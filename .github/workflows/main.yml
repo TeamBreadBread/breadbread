@@ -1,0 +1,26 @@
+name: Claude PR Reviewer
+
+# 1. 언제 실행할 것인가? (PR이 열리거나 코드가 업데이트 될 때)
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# 2. 어떤 권한이 필요한가? (PR에 코멘트를 달아야 하므로 쓰기 권한 필요)
+permissions:
+  pull-requests: write
+  contents: read
+  issues: write
+
+# 3. 무엇을 실행할 것인가?
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Claude Code Action Official
+        uses: anthropics/claude-code-action@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
