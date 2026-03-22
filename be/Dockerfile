@@ -3,12 +3,12 @@ FROM eclipse-temurin:17-jdk-jammy AS build
 WORKDIR /app
 
 # 빌드에 필요한 파일들 복사
-COPY gradlew .
-COPY gradlew.bat .
-COPY gradle gradle
-COPY build.gradle .
-COPY settings.gradle .
-COPY src src
+COPY be/gradlew .
+COPY be/gradlew.bat .
+COPY be/gradle gradle
+COPY be/build.gradle .
+COPY be/settings.gradle .
+COPY be/src src
 
 # 실행 권한 부여 및 빌드
 RUN chmod +x ./gradlew
