@@ -1,0 +1,11 @@
+{
+  "title": "BreadBread Docs",
+  "description": "AI-powered bread taxi platform 🍞",
+  "author": "Team BreadBread",
+  "language": "ko",
+  "plugins": [
+    "-sharing",
+    "-fontsettings",
+    "-livereload"
+  ]
+}
