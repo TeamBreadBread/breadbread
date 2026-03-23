@@ -1,2 +1,2 @@
 # MVP Architecture
-![breadbread_mvp_architecture](https://github.com/user-attachments/assets/d3fd7141-e635-4bfd-aa60-cea84566ac51)
+<img width="2022" height="1241" alt="bbang_taxi_architecture_v3" src="https://github.com/user-attachments/assets/db9e7a2d-84f0-4724-8525-3c315a807978" />
