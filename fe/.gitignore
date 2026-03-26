@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# ---------------------------------
+# Local dev only (not for production)
+be/docker-compose.yml
+be/src/main/resources/application-local.yaml
+
+# ---------------------------------

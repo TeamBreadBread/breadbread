@@ -1,0 +1,9 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: breaddb
+      POSTGRES_USER: bread
+      POSTGRES_PASSWORD: bread1234
+    ports:
+      - "5432:5432"
