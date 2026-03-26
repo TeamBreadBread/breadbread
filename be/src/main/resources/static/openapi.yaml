@@ -1096,7 +1096,7 @@ paths:
     post:
       tags: [AI]
       summary: AI 에이전트 채팅
-      description: 빵빵이 AI 에이전트와 대화하는 API. Dify SSE 스트리밍 응답을 통해 실시간으로 답변을 받음
+      description: 빵빵이 AI 에이전트와 대화하는 API. SSE 스트리밍 응답을 통해 실시간으로 답변을 받음
       security:
         - BearerAuth: []
       requestBody:
