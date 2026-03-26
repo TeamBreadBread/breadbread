@@ -2,8 +2,10 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
-      - '-f', 'be/Dockerfile'
-      - '-t', '$_IMAGE_NAME'
+      - '-f'
+      - 'be/Dockerfile'
+      - '-t'
+      - '$_IMAGE_NAME'
       - '.'
 
   - name: 'gcr.io/cloud-builders/docker'
