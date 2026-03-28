@@ -5,7 +5,7 @@ WORKDIR /app
 RUN corepack enable
 
 # 의존성 파일 복사 및 설치
-COPY be/package.json be/.yarnrc.yml ./
+COPY be/package.json be/.yarnrc.yml be/yarn.lock ./
 RUN yarn install --immutable
 
 # 소스 복사 및 빌드
