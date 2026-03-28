@@ -1,19 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiProperty } from '@nestjs/swagger';
-import { BakerySummaryDto } from '../bakeries/dto/bakeries.dto';
-import { CourseSummaryDto } from '../courses/dto/courses.dto';
-import { BannerDto } from '../../common/dto/banner.dto';
-
-export class MainResponseDto {
-  @ApiProperty({ type: [BannerDto] })
-  banners: BannerDto[];
-
-  @ApiProperty({ type: [CourseSummaryDto] })
-  recommendedCourses: CourseSummaryDto[];
-
-  @ApiProperty({ type: [BakerySummaryDto] })
-  popularBakeries: BakerySummaryDto[];
-}
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { MainResponseDto } from './dto/main.dto';
 
 @ApiTags('메인')
 @Controller('api/main')

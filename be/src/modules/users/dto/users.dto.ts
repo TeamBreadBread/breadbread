@@ -10,7 +10,7 @@ export class SignupRequestDto {
   @ApiProperty({ example: 'user123' })
   loginId: string;
 
-  @ApiProperty({ format: 'password' })
+  @ApiProperty({ format: 'password', example: 'password123!' })
   password: string;
 
   @ApiProperty({ example: '홍길동' })
@@ -22,66 +22,66 @@ export class SignupRequestDto {
   @ApiProperty({ example: '01012345678' })
   phone: string;
 
-  @ApiProperty({ description: '휴대폰 인증 완료 토큰' })
+  @ApiProperty({ description: '휴대폰 인증 완료 토큰', example: 'verify_token_abc123' })
   verificationToken: string;
 
-  @ApiProperty({ enum: UserRole, description: '가입 역할 (일반 사용자/사업자/기사)' })
+  @ApiProperty({ enum: UserRole, description: '가입 역할 (일반 사용자/사업자/기사)', example: UserRole.USER })
   role: UserRole;
 }
 
 export class UserProfileDto {
-  @ApiProperty()
+  @ApiProperty({ example: 1 })
   id: number;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'user123' })
   loginId: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: '홍길동' })
   name: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'user@example.com' })
   email: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: '01012345678' })
   phone: string;
 
-  @ApiProperty({ enum: UserRole })
+  @ApiProperty({ enum: UserRole, example: UserRole.USER })
   role: UserRole;
 
-  @ApiProperty({ format: 'date-time' })
+  @ApiProperty({ format: 'date-time', example: '2026-01-15T09:00:00.000Z' })
   createdAt: string;
 }
 
 export class UpdateProfileRequestDto {
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, example: '김철수' })
   name?: string;
 
-  @ApiProperty({ required: false, format: 'email' })
+  @ApiProperty({ required: false, format: 'email', example: 'new@example.com' })
   email?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, example: '01098765432' })
   phone?: string;
 }
 
 export class CheckIdResponseDto {
-  @ApiProperty()
+  @ApiProperty({ example: true })
   available: boolean;
 }
 
 export class FindIdResponseDto {
-  @ApiProperty()
+  @ApiProperty({ example: 'user123' })
   loginId: string;
 }
 
 export class ResetPwRequestDto {
-  @ApiProperty({ format: 'email' })
+  @ApiProperty({ format: 'email', example: 'user@example.com' })
   email: string;
 }
 
 export class ConfirmResetPwRequestDto {
-  @ApiProperty()
+  @ApiProperty({ example: 'reset_token_xyz789' })
   token: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'newPassword123!' })
   newPassword: string;
 }

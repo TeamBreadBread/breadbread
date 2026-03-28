@@ -1,10 +1,6 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-
-export class UpdateLocationDto {
-  latitude: number;
-  longitude: number;
-}
+import { UpdateLocationDto } from './dto/location.dto';
 
 @ApiTags('위치')
 @Controller('api/location')
