@@ -1,23 +1,35 @@
 import { Controller, Get, Post, Patch, Param, Body } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { NotificationDto } from '../../common/dto/notification.dto';
+
+export class RegisterFcmTokenDto {
+  token: string;
+}
+
+export class NotificationListResponseDto {
+  notifications: NotificationDto[];
+}
 
 @ApiTags('알림')
 @Controller('api/notifications')
 export class NotificationsController {
   @Get()
   @ApiOperation({ summary: '알림 목록 조회' })
+  @ApiResponse({ status: 200, type: NotificationListResponseDto })
   findAll() {
     return { notifications: [] };
   }
 
   @Post('token')
   @ApiOperation({ summary: 'FCM 토큰 등록' })
-  registerToken(@Body() body: { token: string }) {
+  @ApiResponse({ status: 201 })
+  registerToken(@Body() body: RegisterFcmTokenDto) {
     return {};
   }
 
   @Patch(':id/read')
   @ApiOperation({ summary: '알림 읽음 처리' })
+  @ApiResponse({ status: 200 })
   markAsRead(@Param('id') id: string) {
     return {};
   }
