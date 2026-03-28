@@ -49,6 +49,9 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+# NestJS
+be/dist/
+
 ### STS ###
 .apt_generated
 .classpath
@@ -210,12 +213,12 @@ dist
 
 # yarn v3
 .pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
+**/.yarn/*
+!**/.yarn/patches
+!**/.yarn/plugins
+!**/.yarn/releases
+!**/.yarn/sdks
+!**/.yarn/versions
 
 # Vite logs files
 vite.config.js.timestamp-*
