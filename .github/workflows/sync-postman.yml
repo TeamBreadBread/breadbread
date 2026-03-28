@@ -36,7 +36,7 @@ jobs:
 
       - name: Update Postman collection
         run: |
-          curl --fail -s -X PUT \
+          curl -s -X PUT \
             "https://api.getpostman.com/collections/${{ secrets.POSTMAN_COLLECTION_ID }}" \
             -H "X-Api-Key: ${{ secrets.POSTMAN_API_KEY }}" \
             -H "Content-Type: application/json" \
