@@ -30,4 +30,4 @@ EXPOSE 8080
 ENV NODE_ENV=production
 
 # PnP 로더를 require해서 모듈 해석
-CMD ["--require", ".pnp.cjs", "dist/main"]
+CMD ["--require", "./.pnp.cjs", "dist/main"]
