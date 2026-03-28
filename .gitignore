@@ -52,6 +52,9 @@ build/
 # NestJS
 be/dist/
 
+# Claude Code
+.claude/
+
 ### STS ###
 .apt_generated
 .classpath
