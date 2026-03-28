@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export enum PaymentMethod {
   CARD = 'CARD',
-  KAKAO_PAY = 'KAKAO_PAY',
+  TOSS_PAY = 'TOSS_PAY',
   STRIPE = 'STRIPE',
 }
 
@@ -15,32 +15,32 @@ export enum PaymentStatus {
 }
 
 export class CreatePaymentRequestDto {
-  @ApiProperty({ format: 'int64' })
+  @ApiProperty({ format: 'int64', example: 1 })
   reservationId: number;
 
-  @ApiProperty({ enum: PaymentMethod })
+  @ApiProperty({ enum: PaymentMethod, example: PaymentMethod.TOSS_PAY })
   paymentMethod: PaymentMethod;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, example: 45000 })
   amount?: number;
 }
 
 export class PaymentDetailDto {
-  @ApiProperty()
+  @ApiProperty({ example: 1 })
   id: number;
 
-  @ApiProperty()
+  @ApiProperty({ example: 1 })
   reservationId: number;
 
-  @ApiProperty()
+  @ApiProperty({ example: 45000 })
   amount: number;
 
-  @ApiProperty({ enum: PaymentStatus })
+  @ApiProperty({ enum: PaymentStatus, example: PaymentStatus.SUCCESS })
   status: PaymentStatus;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'TOSS_PAY' })
   paymentMethod: string;
 
-  @ApiProperty({ format: 'date-time' })
+  @ApiProperty({ format: 'date-time', example: '2026-03-28T10:05:00.000Z' })
   paidAt: string;
 }

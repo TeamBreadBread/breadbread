@@ -1,10 +1,7 @@
 import { Controller, Post, Body, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
-
-export class AiChatRequestDto {
-  message: string;
-}
+import { AiChatRequestDto } from './dto/ai.dto';
 
 @ApiTags('AI')
 @Controller('api/ai')

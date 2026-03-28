@@ -1,44 +1,44 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class BakeryMenuDto {
-  @ApiProperty()
+  @ApiProperty({ example: '크루아상' })
   name: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 4500 })
   price: number;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'https://cdn.breadbread.kr/menus/croissant.jpg' })
   imageUrl: string;
 }
 
 export class BakerySummaryDto {
-  @ApiProperty()
+  @ApiProperty({ example: 1 })
   id: number;
 
-  @ApiProperty()
+  @ApiProperty({ example: '르뺑 베이커리' })
   name: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: '서울시 마포구 연남동 123-4' })
   address: string;
 
-  @ApiProperty({ format: 'double' })
+  @ApiProperty({ format: 'double', example: 37.5563 })
   lat: number;
 
-  @ApiProperty({ format: 'double' })
+  @ApiProperty({ format: 'double', example: 126.9237 })
   lng: number;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'https://cdn.breadbread.kr/bakeries/lepain.jpg' })
   thumbnailUrl: string;
 }
 
 export class BakeryDetailDto extends BakerySummaryDto {
-  @ApiProperty()
+  @ApiProperty({ example: '연남동 골목에 위치한 프랑스식 베이커리입니다.' })
   description: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: '08:00 - 21:00' })
   openHours: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: '02-1234-5678' })
   phone: string;
 
   @ApiProperty({ type: [BakeryMenuDto] })
@@ -49,6 +49,6 @@ export class BakeryListResponseDto {
   @ApiProperty({ type: [BakerySummaryDto] })
   bakeries: BakerySummaryDto[];
 
-  @ApiProperty()
+  @ApiProperty({ example: 42 })
   total: number;
 }

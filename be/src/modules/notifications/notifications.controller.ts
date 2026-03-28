@@ -1,14 +1,6 @@
 import { Controller, Get, Post, Patch, Param, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { NotificationDto } from '../../common/dto/notification.dto';
-
-export class RegisterFcmTokenDto {
-  token: string;
-}
-
-export class NotificationListResponseDto {
-  notifications: NotificationDto[];
-}
+import { RegisterFcmTokenDto, NotificationListResponseDto } from './dto/notifications.dto';
 
 @ApiTags('알림')
 @Controller('api/notifications')
