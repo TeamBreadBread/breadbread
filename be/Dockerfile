@@ -11,7 +11,7 @@ RUN yarn install --immutable
 # 소스 복사 및 빌드
 COPY be/tsconfig.json be/nest-cli.json ./
 COPY be/src ./src
-COPY be/static ./static
+COPY be/src/main/resources/static ./static
 RUN yarn build
 
 # 2. 실행 환경 (Distroless — 쉘/패키지 매니저 없음, 최소 공격 표면)
