@@ -24,6 +24,21 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
 
+  // example(단수) → examples(복수) 변환: Postman Mock Server는 examples 형식만 인식
+  for (const pathItem of Object.values(document.paths ?? {})) {
+    for (const operation of Object.values(pathItem as Record<string, any>)) {
+      for (const response of Object.values(operation?.responses ?? {})) {
+        for (const mediaType of Object.values((response as any)?.content ?? {})) {
+          const mt = mediaType as any;
+          if (mt.example !== undefined) {
+            mt.examples = { default: { value: mt.example } };
+            delete mt.example;
+          }
+        }
+      }
+    }
+  }
+
   // openapi.yaml 자동 갱신 (CI/CD → Postman sync 트리거용)
   const openapiPath = path.join(__dirname, '..', 'static', 'openapi.yaml');
   fs.mkdirSync(path.dirname(openapiPath), { recursive: true });

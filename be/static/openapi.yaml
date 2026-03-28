@@ -11,38 +11,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MainResponseDto'
-              example:
-                banners:
-                  - id: 1
-                    imageUrl: https://cdn.breadbread.kr/banners/spring-event.jpg
-                    linkUrl: https://breadbread.kr/events/spring
-                  - id: 2
-                    imageUrl: https://cdn.breadbread.kr/banners/new-course.jpg
-                    linkUrl: https://breadbread.kr/courses/new
-                recommendedCourses:
-                  - id: 1
-                    name: 은행동 빵지순례 코스
-                    thumbnailUrl: https://cdn.breadbread.kr/courses/eunhaeng.jpg
-                    bakeryCount: 4
-                    estimatedTime: 120
-                  - id: 2
-                    name: 둔산동 브런치 코스
-                    thumbnailUrl: https://cdn.breadbread.kr/courses/dunsan.jpg
-                    bakeryCount: 3
-                    estimatedTime: 90
-                popularBakeries:
-                  - id: 1
-                    name: 르뺑 베이커리
-                    address: 대전시 중구 은행동 123-4
-                    lat: 36.328
-                    lng: 127.4272
-                    thumbnailUrl: https://cdn.breadbread.kr/bakeries/lepain.jpg
-                  - id: 2
-                    name: 밀도
-                    address: 대전시 서구 둔산동 456-7
-                    lat: 36.354
-                    lng: 127.3796
-                    thumbnailUrl: https://cdn.breadbread.kr/bakeries/mildo.jpg
+              examples:
+                default:
+                  value:
+                    banners:
+                      - id: 1
+                        imageUrl: https://cdn.breadbread.kr/banners/spring-event.jpg
+                        linkUrl: https://breadbread.kr/events/spring
+                      - id: 2
+                        imageUrl: https://cdn.breadbread.kr/banners/new-course.jpg
+                        linkUrl: https://breadbread.kr/courses/new
+                    recommendedCourses:
+                      - id: 1
+                        name: 은행동 빵지순례 코스
+                        thumbnailUrl: https://cdn.breadbread.kr/courses/eunhaeng.jpg
+                        bakeryCount: 4
+                        estimatedTime: 120
+                      - id: 2
+                        name: 둔산동 브런치 코스
+                        thumbnailUrl: https://cdn.breadbread.kr/courses/dunsan.jpg
+                        bakeryCount: 3
+                        estimatedTime: 90
+                    popularBakeries:
+                      - id: 1
+                        name: 르뺑 베이커리
+                        address: 대전시 중구 은행동 123-4
+                        lat: 36.328
+                        lng: 127.4272
+                        thumbnailUrl: https://cdn.breadbread.kr/bakeries/lepain.jpg
+                      - id: 2
+                        name: 밀도
+                        address: 대전시 서구 둔산동 456-7
+                        lat: 36.354
+                        lng: 127.3796
+                        thumbnailUrl: https://cdn.breadbread.kr/bakeries/mildo.jpg
       summary: 메인 화면 출력
       tags:
         - 메인
@@ -63,12 +65,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TokenResponseDto'
-              example:
-                accessToken: >-
-                  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzAwMDAwMDAwfQ.abc123
-                refreshToken: >-
-                  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzAwMDAwMDAwfQ.refresh123
-                tokenType: Bearer
+              examples:
+                default:
+                  value:
+                    accessToken: >-
+                      eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzAwMDAwMDAwfQ.abc123
+                    refreshToken: >-
+                      eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzAwMDAwMDAwfQ.refresh123
+                    tokenType: Bearer
         '201':
           description: ''
       summary: 로그인
@@ -102,12 +106,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TokenResponseDto'
-              example:
-                accessToken: >-
-                  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzAwMDAwMDAwfQ.abc123
-                refreshToken: >-
-                  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzAwMDAwMDAwfQ.refresh123
-                tokenType: Bearer
+              examples:
+                default:
+                  value:
+                    accessToken: >-
+                      eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzAwMDAwMDAwfQ.abc123
+                    refreshToken: >-
+                      eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzAwMDAwMDAwfQ.refresh123
+                    tokenType: Bearer
         '201':
           description: ''
       summary: 토큰 갱신
@@ -134,12 +140,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TokenResponseDto'
-              example:
-                accessToken: >-
-                  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzAwMDAwMDAwfQ.abc123
-                refreshToken: >-
-                  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzAwMDAwMDAwfQ.refresh123
-                tokenType: Bearer
+              examples:
+                default:
+                  value:
+                    accessToken: >-
+                      eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzAwMDAwMDAwfQ.abc123
+                    refreshToken: >-
+                      eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzAwMDAwMDAwfQ.refresh123
+                    tokenType: Bearer
         '201':
           description: ''
       summary: 소셜 로그인
@@ -178,8 +186,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VerifyPhoneResponseDto'
-              example:
-                verificationToken: verify_token_abc123
+              examples:
+                default:
+                  value:
+                    verificationToken: verify_token_abc123
         '201':
           description: ''
       summary: 휴대전화 인증 확인
@@ -216,8 +226,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CheckIdResponseDto'
-              example:
-                available: true
+              examples:
+                default:
+                  value:
+                    available: true
       summary: ID 중복 확인
       tags: *ref_1
   /api/users/find-id:
@@ -246,8 +258,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FindIdResponseDto'
-              example:
-                loginId: user123
+              examples:
+                default:
+                  value:
+                    loginId: user123
       summary: ID 찾기
       tags: *ref_1
   /api/users/reset-pw:
@@ -306,14 +320,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserProfileDto'
-              example:
-                id: 1
-                loginId: user123
-                name: 홍길동
-                email: user@example.com
-                phone: '01012345678'
-                role: USER
-                createdAt: '2026-01-15T09:00:00.000Z'
+              examples:
+                default:
+                  value:
+                    id: 1
+                    loginId: user123
+                    name: 홍길동
+                    email: user@example.com
+                    phone: '01012345678'
+                    role: USER
+                    createdAt: '2026-01-15T09:00:00.000Z'
       summary: 프로필 조회
       tags: *ref_1
     patch:
@@ -332,14 +348,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserProfileDto'
-              example:
-                id: 1
-                loginId: user123
-                name: 홍길동
-                email: user@example.com
-                phone: '01012345678'
-                role: USER
-                createdAt: '2026-01-15T09:00:00.000Z'
+              examples:
+                default:
+                  value:
+                    id: 1
+                    loginId: user123
+                    name: 홍길동
+                    email: user@example.com
+                    phone: '01012345678'
+                    role: USER
+                    createdAt: '2026-01-15T09:00:00.000Z'
       summary: 프로필 수정
       tags: *ref_1
   /api/bakeries:
@@ -353,25 +371,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BakeryListResponseDto'
-              example:
-                bakeries:
-                  - id: 1
-                    name: 르뺑 베이커리
-                    address: 대전시 중구 은행동 123-4
-                    lat: 36.328
-                    lng: 127.4272
-                    thumbnailUrl: https://cdn.breadbread.kr/bakeries/lepain.jpg
-                    rating: 4.8
-                    reviewCount: 124
-                  - id: 2
-                    name: 밀도
-                    address: 대전시 서구 둔산동 456-7
-                    lat: 36.354
-                    lng: 127.3796
-                    thumbnailUrl: https://cdn.breadbread.kr/bakeries/mildo.jpg
-                    rating: 4.6
-                    reviewCount: 89
-                total: 2
+              examples:
+                default:
+                  value:
+                    bakeries:
+                      - id: 1
+                        name: 르뺑 베이커리
+                        address: 대전시 중구 은행동 123-4
+                        lat: 36.328
+                        lng: 127.4272
+                        thumbnailUrl: https://cdn.breadbread.kr/bakeries/lepain.jpg
+                        rating: 4.8
+                        reviewCount: 124
+                      - id: 2
+                        name: 밀도
+                        address: 대전시 서구 둔산동 456-7
+                        lat: 36.354
+                        lng: 127.3796
+                        thumbnailUrl: https://cdn.breadbread.kr/bakeries/mildo.jpg
+                        rating: 4.6
+                        reviewCount: 89
+                    total: 2
       summary: 빵집 검색
       tags: &ref_2
         - 빵집
@@ -391,27 +411,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BakeryDetailDto'
-              example:
-                id: 1
-                name: 르뺑 베이커리
-                address: 대전시 중구 은행동 123-4
-                lat: 36.328
-                lng: 127.4272
-                thumbnailUrl: https://cdn.breadbread.kr/bakeries/lepain.jpg
-                rating: 4.8
-                reviewCount: 124
-                phone: 042-1234-5678
-                openHours: 09:00 - 21:00
-                description: 은행동의 인기 베이커리입니다.
-                menus:
-                  - id: 1
-                    name: 크루아상
-                    price: 4500
-                    imageUrl: https://cdn.breadbread.kr/menus/croissant.jpg
-                  - id: 2
-                    name: 소금빵
-                    price: 3500
-                    imageUrl: https://cdn.breadbread.kr/menus/saltbread.jpg
+              examples:
+                default:
+                  value:
+                    id: 1
+                    name: 르뺑 베이커리
+                    address: 대전시 중구 은행동 123-4
+                    lat: 36.328
+                    lng: 127.4272
+                    thumbnailUrl: https://cdn.breadbread.kr/bakeries/lepain.jpg
+                    rating: 4.8
+                    reviewCount: 124
+                    phone: 042-1234-5678
+                    openHours: 09:00 - 21:00
+                    description: 은행동의 인기 베이커리입니다.
+                    menus:
+                      - id: 1
+                        name: 크루아상
+                        price: 4500
+                        imageUrl: https://cdn.breadbread.kr/menus/croissant.jpg
+                      - id: 2
+                        name: 소금빵
+                        price: 3500
+                        imageUrl: https://cdn.breadbread.kr/menus/saltbread.jpg
       summary: 빵집 상세 조회
       tags: *ref_2
   /api/courses:
@@ -425,19 +447,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CourseListResponseDto'
-              example:
-                courses:
-                  - id: 1
-                    name: 은행동 빵지순례 코스
-                    thumbnailUrl: https://cdn.breadbread.kr/courses/eunhaeng.jpg
-                    bakeryCount: 4
-                    estimatedTime: 120
-                  - id: 2
-                    name: 둔산동 브런치 코스
-                    thumbnailUrl: https://cdn.breadbread.kr/courses/dunsan.jpg
-                    bakeryCount: 3
-                    estimatedTime: 90
-                total: 2
+              examples:
+                default:
+                  value:
+                    courses:
+                      - id: 1
+                        name: 은행동 빵지순례 코스
+                        thumbnailUrl: https://cdn.breadbread.kr/courses/eunhaeng.jpg
+                        bakeryCount: 4
+                        estimatedTime: 120
+                      - id: 2
+                        name: 둔산동 브런치 코스
+                        thumbnailUrl: https://cdn.breadbread.kr/courses/dunsan.jpg
+                        bakeryCount: 3
+                        estimatedTime: 90
+                    total: 2
       summary: 코스 목록 조회
       tags: &ref_3
         - 코스
@@ -457,30 +481,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CourseDetailDto'
-              example:
-                id: 1
-                name: 은행동 빵지순례 코스
-                thumbnailUrl: https://cdn.breadbread.kr/courses/eunhaeng.jpg
-                bakeryCount: 4
-                estimatedTime: 120
-                description: 은행동의 숨은 빵집들을 탐방하는 코스입니다.
-                bakeries:
-                  - id: 1
-                    name: 르뺑 베이커리
-                    address: 대전시 중구 은행동 123-4
-                    lat: 36.328
-                    lng: 127.4272
-                    thumbnailUrl: https://cdn.breadbread.kr/bakeries/lepain.jpg
-                    rating: 4.8
-                    reviewCount: 124
-                  - id: 3
-                    name: 은행제빵소
-                    address: 대전시 중구 은행동 78-2
-                    lat: 36.329
-                    lng: 127.426
-                    thumbnailUrl: https://cdn.breadbread.kr/bakeries/eunhaeng.jpg
-                    rating: 4.5
-                    reviewCount: 67
+              examples:
+                default:
+                  value:
+                    id: 1
+                    name: 은행동 빵지순례 코스
+                    thumbnailUrl: https://cdn.breadbread.kr/courses/eunhaeng.jpg
+                    bakeryCount: 4
+                    estimatedTime: 120
+                    description: 은행동의 숨은 빵집들을 탐방하는 코스입니다.
+                    bakeries:
+                      - id: 1
+                        name: 르뺑 베이커리
+                        address: 대전시 중구 은행동 123-4
+                        lat: 36.328
+                        lng: 127.4272
+                        thumbnailUrl: https://cdn.breadbread.kr/bakeries/lepain.jpg
+                        rating: 4.8
+                        reviewCount: 124
+                      - id: 3
+                        name: 은행제빵소
+                        address: 대전시 중구 은행동 78-2
+                        lat: 36.329
+                        lng: 127.426
+                        thumbnailUrl: https://cdn.breadbread.kr/bakeries/eunhaeng.jpg
+                        rating: 4.5
+                        reviewCount: 67
       summary: 코스 상세 조회
       tags: *ref_3
   /api/courses/recommend:
@@ -500,30 +526,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CourseDetailDto'
-              example:
-                id: 1
-                name: 은행동 빵지순례 코스
-                thumbnailUrl: https://cdn.breadbread.kr/courses/eunhaeng.jpg
-                bakeryCount: 4
-                estimatedTime: 120
-                description: 은행동의 숨은 빵집들을 탐방하는 코스입니다.
-                bakeries:
-                  - id: 1
-                    name: 르뺑 베이커리
-                    address: 대전시 중구 은행동 123-4
-                    lat: 36.328
-                    lng: 127.4272
-                    thumbnailUrl: https://cdn.breadbread.kr/bakeries/lepain.jpg
-                    rating: 4.8
-                    reviewCount: 124
-                  - id: 3
-                    name: 은행제빵소
-                    address: 대전시 중구 은행동 78-2
-                    lat: 36.329
-                    lng: 127.426
-                    thumbnailUrl: https://cdn.breadbread.kr/bakeries/eunhaeng.jpg
-                    rating: 4.5
-                    reviewCount: 67
+              examples:
+                default:
+                  value:
+                    id: 1
+                    name: 은행동 빵지순례 코스
+                    thumbnailUrl: https://cdn.breadbread.kr/courses/eunhaeng.jpg
+                    bakeryCount: 4
+                    estimatedTime: 120
+                    description: 은행동의 숨은 빵집들을 탐방하는 코스입니다.
+                    bakeries:
+                      - id: 1
+                        name: 르뺑 베이커리
+                        address: 대전시 중구 은행동 123-4
+                        lat: 36.328
+                        lng: 127.4272
+                        thumbnailUrl: https://cdn.breadbread.kr/bakeries/lepain.jpg
+                        rating: 4.8
+                        reviewCount: 124
+                      - id: 3
+                        name: 은행제빵소
+                        address: 대전시 중구 은행동 78-2
+                        lat: 36.329
+                        lng: 127.426
+                        thumbnailUrl: https://cdn.breadbread.kr/bakeries/eunhaeng.jpg
+                        rating: 4.5
+                        reviewCount: 67
         '201':
           description: ''
       summary: AI 코스 추천
@@ -539,17 +567,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReservationListResponseDto'
-              example:
-                reservations:
-                  - id: 1
-                    status: CONFIRMED
-                    reservationDate: '2026-04-01T14:00:00.000Z'
-                    courseId: 1
-                    courseName: 은행동 빵지순례 코스
-                    driverName: 김기사
-                    driverPhone: '01098765432'
-                    passengerCount: 2
-                    createdAt: '2026-03-28T10:00:00.000Z'
+              examples:
+                default:
+                  value:
+                    reservations:
+                      - id: 1
+                        status: CONFIRMED
+                        reservationDate: '2026-04-01T14:00:00.000Z'
+                        courseId: 1
+                        courseName: 은행동 빵지순례 코스
+                        driverName: 김기사
+                        driverPhone: '01098765432'
+                        passengerCount: 2
+                        createdAt: '2026-03-28T10:00:00.000Z'
       summary: 예약 목록 조회
       tags: &ref_4
         - 예약
@@ -569,16 +599,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReservationDetailDto'
-              example:
-                id: 1
-                status: CONFIRMED
-                reservationDate: '2026-04-01T14:00:00.000Z'
-                courseId: 1
-                courseName: 은행동 빵지순례 코스
-                driverName: 김기사
-                driverPhone: '01098765432'
-                passengerCount: 2
-                createdAt: '2026-03-28T10:00:00.000Z'
+              examples:
+                default:
+                  value:
+                    id: 1
+                    status: CONFIRMED
+                    reservationDate: '2026-04-01T14:00:00.000Z'
+                    courseId: 1
+                    courseName: 은행동 빵지순례 코스
+                    driverName: 김기사
+                    driverPhone: '01098765432'
+                    passengerCount: 2
+                    createdAt: '2026-03-28T10:00:00.000Z'
       summary: 예약 생성
       tags: *ref_4
   /api/reservations/{id}:
@@ -597,16 +629,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReservationDetailDto'
-              example:
-                id: 1
-                status: CONFIRMED
-                reservationDate: '2026-04-01T14:00:00.000Z'
-                courseId: 1
-                courseName: 은행동 빵지순례 코스
-                driverName: 김기사
-                driverPhone: '01098765432'
-                passengerCount: 2
-                createdAt: '2026-03-28T10:00:00.000Z'
+              examples:
+                default:
+                  value:
+                    id: 1
+                    status: CONFIRMED
+                    reservationDate: '2026-04-01T14:00:00.000Z'
+                    courseId: 1
+                    courseName: 은행동 빵지순례 코스
+                    driverName: 김기사
+                    driverPhone: '01098765432'
+                    passengerCount: 2
+                    createdAt: '2026-03-28T10:00:00.000Z'
       summary: 예약 상세 조회
       tags: *ref_4
     patch:
@@ -630,16 +664,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReservationDetailDto'
-              example:
-                id: 1
-                status: PENDING
-                reservationDate: '2026-04-01T14:00:00.000Z'
-                courseId: 1
-                courseName: 은행동 빵지순례 코스
-                driverName: 김기사
-                driverPhone: '01098765432'
-                passengerCount: 2
-                createdAt: '2026-03-28T10:00:00.000Z'
+              examples:
+                default:
+                  value:
+                    id: 1
+                    status: PENDING
+                    reservationDate: '2026-04-01T14:00:00.000Z'
+                    courseId: 1
+                    courseName: 은행동 빵지순례 코스
+                    driverName: 김기사
+                    driverPhone: '01098765432'
+                    passengerCount: 2
+                    createdAt: '2026-03-28T10:00:00.000Z'
       summary: 예약 수정
       tags: *ref_4
     delete:
@@ -672,14 +708,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaymentDetailDto'
-              example:
-                id: 1
-                reservationId: 1
-                amount: 45000
-                method: CARD
-                status: PAID
-                paidAt: '2026-03-28T10:05:00.000Z'
-                createdAt: '2026-03-28T10:00:00.000Z'
+              examples:
+                default:
+                  value:
+                    id: 1
+                    reservationId: 1
+                    amount: 45000
+                    method: CARD
+                    status: PAID
+                    paidAt: '2026-03-28T10:05:00.000Z'
+                    createdAt: '2026-03-28T10:00:00.000Z'
       summary: 결제 요청
       tags: &ref_5
         - 결제
@@ -699,14 +737,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaymentDetailDto'
-              example:
-                id: 1
-                reservationId: 1
-                amount: 45000
-                method: CARD
-                status: PAID
-                paidAt: '2026-03-28T10:05:00.000Z'
-                createdAt: '2026-03-28T10:00:00.000Z'
+              examples:
+                default:
+                  value:
+                    id: 1
+                    reservationId: 1
+                    amount: 45000
+                    method: CARD
+                    status: PAID
+                    paidAt: '2026-03-28T10:05:00.000Z'
+                    createdAt: '2026-03-28T10:00:00.000Z'
       summary: 결제 조회
       tags: *ref_5
   /api/payments/{id}/cancel:
@@ -725,14 +765,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaymentDetailDto'
-              example:
-                id: 1
-                reservationId: 1
-                amount: 45000
-                method: CARD
-                status: CANCELLED
-                paidAt: '2026-03-28T10:05:00.000Z'
-                createdAt: '2026-03-28T10:00:00.000Z'
+              examples:
+                default:
+                  value:
+                    id: 1
+                    reservationId: 1
+                    amount: 45000
+                    method: CARD
+                    status: CANCELLED
+                    paidAt: '2026-03-28T10:05:00.000Z'
+                    createdAt: '2026-03-28T10:00:00.000Z'
         '201':
           description: ''
       summary: 결제 취소
@@ -748,20 +790,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PostListResponseDto'
-              example:
-                posts:
-                  - id: 1
-                    title: 은행동 빵집 투어 후기
-                    content: 오늘 은행동 빵집 투어를 다녀왔어요. 르뺑 베이커리의 크루아상이 정말 맛있었습니다!
-                    imageUrls:
-                      - https://cdn.breadbread.kr/community/post1-1.jpg
-                    author:
-                      id: 1
-                      name: 홍길동
-                    likeCount: 24
-                    commentCount: 5
-                    createdAt: '2026-03-27T15:30:00.000Z'
-                total: 1
+              examples:
+                default:
+                  value:
+                    posts:
+                      - id: 1
+                        title: 은행동 빵집 투어 후기
+                        content: 오늘 은행동 빵집 투어를 다녀왔어요. 르뺑 베이커리의 크루아상이 정말 맛있었습니다!
+                        imageUrls:
+                          - https://cdn.breadbread.kr/community/post1-1.jpg
+                        author:
+                          id: 1
+                          name: 홍길동
+                        likeCount: 24
+                        commentCount: 5
+                        createdAt: '2026-03-27T15:30:00.000Z'
+                    total: 1
       summary: 게시글 목록 조회
       tags: &ref_6
         - 빵뮤니티
@@ -781,18 +825,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PostDetailDto'
-              example:
-                id: 1
-                title: 은행동 빵집 투어 후기
-                content: 오늘 은행동 빵집 투어를 다녀왔어요. 르뺑 베이커리의 크루아상이 정말 맛있었습니다!
-                imageUrls:
-                  - https://cdn.breadbread.kr/community/post1-1.jpg
-                author:
-                  id: 1
-                  name: 홍길동
-                likeCount: 24
-                commentCount: 5
-                createdAt: '2026-03-27T15:30:00.000Z'
+              examples:
+                default:
+                  value:
+                    id: 1
+                    title: 은행동 빵집 투어 후기
+                    content: 오늘 은행동 빵집 투어를 다녀왔어요. 르뺑 베이커리의 크루아상이 정말 맛있었습니다!
+                    imageUrls:
+                      - https://cdn.breadbread.kr/community/post1-1.jpg
+                    author:
+                      id: 1
+                      name: 홍길동
+                    likeCount: 24
+                    commentCount: 5
+                    createdAt: '2026-03-27T15:30:00.000Z'
       summary: 게시글 작성
       tags: *ref_6
   /api/community/{id}:
@@ -811,18 +857,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PostDetailDto'
-              example:
-                id: 1
-                title: 은행동 빵집 투어 후기
-                content: 오늘 은행동 빵집 투어를 다녀왔어요. 르뺑 베이커리의 크루아상이 정말 맛있었습니다!
-                imageUrls:
-                  - https://cdn.breadbread.kr/community/post1-1.jpg
-                author:
-                  id: 1
-                  name: 홍길동
-                likeCount: 24
-                commentCount: 5
-                createdAt: '2026-03-27T15:30:00.000Z'
+              examples:
+                default:
+                  value:
+                    id: 1
+                    title: 은행동 빵집 투어 후기
+                    content: 오늘 은행동 빵집 투어를 다녀왔어요. 르뺑 베이커리의 크루아상이 정말 맛있었습니다!
+                    imageUrls:
+                      - https://cdn.breadbread.kr/community/post1-1.jpg
+                    author:
+                      id: 1
+                      name: 홍길동
+                    likeCount: 24
+                    commentCount: 5
+                    createdAt: '2026-03-27T15:30:00.000Z'
       summary: 게시글 상세 조회
       tags: *ref_6
     patch:
@@ -846,18 +894,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PostDetailDto'
-              example:
-                id: 1
-                title: 수정된 제목
-                content: 오늘 은행동 빵집 투어를 다녀왔어요. 르뺑 베이커리의 크루아상이 정말 맛있었습니다!
-                imageUrls:
-                  - https://cdn.breadbread.kr/community/post1-1.jpg
-                author:
-                  id: 1
-                  name: 홍길동
-                likeCount: 24
-                commentCount: 5
-                createdAt: '2026-03-27T15:30:00.000Z'
+              examples:
+                default:
+                  value:
+                    id: 1
+                    title: 수정된 제목
+                    content: 오늘 은행동 빵집 투어를 다녀왔어요. 르뺑 베이커리의 크루아상이 정말 맛있었습니다!
+                    imageUrls:
+                      - https://cdn.breadbread.kr/community/post1-1.jpg
+                    author:
+                      id: 1
+                      name: 홍길동
+                    likeCount: 24
+                    commentCount: 5
+                    createdAt: '2026-03-27T15:30:00.000Z'
       summary: 게시글 수정
       tags: *ref_6
     delete:
@@ -889,14 +939,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CommentListResponseDto'
-              example:
-                comments:
-                  - id: 1
-                    content: 저도 다녀왔는데 정말 맛있더라고요!
-                    author:
-                      id: 2
-                      name: 김철수
-                    createdAt: '2026-03-27T16:00:00.000Z'
+              examples:
+                default:
+                  value:
+                    comments:
+                      - id: 1
+                        content: 저도 다녀왔는데 정말 맛있더라고요!
+                        author:
+                          id: 2
+                          name: 김철수
+                        createdAt: '2026-03-27T16:00:00.000Z'
       summary: 댓글 목록 조회
       tags: *ref_6
     post:
@@ -920,13 +972,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CommentDto'
-              example:
-                id: 1
-                content: 저도 다녀왔는데 정말 맛있더라고요!
-                author:
-                  id: 2
-                  name: 김철수
-                createdAt: '2026-03-27T16:00:00.000Z'
+              examples:
+                default:
+                  value:
+                    id: 1
+                    content: 저도 다녀왔는데 정말 맛있더라고요!
+                    author:
+                      id: 2
+                      name: 김철수
+                    createdAt: '2026-03-27T16:00:00.000Z'
       summary: 댓글 작성
       tags: *ref_6
   /api/location:
@@ -976,18 +1030,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotificationListResponseDto'
-              example:
-                notifications:
-                  - id: 1
-                    title: 예약이 확정되었습니다
-                    body: 4월 1일 은행동 빵지순례 코스 예약이 확정되었습니다.
-                    read: false
-                    createdAt: '2026-03-28T09:00:00.000Z'
-                  - id: 2
-                    title: 결제가 완료되었습니다
-                    body: 45,000원 결제가 완료되었습니다.
-                    read: true
-                    createdAt: '2026-03-28T08:00:00.000Z'
+              examples:
+                default:
+                  value:
+                    notifications:
+                      - id: 1
+                        title: 예약이 확정되었습니다
+                        body: 4월 1일 은행동 빵지순례 코스 예약이 확정되었습니다.
+                        read: false
+                        createdAt: '2026-03-28T09:00:00.000Z'
+                      - id: 2
+                        title: 결제가 완료되었습니다
+                        body: 45,000원 결제가 완료되었습니다.
+                        read: true
+                        createdAt: '2026-03-28T08:00:00.000Z'
       summary: 알림 목록 조회
       tags: &ref_7
         - 알림
