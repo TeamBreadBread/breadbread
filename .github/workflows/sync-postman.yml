@@ -21,8 +21,13 @@ jobs:
         with:
           node-version: 22
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
       - name: Install dependencies
-        run: npm install -g openapi-to-postmanv2
+        run: pnpm add -g openapi-to-postmanv2 && pnpm add js-yaml
 
       - name: Convert OpenAPI to Postman collection
         run: |
@@ -35,12 +40,10 @@ jobs:
         run: |
           node -e "
             const fs = require('fs');
-            const yaml = require('js-yaml');
+            const yaml = require('./node_modules/js-yaml');
             const doc = yaml.load(fs.readFileSync('be/static/openapi.yaml', 'utf8'));
             fs.writeFileSync('/tmp/openapi.json', JSON.stringify(doc));
           "
-        env:
-          NODE_PATH: /usr/local/lib/node_modules
 
       - name: Inject saved response examples for Mock Server
         run: node .github/scripts/inject-postman-examples.mjs
