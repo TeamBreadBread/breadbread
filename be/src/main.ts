@@ -11,6 +11,8 @@ async function bootstrap() {
 
   app.enableCors();
 
+  app.use('/swagger-ui/index.html', (_req: any, res: any) => res.redirect('/swagger-ui/'));
+
   // Serve openapi.yaml as Swagger UI
   const openapiPath = path.join(__dirname, '..', 'static', 'openapi.yaml');
   if (fs.existsSync(openapiPath)) {
