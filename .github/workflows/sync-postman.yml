@@ -20,8 +20,8 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install openapi-to-postmanv2
-        run: npm install -g openapi-to-postmanv2
+      - name: Install dependencies
+        run: npm install -g openapi-to-postmanv2 js-yaml
 
       - name: Convert OpenAPI to Postman collection
         run: |
@@ -29,6 +29,9 @@ jobs:
             -s be/static/openapi.yaml \
             -o /tmp/collection.json \
             -p -O folderStrategy=Tags,requestParametersResolution=Example
+
+      - name: Inject saved response examples for Mock Server
+        run: node .github/scripts/inject-postman-examples.mjs
 
       - name: Wrap collection for Postman API
         run: |
