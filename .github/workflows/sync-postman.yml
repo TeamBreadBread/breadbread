@@ -30,11 +30,14 @@ jobs:
             -o /tmp/collection.json \
             -p -O folderStrategy=Tags,requestParametersResolution=Example
 
+      - name: Wrap collection for Postman API
+        run: |
+          echo "{\"collection\": $(cat /tmp/collection.json)}" > /tmp/postman-body.json
+
       - name: Update Postman collection
         run: |
-          COLLECTION=$(cat /tmp/collection.json)
           curl --fail -s -X PUT \
             "https://api.getpostman.com/collections/${{ secrets.POSTMAN_COLLECTION_ID }}" \
             -H "X-Api-Key: ${{ secrets.POSTMAN_API_KEY }}" \
             -H "Content-Type: application/json" \
-            -d "{\"collection\": $COLLECTION}"
+            --data-binary @/tmp/postman-body.json
