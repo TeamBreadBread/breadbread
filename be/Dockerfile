@@ -20,7 +20,6 @@ WORKDIR /app
 
 # PnP 런타임 및 캐시 복사
 COPY --from=build /app/.pnp.cjs ./.pnp.cjs
-COPY --from=build /app/.pnp.loader.mjs ./.pnp.loader.mjs
 COPY --from=build /app/.yarn ./.yarn
 
 # 빌드 결과물 및 정적 파일 복사
