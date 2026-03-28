@@ -30,6 +30,11 @@ jobs:
             -o /tmp/collection.json \
             -p -O folderStrategy=Tags,requestParametersResolution=Example
 
+      - name: Debug collection output
+        run: |
+          echo "=== item count ==="
+          cat /tmp/collection.json | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d.get('item', [])))"
+
       - name: Wrap collection for Postman API
         run: |
           echo "{\"collection\": $(cat /tmp/collection.json)}" > /tmp/postman-body.json
