@@ -6,7 +6,7 @@ on:
       - main
       - 'feat-fe/**'
     paths:
-      - 'be/src/main/resources/static/openapi.yaml'
+      - 'be/static/openapi.yaml'
 
 jobs:
   sync:
@@ -26,7 +26,7 @@ jobs:
       - name: Convert OpenAPI to Postman collection
         run: |
           openapi2postmanv2 \
-            -s be/src/main/resources/static/openapi.yaml \
+            -s be/static/openapi.yaml \
             -o /tmp/collection.json \
             -p -O folderStrategy=Tags,requestParametersResolution=Example
 
