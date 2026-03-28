@@ -22,7 +22,7 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: npm install -g openapi-to-postmanv2 js-yaml
+        run: npm install -g openapi-to-postmanv2
 
       - name: Convert OpenAPI to Postman collection
         run: |
@@ -30,6 +30,17 @@ jobs:
             -s be/static/openapi.yaml \
             -o /tmp/collection.json \
             -p -O folderStrategy=Tags,requestParametersResolution=Example
+
+      - name: Convert OpenAPI YAML to JSON
+        run: |
+          node -e "
+            const fs = require('fs');
+            const yaml = require('js-yaml');
+            const doc = yaml.load(fs.readFileSync('be/static/openapi.yaml', 'utf8'));
+            fs.writeFileSync('/tmp/openapi.json', JSON.stringify(doc));
+          "
+        env:
+          NODE_PATH: /usr/local/lib/node_modules
 
       - name: Inject saved response examples for Mock Server
         run: node .github/scripts/inject-postman-examples.mjs
