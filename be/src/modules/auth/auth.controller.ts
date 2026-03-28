@@ -10,12 +10,18 @@ import {
   VerifyPhoneResponseDto,
 } from './dto/auth.dto';
 
+const TOKEN_EXAMPLE = {
+  accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzAwMDAwMDAwfQ.abc123',
+  refreshToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzAwMDAwMDAwfQ.refresh123',
+  tokenType: 'Bearer',
+};
+
 @ApiTags('인증')
 @Controller('api/auth')
 export class AuthController {
   @Post('login')
   @ApiOperation({ summary: '로그인' })
-  @ApiResponse({ status: 200, type: TokenResponseDto })
+  @ApiResponse({ status: 200, type: TokenResponseDto, example: TOKEN_EXAMPLE })
   login(@Body() body: LoginRequestDto) {
     return { accessToken: '', refreshToken: '' };
   }
@@ -29,14 +35,14 @@ export class AuthController {
 
   @Post('refresh')
   @ApiOperation({ summary: '토큰 갱신' })
-  @ApiResponse({ status: 200, type: TokenResponseDto })
+  @ApiResponse({ status: 200, type: TokenResponseDto, example: TOKEN_EXAMPLE })
   refresh(@Body() body: RefreshRequestDto) {
     return { accessToken: '', refreshToken: '' };
   }
 
   @Post(':provider')
   @ApiOperation({ summary: '소셜 로그인' })
-  @ApiResponse({ status: 200, type: TokenResponseDto })
+  @ApiResponse({ status: 200, type: TokenResponseDto, example: TOKEN_EXAMPLE })
   socialLogin(@Param('provider') provider: string, @Body() body: SocialLoginRequestDto) {
     return { accessToken: '', refreshToken: '' };
   }
@@ -50,7 +56,7 @@ export class AuthController {
 
   @Post('phone/verify')
   @ApiOperation({ summary: '휴대전화 인증 확인' })
-  @ApiResponse({ status: 200, type: VerifyPhoneResponseDto })
+  @ApiResponse({ status: 200, type: VerifyPhoneResponseDto, example: { verificationToken: 'verify_token_abc123' } })
   verifyPhone(@Body() body: VerifyPhoneRequestDto) {
     return { verificationToken: '' };
   }

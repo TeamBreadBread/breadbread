@@ -5,7 +5,7 @@ export class CourseSummaryDto {
   @ApiProperty({ example: 1 })
   id: number;
 
-  @ApiProperty({ example: '연남동 빵지순례 코스' })
+  @ApiProperty({ example: '은행동 빵지순례 코스' })
   name: string;
 
   @ApiProperty({ example: 'https://cdn.breadbread.kr/courses/yeonnam.jpg' })
@@ -19,7 +19,7 @@ export class CourseSummaryDto {
 }
 
 export class CourseDetailDto extends CourseSummaryDto {
-  @ApiProperty({ example: '연남동 핫플 빵집 4곳을 도는 인기 코스입니다.' })
+  @ApiProperty({ example: '은행동 핫플 빵집 4곳을 도는 인기 코스입니다.' })
   description: string;
 
   @ApiProperty({ type: [BakerySummaryDto] })
@@ -35,10 +35,10 @@ export class CourseListResponseDto {
 }
 
 export class RecommendLocationDto {
-  @ApiProperty({ format: 'double', example: 37.5563 })
+  @ApiProperty({ format: 'double', example: 36.3280 })
   lat: number;
 
-  @ApiProperty({ format: 'double', example: 126.9237 })
+  @ApiProperty({ format: 'double', example: 127.4272 })
   lng: number;
 }
 

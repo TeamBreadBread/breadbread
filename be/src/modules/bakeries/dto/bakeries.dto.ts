@@ -18,13 +18,13 @@ export class BakerySummaryDto {
   @ApiProperty({ example: '르뺑 베이커리' })
   name: string;
 
-  @ApiProperty({ example: '서울시 마포구 연남동 123-4' })
+  @ApiProperty({ example: '대전시 중구 은행동 123-4' })
   address: string;
 
-  @ApiProperty({ format: 'double', example: 37.5563 })
+  @ApiProperty({ format: 'double', example: 36.3280 })
   lat: number;
 
-  @ApiProperty({ format: 'double', example: 126.9237 })
+  @ApiProperty({ format: 'double', example: 127.4272 })
   lng: number;
 
   @ApiProperty({ example: 'https://cdn.breadbread.kr/bakeries/lepain.jpg' })
@@ -32,7 +32,7 @@ export class BakerySummaryDto {
 }
 
 export class BakeryDetailDto extends BakerySummaryDto {
-  @ApiProperty({ example: '연남동 골목에 위치한 프랑스식 베이커리입니다.' })
+  @ApiProperty({ example: '은행동 골목에 위치한 프랑스식 베이커리입니다.' })
   description: string;
 
   @ApiProperty({ example: '08:00 - 21:00' })

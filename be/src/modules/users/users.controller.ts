@@ -22,14 +22,14 @@ export class UsersController {
 
   @Get('check-id')
   @ApiOperation({ summary: 'ID 중복 확인' })
-  @ApiResponse({ status: 200, type: CheckIdResponseDto })
+  @ApiResponse({ status: 200, type: CheckIdResponseDto, example: { available: true } })
   checkId(@Query('loginId') loginId: string) {
     return { available: true };
   }
 
   @Get('find-id')
   @ApiOperation({ summary: 'ID 찾기' })
-  @ApiResponse({ status: 200, type: FindIdResponseDto })
+  @ApiResponse({ status: 200, type: FindIdResponseDto, example: { loginId: 'user123' } })
   findId(@Query('name') name: string, @Query('phone') phone?: string, @Query('email') email?: string) {
     return { loginId: '' };
   }
@@ -57,14 +57,14 @@ export class UsersController {
 
   @Get('me')
   @ApiOperation({ summary: '프로필 조회' })
-  @ApiResponse({ status: 200, type: UserProfileDto })
+  @ApiResponse({ status: 200, type: UserProfileDto, example: { id: 1, loginId: 'user123', name: '홍길동', email: 'user@example.com', phone: '01012345678', role: 'USER', createdAt: '2026-01-15T09:00:00.000Z' } })
   getProfile() {
     return {};
   }
 
   @Patch('me')
   @ApiOperation({ summary: '프로필 수정' })
-  @ApiResponse({ status: 200, type: UserProfileDto })
+  @ApiResponse({ status: 200, type: UserProfileDto, example: { id: 1, loginId: 'user123', name: '홍길동', email: 'user@example.com', phone: '01012345678', role: 'USER', createdAt: '2026-01-15T09:00:00.000Z' } })
   updateProfile(@Body() body: UpdateProfileRequestDto) {
     return {};
   }
