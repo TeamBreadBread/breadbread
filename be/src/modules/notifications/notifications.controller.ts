@@ -7,7 +7,16 @@ import { RegisterFcmTokenDto, NotificationListResponseDto } from './dto/notifica
 export class NotificationsController {
   @Get()
   @ApiOperation({ summary: '알림 목록 조회' })
-  @ApiResponse({ status: 200, type: NotificationListResponseDto })
+  @ApiResponse({
+    status: 200,
+    type: NotificationListResponseDto,
+    example: {
+      notifications: [
+        { id: 1, title: '예약이 확정되었습니다', body: '4월 1일 은행동 빵지순례 코스 예약이 확정되었습니다.', read: false, createdAt: '2026-03-28T09:00:00.000Z' },
+        { id: 2, title: '결제가 완료되었습니다', body: '45,000원 결제가 완료되었습니다.', read: true, createdAt: '2026-03-28T08:00:00.000Z' },
+      ],
+    },
+  })
   findAll() {
     return { notifications: [] };
   }
