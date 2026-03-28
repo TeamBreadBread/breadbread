@@ -12,7 +12,7 @@ async function bootstrap() {
   app.enableCors();
 
   // Serve openapi.yaml as Swagger UI
-  const openapiPath = path.join(process.cwd(), 'static', 'openapi.yaml');
+  const openapiPath = path.join(__dirname, '..', 'static', 'openapi.yaml');
   if (fs.existsSync(openapiPath)) {
     const document = yaml.load(fs.readFileSync(openapiPath, 'utf8')) as Record<string, unknown>;
     SwaggerModule.setup('swagger-ui', app, document as any, {
@@ -23,6 +23,8 @@ async function bootstrap() {
       res.setHeader('Content-Type', 'application/yaml');
       res.send(fs.readFileSync(openapiPath, 'utf8'));
     });
+  } else {
+    console.warn(`openapi.yaml not found at ${openapiPath}`);
   }
 
   const port = process.env.PORT ?? 8080;
