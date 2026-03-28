@@ -4,7 +4,7 @@
   "description": "BreadBread (Bbang Taxi) NestJS Backend",
   "author": "Team BreadBread",
   "private": true,
-  "packageManager": "yarn@4.9.1",
+  "packageManager": "pnpm@10.8.1",
   "scripts": {
     "build": "nest build",
     "generate-openapi": "ts-node -r tsconfig-paths/register src/generate-openapi.ts",
