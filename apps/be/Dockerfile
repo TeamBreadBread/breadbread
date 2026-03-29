@@ -10,11 +10,11 @@ WORKDIR /app
 
 RUN npm install -g pnpm
 
-# Copy workspace config + root lockfile + BE package.json
+# Copy workspace config + lockfile
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/be/package.json apps/be/package.json
 
-# Install BE dependencies only
+# Install BE dependencies
 RUN pnpm install --frozen-lockfile --filter bread-be
 
 # Copy source and build
@@ -25,12 +25,15 @@ COPY apps/be/static apps/be/static
 WORKDIR /app/apps/be
 RUN pnpm build
 
+# Create standalone deployment with all deps resolved
+RUN pnpm deploy --filter bread-be --prod /prod/be
+
 # 2. Runtime stage (Distroless)
 FROM gcr.io/distroless/nodejs22-debian12
 WORKDIR /app
 
-COPY --from=build /app/apps/be/node_modules ./node_modules
-COPY --from=build /app/apps/be/dist ./dist
+COPY --from=build /prod/be/node_modules ./node_modules
+COPY --from=build /prod/be/dist ./dist
 COPY --from=build /app/apps/be/static ./static
 
 EXPOSE 8080
