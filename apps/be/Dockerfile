@@ -26,7 +26,7 @@ WORKDIR /app/apps/be
 RUN pnpm build
 
 # Create standalone deployment with all deps resolved
-RUN pnpm deploy --filter bread-be --prod /prod/be
+RUN pnpm deploy --legacy --filter bread-be --prod /prod/be
 
 # 2. Runtime stage (Distroless)
 FROM gcr.io/distroless/nodejs22-debian12
