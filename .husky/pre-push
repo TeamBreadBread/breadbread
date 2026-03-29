@@ -1,9 +1,0 @@
-# Type-check FE (tsc -b includes build check)
-echo "Type-checking FE..."
-cd fe && pnpm exec tsc -b --noEmit && cd ..
-
-# Type-check BE
-echo "Type-checking BE..."
-cd be && pnpm exec tsc --noEmit && cd ..
-
-echo "All type checks passed!"

@@ -6,7 +6,7 @@ on:
       - main
       - 'feat-fe/**'
     paths:
-      - 'be/static/openapi.yaml'
+      - 'apps/be/static/openapi.yaml'
   workflow_dispatch:
 
 jobs:
@@ -32,7 +32,7 @@ jobs:
       - name: Convert OpenAPI to Postman collection
         run: |
           openapi2postmanv2 \
-            -s be/static/openapi.yaml \
+            -s apps/be/static/openapi.yaml \
             -o /tmp/collection.json \
             -p -O folderStrategy=Tags,requestParametersResolution=Example
 
@@ -41,7 +41,7 @@ jobs:
           node -e "
             const fs = require('fs');
             const yaml = require('./node_modules/js-yaml');
-            const doc = yaml.load(fs.readFileSync('be/static/openapi.yaml', 'utf8'));
+            const doc = yaml.load(fs.readFileSync('apps/be/static/openapi.yaml', 'utf8'));
             fs.writeFileSync('/tmp/openapi.json', JSON.stringify(doc));
           "
 

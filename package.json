@@ -9,18 +9,25 @@
     "format:fe": "pnpm --filter fe format",
     "format:be": "pnpm --filter bread-be format",
     "typecheck:fe": "pnpm --filter fe exec tsc -b",
-    "typecheck:be": "pnpm --filter bread-be exec tsc --noEmit"
+    "typecheck:be": "pnpm --filter bread-be exec tsc --noEmit",
+    "typecheck:shared": "pnpm --filter @breadbread/shared typecheck"
   },
   "devDependencies": {
+    "eslint": "^10.1.0",
     "husky": "^9.1.7",
-    "lint-staged": "^16.1.0"
+    "lint-staged": "^16.1.0",
+    "prettier": "^3.8.1"
   },
   "lint-staged": {
-    "fe/src/**/*.{ts,tsx}": [
+    "apps/fe/src/**/*.{ts,tsx}": [
       "eslint --fix",
       "prettier --write"
     ],
-    "be/src/**/*.ts": [
+    "apps/be/src/**/*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "packages/shared/src/**/*.ts": [
       "eslint --fix",
       "prettier --write"
     ]

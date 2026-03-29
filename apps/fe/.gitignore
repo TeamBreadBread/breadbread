@@ -23,7 +23,7 @@ dist-ssr
 
 # ---------------------------------
 # Local dev only (not for production)
-be/docker-compose.yml
-be/src/main/resources/application-local.yaml
+# (moved to apps/ — these paths are relative to repo root now)
+# See root .gitignore for project-wide ignores
 
 # ---------------------------------

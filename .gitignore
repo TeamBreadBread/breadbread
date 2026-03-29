@@ -50,7 +50,7 @@ build/
 !**/src/test/**/build/
 
 # NestJS
-be/dist/
+apps/be/dist/
 
 # Claude Code
 .claude/
@@ -73,14 +73,14 @@ application-local.yml
 *-secret.yml
 
 # BE runtime & build artifacts
-be/dist/
-be/build/
-be/coverage/
+apps/be/dist/
+apps/be/build/
+apps/be/coverage/
 
 # FE runtime & build artifacts
-fe/dist/
-fe/coverage/
-fe/.vite/
+apps/fe/dist/
+apps/fe/coverage/
+apps/fe/.vite/
 
 ### STS ###
 .apt_generated
