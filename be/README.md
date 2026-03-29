@@ -1,11 +1,11 @@
 # BreadBread Backend
 
-Spring Boot REST API server for the BreadBread (Bbang Taxi) project.
+NestJS REST API server for the BreadBread project.
 
 ## Requirements
 
-- Java 17
-- Gradle
+- Node.js 22
+- pnpm
 
 ## Environment Variables
 
@@ -21,7 +21,8 @@ Set the following environment variables before running the server:
 ## Running the Server
 
 ```bash
-./gradlew bootRun
+pnpm install
+pnpm start:dev
 ```
 
 The server starts on **http://localhost:8080**.
@@ -31,17 +32,23 @@ The server starts on **http://localhost:8080**.
 Once the server is running, access Swagger UI at:
 
 ```
-http://localhost:8080/swagger-ui.html
+http://localhost:8080/swagger-ui
 ```
 
-Raw OpenAPI spec (JSON):
+Raw OpenAPI spec (YAML):
 
 ```
-http://localhost:8080/api-docs
+http://localhost:8080/openapi.yaml
 ```
 
 ## Build
 
 ```bash
-./gradlew build
+pnpm build
+```
+
+## Generate OpenAPI spec (without DB)
+
+```bash
+pnpm generate-openapi
 ```
