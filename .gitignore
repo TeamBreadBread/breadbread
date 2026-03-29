@@ -55,6 +55,33 @@ be/dist/
 # Claude Code
 .claude/
 
+# Cloud / GCP infrastructure configs (contain infra structure info)
+cloudbuild.yaml
+cloudbuild.*.yaml
+*.tf
+*.tfvars
+!*.tfvars.example
+service-account*.json
+gcp-*.json
+
+# Local environment & secrets
+.env.local
+.env.*.local
+application-local.yaml
+application-local.yml
+*-secret.yaml
+*-secret.yml
+
+# BE runtime & build artifacts
+be/dist/
+be/build/
+be/coverage/
+
+# FE runtime & build artifacts
+fe/dist/
+fe/coverage/
+fe/.vite/
+
 ### STS ###
 .apt_generated
 .classpath
