@@ -27,7 +27,7 @@ jobs:
           version: 10.8.1
 
       - name: Install dependencies
-        run: pnpm add -g openapi-to-postmanv2 && pnpm add js-yaml
+        run: pnpm add -g openapi-to-postmanv2 && pnpm add -w js-yaml
 
       - name: Convert OpenAPI to Postman collection
         run: |
