@@ -73,8 +73,6 @@ paths:
                     refreshToken: >-
                       eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzAwMDAwMDAwfQ.refresh123
                     tokenType: Bearer
-        '201':
-          description: ''
       summary: 로그인
       tags: &ref_0
         - 인증
@@ -84,8 +82,6 @@ paths:
       parameters: []
       responses:
         '200':
-          description: ''
-        '201':
           description: ''
       summary: 로그아웃
       tags: *ref_0
@@ -114,8 +110,6 @@ paths:
                     refreshToken: >-
                       eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzAwMDAwMDAwfQ.refresh123
                     tokenType: Bearer
-        '201':
-          description: ''
       summary: 토큰 갱신
       tags: *ref_0
   /api/auth/{provider}:
@@ -148,8 +142,6 @@ paths:
                     refreshToken: >-
                       eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzAwMDAwMDAwfQ.refresh123
                     tokenType: Bearer
-        '201':
-          description: ''
       summary: 소셜 로그인
       tags: *ref_0
   /api/auth/phone/send:
@@ -164,8 +156,6 @@ paths:
               $ref: '#/components/schemas/SendPhoneRequestDto'
       responses:
         '200':
-          description: ''
-        '201':
           description: ''
       summary: 휴대전화 인증 요청
       tags: *ref_0
@@ -190,8 +180,6 @@ paths:
                 default:
                   value:
                     verificationToken: verify_token_abc123
-        '201':
-          description: ''
       summary: 휴대전화 인증 확인
       tags: *ref_0
   /api/users/signup:
@@ -276,8 +264,6 @@ paths:
               $ref: '#/components/schemas/ResetPwRequestDto'
       responses:
         '200':
-          description: ''
-        '201':
           description: ''
       summary: PW 재설정 이메일 발송
       tags: *ref_1
@@ -552,8 +538,6 @@ paths:
                         thumbnailUrl: https://cdn.breadbread.kr/bakeries/eunhaeng.jpg
                         rating: 4.5
                         reviewCount: 67
-        '201':
-          description: ''
       summary: AI 코스 추천
       tags: *ref_3
   /api/reservations:
@@ -775,8 +759,6 @@ paths:
                     status: CANCELLED
                     paidAt: '2026-03-28T10:05:00.000Z'
                     createdAt: '2026-03-28T10:00:00.000Z'
-        '201':
-          description: ''
       summary: 결제 취소
       tags: *ref_5
   /api/community:
@@ -996,8 +978,6 @@ paths:
       responses:
         '200':
           description: ''
-        '201':
-          description: ''
       summary: 위치 업데이트
       tags:
         - 위치
@@ -1014,8 +994,6 @@ paths:
       responses:
         '200':
           description: text/event-stream SSE 응답
-        '201':
-          description: ''
       summary: AI 에이전트 채팅 (SSE 스트리밍)
       tags:
         - AI
@@ -1082,11 +1060,7 @@ info:
   version: 1.0.0
   contact: {}
 tags: []
-servers:
-  - url: https://bread-be-72253678429.asia-northeast3.run.app
-    description: Production Server (Cloud Run)
-  - url: http://localhost:8080
-    description: Local Development Server
+servers: []
 components:
   securitySchemes:
     bearer:
@@ -1285,11 +1259,11 @@ components:
           description: 휴대폰 인증 완료 토큰
           example: verify_token_abc123
         role:
+          type: string
           enum:
             - USER
             - BUSINESS
             - DRIVER
-          type: string
           description: 가입 역할 (일반 사용자/사업자/기사)
           example: USER
       required:
@@ -1356,11 +1330,11 @@ components:
           type: string
           example: '01012345678'
         role:
+          type: string
           enum:
             - USER
             - BUSINESS
             - DRIVER
-          type: string
           example: USER
         createdAt:
           type: string
@@ -1566,12 +1540,12 @@ components:
           format: date-time
           example: '2026-04-10T14:00:00.000Z'
         status:
+          type: string
           enum: &ref_8
             - PENDING
             - CONFIRMED
             - CANCELLED
             - COMPLETED
-          type: string
           example: CONFIRMED
         createdAt:
           type: string
@@ -1625,8 +1599,8 @@ components:
           format: date-time
           example: '2026-04-10T14:00:00.000Z'
         status:
-          enum: *ref_8
           type: string
+          enum: *ref_8
           example: CONFIRMED
         createdAt:
           type: string
@@ -1668,11 +1642,11 @@ components:
           format: int64
           example: 1
         paymentMethod:
+          type: string
           enum:
             - CARD
             - TOSS_PAY
             - STRIPE
-          type: string
           example: TOSS_PAY
         amount:
           type: number
@@ -1693,13 +1667,13 @@ components:
           type: number
           example: 45000
         status:
+          type: string
           enum:
             - PENDING
             - SUCCESS
             - FAILED
             - CANCELLED
             - REFUNDED
-          type: string
           example: SUCCESS
         paymentMethod:
           type: string
@@ -1905,11 +1879,11 @@ components:
           type: string
           example: 3월 28일 오후 2시 대전 빵 코스 예약이 확정되었습니다.
         type:
+          type: string
           enum:
             - RESERVATION
             - PAYMENT
             - SYSTEM
-          type: string
           example: RESERVATION
         read:
           type: boolean
