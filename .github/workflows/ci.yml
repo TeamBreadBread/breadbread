@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-typecheck-fe:
+    name: "FE: Lint & Type-check"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fe
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.8.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: fe/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm exec tsc -b
+
+  lint-and-typecheck-be:
+    name: "BE: Lint & Type-check"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: be
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.8.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: be/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm exec tsc --noEmit
+
+  test-be:
+    name: "BE: Unit Tests"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: be
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.8.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: be/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
