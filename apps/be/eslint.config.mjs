@@ -20,7 +20,7 @@ export default tseslint.config(
   },
   // generate-openapi.ts는 콘솔 출력이 의도적
   {
-    files: ['src/generate-openapi.ts'],
+    files: ['scripts/generate-openapi.ts'],
     rules: {
       'no-console': 'off',
     },
