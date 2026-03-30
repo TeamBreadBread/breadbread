@@ -45,7 +45,7 @@ async function bootstrap() {
   }
 
   // openapi.yaml 자동 갱신 (CI/CD → Postman sync 트리거용)
-  const openapiPath = path.join(__dirname, "..", "static", "openapi.yaml");
+  const openapiPath = path.join(process.cwd(), "static", "openapi.yaml");
   fs.mkdirSync(path.dirname(openapiPath), { recursive: true });
   fs.writeFileSync(openapiPath, yaml.dump(document));
 
