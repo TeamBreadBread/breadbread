@@ -8,6 +8,21 @@ export default tseslint.config(
     extends: [tseslint.configs.recommended, prettier],
     rules: {
       'no-console': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          args: 'none',
+          ignoreRestSiblings: true,
+        },
+      ],
+      '@typescript-eslint/no-explicit-any': 'warn',
+    },
+  },
+  // generate-openapi.ts는 콘솔 출력이 의도적
+  {
+    files: ['src/generate-openapi.ts'],
+    rules: {
+      'no-console': 'off',
     },
   },
 );
