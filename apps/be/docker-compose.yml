@@ -1,9 +1,15 @@
 services:
-  postgres:
+  db:
     image: postgres:16
+    container_name: breadbread-db
     environment:
-      POSTGRES_DB: breaddb
-      POSTGRES_USER: bread
-      POSTGRES_PASSWORD: bread1234
+      POSTGRES_USER: ${DB_USERNAME:-bread}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-bread1234}
+      POSTGRES_DB: ${DB_NAME:-breaddb}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
