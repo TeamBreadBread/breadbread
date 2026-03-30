@@ -21,9 +21,6 @@ dist-ssr
 *.sln
 *.sw?
 
-# ---------------------------------
-# Local dev only (not for production)
-# (moved to apps/ — these paths are relative to repo root now)
-# See root .gitignore for project-wide ignores
-
-# ---------------------------------
+# Environment variables
+.env.local
+.env.*.local
