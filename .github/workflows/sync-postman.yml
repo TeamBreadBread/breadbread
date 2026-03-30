@@ -12,6 +12,7 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -26,31 +27,28 @@ jobs:
         with:
           version: 10.8.1
 
-      - name: Install dependencies
-        run: pnpm add -g openapi-to-postmanv2 && pnpm add -w js-yaml
+      - name: Install global tools
+        run: |
+          npm install -g openapi-to-postmanv2 js-yaml
 
       - name: Convert OpenAPI to Postman collection
         run: |
           openapi2postmanv2 \
             -s apps/be/static/openapi.yaml \
             -o /tmp/collection.json \
-            -p -O folderStrategy=Tags,requestParametersResolution=Example
+            --options '{"folderStrategy":"Tags","requestParametersResolution":"Example","includeAuthInfoInExample":true}'
 
-      - name: Convert OpenAPI YAML to JSON
+      - name: Convert OpenAPI YAML to JSON (백업용)
         run: |
-          node -e "
-            const fs = require('fs');
-            const yaml = require('./node_modules/js-yaml');
-            const doc = yaml.load(fs.readFileSync('apps/be/static/openapi.yaml', 'utf8'));
-            fs.writeFileSync('/tmp/openapi.json', JSON.stringify(doc));
-          "
+          node -e '
+            const fs = require("fs");
+            const yaml = require("js-yaml");
+            const doc = yaml.load(fs.readFileSync("apps/be/static/openapi.yaml", "utf8"));
+            fs.writeFileSync("/tmp/openapi.json", JSON.stringify(doc, null, 2));
+          '
 
       - name: Inject saved response examples for Mock Server
         run: node .github/scripts/inject-postman-examples.mjs
-
-      - name: Wrap collection for Postman API
-        run: |
-          echo "{\"collection\": $(cat /tmp/collection.json)}" > /tmp/postman-body.json
 
       - name: Update Postman collection
         run: |
@@ -58,4 +56,4 @@ jobs:
             "https://api.getpostman.com/collections/${{ secrets.POSTMAN_COLLECTION_ID }}" \
             -H "X-Api-Key: ${{ secrets.POSTMAN_API_KEY }}" \
             -H "Content-Type: application/json" \
-            --data-binary @/tmp/postman-body.json
+            --data-binary @/tmp/collection.json
