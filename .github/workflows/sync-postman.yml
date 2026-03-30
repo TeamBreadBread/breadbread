@@ -27,9 +27,8 @@ jobs:
         with:
           version: 10.8.1
 
-      - name: Install global tools
-        run: |
-          npm install -g openapi-to-postmanv2 js-yaml
+      - name: Install tools
+        run: npm install -g openapi-to-postmanv2
 
       - name: Convert OpenAPI to Postman collection
         run: |
@@ -37,15 +36,6 @@ jobs:
             -s apps/be/static/openapi.yaml \
             -o /tmp/collection.json \
             --options '{"folderStrategy":"Tags","requestParametersResolution":"Example","includeAuthInfoInExample":true}'
-
-      - name: Convert OpenAPI YAML to JSON (백업용)
-        run: |
-          node -e '
-            const fs = require("fs");
-            const yaml = require("js-yaml");
-            const doc = yaml.load(fs.readFileSync("apps/be/static/openapi.yaml", "utf8"));
-            fs.writeFileSync("/tmp/openapi.json", JSON.stringify(doc, null, 2));
-          '
 
       - name: Inject saved response examples for Mock Server
         run: node .github/scripts/inject-postman-examples.mjs
