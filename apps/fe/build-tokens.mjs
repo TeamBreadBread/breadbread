@@ -5,14 +5,13 @@ import { dirname, join } from 'path'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const tokens = JSON.parse(readFileSync(join(__dirname, 'src/tokens/tokens.json'), 'utf-8'))
 
-const lines = ['@theme {']
+const lines = ['/* Do not edit directly, this file was auto-generated. */', '@theme {']
 
 // Colors: Wireframe(Temp)/Mode 1 > gray
 const gray = tokens['Wireframe(Temp)/Mode 1']?.gray ?? {}
 for (const [key, val] of Object.entries(gray)) {
   if (val.$type === 'color') {
-    const name = key.replace('gray_', '')
-    lines.push(`  --color-gray-${name}: ${val.$value};`)
+    lines.push(`  --color-gray-${key.replace('gray_', '')}: ${val.$value};`)
   }
 }
 
@@ -20,8 +19,7 @@ for (const [key, val] of Object.entries(gray)) {
 const radius = tokens['radius/Mode 1'] ?? {}
 for (const [key, val] of Object.entries(radius)) {
   if (val.$type === 'number') {
-    const name = key.replace(/_/g, '-')
-    lines.push(`  --radius-${name}: ${val.$value}px;`)
+    lines.push(`  --radius-${key.replace(/_/g, '-')}: ${val.$value}px;`)
   }
 }
 
@@ -29,8 +27,7 @@ for (const [key, val] of Object.entries(radius)) {
 const spacing = tokens['scaling/Mode 1'] ?? {}
 for (const [key, val] of Object.entries(spacing)) {
   if (val.$type === 'number') {
-    const name = key.replace(/_/g, '-')
-    lines.push(`  --spacing-${name}: ${val.$value}px;`)
+    lines.push(`  --spacing-${key.replace(/_/g, '-')}: ${val.$value}px;`)
   }
 }
 
@@ -55,8 +52,7 @@ for (const [key, weight] of Object.entries(fontWeightMap)) {
 const lineHeights = tokens.global?.lineHeight ?? {}
 for (const [key, val] of Object.entries(lineHeights)) {
   if (val.$type === 'lineHeights') {
-    const name = key.replace('height_', '')
-    lines.push(`  --leading-${name}: ${val.$value}px;`)
+    lines.push(`  --leading-${key.replace('height_', '')}: ${val.$value}px;`)
   }
 }
 
@@ -72,4 +68,4 @@ lines.push('}')
 
 const output = lines.join('\n') + '\n'
 writeFileSync(join(__dirname, 'src/tokens.css'), output)
-console.log(`Generated src/tokens.css (${lines.length - 2} tokens)`)
+console.log(`Generated src/tokens.css (${lines.length - 3} tokens)`)
