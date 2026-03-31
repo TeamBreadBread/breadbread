@@ -3,3 +3,5 @@
 //
 // export type { CreateUserRequest, CreateUserResponse } from "./user.dto";
 // export type { RideRequest, RideResponse } from "./ride.dto";
+
+export {};
