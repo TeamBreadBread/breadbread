@@ -7,6 +7,10 @@ lerna-debug.log*
 
 node_modules
 dist
+
+# Generated files
+src/tokens.css
+src/routeTree.gen.ts
 dist-ssr
 *.local
 

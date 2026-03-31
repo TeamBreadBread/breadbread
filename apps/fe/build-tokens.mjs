@@ -1,0 +1,75 @@
+import { readFileSync, writeFileSync } from 'fs'
+import { fileURLToPath } from 'url'
+import { dirname, join } from 'path'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const tokens = JSON.parse(readFileSync(join(__dirname, 'src/tokens/tokens.json'), 'utf-8'))
+
+const lines = ['@theme {']
+
+// Colors: Wireframe(Temp)/Mode 1 > gray
+const gray = tokens['Wireframe(Temp)/Mode 1']?.gray ?? {}
+for (const [key, val] of Object.entries(gray)) {
+  if (val.$type === 'color') {
+    const name = key.replace('gray_', '')
+    lines.push(`  --color-gray-${name}: ${val.$value};`)
+  }
+}
+
+// Border radius: radius/Mode 1
+const radius = tokens['radius/Mode 1'] ?? {}
+for (const [key, val] of Object.entries(radius)) {
+  if (val.$type === 'number') {
+    const name = key.replace(/_/g, '-')
+    lines.push(`  --radius-${name}: ${val.$value}px;`)
+  }
+}
+
+// Spacing: scaling/Mode 1
+const spacing = tokens['scaling/Mode 1'] ?? {}
+for (const [key, val] of Object.entries(spacing)) {
+  if (val.$type === 'number') {
+    const name = key.replace(/_/g, '-')
+    lines.push(`  --spacing-${name}: ${val.$value}px;`)
+  }
+}
+
+// Font family
+lines.push(`  --font-sans: Pretendard, sans-serif;`)
+
+// Font sizes: global.fontSize
+const fontSizes = tokens.global?.fontSize ?? {}
+for (const [key, val] of Object.entries(fontSizes)) {
+  if (val.$type === 'fontSizes') {
+    lines.push(`  --font-size-${key}: ${val.$value}px;`)
+  }
+}
+
+// Font weights
+const fontWeightMap = { regular: '400', medium: '500', bold: '700' }
+for (const [key, weight] of Object.entries(fontWeightMap)) {
+  lines.push(`  --font-weight-${key}: ${weight};`)
+}
+
+// Line heights: global.lineHeight
+const lineHeights = tokens.global?.lineHeight ?? {}
+for (const [key, val] of Object.entries(lineHeights)) {
+  if (val.$type === 'lineHeights') {
+    const name = key.replace('height_', '')
+    lines.push(`  --leading-${name}: ${val.$value}px;`)
+  }
+}
+
+// Box shadows: global.shadow_*
+for (const [key, val] of Object.entries(tokens.global ?? {})) {
+  if (val.$type === 'boxShadow') {
+    const { x, y, blur, spread, color } = val.$value
+    lines.push(`  --shadow-${key.replace('shadow_', '')}: ${x}px ${y}px ${blur}px ${spread}px ${color};`)
+  }
+}
+
+lines.push('}')
+
+const output = lines.join('\n') + '\n'
+writeFileSync(join(__dirname, 'src/tokens.css'), output)
+console.log(`Generated src/tokens.css (${lines.length - 2} tokens)`)
