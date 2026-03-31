@@ -12,7 +12,7 @@
 
 ## 1. 프로젝트 소개
 
-**BreadBread**는 개인화된 대전 빵집 투어 관광 에이전트입니다.
+**BreadBread**는 개인화된 대전 빵집 투어 에이전트입니다.
 
 - **FE**: React + TanStack Router/Query + Tailwind CSS v4
 - **BE**: NestJS + TypeORM + PostgreSQL (pgvector)
