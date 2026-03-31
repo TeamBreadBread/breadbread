@@ -8,6 +8,8 @@ jobs:
   lint-and-typecheck-fe:
     name: "FE: Lint & Type-check"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: apps/fe
@@ -31,6 +33,8 @@ jobs:
   lint-and-typecheck-be:
     name: "BE: Lint & Type-check"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: apps/be
@@ -54,6 +58,8 @@ jobs:
   test-be:
     name: "BE: Unit Tests"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: apps/be
