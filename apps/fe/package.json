@@ -5,8 +5,9 @@
   "packageManager": "pnpm@10.8.1",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build:tokens": "node build-tokens.mjs",
+    "dev": "node build-tokens.mjs && vite",
+    "build": "node build-tokens.mjs && tsc -b && vite build",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "preview": "vite preview"

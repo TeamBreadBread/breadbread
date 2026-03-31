@@ -1,5 +1,2 @@
 @import "tailwindcss";
-
-/* Design tokens — PD 디자인 시스템 확정 후 채워넣을 것 */
-@theme {
-}
+@import "./tokens.css";
