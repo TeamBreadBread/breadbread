@@ -16,18 +16,16 @@ type SectionHeaderProps = {
 const SectionHeader = ({ title, actionLabel, icon, onActionClick }: SectionHeaderProps) => {
   return (
     <div className="flex items-center justify-between">
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-x1">
         {icon && <div className="flex items-center justify-center">{icon}</div>}
-        <h2 className="text-[18px] leading-[24px] font-bold tracking-[-0.02em] text-gray-1000">
-          {title}
-        </h2>
+        <h2 className="text-size-5 leading-t6 font-bold tracking-2 text-gray-1000">{title}</h2>
       </div>
 
       {actionLabel && onActionClick && (
         <Button
           type="button"
           onClick={onActionClick}
-          className="text-[14px] leading-[19px] font-medium tracking-[-0.02em] text-gray-700 hover:text-gray-900"
+          className="text-size-3 leading-t4 font-medium tracking-2 text-gray-700 hover:text-gray-900"
         >
           {actionLabel}
         </Button>

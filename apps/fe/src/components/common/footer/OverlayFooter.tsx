@@ -1,4 +1,6 @@
 // 공통 오버레이 푸터 (다른 페이지/컴포넌트에서 범용으로 사용)
+import { cn } from "@/utils/cn";
+import "./OverlayFooter.css";
 
 type OverlayFooterProps = {
   title: string;
@@ -12,7 +14,12 @@ const OverlayFooter = ({ title, description, imageUrl, className }: OverlayFoote
 
   return (
     <div
-      className={`relative w-full min-h-[220px] overflow-hidden rounded-[var(--radius-r3)] aspect-[16/10] sm:rounded-[var(--radius-r3-5)] md:rounded-[var(--radius-r4)] md:aspect-[21/10] lg:aspect-[5/2] ${className ?? ""}`}
+      className={cn(
+        "overlay-footer-root relative w-full overflow-hidden rounded-r3",
+        "sm:rounded-r3-5",
+        "md:rounded-r4",
+        className,
+      )}
     >
       {hasImage ? (
         <img src={imageUrl} alt={title} className="h-full w-full object-cover" loading="lazy" />
@@ -23,19 +30,34 @@ const OverlayFooter = ({ title, description, imageUrl, className }: OverlayFoote
       {hasImage && <div className="absolute inset-0 bg-gray-1000/25" />}
 
       <div
-        className={`absolute inset-x-0 bottom-0 p-4 sm:p-5 md:p-6 lg:p-7 ${
-          hasImage ? "text-white" : "text-gray-1000"
-        }`}
+        className={cn(
+          "absolute inset-x-0 bottom-0 p-x4",
+          "sm:p-x5",
+          "md:p-x6",
+          "lg:p-x7",
+          hasImage ? "text-white" : "text-gray-1000",
+        )}
       >
-        <div className="max-w-[85%] md:max-w-[78%] lg:max-w-[70%]">
-          <p className="text-[18px] leading-[24px] font-bold tracking-[-0.02em] sm:text-[21px] sm:leading-[28px] md:text-[24px] md:leading-[32px] lg:text-[27px] lg:leading-[35px]">
+        <div className="overlay-footer-content">
+          <p
+            className={cn(
+              "text-size-5 leading-t6 font-bold tracking-2",
+              "sm:text-size-7 sm:leading-t8",
+              "md:text-size-8 md:leading-t9",
+              "lg:text-size-9 lg:leading-t10",
+            )}
+          >
             {title}
           </p>
           {description && (
             <p
-              className={`mt-1 text-[13px] leading-[18px] font-medium sm:text-[14px] sm:leading-[20px] md:mt-2 md:text-[15px] md:leading-[21px] lg:text-[16px] lg:leading-[23px] ${
-                hasImage ? "text-white/90" : "text-gray-800"
-              }`}
+              className={cn(
+                "mt-x1 text-size-2 leading-t3 font-medium",
+                "sm:text-size-3 sm:leading-t4",
+                "md:mt-x2 md:text-size-4 md:leading-t5",
+                "lg:text-size-4 lg:leading-t5",
+                hasImage ? "text-white/90" : "text-gray-800",
+              )}
             >
               {description}
             </p>
