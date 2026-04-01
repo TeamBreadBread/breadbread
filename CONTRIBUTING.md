@@ -14,9 +14,9 @@
 
 **BreadBread**는 개인화된 대전 빵집 투어 에이전트입니다.
 
-- **FE**: React + Tailwind CSS v4 + zustand + TanStack Router/Query + zod
-- **BE**: NestJS + TypeORM + PostgreSQL & pgvector
-- **배포**: Cloudflare Pages (FE) / Google Cloud Run (BE) / Cloud SQL (DB)
+- **FE**: React + TanStack Router/Query + Tailwind CSS v4
+- **BE**: NestJS + TypeORM + PostgreSQL (pgvector)
+- **배포**: Vercel (FE) / Google Cloud Run (BE) / Cloud SQL (DB)
 - **모노레포**: pnpm workspace (`apps/fe`, `apps/be`)
 
 ---
