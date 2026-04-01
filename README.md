@@ -2,71 +2,72 @@
 <img width="2023" height="1370" alt="breadbread_architecture_v4" src="https://github.com/user-attachments/assets/abc6ddaa-250a-4612-bae8-298735bbb74e" />
 
 ```
-src/
-├─ api/                      # 서버 통신 관련 (axios, fetch, API 함수)
+apps/fe/src/
+├─ api/                      # 서버 통신 관련
+│  └─ client.ts
 │
-├─ Assets/                   # 이미지, 아이콘 등 정적 리소스
+├─ assets/                   # 정적 리소스
+│  ├─ hero.png
+│  ├─ react.svg
+│  ├─ vite.svg
+│  ├─ icons/
+│  └─ images/
 │
-├─ routes/                   # 라우팅 설정 (페이지 연결)
-│
-├─ tokens/                   # 디자인 토큰 관리
-│  └─ tokens.json            # 색상, spacing, typography 등
-│
-├─ components/               # ⭐ 
+├─ components/
 │  ├─ common/                # 공통 UI 컴포넌트
-│  │  ├─ button/
-│  │  │  ├─ Button.tsx       # 버튼 컴포넌트
-│  │  │  └─ index.ts
-│  │  ├─ input/
-│  │  │  ├─ Input.tsx        # 입력 컴포넌트
-│  │  │  └─ index.ts
-│  │  ├─ modal/
-│  │  │  ├─ Modal.tsx        # 기본 모달
-│  │  │  └─ index.ts
-│  │  ├─ chip/
-│  │  │  ├─ Chip.tsx         # 선택형 버튼
-│  │  │  └─ index.ts
+│  │  ├─ Button/
+│  │  │  └─ Button.tsx
 │  │  ├─ card/
-│  │  │  ├─ Card.tsx         # 기본 카드
-│  │  │  └─ index.ts
-│  │  ├─ spinner/
-│  │  │  ├─ Spinner.tsx      # 로딩
-│  │  │  └─ index.ts
-│  │  ├─ error-state/
-│  │  │  ├─ ErrorState.tsx   # 에러 UI
-│  │  │  └─ index.ts
-│  │  ├─ empty-state/
-│  │  │  ├─ EmptyState.tsx   # 빈 상태 UI
-│  │  │  └─ index.ts
-│  │  └─ index.ts            # barrel export
+│  │  │  └─ Card.tsx
+│  │  ├─ footer/
+│  │  │  └─ OverlayFooter.tsx
+│  │  ├─ icon/
+│  │  │  └─ Icon.tsx
+│  │  ├─ section-header/
+│  │  │  └─ SectionHeader.tsx
+│  │  ├─ skeleton/
+│  │  │  └─ Skeleton.tsx
+│  │  └─ index.ts
 │  │
-│  ├─ layout/                # 레이아웃 UI
-│  │  ├─ Header.tsx          # 상단 헤더
-│  │  ├─ BottomNav.tsx       # 하단 네비
-│  │  └─ PageContainer.tsx   # max-width 컨테이너
+│  ├─ layout/
+│  │  ├─ BottomNav.tsx
+│  │  └─ MobileFrame.tsx
 │  │
-│  └─ domain/                # 기능별 UI (빵집, AI 추천 등)
+│  └─ domain/
+│     ├─ ai-course/
+│     │  ├─ PreferenceCard.tsx
+│     │  └─ ResultList.tsx
 │     ├─ bakery/
 │     │  ├─ BakeryCard.tsx
 │     │  └─ BakeryList.tsx
-│     └─ ai-course/
-│        ├─ PreferenceCard.tsx
-│        └─ ResultList.tsx
+│     └─ home/               # 현재 비어 있음(예정)
 │
-├─ pages/                    # ⭐ 페이지 단위 추가 (없으면 추가 추천)
-│  ├─ HomePage.tsx
+├─ hooks/
+│  ├─ useLoading.ts
+│  └─ useModal.ts
+│
+├─ pages/
 │  ├─ AiCoursePage.tsx
+│  ├─ BreadPreference.tsx
+│  ├─ HomePage.tsx
 │  └─ MyPage.tsx
 │
-├─ hooks/                    # 공통 로직
-│  ├─ useModal.ts
-│  └─ useLoading.ts
+├─ routes/
+│  ├─ __root.tsx
+│  └─ index.tsx
 │
-├─ utils/                    # 유틸 함수
-│  ├─ cn.ts                  # className merge
-│  └─ format.ts
-│
-├─ styles/                   # ⭐ Tailwind + 글로벌 스타일
+├─ styles/
 │  ├─ globals.css
 │  └─ tailwind.css
+│
+├─ tokens/
+│  └─ tokens.json
+│
+├─ utils/
+│  ├─ cn.ts
+│  └─ format.ts
+│
+├─ index.css
+├─ main.tsx
+└─ routeTree.gen.ts
 ```

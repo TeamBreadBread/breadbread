@@ -8,25 +8,35 @@ type OverlayFooterProps = {
 };
 
 const OverlayFooter = ({ title, description, imageUrl, className }: OverlayFooterProps) => {
+  const hasImage = Boolean(imageUrl);
+
   return (
     <div
       className={`relative w-full min-h-[220px] overflow-hidden rounded-[var(--radius-r3)] aspect-[16/10] sm:rounded-[var(--radius-r3-5)] md:rounded-[var(--radius-r4)] md:aspect-[21/10] lg:aspect-[5/2] ${className ?? ""}`}
     >
-      {imageUrl ? (
+      {hasImage ? (
         <img src={imageUrl} alt={title} className="h-full w-full object-cover" loading="lazy" />
       ) : (
         <div className="h-full w-full bg-gray-300" />
       )}
 
-      {imageUrl && <div className="absolute inset-0 bg-gray-1000/25" />}
+      {hasImage && <div className="absolute inset-0 bg-gray-1000/25" />}
 
-      <div className="absolute inset-x-0 bottom-0 p-4 text-white sm:p-5 md:p-6 lg:p-7">
+      <div
+        className={`absolute inset-x-0 bottom-0 p-4 sm:p-5 md:p-6 lg:p-7 ${
+          hasImage ? "text-white" : "text-gray-1000"
+        }`}
+      >
         <div className="max-w-[85%] md:max-w-[78%] lg:max-w-[70%]">
           <p className="text-[18px] leading-[24px] font-bold tracking-[-0.02em] sm:text-[21px] sm:leading-[28px] md:text-[24px] md:leading-[32px] lg:text-[27px] lg:leading-[35px]">
             {title}
           </p>
           {description && (
-            <p className="mt-1 text-[13px] leading-[18px] font-medium text-white/90 sm:text-[14px] sm:leading-[20px] md:mt-2 md:text-[15px] md:leading-[21px] lg:text-[16px] lg:leading-[23px]">
+            <p
+              className={`mt-1 text-[13px] leading-[18px] font-medium sm:text-[14px] sm:leading-[20px] md:mt-2 md:text-[15px] md:leading-[21px] lg:text-[16px] lg:leading-[23px] ${
+                hasImage ? "text-white/90" : "text-gray-800"
+              }`}
+            >
               {description}
             </p>
           )}
