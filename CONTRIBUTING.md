@@ -14,9 +14,9 @@
 
 **BreadBread**는 개인화된 대전 빵집 투어 에이전트입니다.
 
-- **FE**: React + TanStack Router/Query + Tailwind CSS v4
+- **FE**: React + Tailwind CSS v4 + Zustand, TanStack Router/Query, Vite, Zod
 - **BE**: NestJS + TypeORM + PostgreSQL (pgvector)
-- **배포**: Vercel (FE) / Google Cloud Run (BE) / Cloud SQL (DB)
+- **배포**: Cloudflare Pages (FE) / Google Cloud Run (BE) / Cloud SQL (DB)
 - **모노레포**: pnpm workspace (`apps/fe`, `apps/be`)
 
 ---
@@ -32,6 +32,7 @@
 | 클라이언트 상태 | Zustand |
 | 스타일 | Tailwind CSS v4 |
 | 빌드 | Vite |
+| 런타임 스키마 검증 | Zod |
 
 ### Backend
 | 역할 | 라이브러리 |
@@ -158,10 +159,10 @@ pnpm add -D 패키지명 --filter fe
 > 각 작업은 별도 브랜치에서 PR로 진행합니다.
 
 ### 1단계: 디자인 토큰
-- [ ] Figma에서 디자인 토큰 추출 후 Tailwind CSS에 연동
+- [x] Figma에서 디자인 토큰 추출 후 Tailwind CSS에 연동
 
 ### 2단계: 공통 컴포넌트
-- [ ] `feat/fe/common-components` 브랜치 생성
+- [x] `feat/fe/common-components` 브랜치 생성
 - [ ] Button, Input, Modal 등 공통 UI 컴포넌트
 - [ ] 디자인 토큰 기반으로 Tailwind 클래스 적용
 - [ ] 로딩/에러 상태 공통 처리
