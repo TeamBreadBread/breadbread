@@ -4,6 +4,7 @@
 // ReactNode 타입은 React에서 사용할 수 있는 모든 요소를 나타내는 타입입니다.
 // 문자열, 숫자, JSX 요소, 배열 등 다양한 형태의 자식 요소를 허용합니다.
 import type { ReactNode } from "react";
+import Button from "../Button/Button";
 
 type SectionHeaderProps = {
   title: string;
@@ -23,13 +24,13 @@ const SectionHeader = ({ title, actionLabel, icon, onActionClick }: SectionHeade
       </div>
 
       {actionLabel && onActionClick && (
-        <button
+        <Button
           type="button"
           onClick={onActionClick}
           className="text-[14px] leading-[19px] font-medium tracking-[-0.02em] text-gray-700 hover:text-gray-900"
         >
           {actionLabel}
-        </button>
+        </Button>
       )}
     </div>
   );

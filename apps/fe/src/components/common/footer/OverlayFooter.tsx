@@ -18,7 +18,7 @@ const OverlayFooter = ({ title, description, imageUrl, className }: OverlayFoote
         <div className="h-full w-full bg-gray-300" />
       )}
 
-      {imageUrl && <div className="absolute inset-0 bg-black/25" />}
+      {imageUrl && <div className="absolute inset-0 bg-gray-1000/25" />}
 
       <div className="absolute inset-x-0 bottom-0 p-4 text-white sm:p-5 md:p-6 lg:p-7">
         <div className="max-w-[85%] md:max-w-[78%] lg:max-w-[70%]">
