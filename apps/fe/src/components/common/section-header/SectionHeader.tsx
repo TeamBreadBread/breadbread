@@ -4,7 +4,7 @@
 // ReactNode 타입은 React에서 사용할 수 있는 모든 요소를 나타내는 타입입니다.
 // 문자열, 숫자, JSX 요소, 배열 등 다양한 형태의 자식 요소를 허용합니다.
 import type { ReactNode } from "react";
-import Button from "../Button/Button";
+import { Button } from "../Button";
 
 type SectionHeaderProps = {
   title: string;
