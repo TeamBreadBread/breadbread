@@ -1,0 +1,32 @@
+.overlay-footer-root {
+  min-height: calc(var(--spacing-x16) * 3 + var(--spacing-x7));
+  aspect-ratio: 16 / 10;
+}
+
+@media (min-width: 48rem) {
+  .overlay-footer-root {
+    aspect-ratio: 21 / 10;
+  }
+}
+
+@media (min-width: 64rem) {
+  .overlay-footer-root {
+    aspect-ratio: 5 / 2;
+  }
+}
+
+.overlay-footer-content {
+  max-width: 85%;
+}
+
+@media (min-width: 48rem) {
+  .overlay-footer-content {
+    max-width: 78%;
+  }
+}
+
+@media (min-width: 64rem) {
+  .overlay-footer-content {
+    max-width: 70%;
+  }
+}
