@@ -42,6 +42,14 @@ for (const [key, val] of Object.entries(fontSizes)) {
   }
 }
 
+// Letter spacing: global.letterSpacing
+const letterSpacing = tokens.global?.letterSpacing ?? {}
+for (const [key, val] of Object.entries(letterSpacing)) {
+  if (val.$type === 'letterSpacing') {
+    lines.push(`  --tracking-${key}: ${val.$value}px;`)
+  }
+}
+
 // Font weights
 const fontWeightMap = { regular: '400', medium: '500', bold: '700' }
 for (const [key, weight] of Object.entries(fontWeightMap)) {
