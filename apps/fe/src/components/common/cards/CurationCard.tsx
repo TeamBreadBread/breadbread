@@ -38,7 +38,7 @@ const CurationCard = ({
       <div className="flex flex-col gap-[var(--spacing-x1)]">
         <p
           className={cn(
-            "text-[var(--font-size-4)] leading-[var(--leading-t5)]",
+            "text-[length:var(--font-size-4)] leading-[var(--leading-t5)]",
             "font-bold tracking-[var(--tracking-2)] text-[var(--color-gray-1000)]",
           )}
         >
@@ -47,7 +47,7 @@ const CurationCard = ({
         <div
           className={cn(
             "flex items-center gap-[var(--spacing-x0-5)]",
-            "text-[var(--font-size-1)] leading-[var(--leading-t2)] font-medium",
+            "text-[length:var(--font-size-1)] leading-[var(--leading-t2)] font-medium",
             "text-[var(--color-gray-700)]",
           )}
         >

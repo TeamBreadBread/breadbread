@@ -22,8 +22,11 @@ const CurationFooter = ({
   return (
     <div className="h-full w-full overflow-x-auto">
       <div className="flex gap-[var(--spacing-x4)] w-max">
-        {items.map((item, index) => (
-          <div key={index} className={cn("flex-shrink-0", "w-[254px] h-[240px]")}>
+        {items.map((item) => (
+          <div
+            key={`${item.title}-${item.address}`}
+            className={cn("flex-shrink-0", "w-[254px] h-[240px]")}
+          >
             <CurationCard title={item.title} address={item.address} rate={item.rate} />
           </div>
         ))}
