@@ -14,7 +14,7 @@ type QuickMenuProps = {
 
 const QuickMenu = ({ items, className }: QuickMenuProps) => {
   return (
-    <div className={cn("grid grid-cols-4 gap-y-x4 px-x4", className)}>
+    <div className={cn("grid grid-cols-4 gap-x4 px-x4", className)}>
       {items.map((item) => (
         <button
           key={item.id}
@@ -25,7 +25,7 @@ const QuickMenu = ({ items, className }: QuickMenuProps) => {
           <div className="flex h-x13 w-x13 items-center justify-center rounded-r3 bg-gray-100">
             <span className="text-size-7 leading-none">{item.icon}</span>
           </div>
-          <span className="text-size-1 leading-t2 font-medium tracking-0 text-gray-800">
+          <span className="text-size-1 font-medium leading-t2 tracking-0 text-gray-800">
             {item.label}
           </span>
         </button>

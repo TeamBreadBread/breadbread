@@ -5,16 +5,15 @@ import BottomNav from "./BottomNav";
 
 type AppShellProps = {
   children: React.ReactNode;
-  activePath?: string;
   className?: string;
 };
 
-const AppShell = ({ children, activePath, className }: AppShellProps) => {
+const AppShell = ({ children, className }: AppShellProps) => {
   return (
     <MobileFrame>
       <TopHeader />
       <main className={cn("flex-1 overflow-y-auto", className)}>{children}</main>
-      <BottomNav activePath={activePath} />
+      <BottomNav />
     </MobileFrame>
   );
 };

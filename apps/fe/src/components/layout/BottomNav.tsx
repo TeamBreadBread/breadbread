@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { cn } from "@/utils/cn";
 
 type NavItem = {
@@ -14,11 +15,10 @@ const navItems: NavItem[] = [
 ];
 
 type BottomNavProps = {
-  activePath?: string;
   className?: string;
 };
 
-const BottomNav = ({ activePath = "/", className }: BottomNavProps) => {
+const BottomNav = ({ className }: BottomNavProps) => {
   return (
     <nav
       className={cn(
@@ -26,29 +26,18 @@ const BottomNav = ({ activePath = "/", className }: BottomNavProps) => {
         className,
       )}
     >
-      {navItems.map((item) => {
-        const isActive = activePath === item.href;
-        return (
-          <a
-            key={item.id}
-            href={item.href}
-            className={cn(
-              "flex flex-col items-center gap-x0-5 py-x1-5",
-              isActive ? "text-gray-1000" : "text-gray-600",
-            )}
-          >
-            <span className="text-size-6 leading-none">{item.icon}</span>
-            <span
-              className={cn(
-                "text-size-0 leading-t1 tracking-0",
-                isActive ? "font-bold" : "font-medium",
-              )}
-            >
-              {item.label}
-            </span>
-          </a>
-        );
-      })}
+      {navItems.map((item) => (
+        <Link
+          key={item.id}
+          to={item.href}
+          className="flex flex-col items-center gap-x0-5 py-x1-5 text-gray-600"
+          activeProps={{ className: "flex flex-col items-center gap-x0-5 py-x1-5 text-gray-1000" }}
+          activeOptions={{ exact: true }}
+        >
+          <span className="text-size-6 leading-none">{item.icon}</span>
+          <span className="text-size-0 font-medium leading-t1 tracking-0">{item.label}</span>
+        </Link>
+      ))}
     </nav>
   );
 };

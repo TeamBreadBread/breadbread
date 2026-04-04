@@ -27,7 +27,7 @@ const quickMenuItems: QuickMenuItem[] = [
 
 const HomePage = () => {
   return (
-    <AppShell activePath="/">
+    <AppShell>
       <div className="flex flex-col gap-x8 py-x6">
         <QuickMenu items={quickMenuItems} />
 

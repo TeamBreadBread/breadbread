@@ -30,7 +30,7 @@ const CurationCard = ({ data, className }: CurationCardProps) => {
           <div className="h-full w-full bg-gray-300" />
         )}
         {tag && (
-          <span className="absolute left-x2 top-x2 rounded-r1 bg-gray-1000/70 px-x1-5 py-x0-5 text-size-0 leading-t1 font-medium tracking-0 text-gray-00">
+          <span className="absolute left-x2 top-x2 rounded-r1 bg-gray-1000/70 px-x1-5 py-x0-5 text-size-0 font-medium leading-t1 tracking-0 text-gray-00">
             {tag}
           </span>
         )}
