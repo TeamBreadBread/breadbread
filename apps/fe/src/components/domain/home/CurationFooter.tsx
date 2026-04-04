@@ -1,4 +1,5 @@
-import CurationCard from "./CurationCard";
+import CurationCard from "@/components/common/cards/CurationCard";
+import { cn } from "@/utils/cn";
 
 type CurationItem = {
   title: string;
@@ -19,10 +20,10 @@ const CurationFooter = ({
   ],
 }: CurationFooterProps) => {
   return (
-    <div className="w-full h-[364px] overflow-x-auto scrollbar-hide">
-      <div className="flex gap-4 w-max">
+    <div className="h-full w-full overflow-x-auto">
+      <div className="flex gap-[var(--spacing-x4)] w-max">
         {items.map((item, index) => (
-          <div key={index} className="flex-shrink-0 w-[254px] h-[240px]">
+          <div key={index} className={cn("flex-shrink-0", "w-[254px] h-[240px]")}>
             <CurationCard title={item.title} address={item.address} rate={item.rate} />
           </div>
         ))}

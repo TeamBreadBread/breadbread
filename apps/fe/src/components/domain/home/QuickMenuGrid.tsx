@@ -1,5 +1,5 @@
 // 오른쪽 4개 카드 묶음
-import QuickMenuCard from "./QuickMenuCard";
+import QuickMenuCard from "@/components/common/cards/QuickMenuCard";
 
 const quickMenus = [
   { label: "지역별" },
