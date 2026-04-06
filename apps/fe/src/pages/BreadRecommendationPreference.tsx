@@ -87,7 +87,7 @@ export default function BreadRecommendationPreference() {
 
   return (
     <MobileFrame>
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col pb-x32">
         <PreferenceTopBar title="빵 취향 선택" />
 
         <PreferenceIntro
@@ -126,10 +126,10 @@ export default function BreadRecommendationPreference() {
         </div>
       </div>
 
-      <div className="sticky bottom-0 bg-gray-00">
+      <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-x186 -translate-x-1/2 bg-gray-00">
         <div className="h-x12 bg-gradient-to-b from-transparent to-gray-00" />
 
-        <div className="flex items-start justify-start gap-x2-5 overflow-hidden border-t border-gray-300 bg-gray-00 px-x5 py-x3">
+        <div className="flex items-start justify-center gap-x2-5 overflow-hidden border-t border-gray-300 bg-gray-00 px-x5 py-x3">
           <Button
             variant="secondary"
             fullWidth

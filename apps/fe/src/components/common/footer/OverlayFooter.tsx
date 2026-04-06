@@ -15,7 +15,9 @@ export default function OverlayFooter({
   onRightClick,
 }: OverlayFooterProps) {
   return (
-    <div className={cn("sticky bottom-0 bg-gray-00")}>
+    <div
+      className={cn("fixed bottom-0 left-1/2 z-20 w-full max-w-x186 -translate-x-1/2 bg-gray-00")}
+    >
       <div className="h-x12 bg-gradient-to-b from-transparent to-gray-00" />
 
       <div
