@@ -73,7 +73,7 @@ export default function BreadPreference() {
 
   return (
     <MobileFrame>
-      <div className="flex flex-1 flex-col pb-x32">
+      <div className="pb-footer-safe flex flex-1 flex-col">
         <PreferenceTopBar title="빵 취향 선택" />
 
         <PreferenceIntro

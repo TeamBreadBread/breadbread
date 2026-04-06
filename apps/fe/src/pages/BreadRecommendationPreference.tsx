@@ -1,3 +1,6 @@
+// 사용자의 선택지를 섹션별로 관리하고,
+// 선택 결과를 기반으로 다음 페이지로 이동시키는 화면
+
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import MobileFrame from "@/components/layout/MobileFrame";
@@ -9,6 +12,7 @@ import PreferenceQuestionSection from "@/components/domain/ai-course/PreferenceQ
 import PreferenceTopBar from "@/components/domain/ai-course/PreferenceTopBar";
 import RecommendationCTAButton from "@/components/domain/ai-course/RecommendationCTAButton";
 import RecommendationCountStepper from "@/components/domain/ai-course/RecommendationCountStepper";
+import { cn } from "@/utils/cn";
 
 type OptionItem = {
   label: string;
@@ -87,7 +91,7 @@ export default function BreadRecommendationPreference() {
 
   return (
     <MobileFrame>
-      <div className="flex flex-1 flex-col pb-x32">
+      <div className="pb-footer-safe flex flex-1 flex-col">
         <PreferenceTopBar title="빵 취향 선택" />
 
         <PreferenceIntro
@@ -126,10 +130,17 @@ export default function BreadRecommendationPreference() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-x186 -translate-x-1/2 bg-gray-00">
+      <div
+        className={cn("fixed bottom-0 left-1/2 z-20 w-full max-w-x186 -translate-x-1/2 bg-gray-00")}
+      >
         <div className="h-x12 bg-gradient-to-b from-transparent to-gray-00" />
 
-        <div className="flex items-start justify-center gap-x2-5 overflow-hidden border-t border-gray-300 bg-gray-00 px-x5 py-x3">
+        <div
+          className={cn(
+            "flex items-start justify-center gap-x2-5 overflow-hidden",
+            "mt-x3 border-t border-gray-300 bg-gray-00 px-x5 py-x3",
+          )}
+        >
           <Button
             variant="secondary"
             fullWidth

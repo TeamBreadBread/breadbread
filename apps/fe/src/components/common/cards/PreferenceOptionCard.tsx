@@ -20,7 +20,8 @@ export default function PreferenceOptionCard({
       onClick={onClick}
       aria-pressed={selected}
       className={cn(
-        "flex w-full min-h-x16 flex-col items-center justify-center gap-x0-5 overflow-hidden rounded-r2 border px-x5 pb-x3 pt-x2-5 transition",
+        "flex w-full flex-col items-center justify-center gap-x0-5 overflow-hidden rounded-r2 border px-x5 pb-x3 pt-x2-5 transition",
+        icon ? "min-h-x16" : "min-h-x16",
         selected
           ? "border-gray-600 bg-gray-300"
           : "border-gray-200 bg-gray-100 hover:border-gray-600 hover:bg-gray-300",

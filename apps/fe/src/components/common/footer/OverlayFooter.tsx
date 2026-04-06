@@ -23,7 +23,7 @@ export default function OverlayFooter({
       <div
         className={cn(
           "flex items-start justify-center gap-x2-5 overflow-hidden",
-          "border-t border-gray-300 bg-gray-00 px-x5 py-x3",
+          "mt-x3 border-t border-gray-300 bg-gray-00 px-x5 py-x3",
         )}
       >
         <Button variant="secondary" fullWidth className="max-w-x80" onClick={onLeftClick}>
