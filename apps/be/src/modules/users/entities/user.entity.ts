@@ -18,7 +18,7 @@ export enum UserRole {
   DRIVER = "DRIVER",
 }
 
-@Entity("user")
+@Entity("users")
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
@@ -26,7 +26,7 @@ export class User {
   @Column({ length: 50, unique: true })
   loginId: string;
 
-  @Column({ length: 255 })
+  @Column({ length: 255, select: false })
   password: string;
 
   @Column({ length: 50 })

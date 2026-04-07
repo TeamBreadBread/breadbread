@@ -28,7 +28,7 @@ export class Driver {
   @Column({ length: 20 })
   carNumber: string;
 
-  @Column({ type: "decimal", precision: 2, scale: 1, nullable: true })
+  @Column({ type: "float", nullable: true })
   rating: number;
 
   @CreateDateColumn()

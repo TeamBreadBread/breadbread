@@ -18,13 +18,13 @@ export class AiCourse {
   @Column({ length: 200 })
   title: string;
 
-  @Column({ type: "decimal", precision: 5, scale: 2, nullable: true })
+  @Column({ type: "float", nullable: true })
   totalDistance: number;
 
   @Column({ nullable: true })
   estimatedCost: number;
 
-  @Column({ type: "decimal", precision: 5, scale: 2, nullable: true })
+  @Column({ type: "float", nullable: true })
   estimatedTime: number;
 
   @Column({ default: false })

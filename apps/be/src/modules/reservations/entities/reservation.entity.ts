@@ -43,10 +43,10 @@ export class Reservation {
   @Column({ length: 200, nullable: true })
   departure: string;
 
-  @Column({ type: "decimal", precision: 10, scale: 7, nullable: true })
+  @Column({ type: "float", nullable: true })
   departureLat: number;
 
-  @Column({ type: "decimal", precision: 10, scale: 7, nullable: true })
+  @Column({ type: "float", nullable: true })
   departureLng: number;
 
   @Column({ type: "enum", enum: ReservationStatus, default: ReservationStatus.PENDING })

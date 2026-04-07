@@ -28,10 +28,10 @@ export class Bakery {
   @Column({ length: 255 })
   address: string;
 
-  @Column({ type: "decimal", precision: 10, scale: 7 })
+  @Column({ type: "float" })
   latitude: number;
 
-  @Column({ type: "decimal", precision: 10, scale: 7 })
+  @Column({ type: "float" })
   longitude: number;
 
   @Column({ length: 100, nullable: true })
@@ -43,7 +43,7 @@ export class Bakery {
   @Column({ length: 20, nullable: true })
   phone: string;
 
-  @Column({ type: "decimal", precision: 2, scale: 1, nullable: true })
+  @Column({ type: "float", nullable: true })
   rating: number;
 
   @Column({ default: 0 })
@@ -58,7 +58,7 @@ export class Bakery {
   @Column({ default: false })
   isParkingAvailable: boolean;
 
-  @Column({ type: "decimal", precision: 2, scale: 1, nullable: true })
+  @Column({ type: "float", nullable: true })
   waitRisk: number;
 
   @Column({ length: 500, nullable: true })

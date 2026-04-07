@@ -39,7 +39,7 @@ export class Payment {
   cancelledAt: Date;
 
   @Column({ nullable: true })
-  refundAt: Date;
+  refundedAt: Date;
 
   @ManyToOne(() => User)
   @JoinColumn()

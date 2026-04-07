@@ -31,10 +31,10 @@ export class Course {
   @Column({ length: 50, nullable: true })
   theme: string;
 
-  @Column({ type: "decimal", precision: 5, scale: 2, nullable: true })
+  @Column({ type: "float", nullable: true })
   totalDistance: number;
 
-  @Column({ type: "decimal", precision: 5, scale: 2, nullable: true })
+  @Column({ type: "float", nullable: true })
   estimatedTime: number;
 
   @Column({ default: true })
