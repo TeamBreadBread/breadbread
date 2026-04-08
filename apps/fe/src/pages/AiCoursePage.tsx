@@ -1,11 +1,13 @@
 import { cn } from "@/utils/cn";
 import CourseTimeline from "@/components/domain/ai-course/CourseTimeline";
-import ResultCTASection from "@/components/domain/ai-course/ResultCTASection";
-import ResultSummaryCard from "@/components/domain/ai-course/ResultSummaryCard";
+import ResultCTASection, {
+  RESULT_CTA_HEIGHT_CLASS,
+} from "@/components/domain/ai-course/ResultCTASection";
 import ResultTopBar from "@/components/domain/ai-course/ResultTopBar";
 import MobileFrame from "@/components/layout/MobileFrame";
-import { RESULT_CTA_HEIGHT_CLASS } from "@/components/domain/ai-course/ResultCTASection";
 import mapImage from "@/assets/images/map.png";
+import handleArrow from "@/assets/icons/handle_arrowup.png";
+import { useState } from "react";
 
 const courses = [
   {
@@ -31,24 +33,66 @@ const courses = [
 ];
 
 export default function AiCoursePage() {
+  const [isSheetOpen, setIsSheetOpen] = useState(true);
+
   return (
-    <MobileFrame className="flex flex-col">
-      <ResultTopBar title="AI 추천 코스" />
+    <MobileFrame className="relative h-[calc(100vh-32px)] overflow-hidden">
+      <section className="relative h-full">
+        <ResultTopBar title="AI 추천 코스" />
 
-      <div className={cn("flex-1 overflow-y-auto", RESULT_CTA_HEIGHT_CLASS)}>
-        <ResultSummaryCard title="커플을 위한 달콤한 빵투어" duration="3~4시간" price="3만원" />
+        <div className="absolute inset-x-0 top-[56px] flex justify-center">
+          <div className="relative h-[200px] w-[402px] max-w-full overflow-hidden rounded-r3 md:h-[280px] md:w-[620px]">
+            <img
+              src={mapImage}
+              alt="코스 대표 지도"
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+          </div>
+        </div>
 
-        <section className={cn("px-x5 pb-x3")}>
-          <img
-            src={mapImage}
-            alt="코스 대표 지도"
-            className={cn("mx-auto h-[180px] w-full", "max-w-[390px] rounded-r3 object-cover")}
-            loading="lazy"
-          />
-        </section>
+        <aside
+          className={cn(
+            "absolute inset-x-0 z-20 bg-gray-00",
+            "overflow-hidden transition-all duration-700 ease-in-out",
+            isSheetOpen
+              ? "bottom-[72px] h-[58%] rounded-t-r5 border border-gray-200 border-b-0"
+              : "top-[56px] bottom-0 h-auto rounded-none shadow-3",
+          )}
+        >
+          <div className="flex justify-center py-x2">
+            <button
+              type="button"
+              aria-label="바텀시트 핸들"
+              aria-expanded={isSheetOpen}
+              onClick={() => setIsSheetOpen((prev) => !prev)}
+              className={cn(
+                "flex h-6 w-16 items-center justify-center rounded-full bg-gray-00",
+                "outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-00",
+              )}
+            >
+              <img
+                src={handleArrow}
+                alt=""
+                className={cn(
+                  "h-[9px] w-[47px] object-contain transition-transform duration-700 ease-in-out",
+                  isSheetOpen ? "rotate-0" : "rotate-180",
+                )}
+                aria-hidden
+              />
+            </button>
+          </div>
 
-        <CourseTimeline courses={courses} />
-      </div>
+          <div
+            className={cn(
+              "sheet-scrollbar h-[calc(100%-24px)] overflow-y-auto pb-x4",
+              RESULT_CTA_HEIGHT_CLASS,
+            )}
+          >
+            <CourseTimeline courses={courses} />
+          </div>
+        </aside>
+      </section>
 
       <ResultCTASection />
     </MobileFrame>
