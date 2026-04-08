@@ -8,13 +8,15 @@ interface ResultSummaryCardProps {
 }
 
 export default function ResultSummaryCard({ title, duration, price }: ResultSummaryCardProps) {
-  const titleClass = cn("text-size-4 leading-t5 font-bold tracking-2", "text-gray-1000");
+  const titleClass = cn("text-size-6 leading-t7 font-bold tracking-2", "text-gray-1000");
 
   const metaLabelClass = cn(
     "flex items-center gap-x2",
-    "text-size-3 leading-t4 font-medium tracking-2",
+    "text-size-3 leading-t4 font-medium tracking-1",
     "text-gray-700",
   );
+
+  const metaValueClass = cn("text-size-3 leading-t4 font-medium tracking-1", "text-gray-900");
 
   return (
     <section className={cn("flex gap-x3", "px-x5 py-x6")}>
@@ -25,10 +27,10 @@ export default function ResultSummaryCard({ title, duration, price }: ResultSumm
 
         <div className={metaLabelClass}>
           <span>소요시간</span>
-          <span className="text-gray-900">{duration}</span>
+          <span className={metaValueClass}>{duration}</span>
           <span>·</span>
           <span>예상비용</span>
-          <span className="text-gray-900">{price}</span>
+          <span className={metaValueClass}>{price}</span>
         </div>
       </div>
     </section>
