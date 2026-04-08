@@ -85,7 +85,7 @@ const LoginPage = () => {
         </div>
 
         {/* 하단 링크 */}
-        <div className="flex items-center gap-3 text-size-3 tracking-[-0.1px]">
+        <div className="flex items-center gap-x3 text-size-3 tracking-[-0.1px]">
           <button
             type="button"
             aria-disabled="true"
