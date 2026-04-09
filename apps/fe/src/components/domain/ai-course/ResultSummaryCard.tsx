@@ -1,5 +1,5 @@
 import { cn } from "@/utils/cn";
-import { Skeleton } from "@/components/common";
+import { Skeleton } from "@/components";
 
 interface ResultSummaryCardProps {
   title: string;
@@ -8,7 +8,7 @@ interface ResultSummaryCardProps {
 }
 
 export default function ResultSummaryCard({ title, duration, price }: ResultSummaryCardProps) {
-  const titleClass = cn("text-size-6 leading-t7 font-bold tracking-2", "text-gray-1000");
+  const titleClass = cn("t7bold", "text-gray-1000");
 
   const metaLabelClass = cn(
     "flex items-center gap-x2",

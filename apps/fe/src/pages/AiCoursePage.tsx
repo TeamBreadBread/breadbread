@@ -1,11 +1,12 @@
 import { cn } from "@/utils/cn";
-import CourseTimeline from "@/components/domain/ai-course/CourseTimeline";
-import ResultCTASection, {
+import {
+  CourseTimeline,
+  MobileFrame,
   RESULT_CTA_HEIGHT_CLASS,
-} from "@/components/domain/ai-course/ResultCTASection";
-import ResultSummaryCard from "@/components/domain/ai-course/ResultSummaryCard";
-import ResultTopBar from "@/components/domain/ai-course/ResultTopBar";
-import MobileFrame from "@/components/layout/MobileFrame";
+  ResultCTASection,
+  ResultSummaryCard,
+  ResultTopBar,
+} from "@/components";
 import mapImage from "@/assets/images/map.png";
 import handleArrow from "@/assets/icons/handle_arrowup.png";
 import { useState } from "react";
@@ -61,8 +62,8 @@ export default function AiCoursePage() {
             "absolute inset-x-0 z-20 bg-gray-00",
             "overflow-hidden transition-all duration-700 ease-in-out",
             isSheetOpen
-              ? "bottom-[calc(var(--spacing-x16)+var(--spacing-x2))] h-[58%] rounded-t-r5 border border-gray-200 border-b-0"
-              : "top-x14 bottom-0 h-auto rounded-none shadow-3",
+              ? "bottom-[calc(var(--spacing-x16)+var(--spacing-x2))] h-[58%] rounded-t-r5"
+              : "top-x14 bottom-0 h-auto rounded-none",
           )}
         >
           <div className="flex justify-center py-x2">

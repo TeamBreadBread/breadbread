@@ -1,4 +1,4 @@
-import { Button } from "@/components/common";
+import { Button } from "@/components";
 import { cn } from "@/utils/cn";
 
 export const RESULT_CTA_HEIGHT_CLASS = "pb-[calc(72px+env(safe-area-inset-bottom))]";

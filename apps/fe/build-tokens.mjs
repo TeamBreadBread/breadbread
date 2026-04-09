@@ -74,6 +74,43 @@ for (const [key, val] of Object.entries(tokens.global ?? {})) {
 
 lines.push('}')
 
-const output = lines.join('\n') + '\n'
+// Helper function to resolve token references
+function resolveTokenValue(reference, tokens) {
+  if (!reference || typeof reference !== 'string') return null
+  const path = reference.slice(1, -1).split('.') // Remove { and } and split
+  let value = tokens
+  for (const key of path) {
+    value = value?.[key]
+  }
+  return value?.$value ?? value
+}
+
+// Typography components
+const typographyLines = []
+const globalTokens = tokens.global ?? {}
+
+for (const [key, val] of Object.entries(globalTokens)) {
+  if (val.$type === 'typography') {
+    const fontFamily = resolveTokenValue(val.$value.fontFamily, tokens.global)
+    const fontWeight = resolveTokenValue(val.$value.fontWeight, tokens.global)
+    const fontSize = resolveTokenValue(val.$value.fontSize, tokens.global)
+    const lineHeight = resolveTokenValue(val.$value.lineHeight, tokens.global)
+    const letterSpacing = resolveTokenValue(val.$value.letterSpacing, tokens.global)
+    
+    // Map weight values to CSS weight numbers
+    const fontWeightMap = { 'Regular': '400', 'Medium': '500', 'Bold': '700', 'regular': '400', 'medium': '500', 'bold': '700' }
+    const cssWeight = fontWeightMap[fontWeight] ?? fontWeight
+    
+    typographyLines.push(`.${key} {`)
+    typographyLines.push(`  font-family: ${fontFamily};`)
+    typographyLines.push(`  font-size: ${fontSize}px;`)
+    typographyLines.push(`  line-height: ${lineHeight}px;`)
+    typographyLines.push(`  font-weight: ${cssWeight};`)
+    typographyLines.push(`  letter-spacing: ${letterSpacing}px;`)
+    typographyLines.push(`}`)
+  }
+}
+
+const output = lines.join('\n') + '\n\n' + typographyLines.join('\n') + '\n'
 writeFileSync(join(__dirname, 'src/tokens.css'), output)
-console.log(`Generated src/tokens.css (${lines.length - 3} tokens)`)
+console.log(`Generated src/tokens.css (${lines.length - 3} tokens + ${typographyLines.length / 7} typography classes)`)
