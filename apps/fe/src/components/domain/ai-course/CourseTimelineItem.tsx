@@ -14,13 +14,16 @@ export default function CourseTimelineItem({
   name,
   address,
   menu,
-  isLast = false,
 }: CourseTimelineItemProps) {
-  const badgeContainerClass = cn("relative z-10 flex", "w-9 justify-center", "pt-x1");
+  const badgeContainerClass = cn(
+    "relative z-10 flex before:absolute before:left-[17px] before:top-[30px] before:h-full before:w-[2px] before:bg-gray-200 before:content-['']",
+    "w-9 justify-center",
+    "pt-x1",
+  );
 
   const badgeClass = cn(
     "relative flex h-6 w-6 items-center justify-center",
-    "text-size-1 leading-t2 font-bold tracking-1",
+    "t2medium",
     "text-gray-00",
   );
 
@@ -28,12 +31,6 @@ export default function CourseTimelineItem({
     "flex flex-1 flex-col gap-x1",
     "rounded-r2 border border-gray-200 bg-gray-100",
     "p-x4 pb-x4",
-  );
-
-  const connectorLineClass = cn(
-    "absolute w-[2px] bg-gray-200",
-    "left-[17px] top-[30px]",
-    "h-[calc(100%-12px)]",
   );
 
   return (
@@ -44,8 +41,6 @@ export default function CourseTimelineItem({
           <span className="absolute inset-0 flex items-center justify-center">{index}</span>
         </div>
       </div>
-
-      {!isLast && <div className={connectorLineClass} aria-hidden />}
 
       <div className={timelineCardClass}>
         <div className="text-size-4 leading-t5 font-bold tracking-2 text-gray-1000">{name}</div>

@@ -62,8 +62,8 @@ export default function AiCoursePage() {
             "absolute inset-x-0 z-20 bg-gray-00",
             "overflow-hidden transition-all duration-700 ease-in-out",
             isSheetOpen
-              ? "bottom-[calc(var(--spacing-x16)+var(--spacing-x2))] h-[58%] rounded-t-r5"
-              : "top-x14 bottom-0 h-auto rounded-none",
+              ? "bottom-0 h-[50%] rounded-t-r5"
+              : "top-[200px] bottom-0 h-auto rounded-none",
           )}
         >
           <div className="flex justify-center py-x2">

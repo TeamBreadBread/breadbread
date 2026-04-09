@@ -10,11 +10,7 @@ interface ResultSummaryCardProps {
 export default function ResultSummaryCard({ title, duration, price }: ResultSummaryCardProps) {
   const titleClass = cn("t7bold", "text-gray-1000");
 
-  const metaLabelClass = cn(
-    "flex items-center gap-x2",
-    "text-size-3 leading-t4 font-medium tracking-1",
-    "text-gray-700",
-  );
+  const metaLabelClass = cn("flex items-center gap-x2", "t4medium", "text-gray-700");
 
   const metaValueClass = cn("text-size-3 leading-t4 font-medium tracking-1", "text-gray-900");
 
