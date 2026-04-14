@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { ActionField, AppTopBar, BottomCTA, TextField } from "@/components/common";
 import {
   PhoneVerificationSection,
@@ -10,6 +11,7 @@ import MobileFrame from "@/components/layout/MobileFrame";
 import { cn } from "@/utils/cn";
 
 export default function SignupPage() {
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [userId, setUserId] = useState("");
   const [isUserIdDupChecked, setIsUserIdDupChecked] = useState(false);
@@ -123,7 +125,14 @@ export default function SignupPage() {
   const handleSubmit = () => {
     if (!canSubmit) return;
 
-    window.alert("가입이 완료되었습니다.");
+    navigate({ to: "/signup-result" });
+
+    // Fallback for cases where router transition is delayed or blocked in dev.
+    requestAnimationFrame(() => {
+      if (window.location.pathname !== "/signup-result") {
+        window.location.assign("/signup-result");
+      }
+    });
   };
 
   return (
