@@ -7,11 +7,15 @@ const tokens = JSON.parse(readFileSync(join(__dirname, 'src/tokens/tokens.json')
 
 const lines = ['/* Do not edit directly, this file was auto-generated. */', '@theme {']
 
-// Colors: Wireframe(Temp)/Mode 1 > gray
-const gray = tokens['Wireframe(Temp)/Mode 1']?.gray ?? {}
-for (const [key, val] of Object.entries(gray)) {
-  if (val.$type === 'color') {
-    lines.push(`  --color-gray-${key.replace('gray_', '')}: ${val.$value};`)
+// Colors: Wireframe(Temp)/Mode 1
+const colorGroups = ['gray', 'red', 'green', 'blue']
+for (const group of colorGroups) {
+  const colors = tokens['Wireframe(Temp)/Mode 1']?.[group] ?? {}
+
+  for (const [key, val] of Object.entries(colors)) {
+    if (val.$type === 'color') {
+      lines.push(`  --color-${group}-${key.replace(`${group}_`, '')}: ${val.$value};`)
+    }
   }
 }
 
@@ -69,6 +73,31 @@ for (const [key, val] of Object.entries(tokens.global ?? {})) {
   if (val.$type === 'boxShadow') {
     const { x, y, blur, spread, color } = val.$value
     lines.push(`  --shadow-${key.replace('shadow_', '')}: ${x}px ${y}px ${blur}px ${spread}px ${color};`)
+  }
+}
+
+// Typography: global + typography/Mode 1
+const globalTypography = tokens.global ?? {}
+for (const [key, val] of Object.entries(globalTypography)) {
+  if (val.$type === 'typography') {
+    const fontFamily = val.$value.fontFamily?.replaceAll('{fontFamily.pretendard}', '"Pretendard", sans-serif') || 'inherit'
+    const fontWeight = val.$value.fontWeight?.includes('.regular') ? '400' : val.$value.fontWeight?.includes('.medium') ? '500' : val.$value.fontWeight?.includes('.bold') ? '700' : 'inherit'
+    const fontSize = val.$value.fontSize?.match(/\{fontSize\.(\d+)\}/)?.[1] ? `var(--font-size-${val.$value.fontSize.match(/\{fontSize\.(\d+)\}/)[1]})` : 'inherit'
+    const lineHeight = val.$value.lineHeight?.match(/\{lineHeight\.(height_\w+)\}/)?.[1] ? `var(--leading-${val.$value.lineHeight.match(/\{lineHeight\.(height_\w+)\}/)[1].replace('height_', '')})` : 'inherit'
+    const letterSpacing = val.$value.letterSpacing?.match(/\{letterSpacing\.(\d+)\}/)?.[1] ? `var(--tracking-${val.$value.letterSpacing.match(/\{letterSpacing\.(\d+)\}/)[1]})` : '0'
+    lines.push(`  --typo-${key}: ${fontSize} / ${lineHeight} ${fontWeight} ${fontFamily};`)
+  }
+}
+
+const typographyMode = tokens['typography/Mode 1'] ?? {}
+for (const [key, val] of Object.entries(typographyMode)) {
+  if (val.$type === 'typography') {
+    const fontFamily = val.$value.fontFamily?.replaceAll('{fontFamily.pretendard}', '"Pretendard", sans-serif') || 'inherit'
+    const fontWeight = val.$value.fontWeight?.includes('.regular') ? '400' : val.$value.fontWeight?.includes('.medium') ? '500' : val.$value.fontWeight?.includes('.bold') ? '700' : 'inherit'
+    const fontSize = val.$value.fontSize?.match(/\{fontSize\.(size_\w+)\}/)?.[1] ? `var(--font-size-${val.$value.fontSize.match(/\{fontSize\.(size_\w+)\}/)[1]})` : 'inherit'
+    const lineHeight = val.$value.lineHeight?.match(/\{lineHeight\.(height_\w+)\}/)?.[1] ? `var(--leading-${val.$value.lineHeight.match(/\{lineHeight\.(height_\w+)\}/)[1].replace('height_', '')})` : 'inherit'
+    const letterSpacing = val.$value.letterSpacing?.match(/\{letterSpacing\.(\d+)\}/)?.[1] ? `var(--tracking-${val.$value.letterSpacing.match(/\{letterSpacing\.(\d+)\}/)[1]})` : '0'
+    lines.push(`  --typo-${key}: ${fontSize} / ${lineHeight} ${fontWeight} ${fontFamily};`)
   }
 }
 
