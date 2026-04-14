@@ -152,7 +152,7 @@ export default function SignupPage() {
             }}
             containerClassName={userIdContainerClassName}
             inputClassName={userIdInputClassName}
-            actionClassName="text-gray-800"
+            actionClassName={cn(isUserIdDupChecked ? "text-gray-500" : "text-gray-800")}
           />
         </SignupSection>
 
