@@ -1,35 +1,23 @@
-import { ConflictException, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
+import { ConflictException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { User } from "./entities/user.entity";
 import { CheckIdResponseDto, SignupRequestDto } from "./dto/users.dto";
 import * as bcrypt from "bcrypt";
-import { JwtService } from "@nestjs/jwt";
-import jwtConfig from "src/config/jwt.config";
-import { ConfigType } from "@nestjs/config";
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    private readonly jwtService: JwtService,
-    @Inject(jwtConfig.KEY)
-    private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
   ) {}
 
-  async signup(dto: SignupRequestDto): Promise<{ message: string }> {
+  async createUser(dto: Omit<SignupRequestDto, "verificationToken">): Promise<{ message: string }> {
     const existing = await this.userRepository.findOne({
       where: { loginId: dto.loginId },
     });
     if (existing) {
       throw new ConflictException("이미 사용 중인 아이디입니다.");
-    }
-    const payload = this.jwtService.verify(dto.verificationToken, {
-      secret: this.jwtConfiguration.accessSecret,
-    });
-    if (!payload.verified || payload.phone !== dto.phone) {
-      throw new UnauthorizedException("전화번호 인증이 필요합니다.");
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);

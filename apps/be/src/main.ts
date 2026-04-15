@@ -60,7 +60,7 @@ async function bootstrap() {
     res.send(yaml.dump(document));
   });
 
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
   const port = process.env.PORT ?? 8080;
   await app.listen(port);

@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { ThrottlerModule } from "@nestjs/throttler";
 import { DatabaseModule } from "./database/database.module";
 import { MainModule } from "./modules/main/main.module";
 import { AuthModule } from "./modules/auth/auth.module";
@@ -22,6 +23,7 @@ import { validationSchema } from "./config/validation.schema";
       validationSchema,
       load: [jwtConfig],
     }),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
     DatabaseModule,
     MainModule,
     AuthModule,

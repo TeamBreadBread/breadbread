@@ -1,7 +1,6 @@
 import { Controller, Post, Get, Patch, Query, Body } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import {
-  SignupRequestDto,
   UserProfileDto,
   UpdateProfileRequestDto,
   CheckIdResponseDto,
@@ -15,13 +14,6 @@ import { UsersService } from "./users.service";
 @Controller("api/users")
 export class UsersController {
   constructor(private readonly userService: UsersService) {}
-
-  @Post("signup")
-  @ApiOperation({ summary: "회원가입" })
-  @ApiResponse({ status: 201 })
-  signup(@Body() body: SignupRequestDto) {
-    return this.userService.signup(body);
-  }
 
   @Get("check-id")
   @ApiOperation({ summary: "ID 중복 확인" })

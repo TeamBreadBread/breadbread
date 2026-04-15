@@ -6,6 +6,7 @@ import { ConfigType } from "@nestjs/config";
 import { JwtPayload } from "./jwt.strategy";
 import { LoginRequestDto, RefreshRequestDto } from "./dto/auth.dto";
 import { TokenResponseDto } from "src/common/dto/token-response.dto";
+import { SignupRequestDto } from "../users/dto/users.dto";
 import * as bcrypt from "bcrypt";
 import * as crypto from "crypto";
 import { SmsService } from "./sms.service";
@@ -36,6 +37,20 @@ export class AuthService {
         ? this.jwtConfiguration.accessExpiresIn
         : this.jwtConfiguration.refreshExpiresIn;
     return this.jwtService.sign(payload, { secret, expiresIn });
+  }
+
+  async signup(dto: SignupRequestDto): Promise<{ message: string }> {
+    try {
+      const payload = this.jwtService.verify(dto.verificationToken, {
+        secret: this.jwtConfiguration.accessSecret,
+      });
+      if (!payload.verified || payload.phone !== dto.phone) {
+        throw new UnauthorizedException("전화번호 인증이 필요합니다.");
+      }
+    } catch {
+      throw new UnauthorizedException("유효하지 않거나 만료된 인증 토큰입니다.");
+    }
+    return this.userService.createUser(dto);
   }
 
   async login(dto: LoginRequestDto): Promise<TokenResponseDto> {

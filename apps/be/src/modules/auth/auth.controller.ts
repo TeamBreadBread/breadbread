@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, UseGuards } from "@nestjs/common";
+import { Controller, Post, Body, Param, HttpCode, HttpStatus } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { TokenResponseDto } from "../../common/dto/token-response.dto";
 import {
@@ -9,9 +9,9 @@ import {
   VerifyPhoneRequestDto,
   VerifyPhoneResponseDto,
 } from "./dto/auth.dto";
+import { SignupRequestDto } from "../users/dto/users.dto";
 import { AuthService } from "./auth.service";
 import { Throttle } from "@nestjs/throttler";
-import { JwtAuthGuard } from "./jwt-auth.guard";
 
 const TOKEN_EXAMPLE = {
   accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzAwMDAwMDAwfQ.abc123",
@@ -25,6 +25,14 @@ const TOKEN_EXAMPLE = {
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Post("signup")
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: "회원가입" })
+  @ApiResponse({ status: 201 })
+  signup(@Body() body: SignupRequestDto) {
+    return this.authService.signup(body);
+  }
+
   @Post("login")
   @ApiOperation({ summary: "로그인" })
   @ApiResponse({ status: 200, type: TokenResponseDto, example: TOKEN_EXAMPLE })
@@ -35,7 +43,6 @@ export class AuthController {
   @Post("logout")
   @ApiOperation({ summary: "로그아웃" })
   @ApiResponse({ status: 200 })
-  @UseGuards(JwtAuthGuard)
   logout(@Body() body: RefreshRequestDto) {
     return this.authService.logout(body);
   }
