@@ -97,10 +97,9 @@ const LoginPage = () => {
           <span className="font-normal leading-t4 text-gray-500">|</span>
           <button
             type="button"
-            aria-disabled="true"
+            onClick={() => navigate({ to: "/find-id" })}
             className="font-medium leading-t4 text-gray-700"
           >
-            {/* TODO: 아이디 찾기 라우트 연결 */}
             아이디 찾기
           </button>
           <span className="font-normal leading-t4 text-gray-500">|</span>
