@@ -5,6 +5,7 @@ import { AppModule } from "./app.module";
 import * as fs from "fs";
 import * as path from "path";
 import * as yaml from "js-yaml";
+import { ValidationPipe } from "@nestjs/common";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -58,6 +59,8 @@ async function bootstrap() {
     res.setHeader("Content-Type", "application/yaml");
     res.send(yaml.dump(document));
   });
+
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
   const port = process.env.PORT ?? 8080;
   await app.listen(port);
