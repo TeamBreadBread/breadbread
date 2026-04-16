@@ -6,6 +6,7 @@ interface ActionFieldProps {
   actionText: string;
   disabled?: boolean;
   variant?: "fill" | "outline";
+  actionButtonClassName?: string;
   inputMode?: "text" | "numeric" | "decimal" | "email" | "tel" | "url";
   inputBgColor?: "white" | "gray-00" | "gray-200" | "gray-400";
   value?: string;
@@ -21,6 +22,7 @@ export default function ActionField({
   actionText,
   disabled = false,
   variant = "fill",
+  actionButtonClassName,
   inputMode,
   inputBgColor = "white",
   value,
@@ -88,6 +90,7 @@ export default function ActionField({
             : disabled
               ? "bg-gray-300 text-gray-500"
               : "bg-gray-1000 text-white hover:bg-gray-900 active:bg-gray-800",
+          actionButtonClassName,
         )}
       >
         {actionText}

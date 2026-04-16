@@ -89,6 +89,7 @@ export default function PhoneVerificationSection({
           actionText="인증하기"
           variant="outline"
           disabled={!isCodeRequested}
+          actionButtonClassName={isCodeRequested ? "text-gray-800" : undefined}
           inputMode="numeric"
           inputBgColor={isVerified ? "gray-200" : "gray-00"}
           onActionClick={handleVerify}

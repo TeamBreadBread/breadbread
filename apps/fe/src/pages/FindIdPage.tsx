@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { AppTopBar, BottomCTA } from "@/components/common";
 import AuthIntroSection from "@/components/domain/auth/AuthIntroSection";
 import AuthLinkRow from "@/components/domain/auth/AuthLinkRow";
@@ -9,6 +10,11 @@ import MobileFrame from "@/components/layout/MobileFrame";
 
 export default function FindIdPage() {
   const [isVerified, setIsVerified] = useState(false);
+  const navigate = useNavigate();
+
+  const handleFindIdClick = () => {
+    navigate({ to: "/find-id-result" });
+  };
 
   return (
     <MobileFrame>
@@ -27,7 +33,7 @@ export default function FindIdPage() {
         </div>
       </main>
 
-      <BottomCTA text="아이디 찾기" disabled={!isVerified} />
+      <BottomCTA text="아이디 찾기" disabled={!isVerified} onClick={handleFindIdClick} />
     </MobileFrame>
   );
 }
