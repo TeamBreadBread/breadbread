@@ -62,7 +62,7 @@ const QUESTION_SECTIONS: QuestionItem[] = [
   },
 ];
 
-type SelectedBySection = Record<string, string>;
+type SelectedBySection = Record<string, string[]>;
 
 function CircleIcon() {
   return <div className="h-x14 w-x14 rounded-full bg-gray-400" />;
@@ -79,13 +79,15 @@ export default function BreadRecommendationPreference() {
 
   const handleSelect = (sectionId: string, optionLabel: string) => {
     setSelectedBySection((prev) => {
-      if (prev[sectionId] === optionLabel) {
-        const next = { ...prev };
-        delete next[sectionId];
-        return next;
-      }
+      const current = prev[sectionId] ?? [];
+      const isSelected = current.includes(optionLabel);
 
-      return { ...prev, [sectionId]: optionLabel };
+      return {
+        ...prev,
+        [sectionId]: isSelected
+          ? current.filter((selectedOption) => selectedOption !== optionLabel)
+          : [...current, optionLabel],
+      };
     });
   };
 
@@ -119,7 +121,7 @@ export default function BreadRecommendationPreference() {
                   <PreferenceOptionCard
                     key={`${section.id}-${option.label}-${optionIndex}`}
                     label={option.label}
-                    selected={selectedBySection[section.id] === option.label}
+                    selected={selectedBySection[section.id]?.includes(option.label) ?? false}
                     onClick={() => handleSelect(section.id, option.label)}
                     icon={option.withIcon ? <CircleIcon /> : undefined}
                   />

@@ -11,6 +11,7 @@ export default function PreferenceTopBar({ title }: PreferenceTopBarProps) {
         <button
           type="button"
           aria-label="뒤로가기"
+          onClick={() => window.history.back()}
           className="flex h-x9 w-x9 items-center justify-center rounded-full hover:bg-gray-100"
         >
           <img src={ArrowLeftIcon} alt="" aria-hidden="true" className="h-x4 w-x4" />
