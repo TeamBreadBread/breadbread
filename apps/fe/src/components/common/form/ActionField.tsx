@@ -41,7 +41,7 @@ export default function ActionField({
         ? "bg-gray-200"
         : inputBgColor === "gray-400"
           ? "bg-gray-400"
-          : "bg-white";
+          : "bg-gray-00";
   const borderColorClass =
     tone === "error"
       ? "border-red-700"
@@ -67,7 +67,7 @@ export default function ActionField({
         disabled={disabled}
         inputMode={inputMode}
         className={cn(
-          "h-full w-full bg-transparent px-x2 text-size-4 font-normal leading-t5 tracking-[-0.1px] placeholder:text-gray-500 focus:outline-none",
+          "h-full w-full bg-transparent px-x2 text-size-4 font-normal leading-t5 tracking-1 placeholder:text-gray-500 focus:outline-none",
           isVerified ? "text-gray-500" : "text-gray-1000 disabled:text-gray-500",
         )}
       />
@@ -77,19 +77,19 @@ export default function ActionField({
         disabled={disabled}
         onClick={onActionClick}
         className={cn(
-          "h-10 shrink-0 rounded-r2 px-x3 text-size-3 font-medium leading-t4 tracking-[-0.1px]",
+          "h-10 shrink-0 rounded-r2 px-x3 text-size-3 font-medium leading-t4 tracking-1",
           variant === "outline"
             ? disabled
-              ? "bg-white text-gray-500"
+              ? "bg-gray-00 text-gray-500"
               : isVerified
                 ? "bg-transparent text-gray-500"
                 : cn(
-                    "bg-white text-gray-500",
+                    "bg-gray-00 text-gray-500",
                     !disableHover && "hover:bg-gray-50 active:bg-gray-100",
                   )
             : disabled
               ? "bg-gray-300 text-gray-500"
-              : "bg-gray-1000 text-white hover:bg-gray-900 active:bg-gray-800",
+              : "bg-gray-1000 text-gray-00 hover:bg-gray-900 active:bg-gray-800",
           actionButtonClassName,
         )}
       >

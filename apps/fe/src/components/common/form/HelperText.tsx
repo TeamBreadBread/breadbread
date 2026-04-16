@@ -10,7 +10,7 @@ export default function HelperText({ children, variant = "default" }: HelperText
   return (
     <p
       className={cn(
-        "text-size-2 font-normal leading-t3 tracking-[-0.1px]",
+        "text-size-2 font-normal leading-t3 tracking-1",
         variant === "error" ? "text-red-500" : "text-gray-600",
       )}
     >

@@ -9,10 +9,7 @@ interface FieldLabelProps {
 export default function FieldLabel({ children, className }: FieldLabelProps) {
   return (
     <label
-      className={cn(
-        "text-size-4 font-medium leading-t5 tracking-[-0.1px] text-gray-1000",
-        className,
-      )}
+      className={cn("text-size-4 font-medium leading-t5 tracking-1 text-gray-1000", className)}
     >
       {children}
     </label>

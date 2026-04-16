@@ -19,7 +19,7 @@ export default function AppTopBar({ title }: AppTopBarProps) {
         <img src={ArrowLeft} alt="" className="size-6" />
       </button>
 
-      <span className="absolute left-1/2 -translate-x-1/2 text-size-5 font-bold leading-t6 tracking-[-0.1px] text-gray-1000">
+      <span className="absolute left-1/2 -translate-x-1/2 text-size-5 font-bold leading-t6 tracking-1 text-gray-1000">
         {title}
       </span>
 

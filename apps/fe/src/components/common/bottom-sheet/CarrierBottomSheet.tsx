@@ -35,7 +35,7 @@ export default function BottomSheet({
       <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center">
         <section
           className={cn(
-            "w-full max-w-[744px] max-h-[500px] overflow-hidden rounded-t-r6 bg-white",
+            "w-full max-w-[744px] max-h-[500px] overflow-hidden rounded-t-r6 bg-gray-00",
             className,
           )}
           role="dialog"
@@ -44,11 +44,11 @@ export default function BottomSheet({
         >
           <div className="flex flex-col gap-x3">
             <div className="flex h-x6 items-center justify-center">
-              <div className="h-[4px] w-[36px] rounded-full bg-[#dcdee3]" />
+              <div className="h-x1 w-x9 rounded-full bg-gray-400" />
             </div>
 
             <div className="px-x5">
-              <h2 className="font-pretendard typo-t7bold text-[#1a1c20]">{title}</h2>
+              <h2 className="font-pretendard typo-t7bold text-gray-1000">{title}</h2>
             </div>
 
             <div className="px-x5 pb-x3">
@@ -57,7 +57,7 @@ export default function BottomSheet({
                   const isSelected = selectedValue === option.value;
 
                   return (
-                    <li key={option.value} className="border-b border-[#f3f4f5] last:border-b-0">
+                    <li key={option.value} className="border-b border-gray-200 last:border-b-0">
                       <button
                         type="button"
                         onClick={() => {
@@ -67,7 +67,7 @@ export default function BottomSheet({
                         className="flex w-full items-center justify-between py-x4 text-left"
                         aria-pressed={isSelected}
                       >
-                        <span className="font-pretendard typo-t6regular text-[#1a1c20]">
+                        <span className="font-pretendard typo-t6regular text-gray-1000">
                           {option.label}
                         </span>
 
@@ -75,12 +75,12 @@ export default function BottomSheet({
                           className={cn(
                             "flex h-x6 w-x6 items-center justify-center rounded-full border",
                             isSelected
-                              ? "border-[#555d6d] bg-[#555d6d]"
-                              : "border-[#dcdee3] bg-white",
+                              ? "border-gray-800 bg-gray-800"
+                              : "border-gray-400 bg-gray-00",
                           )}
                         >
                           {isSelected ? (
-                            <div className="h-[8px] w-[8px] rounded-full bg-white" />
+                            <div className="h-x2 w-x2 rounded-full bg-gray-00" />
                           ) : null}
                         </div>
                       </button>

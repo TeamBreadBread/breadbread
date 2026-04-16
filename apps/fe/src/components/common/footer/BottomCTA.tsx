@@ -17,7 +17,7 @@ export default function BottomCTA({ text, disabled = false, onClick, className }
         onClick={onClick}
         className={cn(
           "h-x14 w-full rounded-r3 bg-gray-800 px-x5 py-x4",
-          "text-size-7 font-bold leading-t8 tracking-2 text-white",
+          "text-size-7 font-bold leading-t8 tracking-2 text-gray-00",
           "disabled:bg-gray-400",
         )}
       >

@@ -12,7 +12,7 @@ const SOCIAL_BUTTONS = [
   {
     id: "naver",
     label: "네이버로 계속하기",
-    className: "bg-[#03A94D] text-white",
+    className: "bg-[#03A94D] text-gray-00",
   },
   {
     id: "google",

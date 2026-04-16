@@ -35,7 +35,7 @@ const OverlayFooter = ({ title, description, imageUrl, className }: OverlayFoote
           "sm:p-x5",
           "md:p-x6",
           "lg:p-x7",
-          hasImage ? "text-white" : "text-gray-1000",
+          hasImage ? "text-gray-00" : "text-gray-1000",
         )}
       >
         <div className="overlay-footer-content">
@@ -56,7 +56,7 @@ const OverlayFooter = ({ title, description, imageUrl, className }: OverlayFoote
                 "sm:text-size-3 sm:leading-t4",
                 "md:mt-x2 md:text-size-4 md:leading-t5",
                 "lg:text-size-4 lg:leading-t5",
-                hasImage ? "text-white/90" : "text-gray-800",
+                hasImage ? "text-gray-00/90" : "text-gray-800",
               )}
             >
               {description}

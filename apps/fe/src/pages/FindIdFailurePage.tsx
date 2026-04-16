@@ -23,7 +23,7 @@ export default function FindIdFailurePage() {
     <MobileFrame>
       <StatusBar />
 
-      <main className="flex flex-1 flex-col items-center gap-[24px] pt-[156px]">
+      <main className="flex flex-1 flex-col items-center gap-x6 pt-[156px]">
         <FindIdFailureSection
           title={"요청하신 정보와\n일치하는 아이디가 없습니다."}
           description={

@@ -58,7 +58,7 @@ export default function PhoneVerificationSection({
         <button
           type="button"
           onClick={() => setIsCarrierSheetOpen(true)}
-          className="h-14 w-full rounded-r3 border border-gray-300 bg-white px-x4 py-x3 text-left text-size-4 font-normal leading-t5 tracking-[-0.1px] text-gray-1000"
+          className="h-14 w-full rounded-r3 border border-gray-300 bg-gray-00 px-x4 py-x3 text-left text-size-4 font-normal leading-t5 tracking-1 text-gray-1000"
         >
           {selectedCarrier}
         </button>
