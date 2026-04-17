@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as PasswordResetSuccessRouteImport } from './routes/password-reset-success'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as FindPasswordRouteImport } from './routes/find-password'
 import { Route as IndexRouteImport } from './routes/index'
@@ -18,11 +17,6 @@ import { Route as IndexRouteImport } from './routes/index'
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PasswordResetSuccessRoute = PasswordResetSuccessRouteImport.update({
-  id: '/password-reset-success',
-  path: '/password-reset-success',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -45,14 +39,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/find-password': typeof FindPasswordRoute
   '/login': typeof LoginRoute
-  '/password-reset-success': typeof PasswordResetSuccessRoute
   '/reset-password': typeof ResetPasswordRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/find-password': typeof FindPasswordRoute
   '/login': typeof LoginRoute
-  '/password-reset-success': typeof PasswordResetSuccessRoute
   '/reset-password': typeof ResetPasswordRoute
 }
 export interface FileRoutesById {
@@ -60,38 +52,20 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/find-password': typeof FindPasswordRoute
   '/login': typeof LoginRoute
-  '/password-reset-success': typeof PasswordResetSuccessRoute
   '/reset-password': typeof ResetPasswordRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/find-password'
-    | '/login'
-    | '/password-reset-success'
-    | '/reset-password'
+  fullPaths: '/' | '/find-password' | '/login' | '/reset-password'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/find-password'
-    | '/login'
-    | '/password-reset-success'
-    | '/reset-password'
-  id:
-    | '__root__'
-    | '/'
-    | '/find-password'
-    | '/login'
-    | '/password-reset-success'
-    | '/reset-password'
+  to: '/' | '/find-password' | '/login' | '/reset-password'
+  id: '__root__' | '/' | '/find-password' | '/login' | '/reset-password'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FindPasswordRoute: typeof FindPasswordRoute
   LoginRoute: typeof LoginRoute
-  PasswordResetSuccessRoute: typeof PasswordResetSuccessRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
@@ -102,13 +76,6 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/password-reset-success': {
-      id: '/password-reset-success'
-      path: '/password-reset-success'
-      fullPath: '/password-reset-success'
-      preLoaderRoute: typeof PasswordResetSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -139,7 +106,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FindPasswordRoute: FindPasswordRoute,
   LoginRoute: LoginRoute,
-  PasswordResetSuccessRoute: PasswordResetSuccessRoute,
   ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport

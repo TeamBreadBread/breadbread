@@ -7,11 +7,17 @@ const tokens = JSON.parse(readFileSync(join(__dirname, 'src/tokens/tokens.json')
 
 const lines = ['/* Do not edit directly, this file was auto-generated. */', '@theme {']
 
-// Colors: Wireframe(Temp)/Mode 1 > gray
-const gray = tokens['Wireframe(Temp)/Mode 1']?.gray ?? {}
-for (const [key, val] of Object.entries(gray)) {
-  if (val.$type === 'color') {
-    lines.push(`  --color-gray-${key.replace('gray_', '')}: ${val.$value};`)
+// Colors: Wireframe(Temp)/Mode 1 > palettes
+const wireframeColors = tokens['Wireframe(Temp)/Mode 1'] ?? {}
+const colorPalettes = ['gray', 'red', 'green']
+
+for (const palette of colorPalettes) {
+  const paletteTokens = wireframeColors[palette] ?? {}
+
+  for (const [key, val] of Object.entries(paletteTokens)) {
+    if (val.$type === 'color') {
+      lines.push(`  --color-${palette}-${key.replace(`${palette}_`, '')}: ${val.$value};`)
+    }
   }
 }
 
