@@ -78,6 +78,7 @@ apps/fe/src/
 │ ├─ HomePage.tsx
 │ ├─ AiCoursePage.tsx
 │ ├─ BreadPreference.tsx
+| ├─ LoginPage.tsx
 │ ├─ FindIdPage.tsx
 │ ├─ FindIdResultPage.tsx
 │ ├─ FindIdFailurePage.tsx
