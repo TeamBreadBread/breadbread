@@ -4,6 +4,7 @@ interface BottomCTAProps {
   onClick?: () => void;
   enabledBgClassName?: string;
   disabledBgClassName?: string;
+  className?: string;
 }
 
 export default function BottomCTA({
@@ -12,6 +13,7 @@ export default function BottomCTA({
   onClick,
   enabledBgClassName = "bg-gray-800",
   disabledBgClassName = "bg-gray-300",
+  className = "",
 }: BottomCTAProps) {
   return (
     <div className="w-full border-t border-gray-200 bg-gray-00 px-x5 py-x4">
@@ -19,7 +21,7 @@ export default function BottomCTA({
         type="button"
         onClick={onClick}
         disabled={disabled}
-        className={`font-pretendard typo-t5medium w-full rounded-r3 py-x4 text-gray-00 ${disabled ? disabledBgClassName : enabledBgClassName}`}
+        className={`font-pretendard typo-t5medium w-full rounded-r3 py-x4 text-gray-00 ${disabled ? disabledBgClassName : enabledBgClassName} ${className}`}
       >
         {text}
       </button>
