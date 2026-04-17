@@ -84,7 +84,6 @@ for (const [key, val] of Object.entries(globalTypography)) {
     const fontWeight = val.$value.fontWeight?.includes('.regular') ? '400' : val.$value.fontWeight?.includes('.medium') ? '500' : val.$value.fontWeight?.includes('.bold') ? '700' : 'inherit'
     const fontSize = val.$value.fontSize?.match(/\{fontSize\.(\d+)\}/)?.[1] ? `var(--font-size-${val.$value.fontSize.match(/\{fontSize\.(\d+)\}/)[1]})` : 'inherit'
     const lineHeight = val.$value.lineHeight?.match(/\{lineHeight\.(height_\w+)\}/)?.[1] ? `var(--leading-${val.$value.lineHeight.match(/\{lineHeight\.(height_\w+)\}/)[1].replace('height_', '')})` : 'inherit'
-    const letterSpacing = val.$value.letterSpacing?.match(/\{letterSpacing\.(\d+)\}/)?.[1] ? `var(--tracking-${val.$value.letterSpacing.match(/\{letterSpacing\.(\d+)\}/)[1]})` : '0'
     lines.push(`  --typo-${key}: ${fontSize} / ${lineHeight} ${fontWeight} ${fontFamily};`)
   }
 }
@@ -96,7 +95,6 @@ for (const [key, val] of Object.entries(typographyMode)) {
     const fontWeight = val.$value.fontWeight?.includes('.regular') ? '400' : val.$value.fontWeight?.includes('.medium') ? '500' : val.$value.fontWeight?.includes('.bold') ? '700' : 'inherit'
     const fontSize = val.$value.fontSize?.match(/\{fontSize\.(size_\w+)\}/)?.[1] ? `var(--font-size-${val.$value.fontSize.match(/\{fontSize\.(size_\w+)\}/)[1]})` : 'inherit'
     const lineHeight = val.$value.lineHeight?.match(/\{lineHeight\.(height_\w+)\}/)?.[1] ? `var(--leading-${val.$value.lineHeight.match(/\{lineHeight\.(height_\w+)\}/)[1].replace('height_', '')})` : 'inherit'
-    const letterSpacing = val.$value.letterSpacing?.match(/\{letterSpacing\.(\d+)\}/)?.[1] ? `var(--tracking-${val.$value.letterSpacing.match(/\{letterSpacing\.(\d+)\}/)[1]})` : '0'
     lines.push(`  --typo-${key}: ${fontSize} / ${lineHeight} ${fontWeight} ${fontFamily};`)
   }
 }
