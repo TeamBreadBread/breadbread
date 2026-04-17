@@ -1,37 +1,42 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from "@nestjs/swagger";
+import { IsNumberString, IsPhoneNumber, Length } from "class-validator";
 
 export class LoginRequestDto {
-  @ApiProperty({ example: 'user123' })
+  @ApiProperty({ example: "user123" })
   loginId: string;
 
-  @ApiProperty({ example: 'password123!' })
+  @ApiProperty({ example: "password123!" })
   password: string;
 }
 
 export class SocialLoginRequestDto {
-  @ApiProperty({ example: 'ya29.a0AfH6SMBx...' })
+  @ApiProperty({ example: "ya29.a0AfH6SMBx..." })
   accessToken: string;
 }
 
 export class RefreshRequestDto {
-  @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh123' })
+  @ApiProperty({ example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh123" })
   refreshToken: string;
 }
 
 export class SendPhoneRequestDto {
-  @ApiProperty({ example: '01012345678' })
+  @ApiProperty({ example: "01012345678" })
+  @IsPhoneNumber("KR")
   phone: string;
 }
 
 export class VerifyPhoneRequestDto {
-  @ApiProperty({ example: '01012345678' })
+  @ApiProperty({ example: "01012345678" })
+  @IsPhoneNumber("KR")
   phone: string;
 
-  @ApiProperty({ example: '123456' })
+  @ApiProperty({ example: "123456" })
+  @Length(6, 6)
+  @IsNumberString()
   code: string;
 }
 
 export class VerifyPhoneResponseDto {
-  @ApiProperty({ description: '휴대폰 인증 완료 토큰', example: 'verify_token_abc123' })
+  @ApiProperty({ description: "휴대폰 인증 완료 토큰", example: "verify_token_abc123" })
   verificationToken: string;
 }
