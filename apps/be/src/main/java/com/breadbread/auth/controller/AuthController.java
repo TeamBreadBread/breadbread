@@ -48,4 +48,26 @@ public class AuthController {
         return authService.refresh(request.getRefreshToken());
     }
 
+    @Operation(summary = "휴대전화 인증 요청")
+    @ApiResponse(responseCode = "200")
+    @PostMapping("/phone/send")
+    public void sendPhone(@RequestBody SendPhoneRequest request) {
+        authService.sendVerificationCode(request);
+    }
+
+    @Operation(summary = "휴대전화 인증 확인")
+    @ApiResponse(responseCode = "200", description = "verificationToken 반환")
+    @PostMapping("/phone/verify")
+    public String verifyPhone(@RequestBody VerifyPhoneRequest request) {
+        return authService.verifyCode(request);
+    }
+
+    @Operation(summary = "소셜 로그인")
+    @ApiResponse(responseCode = "200", description = "accessToken, refreshToken 반환")
+    @PostMapping("/{provider}")
+    public TokenResponse socialLogin(@PathVariable String provider,
+                                     @RequestBody SocialLoginRequest request) {
+        // TODO: authService.socialLogin(provider, request)
+        return TokenResponse.builder().accessToken("").refreshToken("").build();
+    }
 }
