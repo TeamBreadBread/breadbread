@@ -83,7 +83,13 @@ public class AuthService {
 
     @Transactional
     public void logout(String accessToken) {
-        Long userId  = Long.parseLong(jwtProvider.getUserIdFromAccessToken(accessToken));
+        String extractedUserId = jwtProvider.getUserIdFromAccessToken(accessToken);
+        Long userId;
+        try {
+            userId = Long.parseLong(extractedUserId);
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("AccessToken userId 형식이 올바르지 않음", e);
+        }
         refreshTokenRepository.deleteByUser_Id(userId);
     }
 

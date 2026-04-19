@@ -6,7 +6,6 @@ import com.breadbread.auth.dto.SignupRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -24,25 +23,22 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/signup")
     public String signup(@RequestBody SignupRequest request) {
-        // TODO: authService.signup(request)
         return authService.signup(request);
     }
 
     @Operation(summary = "로그인")
     @ApiResponse(responseCode = "200", description = "accessToken, refreshToken 반환")
     @PostMapping("/login")
-    public TokenResponse login(@RequestBody LoginRequest request) throws Exception {
+    public TokenResponse login(@RequestBody LoginRequest request){
         return authService.login(request);
     }
 
     @Operation(summary = "로그아웃")
     @ApiResponse(responseCode = "200")
     @PostMapping("/logout")
-    public String logout(HttpServletRequest request,
-                         @RequestHeader("Authorization") String bearerToken) {
+    public void logout(@RequestHeader("Authorization") String bearerToken) {
         String accessToken = bearerToken.substring(7);
         authService.logout(accessToken);
-        return "로그아웃 성공";
     }
 
     @Operation(summary = "토큰 갱신")
