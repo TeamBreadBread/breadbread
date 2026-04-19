@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+
+jwt:
+  secret: test-secret-key-minimum-32-characters-long
+  expires-in: 900000
+  refresh-secret: test-refresh-key-minimum-32-characters-long
+  refresh-expires-in: 604800000
