@@ -1,12 +1,9 @@
 package com.breadbread.auth.service;
 
 import com.breadbread.auth.dto.*;
-import com.breadbread.auth.entity.AuthType;
-import com.breadbread.auth.entity.PhoneVerification;
-import com.breadbread.auth.entity.VerificationPurpose;
+import com.breadbread.auth.entity.*;
 import com.breadbread.auth.repository.PhoneVerificationRepository;
 import com.breadbread.auth.repository.RefreshTokenRepository;
-import com.breadbread.auth.entity.RefreshToken;
 import com.breadbread.global.jwt.JwtProvider;
 import com.breadbread.global.util.SmsUtil;
 import com.breadbread.user.entity.User;
@@ -39,6 +36,7 @@ public class AuthService {
     private final JwtProvider jwtProvider;
     private final PasswordEncoder passwordEncoder;
     private final SmsUtil smsUtil;
+    private final SsoService ssoService;
 
     @Value("${coolsms.api.expires-in}")
     private long expiresIn;
@@ -188,5 +186,9 @@ public class AuthService {
         verification.verify();
         phoneVerificationRepository.save(verification);
         return "인증이 완료되었습니다.";
+    }
+
+    public TokenResponse socialLogin(SsoProvider provider, SocialLoginRequest request) {
+        return ssoService.socialLogin(provider, request);
     }
 }
