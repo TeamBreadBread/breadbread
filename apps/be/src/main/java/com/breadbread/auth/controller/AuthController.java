@@ -62,12 +62,12 @@ public class AuthController {
         return authService.verifyCode(request);
     }
 
-    @Operation(summary = "소셜 로그인")
-    @ApiResponse(responseCode = "200", description = "accessToken, refreshToken 반환")
-    @PostMapping("/{provider}")
-    public TokenResponse socialLogin(@PathVariable String provider,
-                                     @RequestBody SocialLoginRequest request) {
-        // TODO: authService.socialLogin(provider, request)
-        return TokenResponse.builder().accessToken("").refreshToken("").build();
-    }
+//    @Operation(summary = "소셜 로그인")
+//    @ApiResponse(responseCode = "200", description = "accessToken, refreshToken 반환")
+//    @PostMapping("/{provider}")
+//    public TokenResponse socialLogin(@PathVariable String provider,
+//                                     @RequestBody SocialLoginRequest request) {
+//        // TODO: authService.socialLogin(provider, request)
+//        return TokenResponse.builder().accessToken("").refreshToken("").build();
+//    }
 }
