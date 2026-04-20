@@ -1,4 +1,7 @@
 spring:
+  application:
+    name: breadbread
+
   datasource:
     url: jdbc:h2:mem:testdb;MODE=PostgreSQL
     driver-class-name: org.h2.Driver
@@ -14,3 +17,10 @@ jwt:
   expires-in: 900000
   refresh-secret: test-refresh-key-minimum-32-characters-long
   refresh-expires-in: 604800000
+
+coolsms:
+  api:
+    key: test-key
+    secret: test-secret
+    sender: "01000000000"
+    expires-in: 300

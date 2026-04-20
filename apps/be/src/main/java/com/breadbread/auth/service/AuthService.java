@@ -40,7 +40,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final SmsUtil smsUtil;
 
-    @Value("${coolsms.expires-in}")
+    @Value("${coolsms.api.expires-in}")
     private long expiresIn;
 
     private static final Random RANDOM = new Random();

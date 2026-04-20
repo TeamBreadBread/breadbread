@@ -22,9 +22,9 @@ spring:
     enabled: false  # 개발 중 임시 비활성화
 
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:temp-access-secret-key-minimum-32-characters-x}
   expires-in: ${JWT_EXPIRES_IN:3600}
-  refresh-secret: ${JWT_REFRESH_SECRET}
+  refresh-secret: ${JWT_REFRESH_SECRET:temp-refresh-secret-key-minimum-32-characters-x}
   refresh-expires-in: ${JWT_REFRESH_EXPIRES_IN:604800}
 
 server:
@@ -32,7 +32,7 @@ server:
 
 coolsms:
   api:
-    key: ${COOLSMS_API_KEY}
-    secret: ${COOLSMS_API_SECRET}
-    sender: ${COOLSMS_SENDER}
+    key: ${COOLSMS_API_KEY:temp-api-key}
+    secret: ${COOLSMS_API_SECRET:temp-api-secret}
+    sender: ${COOLSMS_SENDER:"01000000000"}
     expires-in: ${COOLSMS_EXPIRES_IN:300}
