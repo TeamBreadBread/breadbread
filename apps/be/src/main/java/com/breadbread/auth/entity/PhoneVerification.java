@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -24,6 +25,7 @@ public class PhoneVerification extends BaseEntity {
     private AuthType authType;
     @Enumerated(EnumType.STRING)
     private VerificationPurpose purpose;
+    private String verificationToken;
 
     @Builder
     public PhoneVerification(String phone, String code, LocalDateTime expiredAt,
@@ -35,8 +37,10 @@ public class PhoneVerification extends BaseEntity {
         this.purpose = purpose;
     }
 
-    public void verify() {
+    public String verify() {
         this.verified = true;
+        this.verificationToken = UUID.randomUUID().toString();
         this.expiredAt = LocalDateTime.now().plusMinutes(10); // 인증 후 10분 안에 회원가입
+        return verificationToken;
     }
 }

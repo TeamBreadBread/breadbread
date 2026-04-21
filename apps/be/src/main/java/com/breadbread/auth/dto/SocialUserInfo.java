@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-@Builder
 public class SocialUserInfo {
     private String providerUserId;
     private String email;
