@@ -17,6 +17,7 @@ public class RefreshToken extends BaseEntity {
     private Long id;
     @Column(nullable = false, unique = true, length = 500)
     private String token;
+    @Column(nullable = false)
     private LocalDateTime expiredAt;
     private boolean revoked = false;
     @ManyToOne(fetch = FetchType.LAZY)
