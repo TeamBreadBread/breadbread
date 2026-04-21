@@ -56,9 +56,19 @@ const QUESTION_SECTIONS: QuestionItem[] = [
   {
     id: "count",
     title: "총 몇 개의 빵집을 추천받고 싶으신가요?",
-    helperText: "",
     columns: 1,
     options: [],
+  },
+  {
+    id: "courseChangePreference",
+    title: "실시간 상황(품절 등)에 따른 AI의 코스 변경 제안을 얼마나 적극적으로 할까요?",
+    helperText: "",
+    columns: 1,
+    options: [
+      { label: "최초 계획을 최대한 유지" },
+      { label: "상황 변동 시 적극적으로 제안" },
+      { label: "품절 시에만 제안" },
+    ],
   },
 ];
 
@@ -81,19 +91,24 @@ export default function BreadRecommendationPreference() {
     setSelectedBySection((prev) => {
       const current = prev[sectionId] ?? [];
       const isSelected = current.includes(optionLabel);
+      const isSingleSelectSection = sectionId === "courseChangePreference";
 
       return {
         ...prev,
-        [sectionId]: isSelected
-          ? current.filter((selectedOption) => selectedOption !== optionLabel)
-          : [...current, optionLabel],
+        [sectionId]: isSingleSelectSection
+          ? isSelected
+            ? []
+            : [optionLabel]
+          : isSelected
+            ? current.filter((selectedOption) => selectedOption !== optionLabel)
+            : [...current, optionLabel],
       };
     });
   };
 
   return (
     <MobileFrame>
-      <div className="pb-footer-safe flex flex-1 flex-col">
+      <div className="pb-footer-safe flex flex-1 flex-col bg-gray-00">
         <PreferenceTopBar title="빵 취향 선택" />
 
         <PreferenceIntro
@@ -103,7 +118,7 @@ export default function BreadRecommendationPreference() {
           description="설명 문구"
         />
 
-        <div className="flex flex-col gap-x2-5">
+        <div className="flex flex-col gap-0">
           {QUESTION_SECTIONS.map((section) => (
             <PreferenceQuestionSection
               key={section.id}

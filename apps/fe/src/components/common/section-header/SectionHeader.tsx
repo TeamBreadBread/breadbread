@@ -6,14 +6,10 @@ interface SectionHeaderProps {
   leftIcon?: ReactNode;
 }
 
-export default function SectionHeader({
-  title,
-  rightText = "중복 가능",
-  leftIcon,
-}: SectionHeaderProps) {
+export default function SectionHeader({ title, rightText, leftIcon }: SectionHeaderProps) {
   return (
-    <div className="flex w-full items-center justify-between">
-      <div className="flex flex-1 items-center gap-x1">
+    <div className="flex w-full items-start justify-between">
+      <div className="flex flex-1 items-start gap-x1">
         <div className="flex items-center justify-start p-x0-5">
           {leftIcon ?? <div className="h-x4-5 w-x4-5 rounded-full bg-gray-400" />}
         </div>
@@ -23,9 +19,11 @@ export default function SectionHeader({
         </h3>
       </div>
 
-      <span className="font-sans text-size-3 leading-t4 font-medium tracking-1 whitespace-nowrap text-right text-gray-700 cursor-default select-none">
-        {rightText}
-      </span>
+      {rightText ? (
+        <span className="font-sans text-size-3 leading-t4 font-medium tracking-1 whitespace-nowrap text-right text-gray-700 cursor-default select-none">
+          {rightText}
+        </span>
+      ) : null}
     </div>
   );
 }
