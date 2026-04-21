@@ -1,13 +1,8 @@
 package com.breadbread.auth.service;
 
 import com.breadbread.auth.dto.*;
-import com.breadbread.auth.entity.AuthType;
-import com.breadbread.auth.entity.PhoneVerification;
-import com.breadbread.auth.entity.VerificationPurpose;
+import com.breadbread.auth.entity.*;
 import com.breadbread.auth.repository.PhoneVerificationRepository;
-import com.breadbread.auth.repository.RefreshTokenRepository;
-import com.breadbread.auth.entity.RefreshToken;
-import com.breadbread.global.jwt.JwtProvider;
 import com.breadbread.global.util.SmsUtil;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.repository.UserRepository;
@@ -17,28 +12,23 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AuthService {
-    private final RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
     private final PhoneVerificationRepository phoneVerificationRepository;
     private final AuthenticationManager authenticationManager;
-    private final JwtProvider jwtProvider;
     private final PasswordEncoder passwordEncoder;
     private final SmsUtil smsUtil;
+    private final SsoService ssoService;
+    private final TokenService tokenService;
 
     @Value("${coolsms.api.expires-in}")
     private long expiresIn;
@@ -82,76 +72,23 @@ public class AuthService {
     public TokenResponse login(LoginRequest loginRequest) {
         User user = userRepository.findByLoginId(loginRequest.getLoginId()).orElseThrow();
 
-        Authentication authentication = authenticationManager.authenticate(
+        authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         user.getId().toString(),
                         loginRequest.getPassword()
                 )
         );
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        String accessToken = jwtProvider.createAccessToken(userDetails.getUsername());
-        String refreshToken = jwtProvider.createRefreshToken(userDetails.getUsername());
-
-        refreshTokenRepository.deleteByUser_Id(user.getId());
-        RefreshToken rt = RefreshToken.builder()
-                .user(user)
-                .token(hashToken(refreshToken))
-                .expiredAt(jwtProvider.getRefrehTokenExpiration(refreshToken))
-                .build();
-
-        refreshTokenRepository.save(rt);
-
-        return TokenResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build();
+        return tokenService.issueTokens(user);
     }
 
-    @Transactional
     public void logout(String accessToken) {
-        String extractedUserId = jwtProvider.getUserIdFromAccessToken(accessToken);
-        Long userId;
-        try {
-            userId = Long.parseLong(extractedUserId);
-        } catch (NumberFormatException e) {
-            throw new RuntimeException("AccessToken userId 형식이 올바르지 않음", e);
-        }
-        refreshTokenRepository.deleteByUser_Id(userId);
+        tokenService.logout(accessToken);
     }
 
     @Transactional
     public TokenResponse refresh(String refreshToken) {
-        if (!jwtProvider.validateRefreshToken(refreshToken)) {
-            throw new RuntimeException("RefreshToken 유효하지 않음");
-        }
-        RefreshToken token = refreshTokenRepository.findByToken(hashToken(refreshToken))
-                .orElseThrow(() -> new RuntimeException("RefreshToken 없음"));
-        if(token.getExpiredAt().isBefore(LocalDateTime.now())){
-            throw new RuntimeException("RefreshToken 만료");
-        }
-
-        refreshTokenRepository.delete(token);
-
-        String userId = token.getUser().getId().toString();
-        String newAccessToken = jwtProvider.createAccessToken(userId);
-        String newRefreshToken = jwtProvider.createRefreshToken(userId);
-
-        RefreshToken newRt = RefreshToken.builder()
-                .user(token.getUser())
-                .token(hashToken(newRefreshToken))
-                .expiredAt(jwtProvider.getRefrehTokenExpiration(newRefreshToken))
-                .build();
-        refreshTokenRepository.save(newRt);
-
-        return TokenResponse.builder().accessToken(newAccessToken).refreshToken(newRefreshToken).build();
-    }
-
-    private String hashToken(String token) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(token.getBytes( StandardCharsets.UTF_8));
-            return Base64.getEncoder().encodeToString(hash);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("토큰 해싱 실패", e);
-        }
+        return tokenService.refresh(refreshToken);
     }
 
     @Transactional
@@ -188,5 +125,9 @@ public class AuthService {
         verification.verify();
         phoneVerificationRepository.save(verification);
         return "인증이 완료되었습니다.";
+    }
+
+    public TokenResponse socialLogin(SsoProvider provider, SocialLoginRequest request) {
+        return ssoService.socialLogin(provider, request);
     }
 }

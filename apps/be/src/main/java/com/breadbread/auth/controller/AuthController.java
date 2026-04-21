@@ -1,6 +1,7 @@
 package com.breadbread.auth.controller;
 
 import com.breadbread.auth.dto.*;
+import com.breadbread.auth.entity.SsoProvider;
 import com.breadbread.auth.service.AuthService;
 import com.breadbread.auth.dto.SignupRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -62,12 +63,11 @@ public class AuthController {
         return authService.verifyCode(request);
     }
 
-//    @Operation(summary = "소셜 로그인")
-//    @ApiResponse(responseCode = "200", description = "accessToken, refreshToken 반환")
-//    @PostMapping("/{provider}")
-//    public TokenResponse socialLogin(@PathVariable String provider,
-//                                     @RequestBody SocialLoginRequest request) {
-//        // TODO: authService.socialLogin(provider, request)
-//        return TokenResponse.builder().accessToken("").refreshToken("").build();
-//    }
+    @Operation(summary = "소셜 로그인")
+    @ApiResponse(responseCode = "200", description = "accessToken, refreshToken 반환")
+    @PostMapping("/{provider}")
+    public TokenResponse socialLogin(@PathVariable SsoProvider provider,
+                                     @RequestBody SocialLoginRequest request) {
+        return authService.socialLogin(provider, request);
+    }
 }
