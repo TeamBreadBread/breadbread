@@ -1,53 +1,32 @@
-import { cn } from "@/utils/cn";
-import numberBreadIcon from "@/assets/icons/numberBread.svg";
-
 interface CourseTimelineItemProps {
   index: number;
-  name: string;
-  address: string;
-  menu: string;
-  isLast?: boolean;
+  place: import("./types").CoursePlace;
 }
 
-export default function CourseTimelineItem({
-  index,
-  name,
-  address,
-  menu,
-}: CourseTimelineItemProps) {
-  const badgeContainerClass = cn(
-    "relative z-10 flex before:absolute before:left-[17px] before:top-[30px] before:h-full before:w-[2px] before:bg-gray-200 before:content-['']",
-    "w-9 justify-center",
-    "pt-x1",
-  );
-
-  const badgeClass = cn(
-    "relative flex h-6 w-6 items-center justify-center",
-    "t2medium",
-    "text-gray-00",
-  );
-
-  const timelineCardClass = cn(
-    "flex flex-1 flex-col gap-x1",
-    "rounded-r2 border border-gray-200 bg-gray-100",
-    "p-x4 pb-x4",
-  );
-
+export default function CourseTimelineItem({ index, place }: CourseTimelineItemProps) {
   return (
-    <div className="relative flex gap-x2">
-      <div className={badgeContainerClass}>
-        <div className={badgeClass}>
-          <img src={numberBreadIcon} alt="" className="h-full w-full" aria-hidden />
-          <span className="absolute inset-0 flex items-center justify-center">{index}</span>
+    <div className="flex items-start gap-x1">
+      <div className="flex items-center justify-start p-x2">
+        <div className="relative h-x6 w-x6">
+          <div className="h-x6 w-x6 rounded-full bg-[#868b94]" />
+          <div className="absolute inset-0 flex items-center justify-center font-pretendard typo-t2medium text-white">
+            {index}
+          </div>
         </div>
       </div>
 
-      <div className={timelineCardClass}>
-        <div className="text-size-4 leading-t5 font-bold tracking-2 text-gray-1000">{name}</div>
+      <div className="flex-1 rounded-r2 border border-[#f3f4f5] bg-[#f7f8f9] p-x4">
+        <div className="font-pretendard typo-t5bold text-[#1a1c20]">{place.name}</div>
 
-        <div className="flex flex-col gap-x1 text-size-2 leading-t3 font-regular tracking-0 text-gray-800">
-          <span>{address}</span>
-          <span>{menu}</span>
+        <div className="mt-x1_5 flex flex-col gap-x1">
+          <div className="flex items-center gap-x1">
+            <div className="h-x4 w-x4 rounded-full bg-[#d9dbe0]" />
+            <span className="font-pretendard typo-t3regular text-[#555d6d]">{place.address}</span>
+          </div>
+          <div className="flex items-center gap-x1">
+            <div className="h-x4 w-x4 rounded-full bg-[#d9dbe0]" />
+            <span className="font-pretendard typo-t3regular text-[#555d6d]">{place.menu}</span>
+          </div>
         </div>
       </div>
     </div>

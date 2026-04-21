@@ -1,32 +1,39 @@
-import { cn } from "@/utils/cn";
-import { Skeleton } from "@/components";
+import type { CourseSummary } from "./types";
 
 interface ResultSummaryCardProps {
-  title: string;
-  duration: string;
-  price: string;
+  summary: CourseSummary;
 }
 
-export default function ResultSummaryCard({ title, duration, price }: ResultSummaryCardProps) {
-  const titleClass = cn("t7bold", "text-gray-1000");
-
-  const metaLabelClass = cn("flex items-center gap-x2", "t4medium", "text-gray-700");
-
-  const metaValueClass = cn("text-size-3 leading-t4 font-medium tracking-1", "text-gray-900");
-
+export default function ResultSummaryCard({ summary }: ResultSummaryCardProps) {
   return (
-    <section className={cn("flex gap-x3", "px-x5 py-x6")}>
-      <Skeleton shape="circle" className="h-[60px] w-[60px]" />
+    <section className="flex items-center gap-x2_5 bg-white px-x5 pt-x9 pb-x6">
+      <div className="flex h-[80px] w-[80px] items-center justify-center p-x2_5">
+        <div className="h-[60px] w-[60px] rounded-full bg-[#dcdee3]" />
+      </div>
 
-      <div className="flex flex-1 flex-col gap-x2">
-        <h2 className={titleClass}>{title}</h2>
+      <div className="flex-1">
+        <h2 className="font-pretendard typo-t7bold text-[#1a1c20]">{summary.title}</h2>
 
-        <div className={metaLabelClass}>
-          <span>소요시간</span>
-          <span className={metaValueClass}>{duration}</span>
-          <span>·</span>
-          <span>예상비용</span>
-          <span className={metaValueClass}>{price}</span>
+        <div className="mt-x2 flex items-center gap-x2">
+          <div className="flex items-center gap-x1">
+            <span className="font-pretendard typo-t4medium whitespace-nowrap text-[#868b94]">
+              소요시간
+            </span>
+            <span className="font-pretendard typo-t4medium whitespace-nowrap text-[#2a3038]">
+              {summary.duration}
+            </span>
+          </div>
+
+          <span className="font-pretendard typo-t4medium whitespace-nowrap text-[#868b94]">·</span>
+
+          <div className="flex items-center gap-x1">
+            <span className="font-pretendard typo-t4medium whitespace-nowrap text-[#868b94]">
+              예상비용
+            </span>
+            <span className="font-pretendard typo-t4medium whitespace-nowrap text-[#2a3038]">
+              {summary.price}
+            </span>
+          </div>
         </div>
       </div>
     </section>

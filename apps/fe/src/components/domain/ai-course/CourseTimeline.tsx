@@ -1,26 +1,18 @@
 import CourseTimelineItem from "./CourseTimelineItem";
-
-interface Course {
-  name: string;
-  address: string;
-  menu: string;
-}
+import type { CoursePlace } from "./types";
 
 interface CourseTimelineProps {
-  courses: Course[];
+  places: CoursePlace[];
 }
 
-export default function CourseTimeline({ courses }: CourseTimelineProps) {
+export default function CourseTimeline({ places }: CourseTimelineProps) {
   return (
-    <section className="px-x5 py-x3">
+    <section className="relative overflow-hidden px-x5 py-x3">
+      <div className="absolute bottom-0 left-[39px] top-0 w-[2px] bg-[#f3f4f5]" />
+
       <div className="flex flex-col gap-x3">
-        {courses.map((course, idx) => (
-          <CourseTimelineItem
-            key={`${course.name}-${idx}`}
-            index={idx + 1}
-            isLast={idx === courses.length - 1}
-            {...course}
-          />
+        {places.map((place, idx) => (
+          <CourseTimelineItem key={place.id} index={idx + 1} place={place} />
         ))}
       </div>
     </section>
