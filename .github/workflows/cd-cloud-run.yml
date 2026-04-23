@@ -1,5 +1,4 @@
 name: Deploy to Cloud Run
-
 on:
   pull_request:
     branches: [main]
@@ -13,6 +12,10 @@ jobs:
   deploy:
     if: ${{ github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
+    env:
+      REGION: ${{ secrets.GCP_REGION }}
+      PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      IMAGE_REPO: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/breadbread/be
     steps:
       - uses: actions/checkout@v4
 
@@ -24,20 +27,20 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          project_id: ${{ env.PROJECT_ID }}
 
       - name: Build and push to Artifact Registry
         run: |
-          gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
-          docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/breadbread/be:${{ github.sha }} apps/be
-          docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/breadbread/be:${{ github.sha }}
+          gcloud auth configure-docker $REGION-docker.pkg.dev
+          docker build -t $IMAGE_REPO:${{ github.sha }} apps/be
+          docker push $IMAGE_REPO:${{ github.sha }}
 
       - name: Deploy to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: breadbread-be
-          region: ${{ secrets.GCP_REGION }}
-          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/breadbread/be:${{ github.sha }}
+          region: ${{ env.REGION }}
+          image: ${{ env.IMAGE_REPO }}:${{ github.sha }}
           allow-unauthenticated: true
           env_vars: |
             SPRING_PROFILES_ACTIVE=prod
