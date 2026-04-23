@@ -1,13 +1,13 @@
 name: Deploy to Cloud Run
 
 on:
-  push:
+  pull_request:
     branches: [main]
-    paths:
-      - 'apps/be/**'
+    types: [closed]
 
 jobs:
   deploy:
+    if: ${{ github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,6 +32,7 @@ jobs:
           service: breadbread-be
           region: ${{ secrets.GCP_REGION }}
           image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/breadbread/be:${{ github.sha }}
+          allow-unauthenticated: true
           env_vars: |
             SPRING_PROFILES_ACTIVE=prod
             GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
