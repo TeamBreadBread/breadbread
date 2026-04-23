@@ -3,6 +3,8 @@ package com.breadbread.auth.service;
 import com.breadbread.auth.dto.*;
 import com.breadbread.auth.entity.*;
 import com.breadbread.auth.repository.PhoneVerificationRepository;
+import com.breadbread.global.exception.CustomException;
+import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.util.SmsUtil;
 import com.breadbread.auth.dto.CheckIdResponse;
 import com.breadbread.user.entity.User;
@@ -39,17 +41,17 @@ public class AuthService {
     private static final Random RANDOM = new Random();
 
     @Transactional
-    public String signup(SignupRequest signupRequest) {
+    public void signup(SignupRequest signupRequest) {
         if(userRepository.findByLoginId(signupRequest.getLoginId()).isPresent()) {
-            throw new IllegalArgumentException("이미 존재하는 아이디입니다.");
+            throw new CustomException(ErrorCode.DUPLICATE_LOGIN_ID);
         }
         if(!signupRequest.getPassword().equals(signupRequest.getPasswordConfirm())) {
-            throw new IllegalArgumentException("비밀번호와 비밀번호 확인이 일치하지 않습니다.");
+            throw new CustomException(ErrorCode.PASSWORD_MISMATCH);
         }
         PhoneVerification verification = validateVerificationToken(
                 signupRequest.getVerificationToken(), VerificationPurpose.SIGNUP);
         if(!verification.getPhone().equals(signupRequest.getPhone())) {
-            throw new IllegalArgumentException("인증된 휴대전화 번호와 입력한 번호가 일치하지 않습니다.");
+            throw new CustomException(ErrorCode.PHONE_VERIFICATION_MISMATCH);
         }
         String encodedPassword = passwordEncoder.encode(signupRequest.getPassword());
         User user = User.builder()
@@ -65,15 +67,13 @@ public class AuthService {
                 .build();
         userRepository.save(user);
         phoneVerificationRepository.delete(verification);
-        return "회원가입이 완료되었습니다.";
     }
 
     @Transactional
     public TokenResponse login(LoginRequest loginRequest) {
         User user = userRepository.findByLoginId(loginRequest.getLoginId()).orElseThrow(
-                () -> new RuntimeException("해당 아이디가 존재하지 않습니다.")
+                () -> new CustomException(ErrorCode.INVALID_LOGIN_ID)
         );
-
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         user.getId().toString(),
@@ -104,9 +104,9 @@ public class AuthService {
         PhoneVerification verification = validateVerificationToken(
                 findIdRequest.getVerificationToken(), VerificationPurpose.FIND_ID);
         User user = userRepository.findByPhone(findIdRequest.getPhone())
-                .orElseThrow(() -> new RuntimeException("해당 휴대전화 번호로 가입된 아이디가 없습니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         if(!user.getName().equals(findIdRequest.getName()) || !user.getPhone().equals(verification.getPhone())) {
-            throw new RuntimeException("사용자 정보가 일치하지 않습니다.");
+            throw new CustomException(ErrorCode.USER_INFO_MISMATCH);
         }
         phoneVerificationRepository.delete(verification);
         return FindIdResponse.builder().loginId(user.getLoginId()).build();
@@ -116,9 +116,9 @@ public class AuthService {
     public void findPassword(FindPwRequest findPwRequest) {
         PhoneVerification verification = validateVerificationToken(findPwRequest.getVerificationToken(), VerificationPurpose.FIND_PW);
         User user = userRepository.findByLoginId(findPwRequest.getLoginId())
-                .orElseThrow(() -> new RuntimeException("해당 아이디가 존재하지 않습니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         if(!user.getName().equals(findPwRequest.getName()) || !user.getPhone().equals(verification.getPhone())) {
-            throw new RuntimeException("사용자 정보가 일치하지 않습니다.");
+            throw new CustomException(ErrorCode.USER_INFO_MISMATCH);
         }
     }
 
@@ -127,9 +127,9 @@ public class AuthService {
         PhoneVerification verification = validateVerificationToken(
                 resetPwRequest.getVerificationToken(), VerificationPurpose.FIND_PW);
         User user = userRepository.findByPhone(verification.getPhone())
-                .orElseThrow(() -> new RuntimeException("해당 정보를 찾을 수 없습니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         if(!resetPwRequest.getNewPassword().equals(resetPwRequest.getNewPasswordConfirm())) {
-            throw new RuntimeException("새 비밀번호와 새 비밀번호 확인이 일치하지 않습니다.");
+            throw new CustomException(ErrorCode.PASSWORD_MISMATCH);
         }
         user.updatePassword(passwordEncoder.encode(resetPwRequest.getNewPassword()));
         userRepository.save(user);
@@ -157,15 +157,15 @@ public class AuthService {
     @Transactional
     public VerifyPhoneResponse verifyCode(VerifyPhoneRequest verifyPhoneRequest) {
         PhoneVerification verification = phoneVerificationRepository.findByPhoneAndPurpose(verifyPhoneRequest.getPhone(), verifyPhoneRequest.getPurpose())
-                .orElseThrow(() -> new RuntimeException("인증번호를 먼저 요청해주세요."));
+                .orElseThrow(() -> new CustomException(ErrorCode.VERIFICATION_NOT_FOUND));
         if (verification.isVerified()) {
-            throw new RuntimeException("이미 인증된 번호입니다.");
+            throw new CustomException(ErrorCode.ALREADY_VERIFIED);
         }
         if (verification.getExpiredAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("인증 코드가 만료되었습니다.");
+            throw new CustomException(ErrorCode.VERIFICATION_EXPIRED);
         }
         if (!verification.getCode().equals(verifyPhoneRequest.getCode())) {
-            throw new RuntimeException("인증 코드가 일치하지 않습니다.");
+            throw new CustomException(ErrorCode.INVALID_VERIFICATION_CODE);
         }
         String verificationToken = verification.verify();
         phoneVerificationRepository.save(verification);
@@ -178,12 +178,12 @@ public class AuthService {
 
     private PhoneVerification validateVerificationToken(String token, VerificationPurpose purpose) {
         PhoneVerification verification = phoneVerificationRepository.findByVerificationToken(token)
-                .orElseThrow(() -> new RuntimeException("유효하지 않은 인증 토큰입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.VERIFICATION_NOT_FOUND));
         if (verification.getExpiredAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("인증이 만료되었습니다. 다시 인증해주세요.");
+            throw new CustomException(ErrorCode.VERIFICATION_EXPIRED);
         }
         if (verification.getPurpose() != purpose) {
-            throw new RuntimeException("올바르지 않은 인증 토큰입니다.");
+            throw new CustomException(ErrorCode.VERIFICATION_PURPOSE_MISMATCH);
         }
         return verification;
     }
