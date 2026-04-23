@@ -1,2 +1,18 @@
 @import "tailwindcss";
 @import "./tokens.css";
+
+.typo-t6bold {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-5);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--leading-t6);
+  letter-spacing: var(--tracking-1);
+}
+
+.typo-t8bold {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-7);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--leading-t8);
+  letter-spacing: var(--tracking-2);
+}
