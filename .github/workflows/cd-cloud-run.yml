@@ -5,6 +5,10 @@ on:
     branches: [main]
     types: [closed]
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   deploy:
     if: ${{ github.event.pull_request.merged == true }}
@@ -19,6 +23,8 @@ jobs:
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Build and push to Artifact Registry
         run: |
@@ -37,7 +43,7 @@ jobs:
             SPRING_PROFILES_ACTIVE=prod
             GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
             GCP_REGION=${{ secrets.GCP_REGION }}
-            CLOUD_SQL_INSTANCE=breadbread-db
+            CLOUD_SQL_INSTANCE=${{ secrets.CLOUD_SQL_INSTANCE }}
             DB_NAME=${{ secrets.DB_NAME }}
             DB_USERNAME=${{ secrets.DB_USERNAME }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
