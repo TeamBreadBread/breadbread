@@ -1,31 +1,17 @@
-# Spring Boot artifacts (no longer used)
+# Gradle 캐시/빌드 결과물
 .gradle
 build
 out
-gradlew
-gradlew.bat
-gradle
-build.gradle
-settings.gradle
-src/main/java
+# 테스트
 src/test
-
-# Node.js
-node_modules
-dist
-
-# Docker
-Dockerfile
-
-# Git & IDE
-.git
-.DS_Store
+# IDE
 .idea
 *.iml
-
-# Logs
+.DS_Store
+# Git
+.git
+# 로그
 *.log
-
-# Env
+# 환경변수
 .env
 .env.*

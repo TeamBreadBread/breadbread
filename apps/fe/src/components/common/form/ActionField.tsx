@@ -1,96 +1,61 @@
-import { useState } from "react";
+import type { InputHTMLAttributes } from "react";
 import { cn } from "@/utils/cn";
 
 interface ActionFieldProps {
-  placeholder?: string;
+  placeholder: string;
   actionText: string;
-  disabled?: boolean;
-  variant?: "fill" | "outline";
-  actionButtonClassName?: string;
-  inputMode?: "text" | "numeric" | "decimal" | "email" | "tel" | "url";
-  inputBgColor?: "white" | "gray-00" | "gray-200" | "gray-400";
   value?: string;
-  onValueChange?: (value: string) => void;
+  onChange?: (value: string) => void;
   onActionClick?: () => void;
-  disableHover?: boolean;
-  isVerified?: boolean;
-  tone?: "default" | "error" | "success";
+  disabled?: boolean;
+  actionDisabled?: boolean;
+  containerClassName?: string;
+  inputClassName?: string;
+  actionClassName?: string;
+  type?: InputHTMLAttributes<HTMLInputElement>["type"];
 }
 
 export default function ActionField({
   placeholder,
   actionText,
-  disabled = false,
-  variant = "fill",
-  actionButtonClassName,
-  inputMode,
-  inputBgColor = "white",
   value,
-  onValueChange,
+  onChange,
   onActionClick,
-  disableHover = false,
-  isVerified = false,
-  tone = "default",
+  disabled = false,
+  actionDisabled = false,
+  containerClassName,
+  inputClassName,
+  actionClassName,
+  type = "text",
 }: ActionFieldProps) {
-  const [inputValue, setInputValue] = useState("");
-  const currentValue = value ?? inputValue;
-  const bgColorClass =
-    inputBgColor === "gray-00"
-      ? "bg-gray-00"
-      : inputBgColor === "gray-200"
-        ? "bg-gray-200"
-        : inputBgColor === "gray-400"
-          ? "bg-gray-400"
-          : "bg-gray-00";
-  const borderColorClass =
-    tone === "error"
-      ? "border-red-700"
-      : tone === "success"
-        ? "border-green-700"
-        : "border-gray-300";
-
   return (
     <div
       className={cn(
-        "flex h-14 w-full items-center gap-x2 rounded-r3 border p-x2",
-        bgColorClass,
-        borderColorClass,
+        "flex h-x14 items-center gap-x2 overflow-hidden rounded-r3 border px-x5 py-x4",
+        disabled ? "border-gray-200 bg-gray-200" : "border-gray-400 bg-white",
+        containerClassName,
       )}
     >
       <input
-        value={currentValue}
-        onChange={(e) => {
-          setInputValue(e.target.value);
-          onValueChange?.(e.target.value);
-        }}
+        type={type}
+        value={value}
+        onChange={(event) => onChange?.(event.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        inputMode={inputMode}
         className={cn(
-          "h-full w-full bg-transparent px-x2 text-size-4 font-normal leading-t5 tracking-1 placeholder:text-gray-500 focus:outline-none",
-          isVerified ? "text-gray-500" : "text-gray-1000 disabled:text-gray-500",
+          "font-pretendard typo-t5regular flex-1 bg-transparent outline-none",
+          value ? "text-gray-1000" : "text-gray-500",
+          inputClassName,
         )}
       />
 
       <button
         type="button"
-        disabled={disabled}
         onClick={onActionClick}
+        disabled={actionDisabled}
         className={cn(
-          "h-10 shrink-0 rounded-r2 px-x3 text-size-3 font-medium leading-t4 tracking-1",
-          variant === "outline"
-            ? disabled
-              ? "bg-gray-00 text-gray-500"
-              : isVerified
-                ? "bg-transparent text-gray-500"
-                : cn(
-                    "bg-gray-00 text-gray-500",
-                    !disableHover && "hover:bg-gray-50 active:bg-gray-100",
-                  )
-            : disabled
-              ? "bg-gray-300 text-gray-500"
-              : "bg-gray-1000 text-gray-00 hover:bg-gray-900 active:bg-gray-800",
-          actionButtonClassName,
+          "font-pretendard typo-t4bold whitespace-nowrap text-gray-500",
+          actionClassName,
         )}
       >
         {actionText}

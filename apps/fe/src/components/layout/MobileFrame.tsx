@@ -1,22 +1,22 @@
 import type { ReactNode } from "react";
 import { cn } from "@/utils/cn";
 
-type MobileFrameProps = {
+interface MobileFrameProps {
   children: ReactNode;
   className?: string;
-};
+}
 
-const MobileFrame = ({ children, className }: MobileFrameProps) => {
+export default function MobileFrame({ children, className }: MobileFrameProps) {
   return (
-    <div
-      className={cn(
-        "mx-auto flex min-h-screen w-full max-w-[744px] flex-col bg-gray-00",
-        className,
-      )}
-    >
-      {children}
+    <div className="min-h-screen w-full bg-gray-200">
+      <div
+        className={cn(
+          "mx-auto flex min-h-screen w-full max-w-[744px] flex-col bg-white",
+          className,
+        )}
+      >
+        {children}
+      </div>
     </div>
   );
-};
-
-export default MobileFrame;
+}

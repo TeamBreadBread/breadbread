@@ -8,135 +8,245 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as FindIdResultRouteImport } from './routes/find-id-result'
-import { Route as FindIdFailureRouteImport } from './routes/find-id-failure'
-import { Route as FindIdRouteImport } from './routes/find-id'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as rootRouteImport } from "./routes/__root";
+import { Route as SignupResultRouteImport } from "./routes/signup-result";
+import { Route as SignupRouteImport } from "./routes/signup";
+import { Route as RecommendationRouteImport } from "./routes/recommendation";
+import { Route as PreferenceRouteImport } from "./routes/preference";
+import { Route as LoginRouteImport } from "./routes/login";
+import { Route as FindIdResultRouteImport } from "./routes/find-id-result";
+import { Route as FindIdFailureRouteImport } from "./routes/find-id-failure";
+import { Route as FindIdRouteImport } from "./routes/find-id";
+import { Route as AiSearchResultRouteImport } from "./routes/ai-search-result";
+import { Route as IndexRouteImport } from "./routes/index";
 
+const SignupResultRoute = SignupResultRouteImport.update({
+  id: "/signup-result",
+  path: "/signup-result",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const SignupRoute = SignupRouteImport.update({
+  id: "/signup",
+  path: "/signup",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const RecommendationRoute = RecommendationRouteImport.update({
+  id: "/recommendation",
+  path: "/recommendation",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const PreferenceRoute = PreferenceRouteImport.update({
+  id: "/preference",
+  path: "/preference",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+  id: "/login",
+  path: "/login",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const FindIdResultRoute = FindIdResultRouteImport.update({
-  id: '/find-id-result',
-  path: '/find-id-result',
+  id: "/find-id-result",
+  path: "/find-id-result",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const FindIdFailureRoute = FindIdFailureRouteImport.update({
-  id: '/find-id-failure',
-  path: '/find-id-failure',
+  id: "/find-id-failure",
+  path: "/find-id-failure",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const FindIdRoute = FindIdRouteImport.update({
-  id: '/find-id',
-  path: '/find-id',
+  id: "/find-id",
+  path: "/find-id",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
+const AiSearchResultRoute = AiSearchResultRouteImport.update({
+  id: "/ai-search-result",
+  path: "/ai-search-result",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/find-id': typeof FindIdRoute
-  '/find-id-failure': typeof FindIdFailureRoute
-  '/find-id-result': typeof FindIdResultRoute
-  '/login': typeof LoginRoute
+  "/": typeof IndexRoute;
+  "/ai-search-result": typeof AiSearchResultRoute;
+  "/find-id": typeof FindIdRoute;
+  "/find-id-failure": typeof FindIdFailureRoute;
+  "/find-id-result": typeof FindIdResultRoute;
+  "/login": typeof LoginRoute;
+  "/preference": typeof PreferenceRoute;
+  "/recommendation": typeof RecommendationRoute;
+  "/signup": typeof SignupRoute;
+  "/signup-result": typeof SignupResultRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/find-id': typeof FindIdRoute
-  '/find-id-failure': typeof FindIdFailureRoute
-  '/find-id-result': typeof FindIdResultRoute
-  '/login': typeof LoginRoute
+  "/": typeof IndexRoute;
+  "/ai-search-result": typeof AiSearchResultRoute;
+  "/find-id": typeof FindIdRoute;
+  "/find-id-failure": typeof FindIdFailureRoute;
+  "/find-id-result": typeof FindIdResultRoute;
+  "/login": typeof LoginRoute;
+  "/preference": typeof PreferenceRoute;
+  "/recommendation": typeof RecommendationRoute;
+  "/signup": typeof SignupRoute;
+  "/signup-result": typeof SignupResultRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/find-id': typeof FindIdRoute
-  '/find-id-failure': typeof FindIdFailureRoute
-  '/find-id-result': typeof FindIdResultRoute
-  '/login': typeof LoginRoute
+  __root__: typeof rootRouteImport;
+  "/": typeof IndexRoute;
+  "/ai-search-result": typeof AiSearchResultRoute;
+  "/find-id": typeof FindIdRoute;
+  "/find-id-failure": typeof FindIdFailureRoute;
+  "/find-id-result": typeof FindIdResultRoute;
+  "/login": typeof LoginRoute;
+  "/preference": typeof PreferenceRoute;
+  "/recommendation": typeof RecommendationRoute;
+  "/signup": typeof SignupRoute;
+  "/signup-result": typeof SignupResultRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
+  fileRoutesByFullPath: FileRoutesByFullPath;
   fullPaths:
-    | '/'
-    | '/find-id'
-    | '/find-id-failure'
-    | '/find-id-result'
-    | '/login'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/find-id' | '/find-id-failure' | '/find-id-result' | '/login'
+    | "/"
+    | "/ai-search-result"
+    | "/find-id"
+    | "/find-id-failure"
+    | "/find-id-result"
+    | "/login"
+    | "/preference"
+    | "/recommendation"
+    | "/signup"
+    | "/signup-result";
+  fileRoutesByTo: FileRoutesByTo;
+  to:
+    | "/"
+    | "/ai-search-result"
+    | "/find-id"
+    | "/find-id-failure"
+    | "/find-id-result"
+    | "/login"
+    | "/preference"
+    | "/recommendation"
+    | "/signup"
+    | "/signup-result";
   id:
-    | '__root__'
-    | '/'
-    | '/find-id'
-    | '/find-id-failure'
-    | '/find-id-result'
-    | '/login'
-  fileRoutesById: FileRoutesById
+    | "__root__"
+    | "/"
+    | "/ai-search-result"
+    | "/find-id"
+    | "/find-id-failure"
+    | "/find-id-result"
+    | "/login"
+    | "/preference"
+    | "/recommendation"
+    | "/signup"
+    | "/signup-result";
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  FindIdRoute: typeof FindIdRoute
-  FindIdFailureRoute: typeof FindIdFailureRoute
-  FindIdResultRoute: typeof FindIdResultRoute
-  LoginRoute: typeof LoginRoute
+  IndexRoute: typeof IndexRoute;
+  AiSearchResultRoute: typeof AiSearchResultRoute;
+  FindIdRoute: typeof FindIdRoute;
+  FindIdFailureRoute: typeof FindIdFailureRoute;
+  FindIdResultRoute: typeof FindIdResultRoute;
+  LoginRoute: typeof LoginRoute;
+  PreferenceRoute: typeof PreferenceRoute;
+  RecommendationRoute: typeof RecommendationRoute;
+  SignupRoute: typeof SignupRoute;
+  SignupResultRoute: typeof SignupResultRoute;
 }
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/find-id-result': {
-      id: '/find-id-result'
-      path: '/find-id-result'
-      fullPath: '/find-id-result'
-      preLoaderRoute: typeof FindIdResultRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/find-id-failure': {
-      id: '/find-id-failure'
-      path: '/find-id-failure'
-      fullPath: '/find-id-failure'
-      preLoaderRoute: typeof FindIdFailureRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/find-id': {
-      id: '/find-id'
-      path: '/find-id'
-      fullPath: '/find-id'
-      preLoaderRoute: typeof FindIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+    "/signup-result": {
+      id: "/signup-result";
+      path: "/signup-result";
+      fullPath: "/signup-result";
+      preLoaderRoute: typeof SignupResultRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/signup": {
+      id: "/signup";
+      path: "/signup";
+      fullPath: "/signup";
+      preLoaderRoute: typeof SignupRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/recommendation": {
+      id: "/recommendation";
+      path: "/recommendation";
+      fullPath: "/recommendation";
+      preLoaderRoute: typeof RecommendationRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/preference": {
+      id: "/preference";
+      path: "/preference";
+      fullPath: "/preference";
+      preLoaderRoute: typeof PreferenceRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/login": {
+      id: "/login";
+      path: "/login";
+      fullPath: "/login";
+      preLoaderRoute: typeof LoginRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/find-id-result": {
+      id: "/find-id-result";
+      path: "/find-id-result";
+      fullPath: "/find-id-result";
+      preLoaderRoute: typeof FindIdResultRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/find-id-failure": {
+      id: "/find-id-failure";
+      path: "/find-id-failure";
+      fullPath: "/find-id-failure";
+      preLoaderRoute: typeof FindIdFailureRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/find-id": {
+      id: "/find-id";
+      path: "/find-id";
+      fullPath: "/find-id";
+      preLoaderRoute: typeof FindIdRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/ai-search-result": {
+      id: "/ai-search-result";
+      path: "/ai-search-result";
+      fullPath: "/ai-search-result";
+      preLoaderRoute: typeof AiSearchResultRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/": {
+      id: "/";
+      path: "/";
+      fullPath: "/";
+      preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AiSearchResultRoute: AiSearchResultRoute,
   FindIdRoute: FindIdRoute,
   FindIdFailureRoute: FindIdFailureRoute,
   FindIdResultRoute: FindIdResultRoute,
   LoginRoute: LoginRoute,
-}
+  PreferenceRoute: PreferenceRoute,
+  RecommendationRoute: RecommendationRoute,
+  SignupRoute: SignupRoute,
+  SignupResultRoute: SignupResultRoute,
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();

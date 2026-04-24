@@ -1,42 +1,23 @@
-# ============================================================
-#  BreadBread BE — Multi-stage Docker Build (Monorepo)
-#  Build context: project root (breadbread/)
-#  Usage: docker build -f apps/be/Dockerfile .
-# ============================================================
+# ---- Build Stage ----
+FROM eclipse-temurin:17-jdk-alpine AS builder
+WORKDIR /workspace
 
-# 1. Build stage
-FROM node:22-slim AS build
+# Gradle wrapper만 먼저 복사 (레이어 캐시 활용)
+COPY gradlew gradlew
+COPY gradle gradle
+COPY build.gradle build.gradle
+COPY settings.gradle settings.gradle
+
+RUN chmod +x gradlew && ./gradlew dependencies --no-daemon
+
+# 소스 복사 후 빌드
+COPY src src
+
+RUN ./gradlew bootJar --no-daemon -x test
+
+# ---- Runtime Stage ----
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
-
-RUN npm install -g pnpm
-
-# Copy workspace config + lockfile
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY apps/be/package.json apps/be/package.json
-
-# Install BE dependencies
-RUN pnpm install --frozen-lockfile --filter bread-be
-
-# Copy source and build
-COPY apps/be/tsconfig.json apps/be/nest-cli.json apps/be/
-COPY apps/be/src apps/be/src
-COPY apps/be/static apps/be/static
-
-WORKDIR /app/apps/be
-RUN pnpm build
-
-# Create standalone deployment with all deps resolved
-RUN pnpm deploy --legacy --filter bread-be --prod /prod/be
-
-# 2. Runtime stage (Distroless)
-FROM gcr.io/distroless/nodejs22-debian12
-WORKDIR /app
-
-COPY --from=build /prod/be/node_modules ./node_modules
-COPY --from=build /prod/be/dist ./dist
-COPY --from=build /app/apps/be/static ./static
-
+COPY --from=builder /workspace/build/libs/*.jar app.jar
 EXPOSE 8080
-ENV NODE_ENV=production
-
-CMD ["dist/main"]
+ENTRYPOINT ["java", "-jar", "app.jar"]

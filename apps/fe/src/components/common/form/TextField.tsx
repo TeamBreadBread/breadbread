@@ -1,22 +1,36 @@
-import type { InputHTMLAttributes, ReactNode } from "react";
+import type { InputHTMLAttributes } from "react";
 import { cn } from "@/utils/cn";
 
-interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
-  trailingIcon?: ReactNode;
+interface TextFieldProps {
+  placeholder?: string;
+  value?: string;
+  onChange?: (value: string) => void;
+  disabled?: boolean;
+  type?: InputHTMLAttributes<HTMLInputElement>["type"];
+  className?: string;
 }
 
-export default function TextField({ trailingIcon, className, ...props }: TextFieldProps) {
+export default function TextField({
+  placeholder,
+  value,
+  onChange,
+  disabled = false,
+  type = "text",
+  className,
+}: TextFieldProps) {
   return (
-    <div className="flex h-14 w-full items-center rounded-r3 border border-gray-300 bg-gray-00 px-x4 py-x3">
-      <input
-        className={cn(
-          "w-full bg-transparent text-size-4 font-normal leading-t5 tracking-1 text-gray-1000 placeholder:text-gray-500 focus:outline-none",
-          className,
-        )}
-        {...props}
-      />
-
-      {trailingIcon && <span className="ml-x2 shrink-0 text-gray-700">{trailingIcon}</span>}
-    </div>
+    <input
+      type={type}
+      value={value}
+      onChange={(event) => onChange?.(event.target.value)}
+      placeholder={placeholder}
+      disabled={disabled}
+      className={cn(
+        "flex h-x14 w-full items-center rounded-r3 border px-x5 py-x4 font-pretendard typo-t5regular outline-none",
+        disabled ? "border-gray-200 bg-gray-200" : "border-gray-400 bg-white",
+        value ? "text-gray-1000" : "text-gray-500",
+        className,
+      )}
+    />
   );
 }

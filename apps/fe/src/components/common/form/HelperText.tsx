@@ -1,20 +1,12 @@
-import type { ReactNode } from "react";
-import { cn } from "@/utils/cn";
+import type { HTMLAttributes, ReactNode } from "react";
 
 interface HelperTextProps {
   children: ReactNode;
-  variant?: "default" | "error";
+  className?: HTMLAttributes<HTMLParagraphElement>["className"];
 }
 
-export default function HelperText({ children, variant = "default" }: HelperTextProps) {
+export default function HelperText({ children, className }: HelperTextProps) {
   return (
-    <p
-      className={cn(
-        "text-size-2 font-normal leading-t3 tracking-1",
-        variant === "error" ? "text-red-500" : "text-gray-600",
-      )}
-    >
-      {children}
-    </p>
+    <p className={`font-pretendard typo-t3regular text-gray-700 ${className ?? ""}`}>{children}</p>
   );
 }
