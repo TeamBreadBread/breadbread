@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { Button } from "@/components/common";
-import RecommendationIconAsset from "@/assets/icons/Star.svg";
+import RecommendationIconAsset from "@/assets/icons/StarCTA.svg";
 import PreferenceIntro from "@/components/domain/ai-course/PreferenceIntro";
 import PreferenceOptionCard from "@/components/common/cards/PreferenceOptionCard";
 import PreferenceQuestionSection from "@/components/domain/ai-course/PreferenceQuestionSection";

@@ -7,7 +7,7 @@ import { routeTree } from "./routeTree.gen";
 import "./index.css";
 
 const router = createRouter({ routeTree });
-const showDevtools = import.meta.env.VITE_SHOW_DEVTOOLS === "true";
+const showDevtools = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEVTOOLS === "true";
 
 declare module "@tanstack/react-router" {
   interface Register {
@@ -17,11 +17,15 @@ declare module "@tanstack/react-router" {
 
 const queryClient = new QueryClient();
 
+export const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <RouterProvider router={router} />
+    {showDevtools && <ReactQueryDevtools />}
+  </QueryClientProvider>
+);
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      {showDevtools && <ReactQueryDevtools />}
-    </QueryClientProvider>
+    <App />
   </StrictMode>,
 );
