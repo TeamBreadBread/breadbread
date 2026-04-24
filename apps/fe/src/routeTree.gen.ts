@@ -9,12 +9,24 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./routes/__root";
+import { Route as SignupResultRouteImport } from "./routes/signup-result";
+import { Route as SignupRouteImport } from "./routes/signup";
 import { Route as RecommendationRouteImport } from "./routes/recommendation";
 import { Route as PreferenceRouteImport } from "./routes/preference";
 import { Route as LoginRouteImport } from "./routes/login";
 import { Route as AiSearchResultRouteImport } from "./routes/ai-search-result";
 import { Route as IndexRouteImport } from "./routes/index";
 
+const SignupResultRoute = SignupResultRouteImport.update({
+  id: "/signup-result",
+  path: "/signup-result",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const SignupRoute = SignupRouteImport.update({
+  id: "/signup",
+  path: "/signup",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const RecommendationRoute = RecommendationRouteImport.update({
   id: "/recommendation",
   path: "/recommendation",
@@ -47,6 +59,8 @@ export interface FileRoutesByFullPath {
   "/login": typeof LoginRoute;
   "/preference": typeof PreferenceRoute;
   "/recommendation": typeof RecommendationRoute;
+  "/signup": typeof SignupRoute;
+  "/signup-result": typeof SignupResultRoute;
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
@@ -54,6 +68,8 @@ export interface FileRoutesByTo {
   "/login": typeof LoginRoute;
   "/preference": typeof PreferenceRoute;
   "/recommendation": typeof RecommendationRoute;
+  "/signup": typeof SignupRoute;
+  "/signup-result": typeof SignupResultRoute;
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
@@ -62,13 +78,37 @@ export interface FileRoutesById {
   "/login": typeof LoginRoute;
   "/preference": typeof PreferenceRoute;
   "/recommendation": typeof RecommendationRoute;
+  "/signup": typeof SignupRoute;
+  "/signup-result": typeof SignupResultRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/" | "/ai-search-result" | "/login" | "/preference" | "/recommendation";
+  fullPaths:
+    | "/"
+    | "/ai-search-result"
+    | "/login"
+    | "/preference"
+    | "/recommendation"
+    | "/signup"
+    | "/signup-result";
   fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/ai-search-result" | "/login" | "/preference" | "/recommendation";
-  id: "__root__" | "/" | "/ai-search-result" | "/login" | "/preference" | "/recommendation";
+  to:
+    | "/"
+    | "/ai-search-result"
+    | "/login"
+    | "/preference"
+    | "/recommendation"
+    | "/signup"
+    | "/signup-result";
+  id:
+    | "__root__"
+    | "/"
+    | "/ai-search-result"
+    | "/login"
+    | "/preference"
+    | "/recommendation"
+    | "/signup"
+    | "/signup-result";
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
@@ -77,10 +117,26 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute;
   PreferenceRoute: typeof PreferenceRoute;
   RecommendationRoute: typeof RecommendationRoute;
+  SignupRoute: typeof SignupRoute;
+  SignupResultRoute: typeof SignupResultRoute;
 }
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
+    "/signup-result": {
+      id: "/signup-result";
+      path: "/signup-result";
+      fullPath: "/signup-result";
+      preLoaderRoute: typeof SignupResultRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/signup": {
+      id: "/signup";
+      path: "/signup";
+      fullPath: "/signup";
+      preLoaderRoute: typeof SignupRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/recommendation": {
       id: "/recommendation";
       path: "/recommendation";
@@ -125,6 +181,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PreferenceRoute: PreferenceRoute,
   RecommendationRoute: RecommendationRoute,
+  SignupRoute: SignupRoute,
+  SignupResultRoute: SignupResultRoute,
 };
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

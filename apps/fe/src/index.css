@@ -1,6 +1,99 @@
 @import "tailwindcss";
 @import "./tokens.css";
 
+@layer components {
+	.typo-t1regular {
+		@apply font-['Pretendard'] text-[11px] font-normal leading-[15px];
+	}
+	.typo-t1medium {
+		@apply font-['Pretendard'] text-[11px] font-medium leading-[15px];
+	}
+	.typo-t1bold {
+		@apply font-['Pretendard'] text-[11px] font-bold leading-[15px];
+	}
+	.typo-t2regular {
+		@apply font-['Pretendard'] text-[12px] font-normal leading-[16px];
+	}
+	.typo-t2medium {
+		@apply font-['Pretendard'] text-[12px] font-medium leading-[16px];
+	}
+	.typo-t2bold {
+		@apply font-['Pretendard'] text-[12px] font-bold leading-[16px];
+	}
+	.typo-t3regular {
+		@apply font-['Pretendard'] text-[13px] font-normal leading-[18px];
+	}
+	.typo-t3medium {
+		@apply font-['Pretendard'] text-[13px] font-medium leading-[18px];
+	}
+	.typo-t3bold {
+		@apply font-['Pretendard'] text-[13px] font-bold leading-[18px];
+	}
+	.typo-t4regular {
+		@apply font-['Pretendard'] text-[14px] font-normal leading-[19px] tracking-[-0.1px];
+	}
+	.typo-t4medium {
+		@apply font-['Pretendard'] text-[14px] font-medium leading-[19px] tracking-[-0.1px];
+	}
+	.typo-t4bold {
+		@apply font-['Pretendard'] text-[14px] font-bold leading-[19px] tracking-[-0.1px];
+	}
+	.typo-t5regular {
+		@apply font-['Pretendard'] text-[16px] font-normal leading-[22px];
+	}
+	.typo-t5medium {
+		@apply font-['Pretendard'] text-[16px] font-medium leading-[22px];
+	}
+	.typo-t5bold {
+		@apply font-['Pretendard'] text-[16px] font-bold leading-[22px];
+	}
+	.typo-t6regular {
+		@apply font-['Pretendard'] text-[18px] font-normal leading-[24px];
+	}
+	.typo-t6medium {
+		@apply font-['Pretendard'] text-[18px] font-medium leading-[24px];
+	}
+	.typo-t6bold {
+		@apply font-['Pretendard'] text-[18px] font-bold leading-[24px];
+	}
+	.typo-t7regular {
+		@apply font-['Pretendard'] text-[20px] font-normal leading-[27px];
+	}
+	.typo-t7medium {
+		@apply font-['Pretendard'] text-[20px] font-medium leading-[27px];
+	}
+	.typo-t7bold {
+		@apply font-['Pretendard'] text-[20px] font-bold leading-[27px];
+	}
+	.typo-t8regular {
+		@apply font-['Pretendard'] text-[22px] font-normal leading-[30px];
+	}
+	.typo-t8medium {
+		@apply font-['Pretendard'] text-[22px] font-medium leading-[30px];
+	}
+	.typo-t8bold {
+		@apply font-['Pretendard'] text-[22px] font-bold leading-[30px];
+	}
+	.typo-t9regular {
+		@apply font-['Pretendard'] text-[24px] font-normal leading-[32px];
+	}
+	.typo-t9medium {
+		@apply font-['Pretendard'] text-[24px] font-medium leading-[32px];
+	}
+	.typo-t9bold {
+		@apply font-['Pretendard'] text-[24px] font-bold leading-[32px];
+	}
+	.typo-t10regular {
+		@apply font-['Pretendard'] text-[26px] font-normal leading-[35px];
+	}
+	.typo-t10medium {
+		@apply font-['Pretendard'] text-[26px] font-medium leading-[35px];
+	}
+	.typo-t10bold {
+		@apply font-['Pretendard'] text-[26px] font-bold leading-[35px];
+	}
+}
+
 html,
 body,
 #root {
