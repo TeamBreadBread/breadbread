@@ -1,45 +1,27 @@
-import PreferenceOptionCard from "./PreferenceOptionCard";
-import type { PreferenceQuestion } from "./types";
+import type { ReactNode } from "react";
+import { cn } from "@/utils/cn";
+import { SectionHeader } from "@/components/common";
 
 interface PreferenceQuestionSectionProps {
-  question: PreferenceQuestion;
-  onToggleOption: (questionId: string, optionId: string) => void;
+  title: string;
+  helperText?: string;
+  columns?: 1 | 2 | 5;
+  children: ReactNode;
 }
 
 export default function PreferenceQuestionSection({
-  question,
-  onToggleOption,
+  title,
+  helperText = "중복 가능",
+  columns = 2,
+  children,
 }: PreferenceQuestionSectionProps) {
+  const gridColumnClass =
+    columns === 1 ? "grid-cols-1" : columns === 5 ? "grid-cols-5" : "grid-cols-2";
+
   return (
-    <section className="bg-white p-x5">
-      <div className="flex flex-col gap-x4">
-        <div className="flex items-center justify-between">
-          <div className="flex flex-1 items-center gap-x1">
-            <div className="flex items-center justify-center p-[3px]">
-              <div className="h-[18px] w-[18px] rounded-full bg-[#dcdee3]" />
-            </div>
-
-            <h2 className="font-pretendard typo-t6medium text-[#1a1c20]">{question.title}</h2>
-          </div>
-
-          {!question.hideSelectionHint && (
-            <span className="font-pretendard typo-t4medium whitespace-nowrap text-[#868b94]">
-              {question.allowMultiple ? "중복 가능" : "1개 선택"}
-            </span>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-[9px]">
-          {question.options.map((option) => (
-            <PreferenceOptionCard
-              key={option.id}
-              label={option.label}
-              selected={option.selected}
-              onClick={() => onToggleOption(question.id, option.id)}
-            />
-          ))}
-        </div>
-      </div>
+    <section className="flex flex-col items-center gap-x4 overflow-hidden bg-gray-00 p-x5">
+      <SectionHeader title={title} rightText={helperText} />
+      <div className={cn("grid w-full gap-x4 gap-y4", gridColumnClass)}>{children}</div>
     </section>
   );
 }

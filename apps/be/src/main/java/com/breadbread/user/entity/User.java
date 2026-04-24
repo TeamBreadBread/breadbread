@@ -15,22 +15,30 @@ public class User extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(unique = true)
     private String loginId;
     private String password;
+    @Column(nullable = false)
     private String name;
     private String nickname;
     private String email;
     private String telecom;
     private String phone;
 
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private UserRole role;
+
     @Enumerated(EnumType.STRING)
     private UserGrade grade = UserGrade.MORNING_BREAD;
     private int usageCount = 0;
 
+    @Column(nullable = false)
     private boolean termsAgreed;
+
+    @Column(nullable = false)
     private boolean privacyAgreed;
+
     private boolean active = true;
 
     @Builder
@@ -51,5 +59,9 @@ public class User extends BaseEntity {
 
     public void updateNickname(String nickname) {
         this.nickname = nickname;
+    }
+
+    public void updatePassword(String password) {
+        this.password = password;
     }
 }

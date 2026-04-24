@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { AppTopBar, BottomDoubleCTA } from "@/components/common";
+import { PreferenceOptionCard } from "@/components/common/cards";
 import PreferenceIntroSection from "@/components/domain/ai-course/PreferenceIntroSection";
 import PreferenceQuestionSection from "@/components/domain/ai-course/PreferenceQuestionSection";
 import MobileFrame from "@/components/layout/MobileFrame";
@@ -95,13 +96,29 @@ export default function BreadPreferencePage() {
         />
 
         <div className="flex flex-col gap-x2_5">
-          {questions.map((question) => (
-            <PreferenceQuestionSection
-              key={question.id}
-              question={question}
-              onToggleOption={handleToggleOption}
-            />
-          ))}
+          {questions.map((question) => {
+            const helperText = question.hideSelectionHint
+              ? ""
+              : question.allowMultiple
+                ? "중복 가능"
+                : "1개 선택";
+            return (
+              <PreferenceQuestionSection
+                key={question.id}
+                title={question.title}
+                helperText={helperText}
+              >
+                {question.options.map((option) => (
+                  <PreferenceOptionCard
+                    key={option.id}
+                    label={option.label}
+                    selected={option.selected}
+                    onClick={() => handleToggleOption(question.id, option.id)}
+                  />
+                ))}
+              </PreferenceQuestionSection>
+            );
+          })}
         </div>
       </div>
 

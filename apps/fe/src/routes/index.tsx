@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import BreadPreferencePage from "@/pages/BreadPreferencePage";
+import HomePage from "@/pages/HomePage";
 
 export const Route = createFileRoute("/")({
-  component: BreadPreferencePage,
+  component: HomePage,
 });
