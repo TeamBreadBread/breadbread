@@ -2,7 +2,7 @@ package com.breadbread.user.dto;
 
 import com.breadbread.bakery.entity.BakeryPersonality;
 import com.breadbread.bakery.entity.BakeryUseType;
-import com.breadbread.user.entity.BreadStyle;
+import com.breadbread.bakery.entity.BreadStyle;
 import com.breadbread.user.entity.WaitingTolerance;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;

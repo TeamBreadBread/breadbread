@@ -2,6 +2,7 @@ package com.breadbread.user.entity;
 
 import com.breadbread.bakery.entity.BakeryPersonality;
 import com.breadbread.bakery.entity.BakeryUseType;
+import com.breadbread.bakery.entity.BreadStyle;
 import jakarta.persistence.*;
 import lombok.*;
 
