@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./routes/__root";
+import { Route as UserPreferenceRouteImport } from "./routes/user-preference";
 import { Route as SignupResultRouteImport } from "./routes/signup-result";
 import { Route as SignupRouteImport } from "./routes/signup";
 import { Route as ResetPasswordRouteImport } from "./routes/reset-password";
@@ -24,6 +25,11 @@ import { Route as AiSearchResultRouteImport } from "./routes/ai-search-result";
 import { Route as IndexRouteImport } from "./routes/index";
 import { Route as RouteIndexRouteImport } from "./routes/route.index";
 
+const UserPreferenceRoute = UserPreferenceRouteImport.update({
+  id: "/user-preference",
+  path: "/user-preference",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const SignupResultRoute = SignupResultRouteImport.update({
   id: "/signup-result",
   path: "/signup-result",
@@ -109,6 +115,7 @@ export interface FileRoutesByFullPath {
   "/reset-password": typeof ResetPasswordRoute;
   "/signup": typeof SignupRoute;
   "/signup-result": typeof SignupResultRoute;
+  "/user-preference": typeof UserPreferenceRoute;
   "/route/": typeof RouteIndexRoute;
 }
 export interface FileRoutesByTo {
@@ -125,6 +132,7 @@ export interface FileRoutesByTo {
   "/reset-password": typeof ResetPasswordRoute;
   "/signup": typeof SignupRoute;
   "/signup-result": typeof SignupResultRoute;
+  "/user-preference": typeof UserPreferenceRoute;
   "/route": typeof RouteIndexRoute;
 }
 export interface FileRoutesById {
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   "/reset-password": typeof ResetPasswordRoute;
   "/signup": typeof SignupRoute;
   "/signup-result": typeof SignupResultRoute;
+  "/user-preference": typeof UserPreferenceRoute;
   "/route/": typeof RouteIndexRoute;
 }
 export interface FileRouteTypes {
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
     | "/reset-password"
     | "/signup"
     | "/signup-result"
+    | "/user-preference"
     | "/route/";
   fileRoutesByTo: FileRoutesByTo;
   to:
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | "/reset-password"
     | "/signup"
     | "/signup-result"
+    | "/user-preference"
     | "/route";
   id:
     | "__root__"
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | "/reset-password"
     | "/signup"
     | "/signup-result"
+    | "/user-preference"
     | "/route/";
   fileRoutesById: FileRoutesById;
 }
@@ -209,11 +221,19 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute;
   SignupRoute: typeof SignupRoute;
   SignupResultRoute: typeof SignupResultRoute;
+  UserPreferenceRoute: typeof UserPreferenceRoute;
   RouteIndexRoute: typeof RouteIndexRoute;
 }
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
+    "/user-preference": {
+      id: "/user-preference";
+      path: "/user-preference";
+      fullPath: "/user-preference";
+      preLoaderRoute: typeof UserPreferenceRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/signup-result": {
       id: "/signup-result";
       path: "/signup-result";
@@ -329,6 +349,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   SignupResultRoute: SignupResultRoute,
+  UserPreferenceRoute: UserPreferenceRoute,
   RouteIndexRoute: RouteIndexRoute,
 };
 export const routeTree = rootRouteImport
