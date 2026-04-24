@@ -67,6 +67,7 @@ public class AuthService {
                 .build();
         userRepository.save(user);
         phoneVerificationRepository.delete(verification);
+        log.info("회원가입 완료 loginId={}", signupRequest.getLoginId());
     }
 
     @Transactional
@@ -80,7 +81,7 @@ public class AuthService {
                         loginRequest.getPassword()
                 )
         );
-
+        log.info("로그인 성공 userId={}", user.getId());
         return tokenService.issueTokens(user);
     }
 
@@ -134,6 +135,7 @@ public class AuthService {
         user.updatePassword(passwordEncoder.encode(resetPwRequest.getNewPassword()));
         userRepository.save(user);
         phoneVerificationRepository.delete(verification);
+        log.info("비밀번호 재설정 완료 userId={}", user.getId());
     }
 
     @Transactional
@@ -150,8 +152,8 @@ public class AuthService {
                 .build();
         phoneVerificationRepository.save(verification);
 
+        log.info("인증번호 발송 phone={} purpose={}", maskPhone(sendPhoneRequest.getPhone()), sendPhoneRequest.getPurpose());
         smsUtil.sendSms(sendPhoneRequest.getPhone(), code);
-        log.info("인증번호: {}", code); // 테스트용
     }
 
     @Transactional
@@ -169,6 +171,7 @@ public class AuthService {
         }
         String verificationToken = verification.verify();
         phoneVerificationRepository.save(verification);
+        log.info("휴대전화 인증 완료 phone={} purpose={}", verifyPhoneRequest.getPhone(), verifyPhoneRequest.getPurpose());
         return VerifyPhoneResponse.builder().verificationToken(verificationToken).build();
     }
 
@@ -191,5 +194,9 @@ public class AuthService {
     @Scheduled(cron = "0 0 3 * * *") // 매일 새벽 3시
     public void deleteExpiredVerifications() {
         phoneVerificationRepository.deleteByExpiredAtBefore(LocalDateTime.now());
+    }
+
+    private String maskPhone(String phone) {
+        return phone.substring(0, 3) + "****" + phone.substring(7);
     }
 }
