@@ -1,16 +1,37 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { cn } from "@/utils/cn";
 
-// 공통 버튼 기본 인터페이스. 추후 variant/size 확장 기준점으로 사용
-export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+type ButtonVariant = "primary" | "secondary";
+
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
+  variant?: ButtonVariant;
+  fullWidth?: boolean;
+}
+
+const variantClassName: Record<ButtonVariant, string> = {
+  primary: "bg-gray-800 text-gray-00",
+  secondary: "bg-gray-300 text-gray-1000",
 };
 
-const Button = ({ children, className, type = "button", ...rest }: ButtonProps) => {
+export default function Button({
+  children,
+  variant = "primary",
+  fullWidth = false,
+  className,
+  ...props
+}: ButtonProps) {
   return (
-    <button type={type} className={className} {...rest}>
+    <button
+      className={cn(
+        "font-sans text-size-6 leading-t6 font-bold tracking-2 flex h-x14 items-center justify-center rounded-r3 px-x5 py-x4 transition-colors",
+        variantClassName[variant],
+        fullWidth && "w-full",
+        className,
+      )}
+      {...props}
+    >
       {children}
     </button>
   );
-};
-
-export default Button;
+}

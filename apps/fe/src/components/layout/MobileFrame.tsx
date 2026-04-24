@@ -8,8 +8,15 @@ interface MobileFrameProps {
 
 export default function MobileFrame({ children, className }: MobileFrameProps) {
   return (
-    <div className="min-h-screen w-full bg-white">
-      <div className={cn("mx-auto min-h-screen w-full max-w-[744px]", className)}>{children}</div>
+    <div className="min-h-screen w-full bg-gray-200">
+      <div
+        className={cn(
+          "mx-auto flex min-h-screen w-full max-w-[744px] flex-col bg-white",
+          className,
+        )}
+      >
+        {children}
+      </div>
     </div>
   );
 }

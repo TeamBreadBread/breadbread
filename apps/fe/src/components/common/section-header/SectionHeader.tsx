@@ -1,37 +1,50 @@
-// components/common/section-header/SectionHeader.tsx
-// 섹션 위에 붙는 제목 + 액션(더보기 등) UI 컴포넌트
-
-// ReactNode 타입은 React에서 사용할 수 있는 모든 요소를 나타내는 타입입니다.
-// 문자열, 숫자, JSX 요소, 배열 등 다양한 형태의 자식 요소를 허용합니다.
 import type { ReactNode } from "react";
-import { Button } from "../Button";
 
-type SectionHeaderProps = {
+interface SectionHeaderProps {
   title: string;
-  actionLabel?: string;
+  rightText?: string;
+  leftIcon?: ReactNode;
+  /** `leftIcon`과 동일 용도 (홈 등에서 사용) */
   icon?: ReactNode;
+  actionLabel?: string;
   onActionClick?: () => void;
-};
+}
 
-const SectionHeader = ({ title, actionLabel, icon, onActionClick }: SectionHeaderProps) => {
+export default function SectionHeader({
+  title,
+  rightText,
+  leftIcon,
+  icon,
+  actionLabel,
+  onActionClick,
+}: SectionHeaderProps) {
+  const leading = leftIcon ?? icon;
+
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-x1">
-        {icon && <div className="flex items-center justify-center">{icon}</div>}
-        <h2 className="text-size-5 leading-t6 font-bold tracking-2 text-gray-1000">{title}</h2>
+    <div className="flex w-full items-start justify-between">
+      <div className="flex flex-1 items-start gap-x1">
+        <div className="flex items-center justify-start p-x0-5">
+          {leading ?? <div className="h-x4-5 w-x4-5 rounded-full bg-gray-400" />}
+        </div>
+
+        <h3 className="font-sans text-size-6 leading-t6 font-medium tracking-2 flex-1 text-gray-1000">
+          {title}
+        </h3>
       </div>
 
-      {actionLabel && onActionClick && (
-        <Button
+      {actionLabel && onActionClick ? (
+        <button
           type="button"
           onClick={onActionClick}
-          className="text-size-3 leading-t4 font-medium tracking-2 text-gray-700 hover:text-gray-900"
+          className="font-sans text-size-3 leading-t4 font-medium tracking-1 shrink-0 whitespace-nowrap text-gray-700"
         >
           {actionLabel}
-        </Button>
-      )}
+        </button>
+      ) : rightText ? (
+        <span className="font-sans text-size-3 leading-t4 font-medium tracking-1 cursor-default select-none whitespace-nowrap text-right text-gray-700">
+          {rightText}
+        </span>
+      ) : null}
     </div>
   );
-};
-
-export default SectionHeader;
+}
