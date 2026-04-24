@@ -1,6 +1,7 @@
 package com.breadbread.auth.dto;
 
 import com.breadbread.user.entity.User;
+import com.breadbread.user.entity.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -39,6 +40,10 @@ public class CustomUserDetails implements UserDetails {
 
     public String getNickname() {
         return user.getNickname();
+    }
+
+    public UserRole getRole() {
+        return user.getRole();
     }
 
     @Override public boolean isEnabled() { return user.isActive(); }
