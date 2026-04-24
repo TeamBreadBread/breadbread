@@ -1,4 +1,5 @@
 import { AppTopBar, BottomDoubleCTA } from "@/components/common";
+import { useNavigate } from "@tanstack/react-router";
 import { MobileFrame } from "@/components/layout";
 import { cn } from "@/utils/cn";
 import CourseTimeline from "@/components/domain/ai-course/CourseTimeline";
@@ -33,6 +34,7 @@ const places: CoursePlace[] = [
 ];
 
 export default function AISearchResultPage() {
+  const navigate = useNavigate();
   const [isSheetOpen, setIsSheetOpen] = useState(true);
   const [isSaveBannerVisible, setIsSaveBannerVisible] = useState(false);
   const hideBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -62,7 +64,7 @@ export default function AISearchResultPage() {
   return (
     <MobileFrame className="relative h-screen overflow-hidden bg-white">
       <div className="relative h-full flex-1 bg-white">
-        <AppTopBar title="AI 추천 코스" />
+        <AppTopBar title="AI 추천 코스" onBack={() => navigate({ to: "/home" })} />
         <ResultSummaryCard summary={summary} />
 
         <div className="h-[200px] w-full overflow-hidden">
@@ -78,7 +80,7 @@ export default function AISearchResultPage() {
             : "top-[304px] bottom-0 h-auto rounded-none",
         )}
       >
-        <div className="flex justify-center py-0">
+        <div className="flex justify-center py-[14px]">
           <button
             type="button"
             aria-label="바텀시트 핸들"
@@ -102,27 +104,30 @@ export default function AISearchResultPage() {
           className={cn(
             "sheet-scrollbar h-[calc(100%-24px)] overflow-y-auto",
             isSaveBannerVisible
-              ? "pb-[calc(128px+env(safe-area-inset-bottom))]"
-              : "pb-[calc(88px+env(safe-area-inset-bottom))]",
+              ? "pb-[calc(196px+env(safe-area-inset-bottom))]"
+              : "pb-[calc(140px+env(safe-area-inset-bottom))]",
           )}
         >
           <CourseTimeline places={places} />
         </div>
       </aside>
 
-      <div
-        className={cn(
-          "pointer-events-none absolute inset-x-0 bottom-[calc(72px+env(safe-area-inset-bottom))] z-20 p-2 transition-all duration-200 ease-out",
-          isSaveBannerVisible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0",
-        )}
-        aria-hidden={!isSaveBannerVisible}
-      >
-        <div className="pointer-events-auto mx-auto max-w-[744px]">
-          <SaveRouteBanner />
+      <div className="absolute inset-x-0 bottom-0 z-30">
+        <div
+          className={cn(
+            "mx-auto max-w-[744px] overflow-hidden transition-all duration-200 ease-out",
+            isSaveBannerVisible ? "max-h-[56px] opacity-100" : "max-h-0 opacity-0",
+          )}
+          aria-hidden={!isSaveBannerVisible}
+        >
+          <SaveRouteBanner onActionClick={() => navigate({ to: "/route" })} />
         </div>
+        <BottomDoubleCTA
+          leftText="다시 추천"
+          rightText="코스 저장"
+          onRightClick={handleSaveClick}
+        />
       </div>
-
-      <BottomDoubleCTA leftText="다시 추천" rightText="코스 저장" onRightClick={handleSaveClick} />
     </MobileFrame>
   );
 }

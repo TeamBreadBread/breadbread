@@ -2,9 +2,17 @@ import Skeleton from "@/components/common/skeleton/Skeleton";
 import aiStarIcon from "@/assets/icons/ai_Star.svg";
 
 // 왼쪽 큰 빵집 추천 카드
-const RecommendationHeroCard = () => {
+type RecommendationHeroCardProps = {
+  onClick?: () => void;
+};
+
+const RecommendationHeroCard = ({ onClick }: RecommendationHeroCardProps) => {
   return (
-    <div className="flex w-[177px] h-[187px] flex-1 flex-col justify-between overflow-hidden rounded-[var(--radius-r2)] bg-gray-800 px-[14px] py-4">
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex h-[187px] w-[177px] flex-1 flex-col justify-between overflow-hidden rounded-[var(--radius-r2)] bg-gray-800 px-[14px] py-4 text-left"
+    >
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-1">
           <span className="text-[16px] leading-[22px] font-bold tracking-[-0.02em] text-white">
@@ -23,7 +31,7 @@ const RecommendationHeroCard = () => {
           <Skeleton shape="circle" className="h-[56px] w-[56px]" />
         </div>
       </div>
-    </div>
+    </button>
   );
 };
 

@@ -7,13 +7,26 @@ interface AppTopBarProps {
   onBack?: () => void;
   /** Tab-style root: no back control; title is left-aligned */
   hideBack?: boolean;
+  /** Keep backward compatibility with existing feature branch usage */
+  centered?: boolean;
+  showBackButton?: boolean;
+  onBackClick?: () => void;
 }
 
-export default function AppTopBar({ title, onBack, hideBack }: AppTopBarProps) {
+export default function AppTopBar({
+  title,
+  onBack,
+  hideBack,
+  centered = false,
+  showBackButton = false,
+  onBackClick,
+}: AppTopBarProps) {
   const navigate = useNavigate();
-  const handleBack = onBack ?? (() => navigate({ to: "/" }));
+  const handleBack = onBackClick ?? onBack ?? (() => navigate({ to: "/" }));
+  const shouldHideBack = hideBack ?? false;
+  const shouldShowBackButton = !shouldHideBack || showBackButton;
 
-  if (hideBack) {
+  if (!shouldShowBackButton) {
     return (
       <header
         className={cn(
@@ -47,7 +60,8 @@ export default function AppTopBar({ title, onBack, hideBack }: AppTopBarProps) {
 
         <h1
           className={cn(
-            "font-pretendard typo-t6bold absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+            "font-pretendard typo-t6bold absolute top-1/2 -translate-y-1/2",
+            centered ? "left-1/2 -translate-x-1/2" : "left-1/2 -translate-x-1/2",
             "text-gray-1000",
           )}
         >

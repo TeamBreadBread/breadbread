@@ -13,7 +13,7 @@ export default function BottomDoubleCTA({
 }: BottomDoubleCTAProps) {
   return (
     <div className="sticky bottom-0 bg-gray-00">
-      <div className="flex gap-x2-5 border-t border-gray-300 bg-gray-00 px-x5 py-x3">
+      <div className="flex justify-center gap-x2-5 border-t border-gray-300 bg-gray-00 px-x5 py-x3">
         <button
           type="button"
           onClick={onLeftClick}

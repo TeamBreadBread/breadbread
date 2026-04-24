@@ -122,7 +122,12 @@ export default function BreadPreferencePage() {
         </div>
       </div>
 
-      <BottomDoubleCTA leftText="건너뛰기" rightText="완료" />
+      <BottomDoubleCTA
+        leftText="건너뛰기"
+        rightText="완료"
+        onLeftClick={() => navigate({ to: "/home" })}
+        onRightClick={() => navigate({ to: "/home" })}
+      />
     </MobileFrame>
   );
 }

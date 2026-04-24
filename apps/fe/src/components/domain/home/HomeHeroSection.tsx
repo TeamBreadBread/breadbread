@@ -1,8 +1,11 @@
 // “민진님, 오늘은 명란소금빵 어떠세요?”부터 추천 카드 + 빠른 메뉴 4개까지 전체
+import { useNavigate } from "@tanstack/react-router";
 import RecommendationHeroCard from "./RecommendationHeroCard";
 import QuickMenuGrid from "./QuickMenuGrid";
 
 const HomeHeroSection = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="bg-white px-5 py-[18px]">
       <div className="flex flex-col gap-4">
@@ -14,7 +17,7 @@ const HomeHeroSection = () => {
         </h1>
 
         <div className="flex gap-2">
-          <RecommendationHeroCard />
+          <RecommendationHeroCard onClick={() => navigate({ to: "/preference" })} />
           <QuickMenuGrid />
         </div>
       </div>
