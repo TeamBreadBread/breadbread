@@ -23,14 +23,17 @@ const BottomNav = () => {
       className={`fixed bottom-0 left-1/2 z-50 w-full -translate-x-1/2 border-t border-gray-300 bg-gray-00 ${APP_SHELL_MAX_WIDTH}`}
     >
       <div className="flex h-[56px] sm:h-[60px]">
-        {navItems.map((item) => (
-          <BottomNavItem
-            key={item.label}
-            label={item.label}
-            active={item.to ? pathname === item.to : false}
-            onClick={item.to ? () => navigate({ to: item.to }) : undefined}
-          />
-        ))}
+        {navItems.map((item) => {
+          const to = item.to;
+          return (
+            <BottomNavItem
+              key={item.label}
+              label={item.label}
+              active={to ? pathname === to : false}
+              onClick={to ? () => navigate({ to }) : undefined}
+            />
+          );
+        })}
       </div>
 
       <div className="relative h-[34px] bg-gray-00 md:hidden">
