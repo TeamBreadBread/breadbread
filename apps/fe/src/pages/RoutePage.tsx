@@ -33,9 +33,9 @@ const mockCourses: RouteCourse[] = [
 
 export default function RoutePage() {
   return (
-    <MobileFrame>
+    <MobileFrame className="max-w-[430px]">
       <div className="flex flex-1 flex-col bg-white">
-        <AppTopBar title="루트" />
+        <AppTopBar title="루트" hideBack />
 
         <div className="flex flex-col items-center gap-[10px] px-x5 py-x4">
           <RouteHeroCard title="코스 추천받기" description="description" />

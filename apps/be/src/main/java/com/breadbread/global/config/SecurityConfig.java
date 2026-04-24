@@ -3,6 +3,7 @@ package com.breadbread.global.config;
 import com.breadbread.auth.service.CustomUserDetailsService;
 import com.breadbread.global.filter.JwtAuthenticationFilter;
 import com.breadbread.global.jwt.JwtProvider;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,7 +44,8 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
                 "https://breadbread.app",
-                "https://breadbread.vercel.app"
+                "https://breadbread.vercel.app",
+                "http://localhost:3000"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
@@ -60,6 +62,20 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(ex -> ex
+                        // 인증 실패 (토큰 없음/만료/유효하지 않음) → 401
+                        .authenticationEntryPoint((request, response, e) -> {
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.getWriter().write("{\"success\":false,\"error\":{\"code\":\"E0002\",\"message\":\"접근 권한이 없습니다.\"}}");
+                        })
+                        // 권한 부족 (인증은 되었으나 권한 없음) → 403
+                        .accessDeniedHandler((request, response, e) -> {
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.getWriter().write("{\"success\":false,\"error\":{\"code\":\"E0003\",\"message\":\"권한이 없습니다.\"}}");
+                        })
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/**",

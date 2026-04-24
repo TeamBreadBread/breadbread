@@ -11,6 +11,7 @@ import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -20,6 +21,7 @@ import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SsoService {
     private final UserRepository userRepository;
     private final SsoAccountRepository ssoAccountRepository;
@@ -34,10 +36,13 @@ public class SsoService {
         // // 기존 가입 여부 확인, 신규면 회원 생성
         SsoAccount ssoAccount = ssoAccountRepository
                 .findByProviderAndProviderUserId(provider, userInfo.getProviderUserId())
-                .orElseGet(() -> createUser(provider, userInfo));
+                .orElseGet(() -> {
+                    log.info("소셜 로그인 신규 가입 provider={}", provider);
+                    return createUser(provider, userInfo);
+                });
 
         User user = ssoAccount.getUser();
-
+        log.info("소셜 로그인 성공 provider={} userId={}", provider, user.getId());
         return tokenService.issueTokens(user);
     }
 

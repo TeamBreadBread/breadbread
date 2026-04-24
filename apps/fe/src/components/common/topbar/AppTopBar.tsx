@@ -1,49 +1,61 @@
-import { useEffect, useRef } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
+import { cn } from "@/utils/cn";
 
 interface AppTopBarProps {
   title: string;
+  onBack?: () => void;
+  /** Tab-style root: no back control; title is left-aligned */
+  hideBack?: boolean;
 }
 
-export default function AppTopBar({ title }: AppTopBarProps) {
-  const titleRef = useRef<HTMLSpanElement | null>(null);
+export default function AppTopBar({ title, onBack, hideBack }: AppTopBarProps) {
+  const navigate = useNavigate();
+  const handleBack = onBack ?? (() => navigate({ to: "/" }));
 
-  useEffect(() => {
-    const titleEl = titleRef.current;
-    if (!titleEl) return;
-    const style = window.getComputedStyle(titleEl);
-
-    // #region agent log
-    fetch("http://127.0.0.1:7527/ingest/47cb9a83-be89-41f5-956b-1d8c6ec48e8a", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "3c747c" },
-      body: JSON.stringify({
-        sessionId: "3c747c",
-        runId: "pre-fix",
-        hypothesisId: "H5",
-        location: "AppTopBar.tsx:13",
-        message: "Route header title computed typography",
-        data: {
-          className: titleEl.className,
-          fontSize: style.fontSize,
-          fontWeight: style.fontWeight,
-          lineHeight: style.lineHeight,
-          letterSpacing: style.letterSpacing,
-          textAlign: style.textAlign,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-  }, []);
+  if (hideBack) {
+    return (
+      <header
+        className={cn(
+          "sticky top-0 z-20 flex h-14 shrink-0 items-center justify-start",
+          "border-b border-gray-300 bg-white px-x5 py-x2_5",
+        )}
+      >
+        <span
+          className={cn(
+            "w-full text-left font-pretendard typo-t6bold text-size-6 font-bold leading-t6",
+            "tracking-[-0.1px] text-gray-1000",
+          )}
+        >
+          {title}
+        </span>
+      </header>
+    );
+  }
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-start border-b border-[#eeeff1] bg-white px-x5 py-x2_5">
-      <span
-        ref={titleRef}
-        className="w-full text-left font-pretendard typo-t6bold text-size-6 font-bold leading-t6 tracking-[-0.1px] text-[#1a1c20]"
-      >
-        {title}
-      </span>
+    <header className="sticky top-0 z-10 bg-white">
+      <div className="relative flex h-14 items-center justify-between border-b border-gray-300 px-x5">
+        <button
+          type="button"
+          aria-label="뒤로가기"
+          onClick={handleBack}
+          className="flex h-9 w-9 items-center justify-center"
+        >
+          <img src={ArrowLeft} alt="" className="size-6" />
+        </button>
+
+        <h1
+          className={cn(
+            "font-pretendard typo-t6bold absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+            "text-gray-1000",
+          )}
+        >
+          {title}
+        </h1>
+
+        <div className="h-9 w-9" />
+      </div>
     </header>
   );
 }

@@ -8,88 +8,329 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as RouteIndexRouteImport } from './routes/route.index'
+import { Route as rootRouteImport } from "./routes/__root";
+import { Route as SignupResultRouteImport } from "./routes/signup-result";
+import { Route as SignupRouteImport } from "./routes/signup";
+import { Route as ResetPasswordRouteImport } from "./routes/reset-password";
+import { Route as RecommendationRouteImport } from "./routes/recommendation";
+import { Route as PreferenceRouteImport } from "./routes/preference";
+import { Route as PasswordResetSuccessRouteImport } from "./routes/password-reset-success";
+import { Route as LoginRouteImport } from "./routes/login";
+import { Route as FindPasswordRouteImport } from "./routes/find-password";
+import { Route as FindIdResultRouteImport } from "./routes/find-id-result";
+import { Route as FindIdFailureRouteImport } from "./routes/find-id-failure";
+import { Route as FindIdRouteImport } from "./routes/find-id";
+import { Route as AiSearchResultRouteImport } from "./routes/ai-search-result";
+import { Route as IndexRouteImport } from "./routes/index";
+import { Route as RouteIndexRouteImport } from "./routes/route.index";
 
+const SignupResultRoute = SignupResultRouteImport.update({
+  id: "/signup-result",
+  path: "/signup-result",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const SignupRoute = SignupRouteImport.update({
+  id: "/signup",
+  path: "/signup",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: "/reset-password",
+  path: "/reset-password",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const RecommendationRoute = RecommendationRouteImport.update({
+  id: "/recommendation",
+  path: "/recommendation",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const PreferenceRoute = PreferenceRouteImport.update({
+  id: "/preference",
+  path: "/preference",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const PasswordResetSuccessRoute = PasswordResetSuccessRouteImport.update({
+  id: "/password-reset-success",
+  path: "/password-reset-success",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+  id: "/login",
+  path: "/login",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
+const FindPasswordRoute = FindPasswordRouteImport.update({
+  id: "/find-password",
+  path: "/find-password",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const FindIdResultRoute = FindIdResultRouteImport.update({
+  id: "/find-id-result",
+  path: "/find-id-result",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const FindIdFailureRoute = FindIdFailureRouteImport.update({
+  id: "/find-id-failure",
+  path: "/find-id-failure",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const FindIdRoute = FindIdRouteImport.update({
+  id: "/find-id",
+  path: "/find-id",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const AiSearchResultRoute = AiSearchResultRouteImport.update({
+  id: "/ai-search-result",
+  path: "/ai-search-result",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const RouteIndexRoute = RouteIndexRouteImport.update({
-  id: '/route/',
-  path: '/route/',
+  id: "/route/",
+  path: "/route/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/route/': typeof RouteIndexRoute
+  "/": typeof IndexRoute;
+  "/ai-search-result": typeof AiSearchResultRoute;
+  "/find-id": typeof FindIdRoute;
+  "/find-id-failure": typeof FindIdFailureRoute;
+  "/find-id-result": typeof FindIdResultRoute;
+  "/find-password": typeof FindPasswordRoute;
+  "/login": typeof LoginRoute;
+  "/password-reset-success": typeof PasswordResetSuccessRoute;
+  "/preference": typeof PreferenceRoute;
+  "/recommendation": typeof RecommendationRoute;
+  "/reset-password": typeof ResetPasswordRoute;
+  "/signup": typeof SignupRoute;
+  "/signup-result": typeof SignupResultRoute;
+  "/route/": typeof RouteIndexRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/route': typeof RouteIndexRoute
+  "/": typeof IndexRoute;
+  "/ai-search-result": typeof AiSearchResultRoute;
+  "/find-id": typeof FindIdRoute;
+  "/find-id-failure": typeof FindIdFailureRoute;
+  "/find-id-result": typeof FindIdResultRoute;
+  "/find-password": typeof FindPasswordRoute;
+  "/login": typeof LoginRoute;
+  "/password-reset-success": typeof PasswordResetSuccessRoute;
+  "/preference": typeof PreferenceRoute;
+  "/recommendation": typeof RecommendationRoute;
+  "/reset-password": typeof ResetPasswordRoute;
+  "/signup": typeof SignupRoute;
+  "/signup-result": typeof SignupResultRoute;
+  "/route": typeof RouteIndexRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/route/': typeof RouteIndexRoute
+  __root__: typeof rootRouteImport;
+  "/": typeof IndexRoute;
+  "/ai-search-result": typeof AiSearchResultRoute;
+  "/find-id": typeof FindIdRoute;
+  "/find-id-failure": typeof FindIdFailureRoute;
+  "/find-id-result": typeof FindIdResultRoute;
+  "/find-password": typeof FindPasswordRoute;
+  "/login": typeof LoginRoute;
+  "/password-reset-success": typeof PasswordResetSuccessRoute;
+  "/preference": typeof PreferenceRoute;
+  "/recommendation": typeof RecommendationRoute;
+  "/reset-password": typeof ResetPasswordRoute;
+  "/signup": typeof SignupRoute;
+  "/signup-result": typeof SignupResultRoute;
+  "/route/": typeof RouteIndexRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/route/'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/route'
-  id: '__root__' | '/' | '/login' | '/route/'
-  fileRoutesById: FileRoutesById
+  fileRoutesByFullPath: FileRoutesByFullPath;
+  fullPaths:
+    | "/"
+    | "/ai-search-result"
+    | "/find-id"
+    | "/find-id-failure"
+    | "/find-id-result"
+    | "/find-password"
+    | "/login"
+    | "/password-reset-success"
+    | "/preference"
+    | "/recommendation"
+    | "/reset-password"
+    | "/signup"
+    | "/signup-result"
+    | "/route/";
+  fileRoutesByTo: FileRoutesByTo;
+  to:
+    | "/"
+    | "/ai-search-result"
+    | "/find-id"
+    | "/find-id-failure"
+    | "/find-id-result"
+    | "/find-password"
+    | "/login"
+    | "/password-reset-success"
+    | "/preference"
+    | "/recommendation"
+    | "/reset-password"
+    | "/signup"
+    | "/signup-result"
+    | "/route";
+  id:
+    | "__root__"
+    | "/"
+    | "/ai-search-result"
+    | "/find-id"
+    | "/find-id-failure"
+    | "/find-id-result"
+    | "/find-password"
+    | "/login"
+    | "/password-reset-success"
+    | "/preference"
+    | "/recommendation"
+    | "/reset-password"
+    | "/signup"
+    | "/signup-result"
+    | "/route/";
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  LoginRoute: typeof LoginRoute
-  RouteIndexRoute: typeof RouteIndexRoute
+  IndexRoute: typeof IndexRoute;
+  AiSearchResultRoute: typeof AiSearchResultRoute;
+  FindIdRoute: typeof FindIdRoute;
+  FindIdFailureRoute: typeof FindIdFailureRoute;
+  FindIdResultRoute: typeof FindIdResultRoute;
+  FindPasswordRoute: typeof FindPasswordRoute;
+  LoginRoute: typeof LoginRoute;
+  PasswordResetSuccessRoute: typeof PasswordResetSuccessRoute;
+  PreferenceRoute: typeof PreferenceRoute;
+  RecommendationRoute: typeof RecommendationRoute;
+  ResetPasswordRoute: typeof ResetPasswordRoute;
+  SignupRoute: typeof SignupRoute;
+  SignupResultRoute: typeof SignupResultRoute;
+  RouteIndexRoute: typeof RouteIndexRoute;
 }
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/route/': {
-      id: '/route/'
-      path: '/route'
-      fullPath: '/route/'
-      preLoaderRoute: typeof RouteIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+    "/signup-result": {
+      id: "/signup-result";
+      path: "/signup-result";
+      fullPath: "/signup-result";
+      preLoaderRoute: typeof SignupResultRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/signup": {
+      id: "/signup";
+      path: "/signup";
+      fullPath: "/signup";
+      preLoaderRoute: typeof SignupRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/reset-password": {
+      id: "/reset-password";
+      path: "/reset-password";
+      fullPath: "/reset-password";
+      preLoaderRoute: typeof ResetPasswordRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/recommendation": {
+      id: "/recommendation";
+      path: "/recommendation";
+      fullPath: "/recommendation";
+      preLoaderRoute: typeof RecommendationRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/preference": {
+      id: "/preference";
+      path: "/preference";
+      fullPath: "/preference";
+      preLoaderRoute: typeof PreferenceRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/password-reset-success": {
+      id: "/password-reset-success";
+      path: "/password-reset-success";
+      fullPath: "/password-reset-success";
+      preLoaderRoute: typeof PasswordResetSuccessRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/login": {
+      id: "/login";
+      path: "/login";
+      fullPath: "/login";
+      preLoaderRoute: typeof LoginRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/find-password": {
+      id: "/find-password";
+      path: "/find-password";
+      fullPath: "/find-password";
+      preLoaderRoute: typeof FindPasswordRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/find-id-result": {
+      id: "/find-id-result";
+      path: "/find-id-result";
+      fullPath: "/find-id-result";
+      preLoaderRoute: typeof FindIdResultRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/find-id-failure": {
+      id: "/find-id-failure";
+      path: "/find-id-failure";
+      fullPath: "/find-id-failure";
+      preLoaderRoute: typeof FindIdFailureRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/find-id": {
+      id: "/find-id";
+      path: "/find-id";
+      fullPath: "/find-id";
+      preLoaderRoute: typeof FindIdRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/ai-search-result": {
+      id: "/ai-search-result";
+      path: "/ai-search-result";
+      fullPath: "/ai-search-result";
+      preLoaderRoute: typeof AiSearchResultRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/": {
+      id: "/";
+      path: "/";
+      fullPath: "/";
+      preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/route/": {
+      id: "/route/";
+      path: "/route";
+      fullPath: "/route/";
+      preLoaderRoute: typeof RouteIndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AiSearchResultRoute: AiSearchResultRoute,
+  FindIdRoute: FindIdRoute,
+  FindIdFailureRoute: FindIdFailureRoute,
+  FindIdResultRoute: FindIdResultRoute,
+  FindPasswordRoute: FindPasswordRoute,
   LoginRoute: LoginRoute,
+  PasswordResetSuccessRoute: PasswordResetSuccessRoute,
+  PreferenceRoute: PreferenceRoute,
+  RecommendationRoute: RecommendationRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  SignupRoute: SignupRoute,
+  SignupResultRoute: SignupResultRoute,
   RouteIndexRoute: RouteIndexRoute,
-}
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();
