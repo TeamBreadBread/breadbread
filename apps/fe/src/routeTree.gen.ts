@@ -9,9 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./routes/__root";
+import { Route as RecommendationRouteImport } from "./routes/recommendation";
+import { Route as PreferenceRouteImport } from "./routes/preference";
 import { Route as LoginRouteImport } from "./routes/login";
 import { Route as IndexRouteImport } from "./routes/index";
 
+const RecommendationRoute = RecommendationRouteImport.update({
+  id: "/recommendation",
+  path: "/recommendation",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const PreferenceRoute = PreferenceRouteImport.update({
+  id: "/preference",
+  path: "/preference",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const LoginRoute = LoginRouteImport.update({
   id: "/login",
   path: "/login",
@@ -26,31 +38,53 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/login": typeof LoginRoute;
+  "/preference": typeof PreferenceRoute;
+  "/recommendation": typeof RecommendationRoute;
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
   "/login": typeof LoginRoute;
+  "/preference": typeof PreferenceRoute;
+  "/recommendation": typeof RecommendationRoute;
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   "/": typeof IndexRoute;
   "/login": typeof LoginRoute;
+  "/preference": typeof PreferenceRoute;
+  "/recommendation": typeof RecommendationRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/" | "/login";
+  fullPaths: "/" | "/login" | "/preference" | "/recommendation";
   fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/login";
-  id: "__root__" | "/" | "/login";
+  to: "/" | "/login" | "/preference" | "/recommendation";
+  id: "__root__" | "/" | "/login" | "/preference" | "/recommendation";
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   LoginRoute: typeof LoginRoute;
+  PreferenceRoute: typeof PreferenceRoute;
+  RecommendationRoute: typeof RecommendationRoute;
 }
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
+    "/recommendation": {
+      id: "/recommendation";
+      path: "/recommendation";
+      fullPath: "/recommendation";
+      preLoaderRoute: typeof RecommendationRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/preference": {
+      id: "/preference";
+      path: "/preference";
+      fullPath: "/preference";
+      preLoaderRoute: typeof PreferenceRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/login": {
       id: "/login";
       path: "/login";
@@ -71,6 +105,8 @@ declare module "@tanstack/react-router" {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  PreferenceRoute: PreferenceRoute,
+  RecommendationRoute: RecommendationRoute,
 };
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
