@@ -6,7 +6,11 @@ const showDevtools = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEVTOOLS
 export const Route = createRootRoute({
   component: () => (
     <>
-      <Outlet />
+      <div className="flex min-h-screen w-full items-center justify-center bg-gray-100">
+        <div className="w-full max-w-[744px] bg-gray-00">
+          <Outlet />
+        </div>
+      </div>
       {showDevtools && <TanStackRouterDevtools />}
     </>
   ),

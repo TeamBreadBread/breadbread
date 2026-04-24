@@ -1,15 +1,25 @@
+import { cn } from "@/utils/cn";
+
 interface AuthLinkRowProps {
   leftText: string;
   rightText: string;
+  onLeftClick?: () => void;
+  onRightClick?: () => void;
 }
 
-export default function AuthLinkRow({ leftText, rightText }: AuthLinkRowProps) {
+const linkClassName = cn(
+  "whitespace-nowrap text-size-3 font-medium leading-t4 tracking-1 text-gray-700",
+);
+
+export default function AuthLinkRow({
+  leftText,
+  rightText,
+  onLeftClick,
+  onRightClick,
+}: AuthLinkRowProps) {
   return (
     <div className="flex items-center justify-center gap-x3">
-      <button
-        type="button"
-        className="whitespace-nowrap text-size-3 font-medium leading-t4 tracking-1 text-gray-700"
-      >
+      <button type="button" onClick={onLeftClick} className={linkClassName}>
         {leftText}
       </button>
 
@@ -17,10 +27,7 @@ export default function AuthLinkRow({ leftText, rightText }: AuthLinkRowProps) {
         |
       </span>
 
-      <button
-        type="button"
-        className="whitespace-nowrap text-size-3 font-medium leading-t4 tracking-1 text-gray-700"
-      >
+      <button type="button" onClick={onRightClick} className={linkClassName}>
         {rightText}
       </button>
     </div>

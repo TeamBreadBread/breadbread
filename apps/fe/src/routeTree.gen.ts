@@ -11,9 +11,12 @@
 import { Route as rootRouteImport } from "./routes/__root";
 import { Route as SignupResultRouteImport } from "./routes/signup-result";
 import { Route as SignupRouteImport } from "./routes/signup";
+import { Route as ResetPasswordRouteImport } from "./routes/reset-password";
 import { Route as RecommendationRouteImport } from "./routes/recommendation";
 import { Route as PreferenceRouteImport } from "./routes/preference";
+import { Route as PasswordResetSuccessRouteImport } from "./routes/password-reset-success";
 import { Route as LoginRouteImport } from "./routes/login";
+import { Route as FindPasswordRouteImport } from "./routes/find-password";
 import { Route as FindIdResultRouteImport } from "./routes/find-id-result";
 import { Route as FindIdFailureRouteImport } from "./routes/find-id-failure";
 import { Route as FindIdRouteImport } from "./routes/find-id";
@@ -30,6 +33,11 @@ const SignupRoute = SignupRouteImport.update({
   path: "/signup",
   getParentRoute: () => rootRouteImport,
 } as any);
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: "/reset-password",
+  path: "/reset-password",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const RecommendationRoute = RecommendationRouteImport.update({
   id: "/recommendation",
   path: "/recommendation",
@@ -40,9 +48,19 @@ const PreferenceRoute = PreferenceRouteImport.update({
   path: "/preference",
   getParentRoute: () => rootRouteImport,
 } as any);
+const PasswordResetSuccessRoute = PasswordResetSuccessRouteImport.update({
+  id: "/password-reset-success",
+  path: "/password-reset-success",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const LoginRoute = LoginRouteImport.update({
   id: "/login",
   path: "/login",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const FindPasswordRoute = FindPasswordRouteImport.update({
+  id: "/find-password",
+  path: "/find-password",
   getParentRoute: () => rootRouteImport,
 } as any);
 const FindIdResultRoute = FindIdResultRouteImport.update({
@@ -77,9 +95,12 @@ export interface FileRoutesByFullPath {
   "/find-id": typeof FindIdRoute;
   "/find-id-failure": typeof FindIdFailureRoute;
   "/find-id-result": typeof FindIdResultRoute;
+  "/find-password": typeof FindPasswordRoute;
   "/login": typeof LoginRoute;
+  "/password-reset-success": typeof PasswordResetSuccessRoute;
   "/preference": typeof PreferenceRoute;
   "/recommendation": typeof RecommendationRoute;
+  "/reset-password": typeof ResetPasswordRoute;
   "/signup": typeof SignupRoute;
   "/signup-result": typeof SignupResultRoute;
 }
@@ -89,9 +110,12 @@ export interface FileRoutesByTo {
   "/find-id": typeof FindIdRoute;
   "/find-id-failure": typeof FindIdFailureRoute;
   "/find-id-result": typeof FindIdResultRoute;
+  "/find-password": typeof FindPasswordRoute;
   "/login": typeof LoginRoute;
+  "/password-reset-success": typeof PasswordResetSuccessRoute;
   "/preference": typeof PreferenceRoute;
   "/recommendation": typeof RecommendationRoute;
+  "/reset-password": typeof ResetPasswordRoute;
   "/signup": typeof SignupRoute;
   "/signup-result": typeof SignupResultRoute;
 }
@@ -102,9 +126,12 @@ export interface FileRoutesById {
   "/find-id": typeof FindIdRoute;
   "/find-id-failure": typeof FindIdFailureRoute;
   "/find-id-result": typeof FindIdResultRoute;
+  "/find-password": typeof FindPasswordRoute;
   "/login": typeof LoginRoute;
+  "/password-reset-success": typeof PasswordResetSuccessRoute;
   "/preference": typeof PreferenceRoute;
   "/recommendation": typeof RecommendationRoute;
+  "/reset-password": typeof ResetPasswordRoute;
   "/signup": typeof SignupRoute;
   "/signup-result": typeof SignupResultRoute;
 }
@@ -116,9 +143,12 @@ export interface FileRouteTypes {
     | "/find-id"
     | "/find-id-failure"
     | "/find-id-result"
+    | "/find-password"
     | "/login"
+    | "/password-reset-success"
     | "/preference"
     | "/recommendation"
+    | "/reset-password"
     | "/signup"
     | "/signup-result";
   fileRoutesByTo: FileRoutesByTo;
@@ -128,9 +158,12 @@ export interface FileRouteTypes {
     | "/find-id"
     | "/find-id-failure"
     | "/find-id-result"
+    | "/find-password"
     | "/login"
+    | "/password-reset-success"
     | "/preference"
     | "/recommendation"
+    | "/reset-password"
     | "/signup"
     | "/signup-result";
   id:
@@ -140,9 +173,12 @@ export interface FileRouteTypes {
     | "/find-id"
     | "/find-id-failure"
     | "/find-id-result"
+    | "/find-password"
     | "/login"
+    | "/password-reset-success"
     | "/preference"
     | "/recommendation"
+    | "/reset-password"
     | "/signup"
     | "/signup-result";
   fileRoutesById: FileRoutesById;
@@ -153,9 +189,12 @@ export interface RootRouteChildren {
   FindIdRoute: typeof FindIdRoute;
   FindIdFailureRoute: typeof FindIdFailureRoute;
   FindIdResultRoute: typeof FindIdResultRoute;
+  FindPasswordRoute: typeof FindPasswordRoute;
   LoginRoute: typeof LoginRoute;
+  PasswordResetSuccessRoute: typeof PasswordResetSuccessRoute;
   PreferenceRoute: typeof PreferenceRoute;
   RecommendationRoute: typeof RecommendationRoute;
+  ResetPasswordRoute: typeof ResetPasswordRoute;
   SignupRoute: typeof SignupRoute;
   SignupResultRoute: typeof SignupResultRoute;
 }
@@ -176,6 +215,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof SignupRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/reset-password": {
+      id: "/reset-password";
+      path: "/reset-password";
+      fullPath: "/reset-password";
+      preLoaderRoute: typeof ResetPasswordRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/recommendation": {
       id: "/recommendation";
       path: "/recommendation";
@@ -190,11 +236,25 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof PreferenceRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/password-reset-success": {
+      id: "/password-reset-success";
+      path: "/password-reset-success";
+      fullPath: "/password-reset-success";
+      preLoaderRoute: typeof PasswordResetSuccessRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/login": {
       id: "/login";
       path: "/login";
       fullPath: "/login";
       preLoaderRoute: typeof LoginRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/find-password": {
+      id: "/find-password";
+      path: "/find-password";
+      fullPath: "/find-password";
+      preLoaderRoute: typeof FindPasswordRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/find-id-result": {
@@ -241,9 +301,12 @@ const rootRouteChildren: RootRouteChildren = {
   FindIdRoute: FindIdRoute,
   FindIdFailureRoute: FindIdFailureRoute,
   FindIdResultRoute: FindIdResultRoute,
+  FindPasswordRoute: FindPasswordRoute,
   LoginRoute: LoginRoute,
+  PasswordResetSuccessRoute: PasswordResetSuccessRoute,
   PreferenceRoute: PreferenceRoute,
   RecommendationRoute: RecommendationRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   SignupResultRoute: SignupResultRoute,
 };

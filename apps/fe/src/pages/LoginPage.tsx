@@ -97,7 +97,11 @@ const LoginPage = () => {
             아이디 찾기
           </button>
           <span className="font-normal leading-t4 text-gray-500">|</span>
-          <button type="button" disabled className={footerLinkClassName}>
+          <button
+            type="button"
+            className={footerLinkClassName}
+            onClick={() => navigate({ to: "/find-password" })}
+          >
             비밀번호 찾기
           </button>
         </nav>

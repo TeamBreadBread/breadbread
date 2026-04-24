@@ -3,10 +3,12 @@ import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 
 interface AppTopBarProps {
   title: string;
+  onBack?: () => void;
 }
 
-export default function AppTopBar({ title }: AppTopBarProps) {
+export default function AppTopBar({ title, onBack }: AppTopBarProps) {
   const navigate = useNavigate();
+  const handleBack = onBack ?? (() => navigate({ to: "/" }));
 
   return (
     <header className="sticky top-0 z-10 bg-white">
@@ -14,7 +16,7 @@ export default function AppTopBar({ title }: AppTopBarProps) {
         <button
           type="button"
           aria-label="뒤로가기"
-          onClick={() => navigate({ to: "/" })}
+          onClick={handleBack}
           className="flex h-9 w-9 items-center justify-center"
         >
           <img src={ArrowLeft} alt="" className="size-6" />
