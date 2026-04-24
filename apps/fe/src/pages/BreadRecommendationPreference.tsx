@@ -31,6 +31,7 @@ const QUESTION_SECTIONS: QuestionItem[] = [
   {
     id: "breadType",
     title: "어떤 빵을 좋아하시나요?",
+    helperText: "중복 가능",
     columns: 2,
     options: [
       { label: "빵", withIcon: true },
@@ -44,18 +45,21 @@ const QUESTION_SECTIONS: QuestionItem[] = [
   {
     id: "waiting",
     title: "웨이팅이 있어도 괜찮으신가요?",
+    helperText: "",
     columns: 1,
     options: [{ label: "괜찮아요" }, { label: "피하고 싶어요" }],
   },
   {
     id: "drink",
     title: "음료수 ~~~시나요?",
+    helperText: "",
     columns: 1,
     options: [{ label: "ㅇㅇㅇㅇㅇ" }, { label: "ㅇㅇㅇㅇㅇ" }],
   },
   {
     id: "count",
     title: "총 몇 개의 빵집을 추천받고 싶으신가요?",
+    helperText: "",
     columns: 1,
     options: [],
   },

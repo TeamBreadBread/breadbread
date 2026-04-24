@@ -24,6 +24,7 @@ const QUESTION_SECTIONS: QuestionItem[] = [
   {
     id: "companion",
     title: "누구와 함께 하시나요?",
+    helperText: "",
     options: [
       { label: "혼자", withIcon: true },
       { label: "커플", withIcon: true },
@@ -34,6 +35,7 @@ const QUESTION_SECTIONS: QuestionItem[] = [
   {
     id: "budget",
     title: "예산이 어떻게 되시나요?",
+    helperText: "",
     options: [
       { label: "2만원 이하" },
       { label: "2 - 4만원" },
@@ -44,6 +46,7 @@ const QUESTION_SECTIONS: QuestionItem[] = [
   {
     id: "route",
     title: "코스 동선을 최소화 해드릴까요?",
+    helperText: "",
     columns: 1,
     options: [{ label: "최소화해주세요" }, { label: "상관없어요" }],
   },
@@ -135,7 +138,7 @@ export default function BreadPreference() {
                 role="button"
                 tabIndex={0}
                 aria-label="출발지 입력창 열기"
-                className="mx-auto flex h-[64px] w-full max-w-[362px] items-center justify-between rounded-r3 border border-gray-500 px-x4"
+                className="flex h-[64px] w-full items-center justify-between rounded-r3 border border-gray-500 px-x4"
                 onClick={openDepartureBottomSheet}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
