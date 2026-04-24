@@ -1,30 +1,38 @@
+import { Button } from "@/components/common/Button";
+import { cn } from "@/utils/cn";
+
 interface BottomCTAProps {
   text: string;
   disabled?: boolean;
   onClick?: () => void;
+  className?: string;
+  /** Legacy props from the Find PW flow; map to button styles. */
   enabledBgClassName?: string;
   disabledBgClassName?: string;
-  className?: string;
 }
 
 export default function BottomCTA({
   text,
   disabled = false,
   onClick,
+  className,
   enabledBgClassName = "bg-gray-800",
-  disabledBgClassName = "bg-gray-300",
-  className = "",
+  disabledBgClassName = "bg-gray-400",
 }: BottomCTAProps) {
   return (
-    <div className="w-full border-t border-gray-200 bg-gray-00 px-x5 py-x4">
-      <button
+    <footer className={cn("w-full border-t border-gray-300 px-x5 py-x4", className)}>
+      <Button
         type="button"
-        onClick={onClick}
         disabled={disabled}
-        className={`font-pretendard typo-t5medium w-full rounded-r3 py-x4 text-gray-00 ${disabled ? disabledBgClassName : enabledBgClassName} ${className}`}
+        onClick={onClick}
+        className={cn(
+          "h-x14 w-full rounded-r3 px-x5 py-x4",
+          "text-size-7 font-bold leading-t8 tracking-2 text-gray-00",
+          disabled ? disabledBgClassName : enabledBgClassName,
+        )}
       >
         {text}
-      </button>
-    </div>
+      </Button>
+    </footer>
   );
 }

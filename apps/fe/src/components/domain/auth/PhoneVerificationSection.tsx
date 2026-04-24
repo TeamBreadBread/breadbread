@@ -1,12 +1,13 @@
-"use client";
+﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ActionField, FieldLabel } from "@/components/common";
-import CarrierBottomSheet from "@/components/common/bottom-sheet/CarrierBottomSheet";
+import BottomSheet from "@/components/common/bottom-sheet/CarrierBottomSheet";
+import { cn } from "@/utils/cn";
 
 interface PhoneVerificationSectionProps {
   label?: string;
-  onVerificationChange?: (isVerified: boolean) => void;
+  onVerificationChange?: (verified: boolean) => void;
 }
 
 const CARRIER_OPTIONS = [
@@ -22,94 +23,101 @@ export default function PhoneVerificationSection({
   label = "휴대폰 번호",
   onVerificationChange,
 }: PhoneVerificationSectionProps) {
-  const [isCodeRequested, setIsCodeRequested] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
   const [selectedCarrier, setSelectedCarrier] = useState("SKT");
-  const [isCarrierSheetOpen, setIsCarrierSheetOpen] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
-  const [showPhoneError, setShowPhoneError] = useState(false);
+  const [isCodeRequested, setIsCodeRequested] = useState(false);
+  const [isCarrierSheetOpen, setIsCarrierSheetOpen] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
 
-  const isPhoneNumberValid = /^01[016789]\d{7,8}$/.test(phoneNumber);
-  const shouldShowPhoneError = showPhoneError && phoneNumber.length > 0 && !isPhoneNumberValid;
+  const digits = phoneNumber.replace(/\D/g, "");
+  const isPhoneNumberValid = /^01[016789]\d{7,8}$/.test(digits);
+  const isPhoneNumberFilled = digits.length > 0;
+  const isPhoneNumberInvalid = isPhoneNumberFilled && !isPhoneNumberValid;
 
-  const handleCodeRequest = () => {
-    setShowPhoneError(true);
-    onVerificationChange?.(false);
-    if (!isPhoneNumberValid) {
-      setIsCodeRequested(false);
-      setIsVerified(false);
-      return;
-    }
+  const phoneActionClassName = cn(isPhoneNumberValid && "text-green-700");
+  const phoneContainerClassName = cn(
+    isPhoneNumberValid && "border-green-700",
+    isPhoneNumberInvalid && "border-red-700",
+  );
+  const phoneInputClassName = cn(
+    isPhoneNumberValid && "text-green-700",
+    isPhoneNumberInvalid && "text-red-700 placeholder:text-red-700",
+  );
 
-    setIsVerified(false);
-    setIsCodeRequested(true);
-  };
+  const verifyActionClassName = cn(
+    isVerified && "bg-gray-200 text-gray-500",
+    !isVerified && isCodeRequested && "text-gray-800",
+  );
+  const verifyContainerClassName = cn(isVerified && "border-gray-500 bg-gray-200");
 
-  const handleVerify = () => {
-    setIsVerified(true);
-    onVerificationChange?.(true);
-  };
+  useEffect(() => {
+    onVerificationChange?.(isVerified);
+  }, [isVerified, onVerificationChange]);
 
   return (
-    <section className="flex flex-col gap-x1_5">
-      <FieldLabel>{label}</FieldLabel>
+    <section className="flex flex-col gap-x1-5">
+      <FieldLabel className="text-gray-800">{label}</FieldLabel>
 
-      <div className="flex flex-col gap-[6px]">
-        {/* 통신사 선택 */}
+      <div className="flex flex-col gap-x1-5">
         <button
           type="button"
           onClick={() => setIsCarrierSheetOpen(true)}
-          className="h-14 w-full rounded-r3 border border-gray-300 bg-gray-00 px-x4 text-left text-size-4 text-gray-1000 outline-none"
+          className="h-14 w-full rounded-r3 border border-gray-300 bg-gray-00 px-x4 py-x3 text-left text-size-4 font-normal leading-t5 tracking-1 text-gray-1000"
         >
           {selectedCarrier}
         </button>
-
-        {/* 휴대폰 번호 + 인증번호 받기 */}
+        <BottomSheet
+          title="통신사를 선택해주세요"
+          options={CARRIER_OPTIONS}
+          selectedValue={selectedCarrier}
+          onSelect={setSelectedCarrier}
+          isOpen={isCarrierSheetOpen}
+          onClose={() => setIsCarrierSheetOpen(false)}
+        />
         <ActionField
           placeholder="01012341234"
           actionText="인증번호 받기"
           value={phoneNumber}
           onChange={(value) => {
-            setPhoneNumber(value);
-            setShowPhoneError(true);
+            setPhoneNumber(value.replace(/\D/g, ""));
             setIsCodeRequested(false);
             setIsVerified(false);
-            setVerificationCode("");
-            onVerificationChange?.(false);
           }}
-          onAction={handleCodeRequest}
+          onActionClick={() => {
+            if (!isPhoneNumberValid) return;
+            setIsCodeRequested(true);
+            setIsVerified(false);
+            setVerificationCode("");
+          }}
+          actionDisabled={!isPhoneNumberValid}
+          actionClassName={phoneActionClassName}
+          containerClassName={phoneContainerClassName}
+          inputClassName={phoneInputClassName}
         />
-        {shouldShowPhoneError && (
-          <p className="font-pretendard typo-t3regular px-x2 text-red-700">
-            올바른 전화번호를 입력해주세요.
-          </p>
-        )}
+        {isPhoneNumberInvalid ? (
+          <p className="t3regular red_700 px-x2">올바른 전화번호를 입력해주세요.</p>
+        ) : null}
 
-        {/* 인증번호 + 인증하기 */}
         <ActionField
           placeholder="인증번호를 입력해주세요"
           actionText="인증하기"
           value={verificationCode}
-          onChange={setVerificationCode}
-          readOnly={!isCodeRequested}
-          inputBgClassName={isVerified ? "bg-gray-400" : "bg-gray-00"}
+          onChange={(value) => setVerificationCode(value.replace(/\D/g, ""))}
+          onActionClick={() => {
+            if (isCodeRequested && digits && verificationCode.trim()) {
+              setIsVerified(true);
+            }
+          }}
           disabled={isVerified}
-          onAction={handleVerify}
+          actionDisabled={isVerified}
+          type="text"
+          inputClassName={isVerified ? "text-gray-500 placeholder:text-gray-500" : undefined}
+          actionClassName={verifyActionClassName}
+          containerClassName={verifyContainerClassName}
         />
-        {isVerified && (
-          <p className="font-pretendard typo-t3regular px-x2 text-green-700">인증되었습니다.</p>
-        )}
+        {isVerified ? <p className="t3regular green_700 px-x2">인증되었습니다.</p> : null}
       </div>
-
-      <CarrierBottomSheet
-        title="통신사를 선택해주세요"
-        options={CARRIER_OPTIONS}
-        selectedValue={selectedCarrier}
-        onSelect={setSelectedCarrier}
-        isOpen={isCarrierSheetOpen}
-        onClose={() => setIsCarrierSheetOpen(false)}
-      />
     </section>
   );
 }

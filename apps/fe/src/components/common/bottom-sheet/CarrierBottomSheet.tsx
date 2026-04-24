@@ -1,65 +1,97 @@
-interface CarrierOption {
+import { cn } from "@/utils/cn";
+
+interface BottomSheetOption {
   label: string;
   value: string;
 }
 
-interface CarrierBottomSheetProps {
+interface BottomSheetProps {
   title: string;
-  options: CarrierOption[];
-  selectedValue: string;
-  onSelect: (value: string) => void;
-  isOpen: boolean;
-  onClose: () => void;
+  options: BottomSheetOption[];
+  selectedValue?: string;
+  onSelect?: (value: string) => void;
+  className?: string;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-export default function CarrierBottomSheet({
+export default function BottomSheet({
   title,
   options,
   selectedValue,
   onSelect,
-  isOpen,
+  className,
+  isOpen = false,
   onClose,
-}: CarrierBottomSheetProps) {
-  if (!isOpen) {
-    return null;
-  }
+}: BottomSheetProps) {
+  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40">
-      <button
-        type="button"
-        aria-label="닫기"
-        className="absolute inset-0 cursor-default"
-        onClick={onClose}
-      />
+    <>
+      <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} role="presentation" />
 
-      <div className="relative z-10 w-full max-w-[744px] rounded-t-[20px] bg-gray-00 px-x5 pb-x5 pt-x4">
-        <div className="mb-x4 flex items-center justify-center">
-          <div className="h-1.5 w-10 rounded-full bg-gray-300" />
-        </div>
+      <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center">
+        <section
+          className={cn(
+            "max-h-[500px] w-full max-w-[744px] overflow-hidden rounded-t-r6 bg-gray-00",
+            className,
+          )}
+          role="dialog"
+          aria-modal="true"
+          aria-label={title}
+        >
+          <div className="flex flex-col gap-x3">
+            <div className="flex h-x6 items-center justify-center">
+              <div className="h-x1 w-x9 rounded-full bg-gray-400" />
+            </div>
 
-        <h2 className="font-pretendard typo-t6medium text-gray-1000">{title}</h2>
+            <div className="px-x5">
+              <h2 className="font-pretendard typo-t7bold text-gray-1000">{title}</h2>
+            </div>
 
-        <div className="mt-x4 flex flex-col gap-x1">
-          {options.map((option) => {
-            const isSelected = option.value === selectedValue;
+            <div className="px-x5 pb-x3">
+              <ul className="flex flex-col">
+                {options.map((option) => {
+                  const isSelected = selectedValue === option.value;
 
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onSelect(option.value);
-                  onClose();
-                }}
-                className={`font-pretendard typo-t5regular w-full rounded-r3 px-x4 py-x3 text-left ${isSelected ? "bg-gray-200 text-gray-1000" : "bg-gray-00 text-gray-700"}`}
-              >
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
+                  return (
+                    <li key={option.value} className="border-b border-gray-200 last:border-b-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onSelect?.(option.value);
+                          onClose?.();
+                        }}
+                        className="flex w-full items-center justify-between py-x4 text-left"
+                        aria-pressed={isSelected}
+                      >
+                        <span className="font-pretendard typo-t6regular text-gray-1000">
+                          {option.label}
+                        </span>
+
+                        <div
+                          className={cn(
+                            "flex h-x6 w-x6 items-center justify-center rounded-full border",
+                            isSelected
+                              ? "border-gray-800 bg-gray-800"
+                              : "border-gray-400 bg-gray-00",
+                          )}
+                        >
+                          {isSelected ? (
+                            <div className="h-x2 w-x2 rounded-full bg-gray-00" />
+                          ) : null}
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+
+            <div className="h-[33px]" />
+          </div>
+        </section>
       </div>
-    </div>
+    </>
   );
 }

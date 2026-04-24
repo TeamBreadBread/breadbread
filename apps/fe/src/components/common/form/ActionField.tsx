@@ -1,40 +1,62 @@
+﻿import type { InputHTMLAttributes } from "react";
+import { cn } from "@/utils/cn";
+
 interface ActionFieldProps {
-  placeholder?: string;
-  value?: string;
+  placeholder: string;
   actionText: string;
-  disabled?: boolean;
-  readOnly?: boolean;
-  inputBgClassName?: string;
+  value?: string;
   onChange?: (value: string) => void;
-  onAction?: () => void;
+  onActionClick?: () => void;
+  disabled?: boolean;
+  actionDisabled?: boolean;
+  containerClassName?: string;
+  inputClassName?: string;
+  actionClassName?: string;
+  type?: InputHTMLAttributes<HTMLInputElement>["type"];
 }
 
 export default function ActionField({
   placeholder,
-  value,
   actionText,
-  disabled = false,
-  readOnly = false,
-  inputBgClassName = "bg-gray-00",
+  value,
   onChange,
-  onAction,
+  onActionClick,
+  disabled = false,
+  actionDisabled = false,
+  containerClassName,
+  inputClassName,
+  actionClassName,
+  type = "text",
 }: ActionFieldProps) {
   return (
-    <div className="relative w-full">
+    <div
+      className={cn(
+        "flex h-x14 items-center gap-x2 overflow-hidden rounded-r3 border px-x5 py-x4",
+        disabled ? "border-gray-200 bg-gray-200" : "border-gray-400 bg-white",
+        containerClassName,
+      )}
+    >
       <input
-        type="text"
-        placeholder={placeholder}
+        type={type}
         value={value}
-        onChange={(e) => onChange?.(e.target.value)}
+        onChange={(event) => onChange?.(event.target.value)}
+        placeholder={placeholder}
         disabled={disabled}
-        readOnly={readOnly}
-        className={`font-pretendard typo-t5regular w-full rounded-r3 border border-gray-300 px-x4 py-x3 pr-x20 text-gray-1000 placeholder-gray-600 outline-none focus:border-gray-300 focus:ring-0 ${inputBgClassName} ${disabled ? "disabled:bg-gray-100" : ""}`}
+        className={cn(
+          "font-pretendard typo-t5regular flex-1 bg-transparent outline-none",
+          value ? "text-gray-1000" : "text-gray-500",
+          inputClassName,
+        )}
       />
+
       <button
         type="button"
-        onClick={onAction}
-        disabled={disabled}
-        className="absolute right-x4 top-1/2 -translate-y-1/2 cursor-default select-none font-pretendard typo-t5regular whitespace-nowrap bg-transparent px-0 py-0 text-gray-700 disabled:text-gray-500"
+        onClick={onActionClick}
+        disabled={actionDisabled}
+        className={cn(
+          "font-pretendard typo-t4bold whitespace-nowrap text-gray-500",
+          actionClassName,
+        )}
       >
         {actionText}
       </button>

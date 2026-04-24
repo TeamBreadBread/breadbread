@@ -17,7 +17,9 @@ export default function AuthIntroSection({
         {title}
       </h1>
 
-      <p className="w-full text-center typo-t5regular text-gray-700">{description}</p>
+      <p className="w-full text-center text-size-4 font-normal leading-t5 tracking-1 text-gray-700">
+        {description}
+      </p>
     </section>
   );
 }
