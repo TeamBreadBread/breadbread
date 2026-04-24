@@ -1,5 +1,6 @@
 package com.breadbread.global.dto;
 
+import com.breadbread.global.exception.ErrorCode;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,6 +30,13 @@ public class ApiResponse<T> {
         ApiResponse<T> response = new ApiResponse<>();
         response.success = false;
         response.error = new ErrorInfo(code, message);
+        return response;
+    }
+
+    public static <T> ApiResponse<T> fail(ErrorCode errorCode) {
+        ApiResponse<T> response = new ApiResponse<>();
+        response.success = false;
+        response.error = new ErrorInfo(errorCode.getCode(), errorCode.getMessage());
         return response;
     }
 }

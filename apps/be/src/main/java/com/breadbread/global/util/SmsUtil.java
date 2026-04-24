@@ -1,6 +1,7 @@
 package com.breadbread.global.util;
 
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import net.nurigo.sdk.NurigoApp;
 import net.nurigo.sdk.message.model.Message;
 import net.nurigo.sdk.message.request.SingleMessageSendingRequest;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class SmsUtil {
     @Value("${coolsms.api.key}")
     private String apiKey;
@@ -34,6 +36,17 @@ public class SmsUtil {
         message.setTo(receiver);
         message.setText("[빵빵] 본인 확인 인증번호 : [" + code + "]");
 
-        return messageService.sendOne(new SingleMessageSendingRequest(message));
+        try {
+            SingleMessageSentResponse response = messageService.sendOne(new SingleMessageSendingRequest(message));
+            log.info("SMS 발송 성공 phone={}", maskPhone(receiver));
+            return response;
+        } catch (Exception e) {
+            log.error("SMS 발송 실패 phone={} error={}", maskPhone(receiver), e.getMessage());
+            throw e;
+        }
+    }
+
+    private String maskPhone(String phone) {
+        return phone.substring(0, 3) + "****" + phone.substring(7);
     }
 }

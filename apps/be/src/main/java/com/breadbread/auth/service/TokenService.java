@@ -9,6 +9,7 @@ import com.breadbread.global.jwt.JwtProvider;
 import com.breadbread.user.entity.User;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -18,6 +19,7 @@ import java.util.Base64;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TokenService {
     private final JwtProvider jwtProvider;
     private final RefreshTokenRepository refreshTokenRepository;
@@ -37,7 +39,7 @@ public class TokenService {
                 .orElseThrow(() -> new CustomException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
 
         refreshTokenRepository.delete(token);
-
+        log.info("토큰 재발급 userId={}", token.getUser().getId());
         return generateTokens(token.getUser());
     }
 
@@ -63,6 +65,7 @@ public class TokenService {
         String extractedUserId = jwtProvider.getUserIdFromAccessToken(accessToken);
         Long userId = Long.parseLong(extractedUserId);
         refreshTokenRepository.deleteByUser_Id(userId);
+        log.info("로그아웃 userId={}", userId);
     }
 
     private String hashToken(String token) {

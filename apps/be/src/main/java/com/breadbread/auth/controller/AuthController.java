@@ -3,15 +3,14 @@ package com.breadbread.auth.controller;
 import com.breadbread.auth.dto.*;
 import com.breadbread.auth.entity.SsoProvider;
 import com.breadbread.auth.service.AuthService;
-import com.breadbread.auth.dto.SignupRequest;
-import com.breadbread.auth.dto.CheckIdResponse;
+import com.breadbread.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import com.breadbread.global.dto.ApiResponse;
 
 @Tag(name = "인증")
 @RestController
@@ -31,13 +30,14 @@ public class AuthController {
 
     @Operation(summary = "로그인")
     @PostMapping("/login")
-    public ApiResponse<TokenResponse> login(@Valid @RequestBody LoginRequest request){
+    public ApiResponse<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
         return ApiResponse.ok(authService.login(request));
     }
 
     @Operation(summary = "로그아웃")
     @PostMapping("/logout")
-    public ApiResponse<Void> logout(@RequestHeader("Authorization") String bearerToken) {
+    public ApiResponse<Void> logout(
+            @Parameter(description = "Bearer {accessToken}") @RequestHeader("Authorization") String bearerToken) {
         String accessToken = bearerToken.substring(7);
         authService.logout(accessToken);
         return ApiResponse.ok();
@@ -51,7 +51,8 @@ public class AuthController {
 
     @Operation(summary = "아이디 중복 확인")
     @GetMapping("/check-id")
-    public ApiResponse<CheckIdResponse> checkId(@RequestParam String loginId) {
+    public ApiResponse<CheckIdResponse> checkId(
+            @Parameter(description = "중복 확인할 아이디", example = "breaduser123") @RequestParam String loginId) {
         return ApiResponse.ok(authService.checkId(loginId));
     }
 
@@ -90,8 +91,9 @@ public class AuthController {
 
     @Operation(summary = "소셜 로그인")
     @PostMapping("/social/{provider}")
-    public ApiResponse<TokenResponse> socialLogin(@PathVariable SsoProvider provider,
-                                                  @RequestBody SocialLoginRequest request) {
+    public ApiResponse<TokenResponse> socialLogin(
+            @Parameter(description = "소셜 로그인 제공자 (KAKAO, NAVER, GOOGLE)") @PathVariable SsoProvider provider,
+            @RequestBody SocialLoginRequest request) {
         return ApiResponse.ok(authService.socialLogin(provider, request));
     }
 }
