@@ -22,6 +22,7 @@ import { Route as FindIdFailureRouteImport } from "./routes/find-id-failure";
 import { Route as FindIdRouteImport } from "./routes/find-id";
 import { Route as AiSearchResultRouteImport } from "./routes/ai-search-result";
 import { Route as IndexRouteImport } from "./routes/index";
+import { Route as RouteIndexRouteImport } from "./routes/route.index";
 
 const SignupResultRoute = SignupResultRouteImport.update({
   id: "/signup-result",
@@ -88,6 +89,11 @@ const IndexRoute = IndexRouteImport.update({
   path: "/",
   getParentRoute: () => rootRouteImport,
 } as any);
+const RouteIndexRoute = RouteIndexRouteImport.update({
+  id: "/route/",
+  path: "/route/",
+  getParentRoute: () => rootRouteImport,
+} as any);
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   "/reset-password": typeof ResetPasswordRoute;
   "/signup": typeof SignupRoute;
   "/signup-result": typeof SignupResultRoute;
+  "/route/": typeof RouteIndexRoute;
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   "/reset-password": typeof ResetPasswordRoute;
   "/signup": typeof SignupRoute;
   "/signup-result": typeof SignupResultRoute;
+  "/route": typeof RouteIndexRoute;
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
@@ -134,6 +142,7 @@ export interface FileRoutesById {
   "/reset-password": typeof ResetPasswordRoute;
   "/signup": typeof SignupRoute;
   "/signup-result": typeof SignupResultRoute;
+  "/route/": typeof RouteIndexRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
@@ -150,7 +159,8 @@ export interface FileRouteTypes {
     | "/recommendation"
     | "/reset-password"
     | "/signup"
-    | "/signup-result";
+    | "/signup-result"
+    | "/route/";
   fileRoutesByTo: FileRoutesByTo;
   to:
     | "/"
@@ -165,7 +175,8 @@ export interface FileRouteTypes {
     | "/recommendation"
     | "/reset-password"
     | "/signup"
-    | "/signup-result";
+    | "/signup-result"
+    | "/route";
   id:
     | "__root__"
     | "/"
@@ -180,7 +191,8 @@ export interface FileRouteTypes {
     | "/recommendation"
     | "/reset-password"
     | "/signup"
-    | "/signup-result";
+    | "/signup-result"
+    | "/route/";
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
@@ -197,6 +209,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute;
   SignupRoute: typeof SignupRoute;
   SignupResultRoute: typeof SignupResultRoute;
+  RouteIndexRoute: typeof RouteIndexRoute;
 }
 
 declare module "@tanstack/react-router" {
@@ -292,6 +305,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof IndexRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/route/": {
+      id: "/route/";
+      path: "/route";
+      fullPath: "/route/";
+      preLoaderRoute: typeof RouteIndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
@@ -309,6 +329,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   SignupResultRoute: SignupResultRoute,
+  RouteIndexRoute: RouteIndexRoute,
 };
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
