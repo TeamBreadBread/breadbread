@@ -8,106 +8,182 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as SignupResultRouteImport } from './routes/signup-result'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as rootRouteImport } from "./routes/__root";
+import { Route as SignupResultRouteImport } from "./routes/signup-result";
+import { Route as SignupRouteImport } from "./routes/signup";
+import { Route as RecommendationRouteImport } from "./routes/recommendation";
+import { Route as PreferenceRouteImport } from "./routes/preference";
+import { Route as LoginRouteImport } from "./routes/login";
+import { Route as AiSearchResultRouteImport } from "./routes/ai-search-result";
+import { Route as IndexRouteImport } from "./routes/index";
 
 const SignupResultRoute = SignupResultRouteImport.update({
-  id: '/signup-result',
-  path: '/signup-result',
+  id: "/signup-result",
+  path: "/signup-result",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
+  id: "/signup",
+  path: "/signup",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
+const RecommendationRoute = RecommendationRouteImport.update({
+  id: "/recommendation",
+  path: "/recommendation",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const PreferenceRoute = PreferenceRouteImport.update({
+  id: "/preference",
+  path: "/preference",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+  id: "/login",
+  path: "/login",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
+const AiSearchResultRoute = AiSearchResultRouteImport.update({
+  id: "/ai-search-result",
+  path: "/ai-search-result",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/signup': typeof SignupRoute
-  '/signup-result': typeof SignupResultRoute
+  "/": typeof IndexRoute;
+  "/ai-search-result": typeof AiSearchResultRoute;
+  "/login": typeof LoginRoute;
+  "/preference": typeof PreferenceRoute;
+  "/recommendation": typeof RecommendationRoute;
+  "/signup": typeof SignupRoute;
+  "/signup-result": typeof SignupResultRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/signup': typeof SignupRoute
-  '/signup-result': typeof SignupResultRoute
+  "/": typeof IndexRoute;
+  "/ai-search-result": typeof AiSearchResultRoute;
+  "/login": typeof LoginRoute;
+  "/preference": typeof PreferenceRoute;
+  "/recommendation": typeof RecommendationRoute;
+  "/signup": typeof SignupRoute;
+  "/signup-result": typeof SignupResultRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/signup': typeof SignupRoute
-  '/signup-result': typeof SignupResultRoute
+  __root__: typeof rootRouteImport;
+  "/": typeof IndexRoute;
+  "/ai-search-result": typeof AiSearchResultRoute;
+  "/login": typeof LoginRoute;
+  "/preference": typeof PreferenceRoute;
+  "/recommendation": typeof RecommendationRoute;
+  "/signup": typeof SignupRoute;
+  "/signup-result": typeof SignupResultRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/signup' | '/signup-result'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/signup' | '/signup-result'
-  id: '__root__' | '/' | '/login' | '/signup' | '/signup-result'
-  fileRoutesById: FileRoutesById
+  fileRoutesByFullPath: FileRoutesByFullPath;
+  fullPaths:
+    | "/"
+    | "/ai-search-result"
+    | "/login"
+    | "/preference"
+    | "/recommendation"
+    | "/signup"
+    | "/signup-result";
+  fileRoutesByTo: FileRoutesByTo;
+  to:
+    | "/"
+    | "/ai-search-result"
+    | "/login"
+    | "/preference"
+    | "/recommendation"
+    | "/signup"
+    | "/signup-result";
+  id:
+    | "__root__"
+    | "/"
+    | "/ai-search-result"
+    | "/login"
+    | "/preference"
+    | "/recommendation"
+    | "/signup"
+    | "/signup-result";
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  LoginRoute: typeof LoginRoute
-  SignupRoute: typeof SignupRoute
-  SignupResultRoute: typeof SignupResultRoute
+  IndexRoute: typeof IndexRoute;
+  AiSearchResultRoute: typeof AiSearchResultRoute;
+  LoginRoute: typeof LoginRoute;
+  PreferenceRoute: typeof PreferenceRoute;
+  RecommendationRoute: typeof RecommendationRoute;
+  SignupRoute: typeof SignupRoute;
+  SignupResultRoute: typeof SignupResultRoute;
 }
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    '/signup-result': {
-      id: '/signup-result'
-      path: '/signup-result'
-      fullPath: '/signup-result'
-      preLoaderRoute: typeof SignupResultRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+    "/signup-result": {
+      id: "/signup-result";
+      path: "/signup-result";
+      fullPath: "/signup-result";
+      preLoaderRoute: typeof SignupResultRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/signup": {
+      id: "/signup";
+      path: "/signup";
+      fullPath: "/signup";
+      preLoaderRoute: typeof SignupRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/recommendation": {
+      id: "/recommendation";
+      path: "/recommendation";
+      fullPath: "/recommendation";
+      preLoaderRoute: typeof RecommendationRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/preference": {
+      id: "/preference";
+      path: "/preference";
+      fullPath: "/preference";
+      preLoaderRoute: typeof PreferenceRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/login": {
+      id: "/login";
+      path: "/login";
+      fullPath: "/login";
+      preLoaderRoute: typeof LoginRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/ai-search-result": {
+      id: "/ai-search-result";
+      path: "/ai-search-result";
+      fullPath: "/ai-search-result";
+      preLoaderRoute: typeof AiSearchResultRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/": {
+      id: "/";
+      path: "/";
+      fullPath: "/";
+      preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AiSearchResultRoute: AiSearchResultRoute,
   LoginRoute: LoginRoute,
+  PreferenceRoute: PreferenceRoute,
+  RecommendationRoute: RecommendationRoute,
   SignupRoute: SignupRoute,
   SignupResultRoute: SignupResultRoute,
-}
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();
