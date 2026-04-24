@@ -1,9 +1,9 @@
 import { AppTopBar } from "@/components/common";
-import BottomNav from "@/components/common/navigation/BottomNav";
 import AccountActionSection from "@/components/domain/account/AccountActionSection";
 import AccountInfoSection from "@/components/domain/account/AccountInfoSection";
 import AccountProfileSection from "@/components/domain/account/AccountProfileSection";
 import type { AccountInfo } from "@/components/domain/account/types";
+import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -31,7 +31,7 @@ export default function AccountSettingsPage() {
           title="계정 설정"
           centered
           showBackButton
-          onBackClick={() => navigate({ to: "/" })}
+          onBackClick={() => navigate({ to: "/my" })}
         />
 
         <div className="flex flex-1 flex-col gap-[10px]">
@@ -45,14 +45,7 @@ export default function AccountSettingsPage() {
         </div>
       </div>
 
-      <BottomNav
-        items={[
-          { label: "홈" },
-          { label: "루트" },
-          { label: "빵터" },
-          { label: "MY", active: true },
-        ]}
-      />
+      <BottomNav />
     </MobileFrame>
   );
 }

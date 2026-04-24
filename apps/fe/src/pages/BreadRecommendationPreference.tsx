@@ -173,7 +173,7 @@ export default function BreadRecommendationPreference() {
 
           <RecommendationCTAButton
             icon={<RecommendationIcon />}
-            onClick={() => navigate({ to: "/" })}
+            onClick={() => navigate({ to: "/ai-search-result" })}
           >
             추천 받기
           </RecommendationCTAButton>
