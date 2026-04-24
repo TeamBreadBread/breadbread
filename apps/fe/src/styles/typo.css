@@ -1,0 +1,8 @@
+.typo-t8bold {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--leading-t8);
+  font-size: var(--font-size-7);
+  letter-spacing: var(--tracking-2);
+  /* paragraphSpacing, paragraphIndent, textCase, textDecoration은 기본값이므로 생략 */
+}

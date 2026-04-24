@@ -1,0 +1,17 @@
+# Gradle 캐시/빌드 결과물
+.gradle
+build
+out
+# 테스트
+src/test
+# IDE
+.idea
+*.iml
+.DS_Store
+# Git
+.git
+# 로그
+*.log
+# 환경변수
+.env
+.env.*

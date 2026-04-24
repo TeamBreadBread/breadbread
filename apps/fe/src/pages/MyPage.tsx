@@ -26,7 +26,7 @@ export default function MyPage() {
   return (
     <MobileFrame>
       <div className="flex flex-1 flex-col bg-[#f3f4f5]">
-        <AppTopBar title="MY" />
+        <AppTopBar title="MY" hideBack />
 
         <div className="flex flex-1 flex-col pb-x5">
           <div className="bg-white">

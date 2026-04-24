@@ -3,10 +3,7 @@ package com.breadbread.auth.entity;
 import com.breadbread.global.entity.BaseEntity;
 import com.breadbread.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(uniqueConstraints = {
@@ -14,13 +11,16 @@ import lombok.NoArgsConstructor;
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@ToString(exclude = "user")
 public class SsoAccount extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private SsoProvider provider;
+    @Column(nullable = false)
     private String providerUserId;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
