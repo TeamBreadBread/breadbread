@@ -22,9 +22,11 @@ export default function PreferenceQuestionSection({
             <h2 className="font-pretendard typo-t6medium text-[#1a1c20]">{question.title}</h2>
           </div>
 
-          <span className="font-pretendard typo-t4medium whitespace-nowrap text-[#868b94]">
-            {question.allowMultiple ? "중복 가능" : "1개 선택"}
-          </span>
+          {!question.hideSelectionHint && (
+            <span className="font-pretendard typo-t4medium whitespace-nowrap text-[#868b94]">
+              {question.allowMultiple ? "중복 가능" : "1개 선택"}
+            </span>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-[9px]">

@@ -27,7 +27,7 @@ export default function BottomDoubleCTA({
       <button
         type="button"
         onClick={onRightClick}
-        className="h-14 rounded-r3 bg-[#1a1c20] font-pretendard typo-t5medium text-white"
+        className="h-14 rounded-r3 bg-gray-800 font-pretendard typo-t5medium text-white"
       >
         {rightText}
       </button>

@@ -8,5 +8,6 @@ export interface PreferenceQuestion {
   id: string;
   title: string;
   allowMultiple?: boolean;
+  hideSelectionHint?: boolean;
   options: PreferenceOption[];
 }

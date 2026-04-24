@@ -45,6 +45,7 @@ const initialQuestions: PreferenceQuestion[] = [
     id: "waiting",
     title: "웨이팅 허용도",
     allowMultiple: true,
+    hideSelectionHint: true,
     options: [
       { id: "no-wait", label: "웨이팅 싫음" },
       { id: "ok", label: "상관 없음" },
