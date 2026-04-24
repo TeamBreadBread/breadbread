@@ -1,9 +1,9 @@
 import { AppTopBar } from "@/components/common";
-import BottomNav from "@/components/common/navigation/BottomNav";
 import MyLevelCard from "@/components/domain/my/MyLevelCard";
 import MyMenuSection from "@/components/domain/my/MyMenuSection";
 import MyProfileCard from "@/components/domain/my/MyProfileCard";
 import type { MyMenu } from "@/components/domain/my/types";
+import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -26,7 +26,7 @@ export default function MyPage() {
   return (
     <MobileFrame>
       <div className="flex flex-1 flex-col bg-[#f3f4f5]">
-        <AppTopBar title="MY" hideBack />
+        <AppTopBar title="MY" onBack={() => navigate({ to: "/home" })} />
 
         <div className="flex flex-1 flex-col pb-x5">
           <div className="bg-white">
@@ -60,14 +60,7 @@ export default function MyPage() {
         </div>
       </div>
 
-      <BottomNav
-        items={[
-          { label: "홈" },
-          { label: "루트" },
-          { label: "빵터" },
-          { label: "MY", active: true },
-        ]}
-      />
+      <BottomNav />
     </MobileFrame>
   );
 }

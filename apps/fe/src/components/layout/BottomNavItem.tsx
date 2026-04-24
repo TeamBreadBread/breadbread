@@ -4,12 +4,14 @@ type BottomNavItemProps = {
   label: string;
   active?: boolean;
   icon?: ReactNode;
+  onClick?: () => void;
 };
 
-const BottomNavItem = ({ label, active = false, icon }: BottomNavItemProps) => {
+const BottomNavItem = ({ label, active = false, icon, onClick }: BottomNavItemProps) => {
   return (
     <button
       type="button"
+      onClick={onClick}
       className="flex flex-1 flex-col items-center justify-center gap-1 sm:gap-[6px]"
     >
       {icon ?? (

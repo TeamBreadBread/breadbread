@@ -16,7 +16,9 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RecommendationRouteImport } from './routes/recommendation'
 import { Route as PreferenceRouteImport } from './routes/preference'
 import { Route as PasswordResetSuccessRouteImport } from './routes/password-reset-success'
+import { Route as MyRouteImport } from './routes/my'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as HomeRouteImport } from './routes/home'
 import { Route as FindPasswordRouteImport } from './routes/find-password'
 import { Route as FindIdResultRouteImport } from './routes/find-id-result'
 import { Route as FindIdFailureRouteImport } from './routes/find-id-failure'
@@ -61,9 +63,19 @@ const PasswordResetSuccessRoute = PasswordResetSuccessRouteImport.update({
   path: '/password-reset-success',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MyRoute = MyRouteImport.update({
+  id: '/my',
+  path: '/my',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HomeRoute = HomeRouteImport.update({
+  id: '/home',
+  path: '/home',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FindPasswordRoute = FindPasswordRouteImport.update({
@@ -115,7 +127,9 @@ export interface FileRoutesByFullPath {
   '/find-id-failure': typeof FindIdFailureRoute
   '/find-id-result': typeof FindIdResultRoute
   '/find-password': typeof FindPasswordRoute
+  '/home': typeof HomeRoute
   '/login': typeof LoginRoute
+  '/my': typeof MyRoute
   '/password-reset-success': typeof PasswordResetSuccessRoute
   '/preference': typeof PreferenceRoute
   '/recommendation': typeof RecommendationRoute
@@ -133,7 +147,9 @@ export interface FileRoutesByTo {
   '/find-id-failure': typeof FindIdFailureRoute
   '/find-id-result': typeof FindIdResultRoute
   '/find-password': typeof FindPasswordRoute
+  '/home': typeof HomeRoute
   '/login': typeof LoginRoute
+  '/my': typeof MyRoute
   '/password-reset-success': typeof PasswordResetSuccessRoute
   '/preference': typeof PreferenceRoute
   '/recommendation': typeof RecommendationRoute
@@ -152,7 +168,9 @@ export interface FileRoutesById {
   '/find-id-failure': typeof FindIdFailureRoute
   '/find-id-result': typeof FindIdResultRoute
   '/find-password': typeof FindPasswordRoute
+  '/home': typeof HomeRoute
   '/login': typeof LoginRoute
+  '/my': typeof MyRoute
   '/password-reset-success': typeof PasswordResetSuccessRoute
   '/preference': typeof PreferenceRoute
   '/recommendation': typeof RecommendationRoute
@@ -172,7 +190,9 @@ export interface FileRouteTypes {
     | '/find-id-failure'
     | '/find-id-result'
     | '/find-password'
+    | '/home'
     | '/login'
+    | '/my'
     | '/password-reset-success'
     | '/preference'
     | '/recommendation'
@@ -190,7 +210,9 @@ export interface FileRouteTypes {
     | '/find-id-failure'
     | '/find-id-result'
     | '/find-password'
+    | '/home'
     | '/login'
+    | '/my'
     | '/password-reset-success'
     | '/preference'
     | '/recommendation'
@@ -208,7 +230,9 @@ export interface FileRouteTypes {
     | '/find-id-failure'
     | '/find-id-result'
     | '/find-password'
+    | '/home'
     | '/login'
+    | '/my'
     | '/password-reset-success'
     | '/preference'
     | '/recommendation'
@@ -227,7 +251,9 @@ export interface RootRouteChildren {
   FindIdFailureRoute: typeof FindIdFailureRoute
   FindIdResultRoute: typeof FindIdResultRoute
   FindPasswordRoute: typeof FindPasswordRoute
+  HomeRoute: typeof HomeRoute
   LoginRoute: typeof LoginRoute
+  MyRoute: typeof MyRoute
   PasswordResetSuccessRoute: typeof PasswordResetSuccessRoute
   PreferenceRoute: typeof PreferenceRoute
   RecommendationRoute: typeof RecommendationRoute
@@ -289,11 +315,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PasswordResetSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/my': {
+      id: '/my'
+      path: '/my'
+      fullPath: '/my'
+      preLoaderRoute: typeof MyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/home': {
+      id: '/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof HomeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/find-password': {
@@ -363,7 +403,9 @@ const rootRouteChildren: RootRouteChildren = {
   FindIdFailureRoute: FindIdFailureRoute,
   FindIdResultRoute: FindIdResultRoute,
   FindPasswordRoute: FindPasswordRoute,
+  HomeRoute: HomeRoute,
   LoginRoute: LoginRoute,
+  MyRoute: MyRoute,
   PasswordResetSuccessRoute: PasswordResetSuccessRoute,
   PreferenceRoute: PreferenceRoute,
   RecommendationRoute: RecommendationRoute,

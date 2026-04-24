@@ -1,6 +1,6 @@
 import { AppTopBar } from "@/components/common";
-import BottomNav from "@/components/common/navigation/BottomNav";
 import { RouteHeroCard, RouteListSection } from "@/components/domain/route";
+import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
 import type { RouteCourse } from "@/components/domain/route";
 
@@ -33,7 +33,7 @@ const mockCourses: RouteCourse[] = [
 
 export default function RoutePage() {
   return (
-    <MobileFrame className="max-w-[430px]">
+    <MobileFrame>
       <div className="flex flex-1 flex-col bg-white">
         <AppTopBar title="루트" hideBack />
 
@@ -43,14 +43,7 @@ export default function RoutePage() {
         </div>
       </div>
 
-      <BottomNav
-        items={[
-          { label: "홈" },
-          { label: "루트", active: true },
-          { label: "빵터" },
-          { label: "MY" },
-        ]}
-      />
+      <BottomNav />
     </MobileFrame>
   );
 }
