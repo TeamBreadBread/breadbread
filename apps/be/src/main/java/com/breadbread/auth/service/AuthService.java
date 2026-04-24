@@ -1,44 +1,39 @@
 package com.breadbread.auth.service;
 
 import com.breadbread.auth.dto.*;
-import com.breadbread.auth.entity.AuthType;
-import com.breadbread.auth.entity.PhoneVerification;
-import com.breadbread.auth.entity.VerificationPurpose;
+import com.breadbread.auth.entity.*;
 import com.breadbread.auth.repository.PhoneVerificationRepository;
-import com.breadbread.auth.repository.RefreshTokenRepository;
-import com.breadbread.auth.entity.RefreshToken;
-import com.breadbread.global.jwt.JwtProvider;
+import com.breadbread.global.exception.CustomException;
+import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.util.SmsUtil;
+import com.breadbread.auth.dto.CheckIdResponse;
 import com.breadbread.user.entity.User;
+import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AuthService {
-    private final RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
     private final PhoneVerificationRepository phoneVerificationRepository;
     private final AuthenticationManager authenticationManager;
-    private final JwtProvider jwtProvider;
     private final PasswordEncoder passwordEncoder;
     private final SmsUtil smsUtil;
+    private final SsoService ssoService;
+    private final TokenService tokenService;
 
     @Value("${coolsms.api.expires-in}")
     private long expiresIn;
@@ -46,20 +41,17 @@ public class AuthService {
     private static final Random RANDOM = new Random();
 
     @Transactional
-    public String signup(SignupRequest signupRequest) {
+    public void signup(SignupRequest signupRequest) {
         if(userRepository.findByLoginId(signupRequest.getLoginId()).isPresent()) {
-            throw new IllegalArgumentException("이미 존재하는 아이디입니다.");
+            throw new CustomException(ErrorCode.DUPLICATE_LOGIN_ID);
         }
         if(!signupRequest.getPassword().equals(signupRequest.getPasswordConfirm())) {
-            throw new IllegalArgumentException("비밀번호와 비밀번호 확인이 일치하지 않습니다.");
+            throw new CustomException(ErrorCode.PASSWORD_MISMATCH);
         }
-        PhoneVerification verification = phoneVerificationRepository.findByPhoneAndPurpose(signupRequest.getPhone(), VerificationPurpose.SIGNUP)
-                .orElseThrow(() -> new IllegalArgumentException("휴대전화 인증이 필요합니다."));
-        if (verification.getExpiredAt().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("인증이 만료되었습니다. 다시 인증해주세요.");
-        }
-        if(!verification.isVerified()){
-            throw new IllegalArgumentException("휴대전화 인증이 완료되지 않았습니다.");
+        PhoneVerification verification = validateVerificationToken(
+                signupRequest.getVerificationToken(), VerificationPurpose.SIGNUP);
+        if(!verification.getPhone().equals(signupRequest.getPhone())) {
+            throw new CustomException(ErrorCode.PHONE_VERIFICATION_MISMATCH);
         }
         String encodedPassword = passwordEncoder.encode(signupRequest.getPassword());
         User user = User.builder()
@@ -69,89 +61,81 @@ public class AuthService {
                 .nickname(signupRequest.getName() + (RANDOM.nextInt(100) + 1))  // 추후 수정 필요
                 .email(signupRequest.getEmail())
                 .phone(signupRequest.getPhone())
-                .role(signupRequest.getRole())
+                .role(signupRequest.getRole() != null ? signupRequest.getRole() : UserRole.ROLE_USER)
                 .privacyAgreed(signupRequest.isPrivacyAgreed())
                 .termsAgreed(signupRequest.isTermsAgreed())
                 .build();
         userRepository.save(user);
         phoneVerificationRepository.delete(verification);
-        return "회원가입이 완료되었습니다.";
+        log.info("회원가입 완료 loginId={}", signupRequest.getLoginId());
     }
 
     @Transactional
     public TokenResponse login(LoginRequest loginRequest) {
-        User user = userRepository.findByLoginId(loginRequest.getLoginId()).orElseThrow();
-
-        Authentication authentication = authenticationManager.authenticate(
+        User user = userRepository.findByLoginId(loginRequest.getLoginId()).orElseThrow(
+                () -> new CustomException(ErrorCode.INVALID_LOGIN_ID)
+        );
+        authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         user.getId().toString(),
                         loginRequest.getPassword()
                 )
         );
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-
-        String accessToken = jwtProvider.createAccessToken(userDetails.getUsername());
-        String refreshToken = jwtProvider.createRefreshToken(userDetails.getUsername());
-
-        refreshTokenRepository.deleteByUser_Id(user.getId());
-        RefreshToken rt = RefreshToken.builder()
-                .user(user)
-                .token(hashToken(refreshToken))
-                .expiredAt(jwtProvider.getRefrehTokenExpiration(refreshToken))
-                .build();
-
-        refreshTokenRepository.save(rt);
-
-        return TokenResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build();
+        log.info("로그인 성공 userId={}", user.getId());
+        return tokenService.issueTokens(user);
     }
 
-    @Transactional
     public void logout(String accessToken) {
-        String extractedUserId = jwtProvider.getUserIdFromAccessToken(accessToken);
-        Long userId;
-        try {
-            userId = Long.parseLong(extractedUserId);
-        } catch (NumberFormatException e) {
-            throw new RuntimeException("AccessToken userId 형식이 올바르지 않음", e);
-        }
-        refreshTokenRepository.deleteByUser_Id(userId);
+        tokenService.logout(accessToken);
     }
 
     @Transactional
     public TokenResponse refresh(String refreshToken) {
-        if (!jwtProvider.validateRefreshToken(refreshToken)) {
-            throw new RuntimeException("RefreshToken 유효하지 않음");
-        }
-        RefreshToken token = refreshTokenRepository.findByToken(hashToken(refreshToken))
-                .orElseThrow(() -> new RuntimeException("RefreshToken 없음"));
-        if(token.getExpiredAt().isBefore(LocalDateTime.now())){
-            throw new RuntimeException("RefreshToken 만료");
-        }
-
-        refreshTokenRepository.delete(token);
-
-        String userId = token.getUser().getId().toString();
-        String newAccessToken = jwtProvider.createAccessToken(userId);
-        String newRefreshToken = jwtProvider.createRefreshToken(userId);
-
-        RefreshToken newRt = RefreshToken.builder()
-                .user(token.getUser())
-                .token(hashToken(newRefreshToken))
-                .expiredAt(jwtProvider.getRefrehTokenExpiration(newRefreshToken))
-                .build();
-        refreshTokenRepository.save(newRt);
-
-        return TokenResponse.builder().accessToken(newAccessToken).refreshToken(newRefreshToken).build();
+        return tokenService.refresh(refreshToken);
     }
 
-    private String hashToken(String token) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(token.getBytes( StandardCharsets.UTF_8));
-            return Base64.getEncoder().encodeToString(hash);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("토큰 해싱 실패", e);
+    public CheckIdResponse checkId(String loginId) {
+        boolean available = !userRepository.existsByLoginId(loginId);
+        return CheckIdResponse.builder().available(available).build();
+    }
+
+
+    @Transactional
+    public FindIdResponse findId(FindIdRequest findIdRequest) {
+        PhoneVerification verification = validateVerificationToken(
+                findIdRequest.getVerificationToken(), VerificationPurpose.FIND_ID);
+        User user = userRepository.findByPhone(findIdRequest.getPhone())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        if(!user.getName().equals(findIdRequest.getName()) || !user.getPhone().equals(verification.getPhone())) {
+            throw new CustomException(ErrorCode.USER_INFO_MISMATCH);
         }
+        phoneVerificationRepository.delete(verification);
+        return FindIdResponse.builder().loginId(user.getLoginId()).build();
+    }
+
+    @Transactional
+    public void findPassword(FindPwRequest findPwRequest) {
+        PhoneVerification verification = validateVerificationToken(findPwRequest.getVerificationToken(), VerificationPurpose.FIND_PW);
+        User user = userRepository.findByLoginId(findPwRequest.getLoginId())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        if(!user.getName().equals(findPwRequest.getName()) || !user.getPhone().equals(verification.getPhone())) {
+            throw new CustomException(ErrorCode.USER_INFO_MISMATCH);
+        }
+    }
+
+    @Transactional
+    public void resetPassword(ResetPwRequest resetPwRequest) {
+        PhoneVerification verification = validateVerificationToken(
+                resetPwRequest.getVerificationToken(), VerificationPurpose.FIND_PW);
+        User user = userRepository.findByPhone(verification.getPhone())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        if(!resetPwRequest.getNewPassword().equals(resetPwRequest.getNewPasswordConfirm())) {
+            throw new CustomException(ErrorCode.PASSWORD_MISMATCH);
+        }
+        user.updatePassword(passwordEncoder.encode(resetPwRequest.getNewPassword()));
+        userRepository.save(user);
+        phoneVerificationRepository.delete(verification);
+        log.info("비밀번호 재설정 완료 userId={}", user.getId());
     }
 
     @Transactional
@@ -168,25 +152,51 @@ public class AuthService {
                 .build();
         phoneVerificationRepository.save(verification);
 
+        log.info("인증번호 발송 phone={} purpose={}", maskPhone(sendPhoneRequest.getPhone()), sendPhoneRequest.getPurpose());
         smsUtil.sendSms(sendPhoneRequest.getPhone(), code);
-        log.info("인증번호: {}", code); // 테스트용
     }
 
     @Transactional
-    public String verifyCode(VerifyPhoneRequest verifyPhoneRequest) {
+    public VerifyPhoneResponse verifyCode(VerifyPhoneRequest verifyPhoneRequest) {
         PhoneVerification verification = phoneVerificationRepository.findByPhoneAndPurpose(verifyPhoneRequest.getPhone(), verifyPhoneRequest.getPurpose())
-                .orElseThrow(() -> new RuntimeException("인증번호를 먼저 요청해주세요."));
+                .orElseThrow(() -> new CustomException(ErrorCode.VERIFICATION_NOT_FOUND));
         if (verification.isVerified()) {
-            throw new RuntimeException("이미 인증된 번호입니다.");
+            throw new CustomException(ErrorCode.ALREADY_VERIFIED);
         }
         if (verification.getExpiredAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("인증 코드가 만료되었습니다.");
+            throw new CustomException(ErrorCode.VERIFICATION_EXPIRED);
         }
         if (!verification.getCode().equals(verifyPhoneRequest.getCode())) {
-            throw new RuntimeException("인증 코드가 일치하지 않습니다.");
+            throw new CustomException(ErrorCode.INVALID_VERIFICATION_CODE);
         }
-        verification.verify();
+        String verificationToken = verification.verify();
         phoneVerificationRepository.save(verification);
-        return "인증이 완료되었습니다.";
+        log.info("휴대전화 인증 완료 phone={} purpose={}", verifyPhoneRequest.getPhone(), verifyPhoneRequest.getPurpose());
+        return VerifyPhoneResponse.builder().verificationToken(verificationToken).build();
+    }
+
+    public TokenResponse socialLogin(SsoProvider provider, SocialLoginRequest request) {
+        return ssoService.socialLogin(provider, request);
+    }
+
+    private PhoneVerification validateVerificationToken(String token, VerificationPurpose purpose) {
+        PhoneVerification verification = phoneVerificationRepository.findByVerificationToken(token)
+                .orElseThrow(() -> new CustomException(ErrorCode.VERIFICATION_NOT_FOUND));
+        if (verification.getExpiredAt().isBefore(LocalDateTime.now())) {
+            throw new CustomException(ErrorCode.VERIFICATION_EXPIRED);
+        }
+        if (verification.getPurpose() != purpose) {
+            throw new CustomException(ErrorCode.VERIFICATION_PURPOSE_MISMATCH);
+        }
+        return verification;
+    }
+
+    @Scheduled(cron = "0 0 3 * * *") // 매일 새벽 3시
+    public void deleteExpiredVerifications() {
+        phoneVerificationRepository.deleteByExpiredAtBefore(LocalDateTime.now());
+    }
+
+    private String maskPhone(String phone) {
+        return phone.substring(0, 3) + "****" + phone.substring(7);
     }
 }

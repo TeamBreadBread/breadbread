@@ -22,10 +22,10 @@ public class JwtProvider {
     private String refreshSecret;
 
     @Value("${jwt.expires-in}")
-    private long accessTokenExpiration;
+    private long accessTokenExpiration;     // 초단위
 
     @Value("${jwt.refresh-expires-in}")
-    private long refreshTokenExpiration;
+    private long refreshTokenExpiration;    // 초단위
 
     private SecretKey accessKey;
     private SecretKey refreshKey;
@@ -41,7 +41,7 @@ public class JwtProvider {
         return Jwts.builder()
                 .subject(userId)
                 .issuedAt(now)
-                .expiration(new Date(now.getTime() + accessTokenExpiration))
+                .expiration(new Date(now.getTime() + accessTokenExpiration * 1000))
                 .signWith(accessKey)
                 .compact();
     }
@@ -51,7 +51,7 @@ public class JwtProvider {
         return Jwts.builder()
                 .subject(userId)
                 .issuedAt(now)
-                .expiration(new Date(now.getTime() + refreshTokenExpiration))
+                .expiration(new Date(now.getTime() + refreshTokenExpiration * 1000))
                 .signWith(refreshKey)
                 .compact();
     }
@@ -64,7 +64,7 @@ public class JwtProvider {
         return parseClaims(token, refreshKey).getSubject();
     }
 
-    public LocalDateTime getRefrehTokenExpiration(String token) {
+    public LocalDateTime getRefreshTokenExpiration(String token) {
         return parseClaims(token, refreshKey).getExpiration().toInstant()
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime();

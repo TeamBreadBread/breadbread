@@ -5,29 +5,31 @@ import com.breadbread.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Entity
+@Table(uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"provider", "provider_user_id"})
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString(exclude = "user")
-public class RefreshToken extends BaseEntity {
+public class SsoAccount extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(nullable = false, unique = true, length = 500)
-    private String token;
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private LocalDateTime expiredAt;
-    private boolean revoked = false;
+    private SsoProvider provider;
+    @Column(nullable = false)
+    private String providerUserId;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
     @Builder
-    public RefreshToken(String token, LocalDateTime expiredAt, User user) {
-        this.token = token;
-        this.expiredAt = expiredAt;
+    public SsoAccount(SsoProvider provider, String providerUserId, User user) {
+        this.provider = provider;
+        this.providerUserId = providerUserId;
         this.user = user;
     }
 }
