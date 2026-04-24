@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from "./routes/__root";
 import { Route as RecommendationRouteImport } from "./routes/recommendation";
 import { Route as PreferenceRouteImport } from "./routes/preference";
 import { Route as LoginRouteImport } from "./routes/login";
+import { Route as AiSearchResultRouteImport } from "./routes/ai-search-result";
 import { Route as IndexRouteImport } from "./routes/index";
 
 const RecommendationRoute = RecommendationRouteImport.update({
@@ -29,6 +30,11 @@ const LoginRoute = LoginRouteImport.update({
   path: "/login",
   getParentRoute: () => rootRouteImport,
 } as any);
+const AiSearchResultRoute = AiSearchResultRouteImport.update({
+  id: "/ai-search-result",
+  path: "/ai-search-result",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const IndexRoute = IndexRouteImport.update({
   id: "/",
   path: "/",
@@ -37,12 +43,14 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
+  "/ai-search-result": typeof AiSearchResultRoute;
   "/login": typeof LoginRoute;
   "/preference": typeof PreferenceRoute;
   "/recommendation": typeof RecommendationRoute;
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
+  "/ai-search-result": typeof AiSearchResultRoute;
   "/login": typeof LoginRoute;
   "/preference": typeof PreferenceRoute;
   "/recommendation": typeof RecommendationRoute;
@@ -50,20 +58,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   "/": typeof IndexRoute;
+  "/ai-search-result": typeof AiSearchResultRoute;
   "/login": typeof LoginRoute;
   "/preference": typeof PreferenceRoute;
   "/recommendation": typeof RecommendationRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/" | "/login" | "/preference" | "/recommendation";
+  fullPaths: "/" | "/ai-search-result" | "/login" | "/preference" | "/recommendation";
   fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/login" | "/preference" | "/recommendation";
-  id: "__root__" | "/" | "/login" | "/preference" | "/recommendation";
+  to: "/" | "/ai-search-result" | "/login" | "/preference" | "/recommendation";
+  id: "__root__" | "/" | "/ai-search-result" | "/login" | "/preference" | "/recommendation";
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
+  AiSearchResultRoute: typeof AiSearchResultRoute;
   LoginRoute: typeof LoginRoute;
   PreferenceRoute: typeof PreferenceRoute;
   RecommendationRoute: typeof RecommendationRoute;
@@ -92,6 +102,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof LoginRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/ai-search-result": {
+      id: "/ai-search-result";
+      path: "/ai-search-result";
+      fullPath: "/ai-search-result";
+      preLoaderRoute: typeof AiSearchResultRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/": {
       id: "/";
       path: "/";
@@ -104,6 +121,7 @@ declare module "@tanstack/react-router" {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AiSearchResultRoute: AiSearchResultRoute,
   LoginRoute: LoginRoute,
   PreferenceRoute: PreferenceRoute,
   RecommendationRoute: RecommendationRoute,

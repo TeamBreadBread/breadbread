@@ -4,12 +4,49 @@
 html,
 body,
 #root {
-	min-height: 100%;
-	background-color: var(--color-gray-200);
+  min-height: 100%;
+  background-color: var(--color-gray-200);
 }
 
 .pb-footer-safe {
-	padding-bottom: calc(
-		var(--spacing-x12) + var(--spacing-x3) + var(--spacing-x14) + var(--spacing-x6)
-	);
+  padding-bottom: calc(
+    var(--spacing-x12) + var(--spacing-x3) + var(--spacing-x14) + var(--spacing-x6)
+  );
+}
+
+.sheet-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gray-500) transparent;
+}
+
+.sheet-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sheet-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sheet-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--color-gray-500);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.sheet-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-gray-600);
+}
+
+@keyframes sheet-slide-down {
+  from {
+    transform: translateY(-24px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-sheet-down {
+  animation: sheet-slide-down 700ms ease-in-out;
 }
