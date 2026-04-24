@@ -1,28 +1,28 @@
+import { Button } from "@/components/common/Button";
 import { cn } from "@/utils/cn";
 
 interface BottomCTAProps {
   text: string;
   disabled?: boolean;
   onClick?: () => void;
+  className?: string;
 }
 
-export default function BottomCTA({ text, disabled = true, onClick }: BottomCTAProps) {
+export default function BottomCTA({ text, disabled = false, onClick, className }: BottomCTAProps) {
   return (
-    <div className="sticky bottom-0 bg-white">
-      <div className="h-x12 bg-gradient-to-b from-transparent to-gray-00" />
-      <div className="border-t border-gray-300 bg-white px-x5 py-x3">
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={onClick}
-          className={cn(
-            "font-pretendard typo-t6bold flex h-x14 w-full items-center justify-center rounded-r3",
-            disabled ? "bg-gray-200 text-gray-500" : "bg-gray-800 text-white",
-          )}
-        >
-          {text}
-        </button>
-      </div>
-    </div>
+    <footer className={cn("w-full border-t border-gray-300 px-x5 py-x4", className)}>
+      <Button
+        type="button"
+        disabled={disabled}
+        onClick={onClick}
+        className={cn(
+          "h-x14 w-full rounded-r3 bg-gray-800 px-x5 py-x4",
+          "text-size-7 font-bold leading-t8 tracking-2 text-gray-00",
+          "disabled:bg-gray-400",
+        )}
+      >
+        {text}
+      </Button>
+    </footer>
   );
 }

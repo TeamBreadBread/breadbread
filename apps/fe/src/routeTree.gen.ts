@@ -14,6 +14,9 @@ import { Route as SignupRouteImport } from "./routes/signup";
 import { Route as RecommendationRouteImport } from "./routes/recommendation";
 import { Route as PreferenceRouteImport } from "./routes/preference";
 import { Route as LoginRouteImport } from "./routes/login";
+import { Route as FindIdResultRouteImport } from "./routes/find-id-result";
+import { Route as FindIdFailureRouteImport } from "./routes/find-id-failure";
+import { Route as FindIdRouteImport } from "./routes/find-id";
 import { Route as AiSearchResultRouteImport } from "./routes/ai-search-result";
 import { Route as IndexRouteImport } from "./routes/index";
 
@@ -42,6 +45,21 @@ const LoginRoute = LoginRouteImport.update({
   path: "/login",
   getParentRoute: () => rootRouteImport,
 } as any);
+const FindIdResultRoute = FindIdResultRouteImport.update({
+  id: "/find-id-result",
+  path: "/find-id-result",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const FindIdFailureRoute = FindIdFailureRouteImport.update({
+  id: "/find-id-failure",
+  path: "/find-id-failure",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const FindIdRoute = FindIdRouteImport.update({
+  id: "/find-id",
+  path: "/find-id",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const AiSearchResultRoute = AiSearchResultRouteImport.update({
   id: "/ai-search-result",
   path: "/ai-search-result",
@@ -56,6 +74,9 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/ai-search-result": typeof AiSearchResultRoute;
+  "/find-id": typeof FindIdRoute;
+  "/find-id-failure": typeof FindIdFailureRoute;
+  "/find-id-result": typeof FindIdResultRoute;
   "/login": typeof LoginRoute;
   "/preference": typeof PreferenceRoute;
   "/recommendation": typeof RecommendationRoute;
@@ -65,6 +86,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
   "/ai-search-result": typeof AiSearchResultRoute;
+  "/find-id": typeof FindIdRoute;
+  "/find-id-failure": typeof FindIdFailureRoute;
+  "/find-id-result": typeof FindIdResultRoute;
   "/login": typeof LoginRoute;
   "/preference": typeof PreferenceRoute;
   "/recommendation": typeof RecommendationRoute;
@@ -75,6 +99,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   "/": typeof IndexRoute;
   "/ai-search-result": typeof AiSearchResultRoute;
+  "/find-id": typeof FindIdRoute;
+  "/find-id-failure": typeof FindIdFailureRoute;
+  "/find-id-result": typeof FindIdResultRoute;
   "/login": typeof LoginRoute;
   "/preference": typeof PreferenceRoute;
   "/recommendation": typeof RecommendationRoute;
@@ -86,6 +113,9 @@ export interface FileRouteTypes {
   fullPaths:
     | "/"
     | "/ai-search-result"
+    | "/find-id"
+    | "/find-id-failure"
+    | "/find-id-result"
     | "/login"
     | "/preference"
     | "/recommendation"
@@ -95,6 +125,9 @@ export interface FileRouteTypes {
   to:
     | "/"
     | "/ai-search-result"
+    | "/find-id"
+    | "/find-id-failure"
+    | "/find-id-result"
     | "/login"
     | "/preference"
     | "/recommendation"
@@ -104,6 +137,9 @@ export interface FileRouteTypes {
     | "__root__"
     | "/"
     | "/ai-search-result"
+    | "/find-id"
+    | "/find-id-failure"
+    | "/find-id-result"
     | "/login"
     | "/preference"
     | "/recommendation"
@@ -114,6 +150,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   AiSearchResultRoute: typeof AiSearchResultRoute;
+  FindIdRoute: typeof FindIdRoute;
+  FindIdFailureRoute: typeof FindIdFailureRoute;
+  FindIdResultRoute: typeof FindIdResultRoute;
   LoginRoute: typeof LoginRoute;
   PreferenceRoute: typeof PreferenceRoute;
   RecommendationRoute: typeof RecommendationRoute;
@@ -158,6 +197,27 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof LoginRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/find-id-result": {
+      id: "/find-id-result";
+      path: "/find-id-result";
+      fullPath: "/find-id-result";
+      preLoaderRoute: typeof FindIdResultRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/find-id-failure": {
+      id: "/find-id-failure";
+      path: "/find-id-failure";
+      fullPath: "/find-id-failure";
+      preLoaderRoute: typeof FindIdFailureRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/find-id": {
+      id: "/find-id";
+      path: "/find-id";
+      fullPath: "/find-id";
+      preLoaderRoute: typeof FindIdRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/ai-search-result": {
       id: "/ai-search-result";
       path: "/ai-search-result";
@@ -178,6 +238,9 @@ declare module "@tanstack/react-router" {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AiSearchResultRoute: AiSearchResultRoute,
+  FindIdRoute: FindIdRoute,
+  FindIdFailureRoute: FindIdFailureRoute,
+  FindIdResultRoute: FindIdResultRoute,
   LoginRoute: LoginRoute,
   PreferenceRoute: PreferenceRoute,
   RecommendationRoute: RecommendationRoute,

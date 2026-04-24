@@ -1,3 +1,4 @@
+import { useNavigate } from "@tanstack/react-router";
 import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 
 interface AppTopBarProps {
@@ -5,12 +6,15 @@ interface AppTopBarProps {
 }
 
 export default function AppTopBar({ title }: AppTopBarProps) {
+  const navigate = useNavigate();
+
   return (
     <header className="sticky top-0 z-10 bg-white">
       <div className="relative flex h-14 items-center justify-between border-b border-gray-300 px-x5">
         <button
           type="button"
           aria-label="뒤로가기"
+          onClick={() => navigate({ to: "/" })}
           className="flex h-9 w-9 items-center justify-center"
         >
           <img src={ArrowLeft} alt="" className="size-6" />

@@ -1,6 +1,30 @@
 @import "tailwindcss";
 @import "./tokens.css";
 
+@layer utilities {
+	.t8bold {
+		font-size: var(--font-size-7);
+		line-height: var(--leading-t8);
+		letter-spacing: var(--tracking-2);
+		font-weight: var(--font-weight-bold);
+	}
+
+	.t3regular {
+		font-size: var(--font-size-2);
+		line-height: var(--leading-t3);
+		letter-spacing: var(--tracking-0);
+		font-weight: var(--font-weight-regular);
+	}
+
+	.red_700 {
+		color: #b91c1c;
+	}
+
+	.green_700 {
+		color: #15803d;
+	}
+}
+
 @layer components {
 	.typo-t1regular {
 		@apply font-['Pretendard'] text-[11px] font-normal leading-[15px];

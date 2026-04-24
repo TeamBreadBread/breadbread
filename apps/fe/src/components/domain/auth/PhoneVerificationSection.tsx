@@ -2,25 +2,37 @@
 
 import { useEffect, useState } from "react";
 import { ActionField, FieldLabel } from "@/components/common";
-import BottomSheet from "@/components/common/form/BottomSheet";
+import BottomSheet from "@/components/common/bottom-sheet/CarrierBottomSheet";
 import { cn } from "@/utils/cn";
 
 interface PhoneVerificationSectionProps {
+  label?: string;
   onVerificationChange?: (verified: boolean) => void;
 }
 
+const CARRIER_OPTIONS = [
+  { label: "SKT", value: "SKT" },
+  { label: "KT", value: "KT" },
+  { label: "LG U+", value: "LG U+" },
+  { label: "SKT 알뜰폰", value: "SKT 알뜰폰" },
+  { label: "KT 알뜰폰", value: "KT 알뜰폰" },
+  { label: "LG U+ 알뜰폰", value: "LG U+ 알뜰폰" },
+];
+
 export default function PhoneVerificationSection({
+  label = "휴대폰 번호",
   onVerificationChange,
 }: PhoneVerificationSectionProps) {
   const [selectedCarrier, setSelectedCarrier] = useState("SKT");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [isCodeRequested, setIsCodeRequested] = useState(false);
-  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+  const [isCarrierSheetOpen, setIsCarrierSheetOpen] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
 
-  const isPhoneNumberFilled = phoneNumber.length > 0;
-  const isPhoneNumberValid = /^\d{10,11}$/.test(phoneNumber);
+  const digits = phoneNumber.replace(/\D/g, "");
+  const isPhoneNumberValid = /^01[016789]\d{7,8}$/.test(digits);
+  const isPhoneNumberFilled = digits.length > 0;
   const isPhoneNumberInvalid = isPhoneNumberFilled && !isPhoneNumberValid;
 
   const phoneActionClassName = cn(isPhoneNumberValid && "text-green-700");
@@ -37,28 +49,31 @@ export default function PhoneVerificationSection({
     isVerified && "bg-gray-200 text-gray-500",
     !isVerified && isCodeRequested && "text-gray-800",
   );
-  const verifyContainerClassName = cn(isVerified && "bg-gray-200 border-gray-500");
+  const verifyContainerClassName = cn(isVerified && "border-gray-500 bg-gray-200");
 
   useEffect(() => {
     onVerificationChange?.(isVerified);
   }, [isVerified, onVerificationChange]);
 
   return (
-    <section className="flex flex-col gap-x1_5">
-      <FieldLabel>휴대폰 번호</FieldLabel>
+    <section className="flex flex-col gap-x1-5">
+      <FieldLabel className="text-gray-800">{label}</FieldLabel>
 
       <div className="flex flex-col gap-x1-5">
         <button
           type="button"
-          onClick={() => setIsBottomSheetOpen(true)}
-          className="flex h-x14 w-full items-center rounded-r3 border border-gray-400 bg-white px-x5 py-x4 text-left font-pretendard typo-t5regular text-gray-1000"
+          onClick={() => setIsCarrierSheetOpen(true)}
+          className="h-14 w-full rounded-r3 border border-gray-300 bg-gray-00 px-x4 py-x3 text-left text-size-4 font-normal leading-t5 tracking-1 text-gray-1000"
         >
           {selectedCarrier}
         </button>
         <BottomSheet
-          isOpen={isBottomSheetOpen}
-          onClose={() => setIsBottomSheetOpen(false)}
+          title="통신사를 선택해주세요"
+          options={CARRIER_OPTIONS}
+          selectedValue={selectedCarrier}
           onSelect={setSelectedCarrier}
+          isOpen={isCarrierSheetOpen}
+          onClose={() => setIsCarrierSheetOpen(false)}
         />
         <ActionField
           placeholder="01012341234"
@@ -71,7 +86,6 @@ export default function PhoneVerificationSection({
           }}
           onActionClick={() => {
             if (!isPhoneNumberValid) return;
-
             setIsCodeRequested(true);
             setIsVerified(false);
             setVerificationCode("");
@@ -81,31 +95,28 @@ export default function PhoneVerificationSection({
           containerClassName={phoneContainerClassName}
           inputClassName={phoneInputClassName}
         />
+        {isPhoneNumberInvalid ? (
+          <p className="t3regular red_700 px-x2">올바른 전화번호를 입력해주세요.</p>
+        ) : null}
+
         <ActionField
           placeholder="인증번호를 입력해주세요"
           actionText="인증하기"
           value={verificationCode}
           onChange={(value) => setVerificationCode(value.replace(/\D/g, ""))}
           onActionClick={() => {
-            if (isCodeRequested && phoneNumber.trim() && verificationCode.trim()) {
+            if (isCodeRequested && digits && verificationCode.trim()) {
               setIsVerified(true);
             }
           }}
           disabled={isVerified}
           actionDisabled={isVerified}
+          type="text"
           inputClassName={isVerified ? "text-gray-500 placeholder:text-gray-500" : undefined}
           actionClassName={verifyActionClassName}
           containerClassName={verifyContainerClassName}
-          type="text"
         />
-        {isPhoneNumberInvalid ? (
-          <p className="font-pretendard typo-t3regular text-red-700">
-            올바른 전화번호를 입력해주세요.
-          </p>
-        ) : null}
-        {isVerified ? (
-          <p className="font-pretendard typo-t3regular text-green-700">인증되었습니다.</p>
-        ) : null}
+        {isVerified ? <p className="t3regular green_700 px-x2">인증되었습니다.</p> : null}
       </div>
     </section>
   );
