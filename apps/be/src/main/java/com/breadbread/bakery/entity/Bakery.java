@@ -1,5 +1,6 @@
 package com.breadbread.bakery.entity;
 
+import com.breadbread.bakery.dto.UpdateBakeryRequest;
 import com.breadbread.global.entity.BaseEntity;
 import com.breadbread.user.entity.User;
 import jakarta.persistence.*;
@@ -85,45 +86,36 @@ public class Bakery extends BaseEntity {
         this.owner = user;
     }
 
-    public void update(String name, String address, String region,
-                       Double latitude, Double longitude,
-                       String phone, String mapLink, String note,
-                       List<BakeryUseType> bakeryUseTypes,
-                       List<BakeryPersonality> bakeryPersonalities,
-                       Set<DayOfWeek> closedDays, Set<DayOfWeek> crowdedDays,
-                       Boolean dineInAvailable, Boolean parkingAvailable,
-                       LocalTime weekdayOpen, LocalTime weekdayClose,
-                       LocalTime weekendOpen, LocalTime weekendClose,
-                       LocalTime lastOrderTime, Boolean holidayClosed,
-                       LocalTime appearanceTime, Frequency frequency) {
-        if (name != null) this.name = name;
-        if (address != null) this.address = address;
-        if (region != null) this.region = region;
-        if (latitude != null) this.latitude = latitude;
-        if (longitude != null) this.longitude = longitude;
-        if (phone != null) this.phone = phone;
-        if (mapLink != null) this.mapLink = mapLink;
-        if (note != null) this.note = note;
-        if (bakeryUseTypes != null) this.bakeryUseTypes = bakeryUseTypes;
-        if (bakeryPersonalities != null) this.bakeryPersonalities = bakeryPersonalities;
-        if (closedDays != null) this.closedDays = closedDays;
-        if (crowdedDays != null) this.crowdedDays = crowdedDays;
-        if (dineInAvailable != null) this.dineInAvailable = dineInAvailable;
-        if (parkingAvailable != null) this.parkingAvailable = parkingAvailable;
-        if (weekdayOpen != null || weekdayClose != null || weekendOpen != null
-                || weekendClose != null || lastOrderTime != null || holidayClosed != null) {
+    public void update(UpdateBakeryRequest req) {
+        if (req.getName() != null) this.name = req.getName();
+        if (req.getAddress() != null) this.address = req.getAddress();
+        if (req.getRegion() != null) this.region = req.getRegion();
+        if (req.getLatitude() != null) this.latitude = req.getLatitude();
+        if (req.getLongitude() != null) this.longitude = req.getLongitude();
+        if (req.getPhone() != null) this.phone = req.getPhone();
+        if (req.getMapLink() != null) this.mapLink = req.getMapLink();
+        if (req.getNote() != null) this.note = req.getNote();
+        if (req.getBakeryUseTypes() != null) this.bakeryUseTypes = req.getBakeryUseTypes();
+        if (req.getBakeryPersonalities() != null) this.bakeryPersonalities = req.getBakeryPersonalities();
+        if (req.getClosedDays() != null) this.closedDays = req.getClosedDays();
+        if (req.getCrowdedDays() != null) this.crowdedDays = req.getCrowdedDays();
+        if (req.getDineInAvailable() != null) this.dineInAvailable = req.getDineInAvailable();
+        if (req.getParkingAvailable() != null) this.parkingAvailable = req.getParkingAvailable();
+        if (req.getAppearanceTime() != null) this.appearanceTime = req.getAppearanceTime();
+        if (req.getFrequency() != null) this.frequency = req.getFrequency();
+        if (req.getWeekdayOpen() != null || req.getWeekdayClose() != null
+                || req.getWeekendOpen() != null || req.getWeekendClose() != null
+                || req.getLastOrderTime() != null || req.getHolidayClosed() != null) {
             BusinessHours current = this.businessHours != null ? this.businessHours : new BusinessHours();
             this.businessHours = BusinessHours.builder()
-                    .weekdayOpen(weekdayOpen != null ? weekdayOpen : current.getWeekdayOpen())
-                    .weekdayClose(weekdayClose != null ? weekdayClose : current.getWeekdayClose())
-                    .weekendOpen(weekendOpen != null ? weekendOpen : current.getWeekendOpen())
-                    .weekendClose(weekendClose != null ? weekendClose : current.getWeekendClose())
-                    .lastOrderTime(lastOrderTime != null ? lastOrderTime : current.getLastOrderTime())
-                    .holidayClosed(holidayClosed != null ? holidayClosed : current.isHolidayClosed())
+                    .weekdayOpen(req.getWeekdayOpen() != null ? req.getWeekdayOpen() : current.getWeekdayOpen())
+                    .weekdayClose(req.getWeekdayClose() != null ? req.getWeekdayClose() : current.getWeekdayClose())
+                    .weekendOpen(req.getWeekendOpen() != null ? req.getWeekendOpen() : current.getWeekendOpen())
+                    .weekendClose(req.getWeekendClose() != null ? req.getWeekendClose() : current.getWeekendClose())
+                    .lastOrderTime(req.getLastOrderTime() != null ? req.getLastOrderTime() : current.getLastOrderTime())
+                    .holidayClosed(req.getHolidayClosed() != null ? req.getHolidayClosed() : current.isHolidayClosed())
                     .build();
         }
-        if (appearanceTime != null) this.appearanceTime = appearanceTime;
-        if (frequency != null) this.frequency = frequency;
     }
 
     @Builder

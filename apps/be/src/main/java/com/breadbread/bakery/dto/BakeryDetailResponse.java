@@ -1,9 +1,13 @@
 package com.breadbread.bakery.dto;
 
+import com.breadbread.bakery.entity.Bakery;
+import com.breadbread.bakery.entity.BakeryImage;
+import com.breadbread.bakery.entity.BusinessHours;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalTime;
+import java.util.Collections;
 import java.util.List;
 
 @Getter
@@ -18,6 +22,35 @@ public class BakeryDetailResponse {
     private LocalTime openTime;
     private LocalTime closeTime;
     private String phone;
-    private Double rating;
+    private int rating;
     private List<BakeryMenuResponse> menus;
+
+    public static BakeryDetailResponse from(Bakery bakery) {
+        BusinessHours bh = bakery.getBusinessHours();
+
+        List<BakeryMenuResponse> menus = bakery.getMenus() == null ? Collections.emptyList() :
+                bakery.getMenus().stream()
+                        .map(BakeryMenuResponse::from)
+                        .toList();
+
+        List<String> imageUrls = bakery.getImages() == null ? Collections.emptyList() :
+                bakery.getImages().stream()
+                        .map(BakeryImage::getImageUrl)
+                        .toList();
+
+        return BakeryDetailResponse.builder()
+                .id(bakery.getId())
+                .name(bakery.getName())
+                .address(bakery.getAddress())
+                .lat(bakery.getLatitude())
+                .lng(bakery.getLongitude())
+                .phone(bakery.getPhone())
+                .rating(bakery.getRating())
+                .imageUrls(imageUrls)
+                .openTime(bh != null ? bh.getTodayOpen() : null)
+                .closeTime(bh != null ? bh.getTodayClose() : null)
+                .menus(menus)
+                .build();
+    }
+
 }

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Set;
 
@@ -39,10 +40,8 @@ public class BusinessHours {
         }
 
         // 주말/평일 구분
-        boolean isWeekend = today == DayOfWeek.SATURDAY || today == DayOfWeek.SUNDAY;
-        LocalTime open = isWeekend ? weekendOpen : weekdayOpen;
-        LocalTime close = isWeekend ? weekendClose : weekdayClose;
-
+        LocalTime open = isWeekend(today) ? weekendOpen : weekdayOpen;
+        LocalTime close = isWeekend(today) ? weekendClose : weekdayClose;
         if (open == null || close == null) {
             return false;
         }
@@ -52,14 +51,21 @@ public class BusinessHours {
     }
 
     public String getBusinessHoursText(DayOfWeek day) {
-        boolean isWeekend = day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY;
-        LocalTime open = isWeekend ? weekendOpen : weekdayOpen;
-        LocalTime close = isWeekend ? weekendClose : weekdayClose;
-
-        if (open == null || close == null) {
-            return "영업시간 미정";
-        }
-
+        LocalTime open = isWeekend(day) ? weekendOpen : weekdayOpen;
+        LocalTime close = isWeekend(day) ? weekendClose : weekdayClose;
+        if (open == null || close == null) return "영업시간 미정";
         return String.format("%s - %s", open, close);
+    }
+
+    public LocalTime getTodayOpen() {
+        return isWeekend(LocalDate.now().getDayOfWeek()) ? weekendOpen : weekdayOpen;
+    }
+
+    public LocalTime getTodayClose() {
+        return isWeekend(LocalDate.now().getDayOfWeek()) ? weekendClose : weekdayClose;
+    }
+
+    private boolean isWeekend(DayOfWeek day) {
+        return day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY;
     }
 }

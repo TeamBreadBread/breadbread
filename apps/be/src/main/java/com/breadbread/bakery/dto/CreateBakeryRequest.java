@@ -1,9 +1,6 @@
 package com.breadbread.bakery.dto;
 
-import com.breadbread.bakery.entity.BakeryPersonality;
-import com.breadbread.bakery.entity.BakeryUseType;
-import com.breadbread.bakery.entity.BreadType;
-import com.breadbread.bakery.entity.Frequency;
+import com.breadbread.bakery.entity.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -40,7 +37,7 @@ public class CreateBakeryRequest {
     private boolean holidayClosed;
 
     @Schema(description = "대표 빵 종류 (SALT_BREAD, DESSERT, CROISSANT, TRADITIONAL)")
-    private BreadType breadType;
+    private BakeryType bakeryType;
 
     @Schema(description = "선호 빵집 취향 (TAKEOUT, CAFE, SNS_MOOD, PRACTICAL)")
     private List<BakeryUseType> bakeryUseTypes;

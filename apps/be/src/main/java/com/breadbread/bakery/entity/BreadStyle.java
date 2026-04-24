@@ -1,4 +1,4 @@
-package com.breadbread.user.entity;
+package com.breadbread.bakery.entity;
 
 public enum BreadStyle {
     PLAIN,            // 담백한 빵

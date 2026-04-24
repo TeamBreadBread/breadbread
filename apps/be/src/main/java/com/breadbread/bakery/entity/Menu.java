@@ -2,15 +2,13 @@ package com.breadbread.bakery.entity;
 
 import com.google.api.client.util.DateTime;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@ToString(exclude = "bakery")
 public class Menu {
 
     @Id
@@ -20,7 +18,7 @@ public class Menu {
     private int price;
     private String imageUrl;
     private boolean signature;
-    private DateTime selloutMin;
+    private int selloutMin;
 
     private boolean soldOut = false;
 
@@ -34,7 +32,7 @@ public class Menu {
     @Builder
     public Menu(String name, int price, String imageUrl,
                 Bakery bakery, BreadType breadType,
-                boolean signature, DateTime selloutMin) {
+                boolean signature, int selloutMin) {
         this.name = name;
         this.price = price;
         this.imageUrl = imageUrl;

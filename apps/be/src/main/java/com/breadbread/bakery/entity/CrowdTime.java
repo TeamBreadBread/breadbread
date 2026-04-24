@@ -10,6 +10,7 @@ import java.time.LocalTime;
 @Table(name = "crowd_times")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@ToString(exclude = "bakery")
 public class CrowdTime extends BaseEntity {
 
     @Id
