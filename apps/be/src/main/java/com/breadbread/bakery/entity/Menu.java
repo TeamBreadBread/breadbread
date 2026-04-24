@@ -1,0 +1,63 @@
+package com.breadbread.bakery.entity;
+
+import com.google.api.client.util.DateTime;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Menu {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String name;
+    private int price;
+    private String imageUrl;
+    private boolean signature;
+    private DateTime selloutMin;
+
+    private boolean soldOut = false;
+
+    @Enumerated(EnumType.STRING)
+    private BreadType breadType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bakery_id")
+    private Bakery bakery;
+
+    @Builder
+    public Menu(String name, int price, String imageUrl,
+                Bakery bakery, BreadType breadType,
+                boolean signature, DateTime selloutMin) {
+        this.name = name;
+        this.price = price;
+        this.imageUrl = imageUrl;
+        this.bakery = bakery;
+        this.breadType = breadType;
+        this.signature = signature;
+        this.selloutMin = selloutMin;
+    }
+
+    public void update(String name, Integer price, String imageUrl,
+                       BreadType breadType, Boolean signature) {
+        if (name != null) this.name = name;
+        if (price != null) this.price = price;
+        if (imageUrl != null) this.imageUrl = imageUrl;
+        if (breadType != null) this.breadType = breadType;
+        if (signature != null) this.signature = signature;
+    }
+
+    public void markSoldOut() {
+        this.soldOut = true;
+    }
+
+    public void markAvailable() {
+        this.soldOut = false;
+    }
+}
