@@ -1,8 +1,8 @@
 package com.breadbread.user.dto;
 
-import com.breadbread.user.entity.BakeryMood;
-import com.breadbread.user.entity.BakeryUseType;
-import com.breadbread.user.entity.BreadStyle;
+import com.breadbread.bakery.entity.BakeryPersonality;
+import com.breadbread.bakery.entity.BakeryUseType;
+import com.breadbread.bakery.entity.BreadType;
 import com.breadbread.user.entity.WaitingTolerance;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -13,15 +13,15 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 public class SavePreferenceRequest {
-    @Schema(description = "빵 스타일 (PLAIN: 담백한 빵, DESSERT: 달달한 디저트, PREMIUM: 고급스러운 베이커리, TRADITIONAL: 전통적인 빵, TRENDY: 요즘 핫한 메뉴)",
+    @Schema(description = "빵 종류 (CLASSIC: 전통 베이커리, DESSERT: 디저트/케이크, K_DESSERT: 한식 디저트, GOURMET: 고메/프리미엄, TRENDY: 트렌디, PLAIN: 플레인/심플)",
             example = "[\"PLAIN\", \"DESSERT\"]")
-    private List<BreadStyle> breadStyles;
+    private List<BreadType> breadTypes;
 
     @Schema(description = "빵집 성향 (FAMOUS: 유명 맛집, HIDDEN_GEM: 동네 숨은 맛집, SNS_HOT: SNS 핫플, HERITAGE: 전통 빵집)",
             example = "[\"HIDDEN_GEM\", \"HERITAGE\"]")
-    private List<BakeryMood> bakeryMoods;
+    private List<BakeryPersonality> bakeryPersonalities;
 
-    @Schema(description = "선호 빵집 취향 (TAKEOUT: 포장 위주, CAFE: 카페형, SNS_MOOD: SNS 감성, PRACTICAL: 실속형)",
+    @Schema(description = "선호 빵집 취향 (TAKEOUT: 포장 위주, CAFE_STYLE: 카페형, MOOD_SPACE: SNS 감성, PRACTICAL: 실속형)",
             example = "[\"TAKEOUT\", \"CAFE\"]")
     private List<BakeryUseType> bakeryUseTypes;
 
