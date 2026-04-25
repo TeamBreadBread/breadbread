@@ -2,7 +2,7 @@ package com.breadbread.user.entity;
 
 import com.breadbread.bakery.entity.BakeryPersonality;
 import com.breadbread.bakery.entity.BakeryUseType;
-import com.breadbread.bakery.entity.BreadStyle;
+import com.breadbread.bakery.entity.BreadType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,7 +23,7 @@ public class UserPreference {
     @ElementCollection
     @Enumerated(EnumType.STRING)
     @CollectionTable(name = "user_bread_styles", joinColumns = @JoinColumn(name = "preference_id"))
-    private List<BreadStyle> breadStyles = new ArrayList<>();
+    private List<BreadType> breadTypes = new ArrayList<>();
 
     @ElementCollection
     @Enumerated(EnumType.STRING)
@@ -43,19 +43,19 @@ public class UserPreference {
     private User user;
 
     @Builder
-    public UserPreference(List<BreadStyle> breadStyles, List<BakeryPersonality> bakeryPersonalities,
+    public UserPreference(List<BreadType> breadTypes, List<BakeryPersonality> bakeryPersonalities,
                           List<BakeryUseType> bakeryUseTypes, WaitingTolerance waitingTolerance,
                           User user) {
-        this.breadStyles = breadStyles != null ? breadStyles : new ArrayList<>();
+        this.breadTypes = breadTypes != null ? breadTypes : new ArrayList<>();
         this.bakeryMoods = bakeryPersonalities != null ? bakeryPersonalities : new ArrayList<>();
         this.bakeryUseTypes = bakeryUseTypes != null ? bakeryUseTypes : new ArrayList<>();
         this.waitingTolerance = waitingTolerance;
         this.user = user;
     }
 
-    public void update(List<BreadStyle> breadStyles, List<BakeryPersonality> bakeryPersonalities,
+    public void update(List<BreadType> breadTypes, List<BakeryPersonality> bakeryPersonalities,
                        List<BakeryUseType> bakeryUseTypes, WaitingTolerance waitingTolerance) {
-        this.breadStyles = breadStyles;
+        this.breadTypes = breadTypes;
         this.bakeryMoods = bakeryPersonalities;
         this.bakeryUseTypes = bakeryUseTypes;
         this.waitingTolerance = waitingTolerance;

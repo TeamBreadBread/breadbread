@@ -7,14 +7,13 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class CreateMenuRequest {
-
+public class UpdateBreadRequest {
     private String name;
-    private int price;
+    private Integer price;
     private String imageUrl;
 
     @Schema(description = "빵 종류 (SALT_BREAD, DESSERT, CROISSANT, TRADITIONAL)")
     private BreadType breadType;
 
-    private boolean signature;
+    private Boolean signature;
 }

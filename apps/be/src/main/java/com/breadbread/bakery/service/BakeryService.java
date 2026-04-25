@@ -2,10 +2,9 @@ package com.breadbread.bakery.service;
 
 import com.breadbread.bakery.dto.*;
 import com.breadbread.bakery.entity.Bakery;
-import com.breadbread.bakery.entity.BakeryImage;
-import com.breadbread.bakery.entity.Menu;
+import com.breadbread.bakery.entity.Bread;
 import com.breadbread.bakery.repository.BakeryRepository;
-import com.breadbread.bakery.repository.MenuRepository;
+import com.breadbread.bakery.repository.BreadRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.entity.User;
@@ -15,14 +14,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class BakeryService {
 
     private final BakeryRepository bakeryRepository;
-    private final MenuRepository menuRepository;
+    private final BreadRepository breadRepository;
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
@@ -56,7 +53,6 @@ public class BakeryService {
                 .phone(request.getPhone())
                 .mapLink(request.getMapLink())
                 .note(request.getNote())
-                .bakeryType(request.getBakeryType())
                 .bakeryUseTypes(request.getBakeryUseTypes())
                 .bakeryPersonalities(request.getBakeryPersonalities())
                 .closedDays(request.getClosedDays())
@@ -99,13 +95,13 @@ public class BakeryService {
     }
 
     @Transactional
-    public Long createMenu(Long userId, UserRole role, Long bakeryId, CreateMenuRequest request) {
+    public Long createBread(Long userId, UserRole role, Long bakeryId, CreateBreadRequest request) {
         Bakery bakery = bakeryRepository.findById(bakeryId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
 
         checkAuthority(bakery, userId, role);
 
-        Menu menu = Menu.builder()
+        Bread bread = Bread.builder()
                 .name(request.getName())
                 .price(request.getPrice())
                 .imageUrl(request.getImageUrl())
@@ -114,34 +110,34 @@ public class BakeryService {
                 .bakery(bakery)
                 .build();
 
-        return menuRepository.save(menu).getId();
+        return breadRepository.save(bread).getId();
     }
 
     @Transactional
-    public void updateMenu(Long userId, UserRole role, Long bakeryId, Long menuId, UpdateMenuRequest request) {
+    public void updateBread(Long userId, UserRole role, Long bakeryId, Long breadId, UpdateBreadRequest request) {
         Bakery bakery = bakeryRepository.findById(bakeryId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
 
         checkAuthority(bakery, userId, role);
 
-        Menu menu = menuRepository.findById(menuId)
+        Bread bread = breadRepository.findById(breadId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MENU_NOT_FOUND));
 
-        menu.update(request.getName(), request.getPrice(), request.getImageUrl(),
+        bread.update(request.getName(), request.getPrice(), request.getImageUrl(),
                 request.getBreadType(), request.getSignature());
     }
 
     @Transactional
-    public void deleteMenu(Long userId, UserRole role, Long bakeryId, Long menuId) {
+    public void deleteBread(Long userId, UserRole role, Long bakeryId, Long breadId) {
         Bakery bakery = bakeryRepository.findById(bakeryId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
 
         checkAuthority(bakery, userId, role);
 
-        Menu menu = menuRepository.findById(menuId)
+        Bread bread = breadRepository.findById(breadId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MENU_NOT_FOUND));
 
-        menuRepository.delete(menu);
+        breadRepository.delete(bread);
     }
 
     private void checkAuthority(Bakery bakery, Long userId, UserRole role) {

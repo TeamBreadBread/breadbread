@@ -19,15 +19,10 @@ public class BakeryController {
 
     private final BakeryService bakeryService;
 
-    @Operation(summary = "빵집 검색")
+    @Operation(summary = "빵집 전체 조회")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200")
     @GetMapping
-    public ApiResponse<BakeryListResponse> search(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Double lat,
-            @RequestParam(required = false) Double lng,
-            @RequestParam(required = false) Integer radius
-    ) {
+    public ApiResponse<BakeryListResponse> findAll() {
         return ApiResponse.ok(bakeryService.findAll());
     }
 
@@ -67,35 +62,35 @@ public class BakeryController {
         return ApiResponse.ok();
     }
 
-    @Operation(summary = "메뉴 등록")
-    @PostMapping("/{bakeryId}/menus")
+    @Operation(summary = "빵집 메뉴 등록")
+    @PostMapping("/{bakeryId}/breads")
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<Long> createMenu(
+    public ApiResponse<Long> createBread(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long bakeryId,
-            @RequestBody CreateMenuRequest request) {
-        Long id = bakeryService.createMenu(userDetails.getId(), userDetails.getRole(), bakeryId, request);
+            @RequestBody CreateBreadRequest request) {
+        Long id = bakeryService.createBread(userDetails.getId(), userDetails.getRole(), bakeryId, request);
         return ApiResponse.ok(id);
     }
 
-    @Operation(summary = "메뉴 수정")
-    @PutMapping("/{bakeryId}/menus/{menuId}")
-    public ApiResponse<Void> updateMenu(
+    @Operation(summary = "빵집 메뉴 수정")
+    @PutMapping("/{bakeryId}/breads/{breadId}")
+    public ApiResponse<Void> updateBread(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long bakeryId,
-            @PathVariable Long menuId,
-            @RequestBody UpdateMenuRequest request) {
-        bakeryService.updateMenu(userDetails.getId(), userDetails.getRole(), bakeryId, menuId, request);
+            @PathVariable Long breadId,
+            @RequestBody UpdateBreadRequest request) {
+        bakeryService.updateBread(userDetails.getId(), userDetails.getRole(), bakeryId, breadId, request);
         return ApiResponse.ok();
     }
 
-    @Operation(summary = "메뉴 삭제")
-    @DeleteMapping("/{bakeryId}/menus/{menuId}")
-    public ApiResponse<Void> deleteMenu(
+    @Operation(summary = "빵집 메뉴 삭제")
+    @DeleteMapping("/{bakeryId}/breads/{breadId}")
+    public ApiResponse<Void> deleteBread(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long bakeryId,
-            @PathVariable Long menuId) {
-        bakeryService.deleteMenu(userDetails.getId(), userDetails.getRole(), bakeryId, menuId);
+            @PathVariable Long breadId) {
+        bakeryService.deleteBread(userDetails.getId(), userDetails.getRole(), bakeryId, breadId);
         return ApiResponse.ok();
     }
 }

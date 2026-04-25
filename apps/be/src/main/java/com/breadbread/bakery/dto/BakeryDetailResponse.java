@@ -22,15 +22,15 @@ public class BakeryDetailResponse {
     private LocalTime openTime;
     private LocalTime closeTime;
     private String phone;
-    private int rating;
-    private List<BakeryMenuResponse> menus;
+    private Integer rating;
+    private List<BakeryBreadResponse> breads;
 
     public static BakeryDetailResponse from(Bakery bakery) {
         BusinessHours bh = bakery.getBusinessHours();
 
-        List<BakeryMenuResponse> menus = bakery.getMenus() == null ? Collections.emptyList() :
-                bakery.getMenus().stream()
-                        .map(BakeryMenuResponse::from)
+        List<BakeryBreadResponse> breads = bakery.getBreads() == null ? Collections.emptyList() :
+                bakery.getBreads().stream()
+                        .map(BakeryBreadResponse::from)
                         .toList();
 
         List<String> imageUrls = bakery.getImages() == null ? Collections.emptyList() :
@@ -49,7 +49,7 @@ public class BakeryDetailResponse {
                 .imageUrls(imageUrls)
                 .openTime(bh != null ? bh.getTodayOpen() : null)
                 .closeTime(bh != null ? bh.getTodayClose() : null)
-                .menus(menus)
+                .breads(breads)
                 .build();
     }
 

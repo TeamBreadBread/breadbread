@@ -36,9 +36,6 @@ public class CreateBakeryRequest {
     private LocalTime lastOrderTime;
     private boolean holidayClosed;
 
-    @Schema(description = "대표 빵 종류 (SALT_BREAD, DESSERT, CROISSANT, TRADITIONAL)")
-    private BakeryType bakeryType;
-
     @Schema(description = "선호 빵집 취향 (TAKEOUT, CAFE, SNS_MOOD, PRACTICAL)")
     private List<BakeryUseType> bakeryUseTypes;
 

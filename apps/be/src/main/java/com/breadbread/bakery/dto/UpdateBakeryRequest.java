@@ -2,7 +2,6 @@ package com.breadbread.bakery.dto;
 
 import com.breadbread.bakery.entity.BakeryPersonality;
 import com.breadbread.bakery.entity.BakeryUseType;
-import com.breadbread.bakery.entity.BreadType;
 import com.breadbread.bakery.entity.Frequency;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -33,7 +32,6 @@ public class UpdateBakeryRequest {
     private LocalTime lastOrderTime;
     private Boolean holidayClosed;
 
-    private BreadType breadType;
     private List<BakeryUseType> bakeryUseTypes;
     private List<BakeryPersonality> bakeryPersonalities;
     private Set<DayOfWeek> closedDays;

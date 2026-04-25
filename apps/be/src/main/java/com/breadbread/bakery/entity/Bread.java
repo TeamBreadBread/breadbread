@@ -1,6 +1,5 @@
 package com.breadbread.bakery.entity;
 
-import com.google.api.client.util.DateTime;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -9,7 +8,7 @@ import lombok.*;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString(exclude = "bakery")
-public class Menu {
+public class Bread {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,9 +29,9 @@ public class Menu {
     private Bakery bakery;
 
     @Builder
-    public Menu(String name, int price, String imageUrl,
-                Bakery bakery, BreadType breadType,
-                boolean signature, int selloutMin) {
+    public Bread(String name, int price, String imageUrl,
+                 Bakery bakery, BreadType breadType,
+                 boolean signature, int selloutMin) {
         this.name = name;
         this.price = price;
         this.imageUrl = imageUrl;

@@ -16,7 +16,7 @@ public class BakerySummaryResponse {
     private Double lat;
     private Double lng;
     private String thumbnailUrl;
-    private int rating;
+    private Integer rating;
     private LocalTime openTime;
     private LocalTime closeTime;
     private int likeCount;

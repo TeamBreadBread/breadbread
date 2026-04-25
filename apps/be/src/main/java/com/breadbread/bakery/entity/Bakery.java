@@ -31,7 +31,7 @@ public class Bakery extends BaseEntity {
     private Double latitude;    // 위도
     private Double longitude;   // 경도
     private String phone;       //• 문의 전화 번호
-    private int rating;      //• 별점
+    private Integer rating;      //• 별점 (null 허용 위해 Integer로 저장)
     private String mapLink;     //• 지도 링크
     private boolean dineInAvailable;   // 매장취식여부
     private boolean parkingAvailable;  // 주차가능여부
@@ -40,9 +40,6 @@ public class Bakery extends BaseEntity {
 
     @Embedded
     private BusinessHours businessHours;    //• 운영 시간
-
-    @Enumerated(EnumType.STRING)
-    private BakeryType bakeryType;
 
     private LocalTime appearanceTime;
 
@@ -71,7 +68,7 @@ public class Bakery extends BaseEntity {
     private List<BakeryPersonality> bakeryPersonalities = new ArrayList<>();
 
     @OneToMany(mappedBy = "bakery", fetch = FetchType.LAZY)
-    private List<Menu> menus = new ArrayList<>();
+    private List<Bread> breads = new ArrayList<>();
 
     @OneToMany(mappedBy = "bakery", fetch = FetchType.LAZY)
     private List<BakeryImage> images = new ArrayList<>();
@@ -119,19 +116,18 @@ public class Bakery extends BaseEntity {
     }
 
     @Builder
-    public Bakery(String name, BakeryType bakeryType, String address, String region,
+    public Bakery(String name, String address, String region,
                   Double latitude, Double longitude,
                   Set<DayOfWeek> closedDays, Set<DayOfWeek> crowdedDays,
                   LocalTime weekdayOpen, LocalTime weekdayClose,
                   LocalTime weekendOpen, LocalTime weekendClose,
                   LocalTime lastOrderTime, boolean holidayClosed,
-                  String phone, int rating, String mapLink,
+                  String phone, Integer rating, String mapLink,
                   List<BakeryUseType> bakeryUseTypes,
                   List<BakeryPersonality> bakeryPersonalities,
                   boolean dineInAvailable, boolean parkingAvailable, String note,
                   LocalTime appearanceTime, Frequency frequency) {
         this.name = name;
-        this.bakeryType = bakeryType;
         this.address = address;
         this.region = region;
         this.latitude = latitude;
