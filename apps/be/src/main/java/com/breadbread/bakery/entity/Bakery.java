@@ -121,7 +121,7 @@ public class Bakery extends BaseEntity {
                   Set<DayOfWeek> closedDays, Set<DayOfWeek> crowdedDays,
                   LocalTime weekdayOpen, LocalTime weekdayClose,
                   LocalTime weekendOpen, LocalTime weekendClose,
-                  LocalTime lastOrderTime, boolean holidayClosed,
+                  String lastOrderTime, boolean holidayClosed,
                   String phone, Integer rating, String mapLink,
                   List<BakeryUseType> bakeryUseTypes,
                   List<BakeryPersonality> bakeryPersonalities,

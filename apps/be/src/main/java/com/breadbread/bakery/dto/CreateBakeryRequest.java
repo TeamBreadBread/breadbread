@@ -33,7 +33,7 @@ public class CreateBakeryRequest {
     private LocalTime weekdayClose;
     private LocalTime weekendOpen;
     private LocalTime weekendClose;
-    private LocalTime lastOrderTime;
+    private String lastOrderTime;
     private boolean holidayClosed;
 
     @Schema(description = "선호 빵집 취향 (TAKEOUT, CAFE, SNS_MOOD, PRACTICAL)")

@@ -29,7 +29,7 @@ public class UpdateBakeryRequest {
     private LocalTime weekdayClose;
     private LocalTime weekendOpen;
     private LocalTime weekendClose;
-    private LocalTime lastOrderTime;
+    private String lastOrderTime;
     private Boolean holidayClosed;
 
     private List<BakeryUseType> bakeryUseTypes;
