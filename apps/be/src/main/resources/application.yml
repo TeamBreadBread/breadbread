@@ -23,6 +23,24 @@ spring:
   security:
     enabled: false  # 개발 중 임시 비활성화
 
+  cloud:
+    gcp:
+      project-id: ${GCP_PROJECT_ID:your-project-id}
+      sql:
+        enabled: false
+      storage:
+        credentials:
+          location: ${GCP_CREDENTIALS_PATH:classpath:key.json}
+
+  servlet:
+    multipart:
+      max-file-size: 10MB        # 파일 1개당 최대 크기
+      max-request-size: 50MB    # 요청 전체 크기 (여러 파일)
+      enabled: true
+
+gcs:
+  bucket: ${GCS_BUCKET:your-bucket-name}
+
 jwt:
   secret: ${JWT_SECRET:temp-access-secret-key-minimum-32-characters-x}
   expires-in: ${JWT_EXPIRES_IN:3600}
@@ -30,7 +48,7 @@ jwt:
   refresh-expires-in: ${JWT_REFRESH_EXPIRES_IN:604800}
 
 server:
-  port: ${PORT:8000}
+  port: ${PORT:8080}
 
 coolsms:
   api:

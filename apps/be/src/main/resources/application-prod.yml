@@ -5,5 +5,15 @@ spring:
     password: ${DB_PASSWORD:bread1234}
     driver-class-name: org.postgresql.Driver
 
+  cloud:
+    gcp:
+      project-id: ${GCP_PROJECT_ID}
+      sql:
+        enabled: false
+
+gcs:
+  bucket: ${GCS_BUCKET}
+
 server:
   port: ${PORT:8080}
+  forward-headers-strategy: framework

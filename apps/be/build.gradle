@@ -49,6 +49,9 @@ dependencies {
 	// Google Cloud SQL Socket Factory for PostgreSQL
 	implementation 'com.google.cloud.sql:postgres-socket-factory:1.15.2'
 
+	// Google Cloud Storage
+	implementation 'com.google.cloud:spring-cloud-gcp-starter-storage:5.10.0'
+
 	// QueryDSL
 	implementation 'com.querydsl:querydsl-jpa::jakarta'
 	annotationProcessor 'com.querydsl:querydsl-apt::jakarta'

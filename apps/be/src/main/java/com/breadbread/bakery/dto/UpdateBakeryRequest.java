@@ -43,4 +43,5 @@ public class UpdateBakeryRequest {
     private Boolean drinkAvailable;
     private LocalTime appearanceTime;
     private Frequency frequency;
+    private String[] imageUrls;
 }

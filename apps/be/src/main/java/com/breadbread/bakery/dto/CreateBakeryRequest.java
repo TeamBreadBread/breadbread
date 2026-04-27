@@ -56,4 +56,7 @@ public class CreateBakeryRequest {
 
     @Schema(description = "생산 빈도 (ALWAYS, ONCE_PER_DAY, TWICE_PER_DAY)")
     private Frequency frequency;
+
+    @Schema(description = "빵집 사진 URL 리스트(최대 5개 저장)")
+    private String[] imageUrls;
 }
