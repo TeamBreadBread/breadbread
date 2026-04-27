@@ -124,10 +124,10 @@ public class BakeryService {
         if(request.getImageUrls()!=null){
             List<BakeryImage> images = new ArrayList<>();
             String[] urls = request.getImageUrls();
-            for(int i=1; i<= urls.length; i++){
+            for (int i = 0; i < urls.length; i++) {
                 images.add(BakeryImage.builder()
                         .imageUrl(urls[i])
-                        .displayOrder(i)
+                        .displayOrder(i + 1)
                         .bakery(saved)
                         .build());
             }
@@ -149,10 +149,10 @@ public class BakeryService {
             bakeryImageRepository.deleteAllByBakery(bakery);
             List<BakeryImage> images = new ArrayList<>();
             String[] urls = request.getImageUrls();
-            for (int i = 1; i <= urls.length; i++) {
+            for (int i = 0; i < urls.length; i++) {
                 images.add(BakeryImage.builder()
                         .imageUrl(urls[i])
-                        .displayOrder(i)
+                        .displayOrder(i + 1)
                         .bakery(bakery)
                         .build());
             }
