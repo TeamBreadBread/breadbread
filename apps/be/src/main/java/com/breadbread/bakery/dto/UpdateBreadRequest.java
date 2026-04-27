@@ -12,7 +12,7 @@ public class UpdateBreadRequest {
     private Integer price;
     private String imageUrl;
 
-    @Schema(description = "빵 종류 (SALT_BREAD, DESSERT, CROISSANT, TRADITIONAL)")
+    @Schema(description = "빵 종류 (BREAD, SANDWICH, CAKE, RICE_CAKE, COOKIE, DIET)")
     private BreadType breadType;
 
     private Boolean signature;

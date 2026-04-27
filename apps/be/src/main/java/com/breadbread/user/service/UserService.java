@@ -24,11 +24,11 @@ public class UserService {
 
         userPreferenceRepository.findByUserId(userId)
                 .ifPresentOrElse(
-                        pref -> pref.update(request.getBreadTypes(), request.getBakeryPersonalities(),
+                        pref -> pref.update(request.getBakeryTypes(), request.getBakeryPersonalities(),
                                 request.getBakeryUseTypes(), request.getWaitingTolerance()),
                         () -> userPreferenceRepository.save(UserPreference.builder()
                                 .user(user)
-                                .breadTypes(request.getBreadTypes())
+                                .bakeryTypes(request.getBakeryTypes())
                                 .bakeryPersonalities(request.getBakeryPersonalities())
                                 .bakeryUseTypes(request.getBakeryUseTypes())
                                 .waitingTolerance(request.getWaitingTolerance())

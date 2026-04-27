@@ -35,6 +35,7 @@ public class Bakery extends BaseEntity {
     private String mapLink;     //• 지도 링크
     private boolean dineInAvailable;   // 매장취식여부
     private boolean parkingAvailable;  // 주차가능여부
+    private boolean drinkAvailable;     // 음료 판매 여부
     private String note;
     private boolean active = true;
 
@@ -45,6 +46,9 @@ public class Bakery extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     private Frequency frequency;
+
+    @Enumerated(EnumType.STRING)
+    private BakeryType bakeryType;
 
 
     @ElementCollection(targetClass = DayOfWeek.class, fetch = FetchType.LAZY)
@@ -92,12 +96,14 @@ public class Bakery extends BaseEntity {
         if (req.getPhone() != null) this.phone = req.getPhone();
         if (req.getMapLink() != null) this.mapLink = req.getMapLink();
         if (req.getNote() != null) this.note = req.getNote();
+        if (req.getBakeryType() != null) this.bakeryType = req.getBakeryType();
         if (req.getBakeryUseTypes() != null) this.bakeryUseTypes = req.getBakeryUseTypes();
         if (req.getBakeryPersonalities() != null) this.bakeryPersonalities = req.getBakeryPersonalities();
         if (req.getClosedDays() != null) this.closedDays = req.getClosedDays();
         if (req.getCrowdedDays() != null) this.crowdedDays = req.getCrowdedDays();
         if (req.getDineInAvailable() != null) this.dineInAvailable = req.getDineInAvailable();
         if (req.getParkingAvailable() != null) this.parkingAvailable = req.getParkingAvailable();
+        if (req.getDrinkAvailable() != null) this.drinkAvailable = req.getDrinkAvailable();
         if (req.getAppearanceTime() != null) this.appearanceTime = req.getAppearanceTime();
         if (req.getFrequency() != null) this.frequency = req.getFrequency();
         if (req.getWeekdayOpen() != null || req.getWeekdayClose() != null
@@ -123,9 +129,11 @@ public class Bakery extends BaseEntity {
                   LocalTime weekendOpen, LocalTime weekendClose,
                   String lastOrderTime, boolean holidayClosed,
                   String phone, Integer rating, String mapLink,
+                  BakeryType bakeryType,
                   List<BakeryUseType> bakeryUseTypes,
                   List<BakeryPersonality> bakeryPersonalities,
-                  boolean dineInAvailable, boolean parkingAvailable, String note,
+                  boolean dineInAvailable, boolean parkingAvailable,
+                  boolean drinkAvailable, String note,
                   LocalTime appearanceTime, Frequency frequency) {
         this.name = name;
         this.address = address;
@@ -147,7 +155,9 @@ public class Bakery extends BaseEntity {
         this.mapLink = mapLink;
         this.dineInAvailable = dineInAvailable;
         this.parkingAvailable = parkingAvailable;
+        this.drinkAvailable = drinkAvailable;
         this.note = note;
+        this.bakeryType = bakeryType;
         this.bakeryUseTypes = bakeryUseTypes != null ? bakeryUseTypes : new ArrayList<>();
         this.bakeryPersonalities = bakeryPersonalities != null ? bakeryPersonalities : new ArrayList<>();
         this.appearanceTime = appearanceTime;
