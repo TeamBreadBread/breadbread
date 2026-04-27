@@ -28,9 +28,6 @@ spring:
       project-id: ${GCP_PROJECT_ID:your-project-id}
       sql:
         enabled: false
-      storage:
-        credentials:
-          location: ${GCP_CREDENTIALS_PATH:classpath:key.json}
 
   servlet:
     multipart:
