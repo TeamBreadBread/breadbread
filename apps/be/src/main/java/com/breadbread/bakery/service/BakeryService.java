@@ -11,24 +11,27 @@ import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class BakeryService {
-
     private final BakeryRepository bakeryRepository;
     private final BreadRepository breadRepository;
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public BakeryListResponse findAll() {
+    public BakeryListResponse search(BakerySearch search, Pageable pageable) {
+        Page<Bakery> result = bakeryRepository.search(search, pageable);
         return BakeryListResponse.builder()
-                .bakeries(bakeryRepository.findAll().stream()
-                        .map(BakerySummaryResponse::from)
-                        .toList())
-                .total((int) bakeryRepository.count())
+                .bakeries(result.getContent().stream().map(BakerySummaryResponse::from).toList())
+                .total((int) result.getTotalElements())
+                .page(pageable.getPageNumber())
+                .size(pageable.getPageSize())
+                .hasNext(result.hasNext())
                 .build();
     }
 
@@ -60,7 +63,7 @@ public class BakeryService {
                 .crowdedDays(request.getCrowdedDays())
                 .dineInAvailable(request.isDineInAvailable())
                 .parkingAvailable(request.isParkingAvailable())
-                .drinkAvailable(request.isDrinkingAvailable())
+                .drinkAvailable(request.isDrinkAvailable())
                 .appearanceTime(request.getAppearanceTime())
                 .frequency(request.getFrequency())
                 .weekdayOpen(request.getWeekdayOpen())
