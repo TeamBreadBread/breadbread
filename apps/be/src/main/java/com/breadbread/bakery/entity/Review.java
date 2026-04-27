@@ -11,7 +11,7 @@ import lombok.*;
 @Table
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@ToString(exclude = "bakery")
+@ToString(exclude = {"bakery", "user"})
 public class Review extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

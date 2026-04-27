@@ -36,6 +36,9 @@ public class CreateBakeryRequest {
     private String lastOrderTime;
     private boolean holidayClosed;
 
+    @Schema(description = "빵 스타일 (CLASSIC: 전통 베이커리, DESSERT: 디저트/케이크, K_DESSERT: 한식 디저트, GOURMET: 고메/프리미엄, TRENDY: 트렌디, PLAIN: 플레인/심플)", example = "CLASSIC")
+    private BakeryType bakeryType;
+
     @Schema(description = "선호 빵집 취향 (TAKEOUT, CAFE, SNS_MOOD, PRACTICAL)")
     private List<BakeryUseType> bakeryUseTypes;
 
@@ -46,6 +49,7 @@ public class CreateBakeryRequest {
     private Set<DayOfWeek> crowdedDays;
     private boolean dineInAvailable;
     private boolean parkingAvailable;
+    private boolean drinkingAvailable;
 
     @Schema(description = "빵 나오는 시각")
     private LocalTime appearanceTime;

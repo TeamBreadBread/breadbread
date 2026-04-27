@@ -8,7 +8,7 @@ import lombok.*;
 @Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"bakery_id", "user_id"})})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@ToString(exclude = "bakery")
+@ToString(exclude = {"bakery", "user"})
 public class BakeryLike {
 
     @Id
@@ -23,6 +23,7 @@ public class BakeryLike {
     @JoinColumn(name = "user_id")
     private User user;
 
+    // Builder 객체를 로그로 찍을 때 bakery 전체가 붙어서 출력되거나 순환 참조되므로 주의 필요
     @Builder
     public BakeryLike(Bakery bakery, User user) {
         this.bakery = bakery;

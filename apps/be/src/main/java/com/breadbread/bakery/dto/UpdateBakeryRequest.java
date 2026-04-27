@@ -1,6 +1,7 @@
 package com.breadbread.bakery.dto;
 
 import com.breadbread.bakery.entity.BakeryPersonality;
+import com.breadbread.bakery.entity.BakeryType;
 import com.breadbread.bakery.entity.BakeryUseType;
 import com.breadbread.bakery.entity.Frequency;
 import lombok.Getter;
@@ -32,12 +33,14 @@ public class UpdateBakeryRequest {
     private String lastOrderTime;
     private Boolean holidayClosed;
 
+    private BakeryType bakeryType;
     private List<BakeryUseType> bakeryUseTypes;
     private List<BakeryPersonality> bakeryPersonalities;
     private Set<DayOfWeek> closedDays;
     private Set<DayOfWeek> crowdedDays;
     private Boolean dineInAvailable;
     private Boolean parkingAvailable;
+    private Boolean drinkAvailable;
     private LocalTime appearanceTime;
     private Frequency frequency;
 }

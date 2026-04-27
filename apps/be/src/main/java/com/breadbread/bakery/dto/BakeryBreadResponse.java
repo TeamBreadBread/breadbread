@@ -14,7 +14,7 @@ public class BakeryBreadResponse {
     private String imageUrl;
     private BreadType breadType;
     private boolean signature;
-    private boolean soldOut;
+    private boolean estimatedSoldOut;
 
     public static BakeryBreadResponse from(Bread bread) {
         return BakeryBreadResponse.builder()
@@ -24,7 +24,7 @@ public class BakeryBreadResponse {
                 .imageUrl(bread.getImageUrl())
                 .breadType(bread.getBreadType())
                 .signature(bread.isSignature())
-                .soldOut(bread.isSoldOut())
+                .estimatedSoldOut(bread.isEstimatedSoldOut())
                 .build();
     }
 }

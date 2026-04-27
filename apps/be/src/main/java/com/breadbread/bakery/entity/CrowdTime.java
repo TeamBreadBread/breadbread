@@ -7,7 +7,7 @@ import lombok.*;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "crowd_times")
+@Table(name = "crowd_time")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString(exclude = "bakery")
