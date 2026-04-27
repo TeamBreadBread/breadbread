@@ -49,7 +49,7 @@ public class CreateBakeryRequest {
     private Set<DayOfWeek> crowdedDays;
     private boolean dineInAvailable;
     private boolean parkingAvailable;
-    private boolean drinkingAvailable;
+    private boolean drinkAvailable;
 
     @Schema(description = "빵 나오는 시각")
     private LocalTime appearanceTime;

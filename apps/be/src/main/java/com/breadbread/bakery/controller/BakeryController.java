@@ -2,11 +2,13 @@ package com.breadbread.bakery.controller;
 
 import com.breadbread.auth.dto.CustomUserDetails;
 import com.breadbread.bakery.dto.*;
+import com.breadbread.bakery.entity.BakerySortType;
 import com.breadbread.bakery.service.BakeryService;
 import com.breadbread.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -19,11 +21,23 @@ public class BakeryController {
 
     private final BakeryService bakeryService;
 
-    @Operation(summary = "빵집 전체 조회")
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200")
+    @Operation(summary = "빵집 목록 조회 (검색/정렬/필터/페이징)")
     @GetMapping
-    public ApiResponse<BakeryListResponse> findAll() {
-        return ApiResponse.ok(bakeryService.findAll());
+    public ApiResponse<BakeryListResponse> search(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) BakerySortType sort,
+            @RequestParam(defaultValue = "false") boolean open,
+            @RequestParam(required = false) String region,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        BakerySearch search = BakerySearch.builder()
+                .keyword(keyword)
+                .sort(sort)
+                .open(open)
+                .region(region)
+                .build();
+        return ApiResponse.ok(bakeryService.search(search, PageRequest.of(page, size)));
     }
 
     @Operation(summary = "빵집 상세 조회")

@@ -10,4 +10,7 @@ import java.util.List;
 public class BakeryListResponse {
     private List<BakerySummaryResponse> bakeries;
     private int total;
+    private int page;
+    private int size;
+    private boolean hasNext;
 }
