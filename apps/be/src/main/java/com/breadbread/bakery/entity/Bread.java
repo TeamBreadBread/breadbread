@@ -1,5 +1,6 @@
 package com.breadbread.bakery.entity;
 
+import com.breadbread.bakery.dto.UpdateBreadRequest;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -42,13 +43,12 @@ public class Bread {
         this.selloutMin = selloutMin;
     }
 
-    public void update(String name, Integer price, String imageUrl,
-                       BreadType breadType, Boolean signature) {
-        if (name != null) this.name = name;
-        if (price != null) this.price = price;
-        if (imageUrl != null) this.imageUrl = imageUrl;
-        if (breadType != null) this.breadType = breadType;
-        if (signature != null) this.signature = signature;
+    public void update(UpdateBreadRequest req) {
+        if (req.getName() != null) this.name = req.getName();
+        if (req.getPrice() != null) this.price = req.getPrice();
+        if (req.getImageUrl() != null) this.imageUrl = req.getImageUrl();
+        if (req.getBreadType() != null) this.breadType = req.getBreadType();
+        if (req.getSignature() != null) this.signature = req.getSignature();
     }
 
     public void markSoldOut() {

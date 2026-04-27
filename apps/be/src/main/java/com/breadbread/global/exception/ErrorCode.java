@@ -56,7 +56,13 @@ public enum ErrorCode {
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "E0601", "존재하지 않는 결제 내역입니다."),
     PAYMENT_FAILED(HttpStatus.BAD_REQUEST, "E0602", "결제에 실패했습니다."),
     PAYMENT_ALREADY_DONE(HttpStatus.CONFLICT, "E0603", "이미 완료된 결제입니다."),
-    PAYMENT_CANCEL_FAILED(HttpStatus.BAD_REQUEST, "E0604", "결제 취소에 실패했습니다.");
+    PAYMENT_CANCEL_FAILED(HttpStatus.BAD_REQUEST, "E0604", "결제 취소에 실패했습니다."),
+
+    // 파일/GCS E07xx
+    FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E0701", "파일 업로드에 실패했습니다."),
+    FILE_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E0702", "파일 삭제에 실패했습니다."),
+    INVALID_FILE_NAME(HttpStatus.BAD_REQUEST, "E0703", "유효하지 않은 파일 이름입니다."),
+    INVALID_GCS_URL(HttpStatus.BAD_REQUEST, "E0704", "유효하지 않은 파일 URL입니다.");
 
     private final HttpStatus status;
     private final String code;

@@ -54,6 +54,7 @@ jobs:
             GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
             GCP_REGION=${{ secrets.GCP_REGION }}
             CLOUD_SQL_INSTANCE=${{ secrets.CLOUD_SQL_INSTANCE }}
+            GCS_BUCKET=${{ secrets.GCS_BUCKET }}
             DB_NAME=${{ secrets.DB_NAME }}
             DB_USERNAME=${{ secrets.DB_USERNAME }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}

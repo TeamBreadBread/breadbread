@@ -23,6 +23,13 @@ public class BakeryController {
 
     private final BakeryService bakeryService;
 
+    @Operation(summary = "AI용 빵집 전체 조회")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200")
+    @GetMapping("/ai")
+    public ApiResponse<java.util.List<BakeryAiResponse>> findAllForAi() {
+        return ApiResponse.ok(bakeryService.findAllForAi());
+    }
+
     @Operation(
             summary = "빵집 목록 조회",
             description = "키워드 검색, 지역 필터, 정렬, 영업 중 필터, 페이징 지원"

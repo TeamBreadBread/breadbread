@@ -1,6 +1,7 @@
 package com.breadbread.bakery.dto;
 
 import com.breadbread.bakery.entity.Bakery;
+import com.breadbread.bakery.entity.BakeryImage;
 import com.breadbread.bakery.entity.BusinessHours;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,7 +22,7 @@ public class BakerySummaryResponse {
     private LocalTime closeTime;
     private int likeCount;
 
-    public static BakerySummaryResponse from(Bakery bakery) {
+    public static BakerySummaryResponse from(Bakery bakery, String thumbnailUrl) {
         BusinessHours bh = bakery.getBusinessHours();
         return BakerySummaryResponse.builder()
                 .id(bakery.getId())
@@ -30,6 +31,7 @@ public class BakerySummaryResponse {
                 .lat(bakery.getLatitude())
                 .lng(bakery.getLongitude())
                 .rating(bakery.getRating())
+                .thumbnailUrl(thumbnailUrl)
                 .openTime(bh != null ? bh.getTodayOpen() : null)
                 .closeTime(bh != null ? bh.getTodayClose() : null)
                 .build();
