@@ -7,8 +7,8 @@ import lombok.Getter;
 @Getter
 @Builder
 public class BakerySearch {
-    String keyword;
-    BakerySortType sort;
+    private String keyword;
+    private BakerySortType sort;
     private boolean open;
     private String region;
 }
