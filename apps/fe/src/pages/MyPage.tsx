@@ -28,7 +28,7 @@ export default function MyPage() {
       <div className="flex flex-1 flex-col bg-[#f3f4f5]">
         <AppTopBar title="MY" onBack={() => navigate({ to: "/home" })} />
 
-        <div className="flex flex-1 flex-col pb-x5">
+        <div className="flex flex-1 flex-col pb-[calc(56px+30px)] sm:pb-[calc(72px+30px)]">
           <div className="bg-white">
             <MyProfileCard
               nickname="노릇노릇한 소금빵"
@@ -53,7 +53,7 @@ export default function MyPage() {
 
           <button
             type="button"
-            className="mt-[20px] self-center font-pretendard typo-t4medium text-[#868b94] underline"
+            className="mt-[20px] self-center font-pretendard typo-t4medium text-[#868b94] underline decoration-[#868b94] underline-offset-4"
           >
             로그아웃
           </button>

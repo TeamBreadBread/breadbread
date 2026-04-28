@@ -20,16 +20,16 @@
   },
   "lint-staged": {
     "apps/fe/src/**/*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
+      "\"C:\\Program Files\\nodejs\\node.exe\" ./node_modules/eslint/bin/eslint.js --fix",
+      "\"C:\\Program Files\\nodejs\\node.exe\" ./node_modules/prettier/bin/prettier.cjs --write"
     ],
     "apps/be/src/**/*.ts": [
-      "eslint --fix",
-      "prettier --write"
+      "\"C:\\Program Files\\nodejs\\node.exe\" ./node_modules/eslint/bin/eslint.js --fix",
+      "\"C:\\Program Files\\nodejs\\node.exe\" ./node_modules/prettier/bin/prettier.cjs --write"
     ],
     "packages/shared/src/**/*.ts": [
-      "eslint --fix",
-      "prettier --write"
+      "\"C:\\Program Files\\nodejs\\node.exe\" ./node_modules/eslint/bin/eslint.js --fix",
+      "\"C:\\Program Files\\nodejs\\node.exe\" ./node_modules/prettier/bin/prettier.cjs --write"
     ]
   }
 }

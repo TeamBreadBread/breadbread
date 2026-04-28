@@ -31,10 +31,6 @@ export default function BottomNav({ items }: BottomNavProps) {
           </div>
         ))}
       </div>
-
-      <div className="relative h-[34px] bg-white">
-        <div className="absolute bottom-x2 left-1/2 h-[5px] w-[144px] -translate-x-1/2 rounded-full bg-black" />
-      </div>
     </div>
   );
 }
