@@ -6,6 +6,7 @@ import { PreferenceOptionCard } from "@/components/common/cards";
 import PreferenceIntro from "@/components/domain/ai-course/PreferenceIntro";
 import PreferenceQuestionSection from "@/components/domain/ai-course/PreferenceQuestionSection";
 import PreferenceTopBar from "@/components/domain/ai-course/PreferenceTopBar";
+import { preferenceSectionAllowsMultiple } from "@/utils/preferenceSelection";
 import { cn } from "@/utils/cn";
 
 type OptionItem = {
@@ -65,18 +66,29 @@ export default function BreadPreference() {
   const [isDepartureBottomSheetOpen, setIsDepartureBottomSheetOpen] = useState(false);
   const [departureKeyword, setDepartureKeyword] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
+  /** 검색 후 목록에서 장소 선택 시에만 요약 출발지 인풋을 gray_400 활성 스타일로 */
+  const [departurePlacePickedFromSearch, setDeparturePlacePickedFromSearch] = useState(false);
   const navigate = useNavigate();
 
   const handleSelect = (sectionId: string, optionLabel: string) => {
     setSelectedBySection((prev) => {
       const current = prev[sectionId] ?? [];
       const isSelected = current.includes(optionLabel);
+      const section = QUESTION_SECTIONS.find((s) => s.id === sectionId);
+      const allowsMultiple = preferenceSectionAllowsMultiple(section?.helperText);
+
+      let nextSectionValues: string[];
+      if (allowsMultiple) {
+        nextSectionValues = isSelected
+          ? current.filter((selectedOption) => selectedOption !== optionLabel)
+          : [...current, optionLabel];
+      } else {
+        nextSectionValues = isSelected ? [] : [optionLabel];
+      }
 
       return {
         ...prev,
-        [sectionId]: isSelected
-          ? current.filter((selectedOption) => selectedOption !== optionLabel)
-          : [...current, optionLabel],
+        [sectionId]: nextSectionValues,
       };
     });
   };
@@ -107,20 +119,28 @@ export default function BreadPreference() {
     : ["검색어 1", "검색어 2", "검색어 3"];
 
   const handleSearchSubmit = () => {
-    setDepartureKeyword(searchKeyword.trim());
+    const trimmed = searchKeyword.trim();
+    setDepartureKeyword(trimmed);
+    setDeparturePlacePickedFromSearch(false);
     closeDepartureBottomSheet();
   };
 
   const handleResultItemClick = (item: string) => {
     setDepartureKeyword(item);
     setSearchKeyword(item);
+    setDeparturePlacePickedFromSearch(true);
     closeDepartureBottomSheet();
   };
+
+  const allQuestionSectionsAnswered = QUESTION_SECTIONS.every(
+    (section) => (selectedBySection[section.id]?.length ?? 0) > 0,
+  );
+  const canGoNext = allQuestionSectionsAnswered && hasDepartureResult;
 
   return (
     <MobileFrame>
       <div className="pb-footer-safe flex flex-1 flex-col">
-        <PreferenceTopBar title="빵 취향 선택" />
+        <PreferenceTopBar title="빵 취향 선택" onCancel={() => navigate({ to: "/home" })} />
 
         <PreferenceIntro
           currentStep={1}
@@ -161,7 +181,9 @@ export default function BreadPreference() {
                 aria-label="출발지 입력창 열기"
                 className={cn(
                   "flex h-[64px] w-full items-center justify-between rounded-r3 px-x4",
-                  hasDepartureResult ? "border border-gray-400" : "border border-gray-500",
+                  departurePlacePickedFromSearch
+                    ? "border border-gray-400"
+                    : "border border-gray-500",
                 )}
                 onClick={openDepartureBottomSheet}
                 onKeyDown={(event) => {
@@ -176,7 +198,7 @@ export default function BreadPreference() {
                   aria-label="출발지 입력 확인"
                   className={cn(
                     "flex h-x6 w-x6 items-center justify-center rounded-full text-size-4",
-                    hasDepartureResult
+                    departurePlacePickedFromSearch
                       ? "border border-gray-400 text-gray-400"
                       : "border border-gray-500 text-gray-500",
                   )}
@@ -193,7 +215,7 @@ export default function BreadPreference() {
                   value={departureKeyword || "출발지 입력"}
                   className={cn(
                     "mx-x3 flex-1 bg-transparent text-left font-sans text-size-5 leading-t6 font-normal tracking-1 outline-none",
-                    hasDepartureResult ? "text-gray-400" : "text-gray-500",
+                    departurePlacePickedFromSearch ? "text-gray-400" : "text-gray-500",
                   )}
                 />
 
@@ -201,7 +223,7 @@ export default function BreadPreference() {
                   aria-hidden="true"
                   className={cn(
                     "flex h-x6 w-x6 items-center justify-center text-size-4",
-                    hasDepartureResult ? "text-gray-400" : "text-gray-500",
+                    departurePlacePickedFromSearch ? "text-gray-400" : "text-gray-500",
                   )}
                 >
                   ⌕
@@ -243,7 +265,7 @@ export default function BreadPreference() {
               </div>
 
               <form
-                className="mt-x4 flex h-x14 items-center gap-x2 rounded-r3 border border-gray-300 px-x5"
+                className="mt-x4 flex h-x14 items-center gap-x2 rounded-r3 border border-gray-300 bg-gray-00 px-x5"
                 onSubmit={(event) => {
                   event.preventDefault();
                   handleSearchSubmit();
@@ -299,7 +321,11 @@ export default function BreadPreference() {
         </>
       ) : null}
 
-      <OverlayFooter onRightClick={() => navigate({ to: "/recommendation" })} />
+      <OverlayFooter
+        nextDisabled={!canGoNext}
+        onLeftClick={() => navigate({ to: "/home" })}
+        onRightClick={() => navigate({ to: "/recommendation" })}
+      />
     </MobileFrame>
   );
 }
