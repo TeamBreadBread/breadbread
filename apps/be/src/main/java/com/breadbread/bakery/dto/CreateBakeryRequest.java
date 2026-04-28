@@ -2,6 +2,7 @@ package com.breadbread.bakery.dto;
 
 import com.breadbread.bakery.entity.*;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -14,19 +15,28 @@ import java.util.Set;
 @NoArgsConstructor
 public class CreateBakeryRequest {
 
+    @NotBlank
     @Schema(description = "빵집 이름")
     private String name;
 
+    @NotBlank
     @Schema(description = "전체 주소")
     private String address;
 
+    @NotBlank
     @Schema(description = "지역구 (예: 대전 중구)")
     private String region;
 
+    @DecimalMin("-90.0") @DecimalMax("90.0")
     private Double latitude;
+
+    @DecimalMin("-180.0") @DecimalMax("180.0")
     private Double longitude;
+
     private String phone;
     private String mapLink;
+
+    @Size(max = 500)
     private String note;
 
     private LocalTime weekdayOpen;
@@ -57,6 +67,7 @@ public class CreateBakeryRequest {
     @Schema(description = "생산 빈도 (ALWAYS, ONCE_PER_DAY, TWICE_PER_DAY)")
     private Frequency frequency;
 
+    @Size(max = 5)
     @Schema(description = "빵집 사진 URL 리스트(최대 5개 저장)")
     private String[] imageUrls;
 }

@@ -62,7 +62,8 @@ public enum ErrorCode {
     FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E0701", "파일 업로드에 실패했습니다."),
     FILE_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E0702", "파일 삭제에 실패했습니다."),
     INVALID_FILE_NAME(HttpStatus.BAD_REQUEST, "E0703", "유효하지 않은 파일 이름입니다."),
-    INVALID_GCS_URL(HttpStatus.BAD_REQUEST, "E0704", "유효하지 않은 파일 URL입니다.");
+    INVALID_GCS_URL(HttpStatus.BAD_REQUEST, "E0704", "유효하지 않은 파일 URL입니다."),
+    INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "E0705", "허용되지 않는 파일 형식입니다. (jpeg, jpg, png, webp만 가능)");
 
     private final HttpStatus status;
     private final String code;
