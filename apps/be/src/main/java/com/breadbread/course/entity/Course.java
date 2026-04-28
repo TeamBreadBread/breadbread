@@ -1,0 +1,119 @@
+package com.breadbread.course.entity;
+
+import com.breadbread.bakery.entity.BreadType;
+import com.breadbread.global.entity.BaseEntity;
+import com.breadbread.global.exception.CustomException;
+import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.user.entity.User;
+import com.breadbread.user.entity.UserPreference;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+@Entity
+@Table(name = "course")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Course extends BaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private CourseType courseType;
+
+    private String thumbnailUrl;
+
+    private Integer estimatedCost;
+
+    private String estimatedTime;
+
+    private boolean shared;  // AI코스 공유 여부 (MANUAL은 항상 true)
+
+    @Embedded
+    private AiCourseInfo aiCourseInfo;
+
+    @Embedded
+    private ManualCourseInfo manualCourseInfo;
+
+    @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
+    private List<CourseBakery> courseBakeries = new ArrayList<>();
+
+    @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
+    private List<CourseLike> courseLikes = new ArrayList<>();
+
+    // AI코스 칼럼
+    @ElementCollection
+    @CollectionTable(name = "course_preferred_bread_types", joinColumns = @JoinColumn(name = "course_id"))
+    @Enumerated(EnumType.STRING)
+    private Set<BreadType> preferredBreadTypes = new HashSet<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_preference_id")
+    private UserPreference userPreference;
+
+    // 정적 팩토리
+    public static Course createManual(String name, String thumbnailUrl,
+                                      String estimatedTime, Integer estimatedCost,
+                                      ManualCourseInfo manualCourseInfo) {
+        Course course = new Course();
+        course.name = name;
+        course.courseType = CourseType.MANUAL;
+        course.thumbnailUrl = thumbnailUrl;
+        course.estimatedTime = estimatedTime;
+        course.estimatedCost = estimatedCost;
+        course.manualCourseInfo = manualCourseInfo;
+        course.shared = true;
+        return course;
+    }
+
+    public static Course createAi(String name, User user, UserPreference userPreference,
+                                   AiCourseInfo aiCourseInfo, Set<BreadType> preferredBreadTypes) {
+        Course course = new Course();
+        course.name = name;
+        course.courseType = CourseType.AI;
+        course.user = user;
+        course.userPreference = userPreference;
+        course.aiCourseInfo = aiCourseInfo;
+        course.preferredBreadTypes = preferredBreadTypes;
+        course.shared = false;
+        return course;
+    }
+
+    public void updateAiResult(String thumbnailUrl, Integer estimatedCost, String estimatedTime) {
+        this.thumbnailUrl = thumbnailUrl;
+        this.estimatedCost = estimatedCost;
+        this.estimatedTime = estimatedTime;
+    }
+
+    public void share() {
+        validateAi();
+        this.shared = true;
+    }
+
+    public void unshare() {
+        validateAi();
+        this.shared = false;
+    }
+
+    private void validateAi() {
+        if (this.courseType != CourseType.AI) {
+            throw new CustomException(ErrorCode.NOT_AI_COURSE);
+        }
+    }
+}
