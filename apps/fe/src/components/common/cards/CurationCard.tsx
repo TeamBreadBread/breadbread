@@ -8,6 +8,8 @@ type CurationCardProps = {
   address?: string;
   rate?: number;
   className?: string;
+  imageClassName?: string;
+  breadIconClassName?: string;
 };
 
 const CurationCard = ({
@@ -15,6 +17,8 @@ const CurationCard = ({
   address = "소제동",
   rate = 4.5,
   className,
+  imageClassName,
+  breadIconClassName,
 }: CurationCardProps) => {
   return (
     <div className={cn("w-full flex flex-col gap-[var(--spacing-x2)]", className)}>
@@ -24,12 +28,13 @@ const CurationCard = ({
           "relative w-[254px] h-[240px] gap-[var(--spacing-x2)]",
           "rounded-[var(--radius-r3)] overflow-hidden bg-[var(--color-gray-200)]",
           "flex items-center justify-center",
+          imageClassName,
         )}
       >
         <img
           src={currationBreadImg}
           alt="빵"
-          className="h-[61px] w-[63px] object-contain"
+          className={cn("h-[61px] w-[63px] object-contain", breadIconClassName)}
           loading="lazy"
         />
       </div>

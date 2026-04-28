@@ -23,6 +23,14 @@ import { Route as FindPasswordRouteImport } from './routes/find-password'
 import { Route as FindIdResultRouteImport } from './routes/find-id-result'
 import { Route as FindIdFailureRouteImport } from './routes/find-id-failure'
 import { Route as FindIdRouteImport } from './routes/find-id'
+import { Route as BbangteoTypeCoursesRouteImport } from './routes/bbangteo-type-courses'
+import { Route as BbangteoThemeCoursesRouteImport } from './routes/bbangteo-theme-courses'
+import { Route as BbangteoRegionCoursesRouteImport } from './routes/bbangteo-region-courses'
+import { Route as BbangteoEditorPickCoursesRouteImport } from './routes/bbangteo-editor-pick-courses'
+import { Route as BbangteoBoardRouteImport } from './routes/bbangteo-board'
+import { Route as BbangteoBakeryListRouteImport } from './routes/bbangteo-bakery-list'
+import { Route as BbangteoArticleBoardRouteImport } from './routes/bbangteo-article-board'
+import { Route as BbangteoRouteImport } from './routes/bbangteo'
 import { Route as AiSearchResultRouteImport } from './routes/ai-search-result'
 import { Route as AccountSettingsRouteImport } from './routes/account-settings'
 import { Route as IndexRouteImport } from './routes/index'
@@ -98,6 +106,47 @@ const FindIdRoute = FindIdRouteImport.update({
   path: '/find-id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BbangteoTypeCoursesRoute = BbangteoTypeCoursesRouteImport.update({
+  id: '/bbangteo-type-courses',
+  path: '/bbangteo-type-courses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BbangteoThemeCoursesRoute = BbangteoThemeCoursesRouteImport.update({
+  id: '/bbangteo-theme-courses',
+  path: '/bbangteo-theme-courses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BbangteoRegionCoursesRoute = BbangteoRegionCoursesRouteImport.update({
+  id: '/bbangteo-region-courses',
+  path: '/bbangteo-region-courses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BbangteoEditorPickCoursesRoute =
+  BbangteoEditorPickCoursesRouteImport.update({
+    id: '/bbangteo-editor-pick-courses',
+    path: '/bbangteo-editor-pick-courses',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const BbangteoBoardRoute = BbangteoBoardRouteImport.update({
+  id: '/bbangteo-board',
+  path: '/bbangteo-board',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BbangteoBakeryListRoute = BbangteoBakeryListRouteImport.update({
+  id: '/bbangteo-bakery-list',
+  path: '/bbangteo-bakery-list',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BbangteoArticleBoardRoute = BbangteoArticleBoardRouteImport.update({
+  id: '/bbangteo-article-board',
+  path: '/bbangteo-article-board',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BbangteoRoute = BbangteoRouteImport.update({
+  id: '/bbangteo',
+  path: '/bbangteo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AiSearchResultRoute = AiSearchResultRouteImport.update({
   id: '/ai-search-result',
   path: '/ai-search-result',
@@ -123,6 +172,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account-settings': typeof AccountSettingsRoute
   '/ai-search-result': typeof AiSearchResultRoute
+  '/bbangteo': typeof BbangteoRoute
+  '/bbangteo-article-board': typeof BbangteoArticleBoardRoute
+  '/bbangteo-bakery-list': typeof BbangteoBakeryListRoute
+  '/bbangteo-board': typeof BbangteoBoardRoute
+  '/bbangteo-editor-pick-courses': typeof BbangteoEditorPickCoursesRoute
+  '/bbangteo-region-courses': typeof BbangteoRegionCoursesRoute
+  '/bbangteo-theme-courses': typeof BbangteoThemeCoursesRoute
+  '/bbangteo-type-courses': typeof BbangteoTypeCoursesRoute
   '/find-id': typeof FindIdRoute
   '/find-id-failure': typeof FindIdFailureRoute
   '/find-id-result': typeof FindIdResultRoute
@@ -143,6 +200,14 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account-settings': typeof AccountSettingsRoute
   '/ai-search-result': typeof AiSearchResultRoute
+  '/bbangteo': typeof BbangteoRoute
+  '/bbangteo-article-board': typeof BbangteoArticleBoardRoute
+  '/bbangteo-bakery-list': typeof BbangteoBakeryListRoute
+  '/bbangteo-board': typeof BbangteoBoardRoute
+  '/bbangteo-editor-pick-courses': typeof BbangteoEditorPickCoursesRoute
+  '/bbangteo-region-courses': typeof BbangteoRegionCoursesRoute
+  '/bbangteo-theme-courses': typeof BbangteoThemeCoursesRoute
+  '/bbangteo-type-courses': typeof BbangteoTypeCoursesRoute
   '/find-id': typeof FindIdRoute
   '/find-id-failure': typeof FindIdFailureRoute
   '/find-id-result': typeof FindIdResultRoute
@@ -164,6 +229,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/account-settings': typeof AccountSettingsRoute
   '/ai-search-result': typeof AiSearchResultRoute
+  '/bbangteo': typeof BbangteoRoute
+  '/bbangteo-article-board': typeof BbangteoArticleBoardRoute
+  '/bbangteo-bakery-list': typeof BbangteoBakeryListRoute
+  '/bbangteo-board': typeof BbangteoBoardRoute
+  '/bbangteo-editor-pick-courses': typeof BbangteoEditorPickCoursesRoute
+  '/bbangteo-region-courses': typeof BbangteoRegionCoursesRoute
+  '/bbangteo-theme-courses': typeof BbangteoThemeCoursesRoute
+  '/bbangteo-type-courses': typeof BbangteoTypeCoursesRoute
   '/find-id': typeof FindIdRoute
   '/find-id-failure': typeof FindIdFailureRoute
   '/find-id-result': typeof FindIdResultRoute
@@ -186,6 +259,14 @@ export interface FileRouteTypes {
     | '/'
     | '/account-settings'
     | '/ai-search-result'
+    | '/bbangteo'
+    | '/bbangteo-article-board'
+    | '/bbangteo-bakery-list'
+    | '/bbangteo-board'
+    | '/bbangteo-editor-pick-courses'
+    | '/bbangteo-region-courses'
+    | '/bbangteo-theme-courses'
+    | '/bbangteo-type-courses'
     | '/find-id'
     | '/find-id-failure'
     | '/find-id-result'
@@ -206,6 +287,14 @@ export interface FileRouteTypes {
     | '/'
     | '/account-settings'
     | '/ai-search-result'
+    | '/bbangteo'
+    | '/bbangteo-article-board'
+    | '/bbangteo-bakery-list'
+    | '/bbangteo-board'
+    | '/bbangteo-editor-pick-courses'
+    | '/bbangteo-region-courses'
+    | '/bbangteo-theme-courses'
+    | '/bbangteo-type-courses'
     | '/find-id'
     | '/find-id-failure'
     | '/find-id-result'
@@ -226,6 +315,14 @@ export interface FileRouteTypes {
     | '/'
     | '/account-settings'
     | '/ai-search-result'
+    | '/bbangteo'
+    | '/bbangteo-article-board'
+    | '/bbangteo-bakery-list'
+    | '/bbangteo-board'
+    | '/bbangteo-editor-pick-courses'
+    | '/bbangteo-region-courses'
+    | '/bbangteo-theme-courses'
+    | '/bbangteo-type-courses'
     | '/find-id'
     | '/find-id-failure'
     | '/find-id-result'
@@ -247,6 +344,14 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountSettingsRoute: typeof AccountSettingsRoute
   AiSearchResultRoute: typeof AiSearchResultRoute
+  BbangteoRoute: typeof BbangteoRoute
+  BbangteoArticleBoardRoute: typeof BbangteoArticleBoardRoute
+  BbangteoBakeryListRoute: typeof BbangteoBakeryListRoute
+  BbangteoBoardRoute: typeof BbangteoBoardRoute
+  BbangteoEditorPickCoursesRoute: typeof BbangteoEditorPickCoursesRoute
+  BbangteoRegionCoursesRoute: typeof BbangteoRegionCoursesRoute
+  BbangteoThemeCoursesRoute: typeof BbangteoThemeCoursesRoute
+  BbangteoTypeCoursesRoute: typeof BbangteoTypeCoursesRoute
   FindIdRoute: typeof FindIdRoute
   FindIdFailureRoute: typeof FindIdFailureRoute
   FindIdResultRoute: typeof FindIdResultRoute
@@ -364,6 +469,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FindIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bbangteo-type-courses': {
+      id: '/bbangteo-type-courses'
+      path: '/bbangteo-type-courses'
+      fullPath: '/bbangteo-type-courses'
+      preLoaderRoute: typeof BbangteoTypeCoursesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bbangteo-theme-courses': {
+      id: '/bbangteo-theme-courses'
+      path: '/bbangteo-theme-courses'
+      fullPath: '/bbangteo-theme-courses'
+      preLoaderRoute: typeof BbangteoThemeCoursesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bbangteo-region-courses': {
+      id: '/bbangteo-region-courses'
+      path: '/bbangteo-region-courses'
+      fullPath: '/bbangteo-region-courses'
+      preLoaderRoute: typeof BbangteoRegionCoursesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bbangteo-editor-pick-courses': {
+      id: '/bbangteo-editor-pick-courses'
+      path: '/bbangteo-editor-pick-courses'
+      fullPath: '/bbangteo-editor-pick-courses'
+      preLoaderRoute: typeof BbangteoEditorPickCoursesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bbangteo-board': {
+      id: '/bbangteo-board'
+      path: '/bbangteo-board'
+      fullPath: '/bbangteo-board'
+      preLoaderRoute: typeof BbangteoBoardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bbangteo-bakery-list': {
+      id: '/bbangteo-bakery-list'
+      path: '/bbangteo-bakery-list'
+      fullPath: '/bbangteo-bakery-list'
+      preLoaderRoute: typeof BbangteoBakeryListRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bbangteo-article-board': {
+      id: '/bbangteo-article-board'
+      path: '/bbangteo-article-board'
+      fullPath: '/bbangteo-article-board'
+      preLoaderRoute: typeof BbangteoArticleBoardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bbangteo': {
+      id: '/bbangteo'
+      path: '/bbangteo'
+      fullPath: '/bbangteo'
+      preLoaderRoute: typeof BbangteoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ai-search-result': {
       id: '/ai-search-result'
       path: '/ai-search-result'
@@ -399,6 +560,14 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountSettingsRoute: AccountSettingsRoute,
   AiSearchResultRoute: AiSearchResultRoute,
+  BbangteoRoute: BbangteoRoute,
+  BbangteoArticleBoardRoute: BbangteoArticleBoardRoute,
+  BbangteoBakeryListRoute: BbangteoBakeryListRoute,
+  BbangteoBoardRoute: BbangteoBoardRoute,
+  BbangteoEditorPickCoursesRoute: BbangteoEditorPickCoursesRoute,
+  BbangteoRegionCoursesRoute: BbangteoRegionCoursesRoute,
+  BbangteoThemeCoursesRoute: BbangteoThemeCoursesRoute,
+  BbangteoTypeCoursesRoute: BbangteoTypeCoursesRoute,
   FindIdRoute: FindIdRoute,
   FindIdFailureRoute: FindIdFailureRoute,
   FindIdResultRoute: FindIdResultRoute,
