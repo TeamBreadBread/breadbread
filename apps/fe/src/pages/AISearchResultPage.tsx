@@ -8,6 +8,7 @@ import SaveRouteBanner from "@/components/domain/ai-course/SaveRouteBanner";
 import type { CoursePlace, CourseSummary } from "@/components/domain/ai-course/types";
 import mapImage from "@/assets/images/map.png";
 import handleArrow from "@/assets/icons/handle_arrowup.png";
+import { useAiSearchBottomSheet } from "@/hooks/useAiSearchBottomSheet";
 import { useEffect, useRef, useState } from "react";
 
 const summary: CourseSummary = {
@@ -35,9 +36,10 @@ const places: CoursePlace[] = [
 
 export default function AISearchResultPage() {
   const navigate = useNavigate();
-  const [isSheetOpen, setIsSheetOpen] = useState(true);
   const [isSaveBannerVisible, setIsSaveBannerVisible] = useState(false);
   const hideBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { sheetRef, contentRef, isDragging, isHalfSheet, togglePhase } = useAiSearchBottomSheet();
 
   useEffect(
     () => () => {
@@ -73,27 +75,28 @@ export default function AISearchResultPage() {
       </div>
 
       <aside
+        ref={sheetRef}
         className={cn(
-          "absolute inset-x-0 z-20 bg-white transition-all duration-700 ease-in-out",
-          isSheetOpen
-            ? "bottom-0 h-[50%] rounded-t-r5"
-            : "top-[304px] bottom-0 h-auto rounded-none",
+          "absolute inset-x-0 z-20 overflow-hidden rounded-t-r5 bg-white",
+          !isDragging && "transition-[top] duration-300 ease-out",
         )}
+        style={{ bottom: 0 }}
       >
         <div className="flex justify-center py-[14px]">
           <button
             type="button"
+            data-ai-sheet-handle="true"
             aria-label="바텀시트 핸들"
-            aria-expanded={isSheetOpen}
-            onClick={() => setIsSheetOpen((prev) => !prev)}
+            aria-expanded={isHalfSheet}
+            onClick={togglePhase}
             className="flex h-x6 w-x16 items-center justify-center rounded-full bg-white outline-none"
           >
             <img
               src={handleArrow}
               alt=""
               className={cn(
-                "h-[9px] w-[47px] object-contain transition-transform duration-700 ease-in-out",
-                isSheetOpen ? "rotate-0" : "rotate-180",
+                "h-[9px] w-[47px] object-contain transition-transform duration-300 ease-out",
+                isHalfSheet ? "rotate-0" : "rotate-180",
               )}
               aria-hidden
             />
@@ -101,6 +104,7 @@ export default function AISearchResultPage() {
         </div>
 
         <div
+          ref={contentRef}
           className={cn(
             "sheet-scrollbar h-[calc(100%-24px)] overflow-y-auto",
             isSaveBannerVisible

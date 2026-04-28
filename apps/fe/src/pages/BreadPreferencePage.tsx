@@ -74,6 +74,15 @@ export default function BreadPreferencePage() {
           };
         }
 
+        const tapped = question.options.find((option) => option.id === optionId);
+        // Same chip again clears selection so only 다른 옵션 is not needed to 해제.
+        if (tapped?.selected) {
+          return {
+            ...question,
+            options: question.options.map((option) => ({ ...option, selected: false })),
+          };
+        }
+
         return {
           ...question,
           options: question.options.map((option) => ({

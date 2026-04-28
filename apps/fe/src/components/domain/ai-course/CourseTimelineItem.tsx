@@ -1,3 +1,6 @@
+import mapIcon from "@/assets/icons/mapIcon.svg";
+import bestBreadIcon from "@/assets/icons/bestBreadIcon.svg";
+
 interface CourseTimelineItemProps {
   index: number;
   place: import("./types").CoursePlace;
@@ -19,13 +22,27 @@ export default function CourseTimelineItem({ index, place }: CourseTimelineItemP
         <div className="font-pretendard typo-t5bold text-[#1a1c20]">{place.name}</div>
 
         <div className="mt-x1_5 flex flex-col gap-x1">
-          <div className="flex items-center gap-x1">
-            <div className="h-x4 w-x4 rounded-full bg-[#d9dbe0]" />
-            <span className="font-pretendard typo-t3regular text-[#555d6d]">{place.address}</span>
+          <div className="flex items-start gap-x1">
+            <img
+              src={mapIcon}
+              alt=""
+              aria-hidden
+              className="mt-[2px] h-[14px] w-[12px] shrink-0 object-contain"
+            />
+            <span className="flex-1 font-pretendard typo-t3regular text-[#555d6d]">
+              {place.address}
+            </span>
           </div>
-          <div className="flex items-center gap-x1">
-            <div className="h-x4 w-x4 rounded-full bg-[#d9dbe0]" />
-            <span className="font-pretendard typo-t3regular text-[#555d6d]">{place.menu}</span>
+          <div className="flex items-start gap-x1">
+            <img
+              src={bestBreadIcon}
+              alt=""
+              aria-hidden
+              className="h-x4 w-x4 shrink-0 object-contain"
+            />
+            <span className="flex-1 font-pretendard typo-t3regular text-[#555d6d]">
+              {place.menu}
+            </span>
           </div>
         </div>
       </div>

@@ -1,10 +1,13 @@
 // “민진님, 오늘은 명란소금빵 어떠세요?”부터 추천 카드 + 빠른 메뉴 4개까지 전체
 import { useNavigate } from "@tanstack/react-router";
+import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
 import RecommendationHeroCard from "./RecommendationHeroCard";
 import QuickMenuGrid from "./QuickMenuGrid";
 
 const HomeHeroSection = () => {
   const navigate = useNavigate();
+
+  const goAiCoursePreferenceFlow = () => navigate({ to: AI_COURSE_FLOW_START });
 
   return (
     <section className="bg-white px-5 py-[18px]">
@@ -17,7 +20,7 @@ const HomeHeroSection = () => {
         </h1>
 
         <div className="flex gap-2">
-          <RecommendationHeroCard onClick={() => navigate({ to: "/preference" })} />
+          <RecommendationHeroCard onClick={goAiCoursePreferenceFlow} />
           <QuickMenuGrid />
         </div>
       </div>

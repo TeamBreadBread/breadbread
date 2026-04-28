@@ -6,6 +6,8 @@ interface OverlayFooterProps {
   rightText?: string;
   onLeftClick?: () => void;
   onRightClick?: () => void;
+  /** true면 우측(다음) 버튼 비활성 */
+  nextDisabled?: boolean;
 }
 
 export default function OverlayFooter({
@@ -13,6 +15,7 @@ export default function OverlayFooter({
   rightText = "다음",
   onLeftClick,
   onRightClick,
+  nextDisabled = false,
 }: OverlayFooterProps) {
   return (
     <div
@@ -22,15 +25,21 @@ export default function OverlayFooter({
 
       <div
         className={cn(
-          "flex items-start justify-center gap-x2-5 overflow-hidden",
-          "mt-x3 border-t border-gray-300 bg-gray-00 px-x5 py-x3",
+          "flex items-start justify-center gap-[10px] overflow-hidden",
+          "mt-x3 border-t border-gray-300 bg-gray-00 px-[20px] py-x3",
         )}
       >
         <Button variant="secondary" fullWidth className="max-w-x80" onClick={onLeftClick}>
           {leftText}
         </Button>
 
-        <Button variant="primary" fullWidth className="max-w-x80" onClick={onRightClick}>
+        <Button
+          variant="primary"
+          fullWidth
+          disabled={nextDisabled}
+          className="max-w-x80 disabled:pointer-events-none disabled:opacity-40"
+          onClick={onRightClick}
+        >
           {rightText}
         </Button>
       </div>

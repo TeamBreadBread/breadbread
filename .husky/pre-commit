@@ -1,1 +1,16 @@
-npx lint-staged
+#!/usr/bin/env sh
+
+# Ensure Node is visible both to sh and child cmd processes on Windows.
+NODE_DIR_WIN='C:\Program Files\nodejs'
+NODE_DIR_UNIX='/c/Program Files/nodejs'
+export PATH="$PATH:$NODE_DIR_UNIX:$NODE_DIR_WIN"
+
+# Run lint-staged with absolute node path as a fallback.
+if [ -x "$NODE_DIR_UNIX/node.exe" ]; then
+  "$NODE_DIR_UNIX/node.exe" ./node_modules/lint-staged/bin/lint-staged.js
+elif command -v node >/dev/null 2>&1; then
+  node ./node_modules/lint-staged/bin/lint-staged.js
+else
+  echo "node executable not found for pre-commit hook"
+  exit 1
+fi
