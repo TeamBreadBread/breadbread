@@ -16,6 +16,7 @@ import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BakeryService {
@@ -120,8 +122,9 @@ public class BakeryService {
         }
 
         Bakery saved = bakeryRepository.save(bakery);
+        log.info("빵집 생성: bakeryId={}, userId={}", saved.getId(), userId);
 
-        if(request.getImageUrls()!=null){
+        if (request.getImageUrls() != null) {
             List<BakeryImage> images = new ArrayList<>();
             String[] urls = request.getImageUrls();
             for (int i = 0; i < urls.length; i++) {
@@ -143,6 +146,7 @@ public class BakeryService {
                 .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
         checkAuthority(bakery, userId, role);
         bakery.update(request);
+        log.info("빵집 수정: bakeryId={}, userId={}", bakeryId, userId);
 
         if (request.getImageUrls() != null) {
             bakery.getImages().forEach(img -> gcsService.deleteQuietly(img.getImageUrl()));
@@ -166,6 +170,7 @@ public class BakeryService {
                 .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
 
         checkAuthority(bakery, userId, role);
+        log.info("빵집 삭제: bakeryId={}, userId={}", bakeryId, userId);
         bakery.getImages().forEach(img -> gcsService.deleteQuietly(img.getImageUrl()));
         bakeryImageRepository.deleteAllByBakery(bakery);
         bakeryRepository.delete(bakery);
@@ -187,7 +192,9 @@ public class BakeryService {
                 .bakery(bakery)
                 .build();
 
-        return breadRepository.save(bread).getId();
+        Long breadId = breadRepository.save(bread).getId();
+        log.info("빵 등록: breadId={}, bakeryId={}, userId={}", breadId, bakeryId, userId);
+        return breadId;
     }
 
     @Transactional
@@ -204,6 +211,7 @@ public class BakeryService {
             gcsService.deleteQuietly(bread.getImageUrl());
         }
         bread.update(request);
+        log.info("빵 수정: breadId={}, bakeryId={}, userId={}", breadId, bakeryId, userId);
     }
 
     @Transactional
@@ -216,6 +224,7 @@ public class BakeryService {
         Bread bread = breadRepository.findById(breadId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MENU_NOT_FOUND));
 
+        log.info("빵 삭제: breadId={}, bakeryId={}, userId={}", breadId, bakeryId, userId);
         if (bread.getImageUrl() != null) {
             gcsService.deleteQuietly(bread.getImageUrl());
         }
@@ -225,6 +234,7 @@ public class BakeryService {
     private void checkAuthority(Bakery bakery, Long userId, UserRole role) {
         if (role == UserRole.ROLE_ADMIN) return;
         if (bakery.getOwner() == null || !bakery.getOwner().getId().equals(userId)) {
+            log.warn("빵집 접근 권한 없음: bakeryId={}, userId={}", bakery.getId(), userId);
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
     }

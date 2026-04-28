@@ -4,6 +4,7 @@ import com.breadbread.bakery.entity.BakeryPersonality;
 import com.breadbread.bakery.entity.BakeryType;
 import com.breadbread.bakery.entity.BakeryUseType;
 import com.breadbread.bakery.entity.Frequency;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -16,14 +17,25 @@ import java.util.Set;
 @NoArgsConstructor
 public class UpdateBakeryRequest {
 
+    @Size(min = 1)
     private String name;
+
+    @Size(min = 1)
     private String address;
+
+    @Size(min = 1)
     private String region;
 
+    @DecimalMin("-90.0") @DecimalMax("90.0")
     private Double latitude;
+
+    @DecimalMin("-180.0") @DecimalMax("180.0")
     private Double longitude;
+
     private String phone;
     private String mapLink;
+
+    @Size(max = 500)
     private String note;
 
     private LocalTime weekdayOpen;
@@ -43,5 +55,7 @@ public class UpdateBakeryRequest {
     private Boolean drinkAvailable;
     private LocalTime appearanceTime;
     private Frequency frequency;
+
+    @Size(max = 5)
     private String[] imageUrls;
 }

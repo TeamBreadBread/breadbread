@@ -8,6 +8,7 @@ import lombok.Getter;
 
 import java.time.LocalTime;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 @Getter
@@ -35,6 +36,7 @@ public class BakeryDetailResponse {
 
         List<String> imageUrls = bakery.getImages() == null ? Collections.emptyList() :
                 bakery.getImages().stream()
+                        .sorted(Comparator.comparingInt(BakeryImage::getDisplayOrder))
                         .map(BakeryImage::getImageUrl)
                         .toList();
 

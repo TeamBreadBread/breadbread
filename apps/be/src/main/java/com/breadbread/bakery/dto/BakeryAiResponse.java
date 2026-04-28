@@ -6,6 +6,7 @@ import lombok.Getter;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -86,6 +87,7 @@ public class BakeryAiResponse {
                 .breads(breads.stream().map(BreadInfo::from).toList())
                 .crowdTimes(crowdTimes.stream().map(CrowdTimeInfo::from).toList())
                 .imageUrls(bakery.getImages().stream()
+                        .sorted(Comparator.comparingInt(BakeryImage::getDisplayOrder))
                         .map(BakeryImage::getImageUrl)
                         .toList())
                 .build();

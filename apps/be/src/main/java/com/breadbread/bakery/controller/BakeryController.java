@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -72,7 +73,7 @@ public class BakeryController {
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<Long> createBakery(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody CreateBakeryRequest request) {
+            @Valid @RequestBody CreateBakeryRequest request) {
         Long id = bakeryService.createBakery(userDetails.getId(), request);
         return ApiResponse.ok(id);
     }
@@ -82,7 +83,7 @@ public class BakeryController {
     public ApiResponse<Void> updateBakery(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long id,
-            @RequestBody UpdateBakeryRequest request) {
+            @Valid @RequestBody UpdateBakeryRequest request) {
         bakeryService.updateBakery(userDetails.getId(), userDetails.getRole(), id, request);
         return ApiResponse.ok();
     }
@@ -102,7 +103,7 @@ public class BakeryController {
     public ApiResponse<Long> createBread(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long bakeryId,
-            @RequestBody CreateBreadRequest request) {
+            @Valid @RequestBody CreateBreadRequest request) {
         Long id = bakeryService.createBread(userDetails.getId(), userDetails.getRole(), bakeryId, request);
         return ApiResponse.ok(id);
     }
@@ -113,7 +114,7 @@ public class BakeryController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long bakeryId,
             @PathVariable Long breadId,
-            @RequestBody UpdateBreadRequest request) {
+            @Valid @RequestBody UpdateBreadRequest request) {
         bakeryService.updateBread(userDetails.getId(), userDetails.getRole(), bakeryId, breadId, request);
         return ApiResponse.ok();
     }
