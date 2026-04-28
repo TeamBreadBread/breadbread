@@ -12,11 +12,14 @@ import PreferenceQuestionSection from "@/components/domain/ai-course/PreferenceQ
 import PreferenceTopBar from "@/components/domain/ai-course/PreferenceTopBar";
 import RecommendationCTAButton from "@/components/domain/ai-course/RecommendationCTAButton";
 import RecommendationCountStepper from "@/components/domain/ai-course/RecommendationCountStepper";
+import { preferenceSectionAllowsMultiple } from "@/utils/preferenceSelection";
 import { cn } from "@/utils/cn";
 
 type OptionItem = {
   label: string;
   withIcon?: boolean;
+  /** 선택 상태용 고유값(라벨이 같을 때) */
+  value?: string;
 };
 
 type QuestionItem = {
@@ -54,7 +57,10 @@ const QUESTION_SECTIONS: QuestionItem[] = [
     title: "음료수 ~~~시나요?",
     helperText: "",
     columns: 1,
-    options: [{ label: "ㅇㅇㅇㅇㅇ" }, { label: "ㅇㅇㅇㅇㅇ" }],
+    options: [
+      { label: "ㅇㅇㅇㅇㅇ", value: "drink-0" },
+      { label: "ㅇㅇㅇㅇㅇ", value: "drink-1" },
+    ],
   },
   {
     id: "count",
@@ -78,6 +84,11 @@ const QUESTION_SECTIONS: QuestionItem[] = [
 
 type SelectedBySection = Record<string, string[]>;
 
+const BREAD_TYPE_SECTION_ID = "breadType";
+
+/** breadType 제외·카드로 반드시 골라야 하는 섹션(count는 스테퍼 기본값) */
+const REQUIRED_CARD_SECTION_IDS = ["waiting", "drink", "courseChangePreference"] as const;
+
 function CircleIcon() {
   return <div className="h-x14 w-x14 rounded-full bg-gray-400" />;
 }
@@ -91,29 +102,41 @@ export default function BreadRecommendationPreference() {
   const [recommendationCount, setRecommendationCount] = useState(1);
   const navigate = useNavigate();
 
-  const handleSelect = (sectionId: string, optionLabel: string) => {
+  const handleSelect = (sectionId: string, optionValue: string) => {
     setSelectedBySection((prev) => {
       const current = prev[sectionId] ?? [];
-      const isSelected = current.includes(optionLabel);
-      const isSingleSelectSection = sectionId === "courseChangePreference";
+      const isSelected = current.includes(optionValue);
+      const section = QUESTION_SECTIONS.find((s) => s.id === sectionId);
+      const allowsMultiple = preferenceSectionAllowsMultiple(section?.helperText);
+
+      let nextSectionValues: string[];
+      if (allowsMultiple) {
+        nextSectionValues = isSelected
+          ? current.filter((selectedOption) => selectedOption !== optionValue)
+          : [...current, optionValue];
+      } else {
+        nextSectionValues = isSelected ? current : [optionValue];
+      }
 
       return {
         ...prev,
-        [sectionId]: isSingleSelectSection
-          ? isSelected
-            ? []
-            : [optionLabel]
-          : isSelected
-            ? current.filter((selectedOption) => selectedOption !== optionLabel)
-            : [...current, optionLabel],
+        [sectionId]: nextSectionValues,
       };
     });
   };
 
+  const canSubmitRecommendation =
+    (selectedBySection[BREAD_TYPE_SECTION_ID]?.length ?? 0) > 0 &&
+    REQUIRED_CARD_SECTION_IDS.every((id) => (selectedBySection[id]?.length ?? 0) > 0);
+
   return (
     <MobileFrame>
       <div className="pb-footer-safe flex flex-1 flex-col bg-gray-00">
-        <PreferenceTopBar title="빵 취향 선택" />
+        <PreferenceTopBar
+          title="빵 취향 선택"
+          onBack={() => navigate({ to: "/preference" })}
+          onCancel={() => navigate({ to: "/home" })}
+        />
 
         <PreferenceIntro
           currentStep={2}
@@ -136,15 +159,18 @@ export default function BreadRecommendationPreference() {
                   onChange={setRecommendationCount}
                 />
               ) : (
-                section.options.map((option, optionIndex) => (
-                  <PreferenceOptionCard
-                    key={`${section.id}-${option.label}-${optionIndex}`}
-                    label={option.label}
-                    selected={selectedBySection[section.id]?.includes(option.label) ?? false}
-                    onClick={() => handleSelect(section.id, option.label)}
-                    icon={option.withIcon ? <CircleIcon /> : undefined}
-                  />
-                ))
+                section.options.map((option, optionIndex) => {
+                  const optionValue = option.value ?? option.label;
+                  return (
+                    <PreferenceOptionCard
+                      key={`${section.id}-${optionValue}-${optionIndex}`}
+                      label={option.label}
+                      selected={selectedBySection[section.id]?.includes(optionValue) ?? false}
+                      onClick={() => handleSelect(section.id, optionValue)}
+                      icon={option.withIcon ? <CircleIcon /> : undefined}
+                    />
+                  );
+                })
               )}
             </PreferenceQuestionSection>
           ))}
@@ -166,13 +192,14 @@ export default function BreadRecommendationPreference() {
             variant="secondary"
             fullWidth
             className="max-w-x80"
-            onClick={() => navigate({ to: "/" })}
+            onClick={() => navigate({ to: "/preference" })}
           >
             이전
           </Button>
 
           <RecommendationCTAButton
             icon={<RecommendationIcon />}
+            disabled={!canSubmitRecommendation}
             onClick={() => navigate({ to: "/ai-search-result" })}
           >
             추천 받기
