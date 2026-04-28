@@ -35,10 +35,6 @@ const BottomNav = () => {
           );
         })}
       </div>
-
-      <div className="relative h-[34px] bg-gray-00 md:hidden">
-        <div className="absolute bottom-[8px] left-1/2 h-[5px] w-[144px] -translate-x-1/2 rounded-full bg-gray-1000" />
-      </div>
     </nav>
   );
 };

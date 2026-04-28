@@ -13,7 +13,7 @@ export default function BottomDoubleCTA({
 }: BottomDoubleCTAProps) {
   return (
     <div className="sticky bottom-0 bg-gray-00">
-      <div className="flex justify-center gap-x2-5 border-t border-gray-300 bg-gray-00 px-x5 py-x3">
+      <div className="flex justify-center gap-[10px] border-t border-gray-300 bg-gray-00 px-[20px] py-x3">
         <button
           type="button"
           onClick={onLeftClick}
@@ -33,10 +33,6 @@ export default function BottomDoubleCTA({
             {rightText}
           </span>
         </button>
-      </div>
-
-      <div className="relative h-[33px] bg-gray-00">
-        <div className="absolute bottom-x2 left-1/2 h-[5px] w-[144px] -translate-x-1/2 rounded-full bg-gray-1000" />
       </div>
     </div>
   );

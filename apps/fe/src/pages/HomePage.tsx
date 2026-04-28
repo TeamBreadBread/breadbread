@@ -9,7 +9,7 @@ const HomePage = () => {
     <AppShell>
       <TopHeader />
 
-      <main className="flex-1 space-y-[10px] pb-[90px] md:pb-[72px]">
+      <main className="flex-1 space-y-[10px] pb-[56px] sm:pb-[72px]">
         <HomeHeroSection />
         <CurationSection />
       </main>
