@@ -1,4 +1,4 @@
-import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
+import axios, { type AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from "axios";
 
 import { ApiBusinessError, type ApiEnvelope, unwrapApiBody } from "@/api/types/common";
 
@@ -49,7 +49,7 @@ function businessErrorFromEnvelope(
 }
 
 apiClient.interceptors.response.use(
-  (response) => {
+  (response: AxiosResponse<ApiEnvelope>) => {
     const envelope = response.data as ApiEnvelope | undefined;
     if (envelope?.success === false) {
       return Promise.reject(
