@@ -1,4 +1,0 @@
-{
-  "buildCommand": "pnpm --filter fe build",
-  "outputDirectory": "apps/fe/dist"
-}
