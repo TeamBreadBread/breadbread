@@ -4,13 +4,13 @@ import { APP_SHELL_MAX_WIDTH } from "./layout.constants";
 
 type NavItem = {
   label: string;
-  to?: "/home" | "/route" | "/my";
+  to?: "/home" | "/route" | "/bbangteo" | "/my";
 };
 
 const navItems: NavItem[] = [
   { label: "홈", to: "/home" },
   { label: "루트", to: "/route" },
-  { label: "빵터" },
+  { label: "빵터", to: "/bbangteo" },
   { label: "MY", to: "/my" },
 ];
 
@@ -25,11 +25,19 @@ const BottomNav = () => {
       <div className="flex h-[56px] sm:h-[60px]">
         {navItems.map((item) => {
           const to = item.to;
+          const isActive =
+            to === "/bbangteo"
+              ? pathname === "/bbangteo" ||
+                pathname.startsWith("/bbangteo-") ||
+                pathname.startsWith("/bbangteo/")
+              : to
+                ? pathname === to || pathname.startsWith(`${to}/`)
+                : false;
           return (
             <BottomNavItem
               key={item.label}
               label={item.label}
-              active={to ? pathname === to : false}
+              active={isActive}
               onClick={to ? () => navigate({ to }) : undefined}
             />
           );

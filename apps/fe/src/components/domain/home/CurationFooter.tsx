@@ -9,6 +9,10 @@ type CurationItem = {
 
 type CurationFooterProps = {
   items?: CurationItem[];
+  itemClassName?: string;
+  cardImageClassName?: string;
+  breadIconClassName?: string;
+  onItemClick?: (item: CurationItem, index: number) => void;
 };
 
 const CurationFooter = ({
@@ -18,16 +22,42 @@ const CurationFooter = ({
     { title: "빵집 이름 3", address: "은행동", rate: 4.2 },
     { title: "빵집 이름 4", address: "대흥동", rate: 4.9 },
   ],
+  itemClassName,
+  cardImageClassName,
+  breadIconClassName,
+  onItemClick,
 }: CurationFooterProps) => {
   return (
     <div className="h-full w-full overflow-x-auto">
       <div className="flex gap-[var(--spacing-x4)] w-max">
-        {items.map((item) => (
+        {items.map((item, index) => (
           <div
-            key={`${item.title}-${item.address}`}
-            className={cn("flex-shrink-0", "w-[254px] h-[240px]")}
+            key={`${item.title}-${item.address}-${index}`}
+            className={cn("flex-shrink-0", "w-[254px] h-[240px]", itemClassName)}
           >
-            <CurationCard title={item.title} address={item.address} rate={item.rate} />
+            {onItemClick ? (
+              <button
+                type="button"
+                className="w-full text-left"
+                onClick={() => onItemClick(item, index)}
+              >
+                <CurationCard
+                  title={item.title}
+                  address={item.address}
+                  rate={item.rate}
+                  imageClassName={cardImageClassName}
+                  breadIconClassName={breadIconClassName}
+                />
+              </button>
+            ) : (
+              <CurationCard
+                title={item.title}
+                address={item.address}
+                rate={item.rate}
+                imageClassName={cardImageClassName}
+                breadIconClassName={breadIconClassName}
+              />
+            )}
           </div>
         ))}
       </div>
