@@ -19,10 +19,10 @@ type Bakery = {
 const bakeries: Bakery[] = [
   {
     id: 1,
-    name: "땡큐베리머치",
-    address: "대전 중구 중교로 49",
+    name: "성심당 본점",
+    address: "대전 중구 대종로480번길 15",
     rating: 4.5,
-    reviewCount: 8,
+    reviewCount: 12836,
     bookmarkCount: 12,
     images: [
       "Frame 473587_4115.png",
@@ -134,7 +134,9 @@ const BakeryMeta = ({
     <div className="flex items-center gap-[2px]">
       <img src={ratingStar} alt="별점" className="h-[14px] w-[14px]" />
       <span className="text-[13px] leading-[18px] text-[#868b94]">{rating}</span>
-      <span className="text-[13px] leading-[18px] text-[#868b94]">({reviewCount})</span>
+      <span className="text-[13px] leading-[18px] text-[#868b94]">
+        ({reviewCount.toLocaleString()})
+      </span>
     </div>
     <span className="text-[13px] leading-[18px] text-[#868b94]">·</span>
     <div className="flex items-center gap-[2px]">
@@ -160,8 +162,18 @@ const BakeryImageRow = ({ images, bakeryName }: { images: string[]; bakeryName: 
   </div>
 );
 
-const BakeryCard = ({ bakery }: { bakery: Bakery }) => (
-  <article className="flex flex-col gap-[12px] border-b border-[#f3f4f5] px-[20px] py-[18px]">
+const BakeryCard = ({ bakery, onClick }: { bakery: Bakery; onClick?: () => void }) => (
+  <article
+    className="flex flex-col gap-[12px] border-b border-[#f3f4f5] px-[20px] py-[18px]"
+    onClick={onClick}
+    onKeyDown={(event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        onClick?.();
+      }
+    }}
+    role={onClick ? "button" : undefined}
+    tabIndex={onClick ? 0 : undefined}
+  >
     <div className="flex flex-col gap-[4px]">
       <h2 className="line-clamp-1 text-[18px] leading-[24px] font-medium text-[#1a1c20]">
         {bakery.name}
@@ -179,15 +191,26 @@ const BakeryCard = ({ bakery }: { bakery: Bakery }) => (
   </article>
 );
 
-const BakeryList = ({ items }: { items: Bakery[] }) => (
+const BakeryList = ({
+  items,
+  onItemClick,
+}: {
+  items: Bakery[];
+  onItemClick?: (bakery: Bakery) => void;
+}) => (
   <section className="flex flex-col">
     {items.map((bakery) => (
-      <BakeryCard key={bakery.id} bakery={bakery} />
+      <BakeryCard
+        key={bakery.id}
+        bakery={bakery}
+        onClick={onItemClick ? () => onItemClick(bakery) : undefined}
+      />
     ))}
   </section>
 );
 
 const BbangteoBakeryListPage = () => {
+  const navigate = useNavigate();
   const [keyword, setKeyword] = useState("");
   const filteredBakeries = useMemo(
     () =>
@@ -197,13 +220,19 @@ const BbangteoBakeryListPage = () => {
     [keyword],
   );
 
+  const handleBakeryClick = (bakery: Bakery) => {
+    if (bakery.name === "성심당 본점") {
+      navigate({ to: "/bbangteo-bakery-detail" });
+    }
+  };
+
   return (
     <MobileFrame className="bg-white">
       <div className="flex min-h-screen flex-1 flex-col bg-white">
         <PageHeader title="빵집 리스트" />
         <main className="flex flex-1 flex-col pt-[56px] pb-[56px] sm:pb-[60px]">
           <SearchFilterSection keyword={keyword} onKeywordChange={setKeyword} />
-          <BakeryList items={filteredBakeries} />
+          <BakeryList items={filteredBakeries} onItemClick={handleBakeryClick} />
         </main>
       </div>
       <BottomNav />

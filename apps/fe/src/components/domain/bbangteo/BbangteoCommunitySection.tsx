@@ -16,7 +16,7 @@ const CircleIcon = ({ size, color }: { size: number; color: string }) => {
 type BbangteoCommunitySectionProps = {
   section: CommunitySectionItem;
   onMoreClick?: () => void;
-  onCurationCardClick?: () => void;
+  onCurationCardClick?: (item: NonNullable<CommunitySectionItem["curationItems"]>[number]) => void;
   onPostItemClick?: () => void;
 };
 
@@ -46,7 +46,7 @@ const BbangteoCommunitySection = ({
               itemClassName="!w-[160px] !h-[152px]"
               cardImageClassName="!w-[160px] !h-[152px]"
               breadIconClassName="!w-[40px] !h-[39px]"
-              onItemClick={onCurationCardClick ? () => onCurationCardClick() : undefined}
+              onItemClick={onCurationCardClick ? (item) => onCurationCardClick(item) : undefined}
             />
           </div>
         ) : section.contentType === "postList" ? (

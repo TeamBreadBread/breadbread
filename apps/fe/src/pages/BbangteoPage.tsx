@@ -12,7 +12,7 @@ const sections: CommunitySectionItem[] = [
     sectionHeight: 300,
     contentType: "curationCards",
     curationItems: [
-      { title: "빵집 이름 1", address: "소제동", rate: 4.5 },
+      { title: "성심당 본점", address: "은행동", rate: 4.5 },
       { title: "빵집 이름 2", address: "소제동", rate: 4.8 },
       { title: "빵집 이름 3", address: "은행동", rate: 4.2 },
       { title: "빵집 이름 4", address: "대흥동", rate: 4.9 },
@@ -50,6 +50,9 @@ const BbangteoPage = () => {
   const goToBakeryList = () => {
     navigate({ to: "/bbangteo-bakery-list" });
   };
+  const goToBakeryDetail = () => {
+    navigate({ to: "/bbangteo-bakery-detail" });
+  };
   const goToBoardList = () => {
     navigate({ to: "/bbangteo-board" });
   };
@@ -86,7 +89,17 @@ const BbangteoPage = () => {
                       ? goToArticleBoardList
                       : undefined
               }
-              onCurationCardClick={section.title === "큐레이션 문구" ? goToBakeryList : undefined}
+              onCurationCardClick={
+                section.title === "큐레이션 문구"
+                  ? (item) => {
+                      if (item.title === "성심당 본점") {
+                        goToBakeryDetail();
+                        return;
+                      }
+                      goToBakeryList();
+                    }
+                  : undefined
+              }
               onPostItemClick={
                 section.title === "자유 게시판"
                   ? goToBoardList
