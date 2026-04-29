@@ -80,6 +80,9 @@ const BbangteoPage = () => {
             <BbangteoCommunitySection
               key={section.title}
               section={section}
+              onSectionTitleAreaClick={
+                section.title === "빵빵 소식" ? goToArticleBoardList : undefined
+              }
               onMoreClick={
                 section.title === "큐레이션 문구"
                   ? goToBakeryList
@@ -102,9 +105,9 @@ const BbangteoPage = () => {
               }
               onPostItemClick={
                 section.title === "자유 게시판"
-                  ? goToBoardList
+                  ? () => goToBoardList()
                   : section.title === "빵빵 소식"
-                    ? goToArticleBoardList
+                    ? () => goToArticleBoardList()
                     : undefined
               }
             />

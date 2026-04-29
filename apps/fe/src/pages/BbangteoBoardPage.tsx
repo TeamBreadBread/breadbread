@@ -213,10 +213,19 @@ const PostMetaItem = ({ count }: { count: number }) => (
   </div>
 );
 
-const PostItem = ({ post }: { post: Post }) => {
+const PostItem = ({ post, onClick }: { post: Post; onClick?: () => void }) => {
   return (
     <article
       className={`flex items-start border-b border-[#f3f4f5] py-[16px] ${post.image ? "gap-[12px]" : "gap-0"}`}
+      onClick={onClick}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick?.();
+        }
+      }}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
     >
       {post.image ? (
         <div
@@ -257,22 +266,33 @@ const PostItem = ({ post }: { post: Post }) => {
   );
 };
 
-const PostList = ({ items }: { items: Post[] }) => {
+const PostList = ({
+  items,
+  onPostClick,
+}: {
+  items: Post[];
+  onPostClick?: (post: Post) => void;
+}) => {
   return (
     <section className="flex flex-col bg-white px-[20px]">
       {items.map((post) => (
-        <PostItem key={post.id} post={post} />
+        <PostItem
+          key={post.id}
+          post={post}
+          onClick={onPostClick ? () => onPostClick(post) : undefined}
+        />
       ))}
     </section>
   );
 };
 
-const FloatingWriteButton = () => {
+const FloatingWriteButton = ({ onClick }: { onClick: () => void }) => {
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] mx-auto w-full max-w-[744px]">
       <button
         type="button"
         aria-label="글쓰기"
+        onClick={onClick}
         className="pointer-events-auto fixed right-[20px] bottom-[76px] z-[60] flex h-[56px] w-[56px] items-center justify-center rounded-full bg-gray-800 shadow-[0_4px_12px_rgba(0,0,0,0.18)] sm:bottom-[80px] md:right-[calc((100vw-744px)/2+20px)]"
       >
         <div className="relative h-[24px] w-[24px]">
@@ -290,6 +310,7 @@ type BbangteoBoardPageProps = {
 };
 
 const BbangteoBoardPage = ({ initialTab = "자유 게시판" }: BbangteoBoardPageProps) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
 
   useEffect(() => {
@@ -297,6 +318,13 @@ const BbangteoBoardPage = ({ initialTab = "자유 게시판" }: BbangteoBoardPag
   }, [initialTab]);
 
   const filteredPosts = posts.filter((post) => post.type === activeTab);
+  const handlePostClick = (post: Post) => {
+    if (post.type === "자유 게시판") {
+      navigate({ to: "/bbangteo-board-post-detail" });
+      return;
+    }
+    navigate({ to: "/bbangteo-bbangticle-post-detail" });
+  };
 
   return (
     <MobileFrame className="bg-[#f3f4f5]">
@@ -304,12 +332,14 @@ const BbangteoBoardPage = ({ initialTab = "자유 게시판" }: BbangteoBoardPag
         <BackHeader />
         <main className="flex flex-1 flex-col pt-[56px] pb-[56px] sm:pb-[60px]">
           <BoardTabs activeTab={activeTab} onChange={setActiveTab} />
-          <PostList items={filteredPosts} />
+          <PostList items={filteredPosts} onPostClick={handlePostClick} />
           <div className="h-[90px] shrink-0 bg-gray-200" />
         </main>
       </div>
 
-      {activeTab === "자유 게시판" ? <FloatingWriteButton /> : null}
+      {activeTab === "자유 게시판" ? (
+        <FloatingWriteButton onClick={() => navigate({ to: "/bbangteo-board-write" })} />
+      ) : null}
       <BottomNav />
     </MobileFrame>
   );

@@ -215,9 +215,8 @@ const MenuItem = ({ menu }: { menu: Menu }) => (
       </div>
       {menu.soldOut ? (
         <div className="flex items-center gap-[2px]">
-          <CircleIcon size={15} />
           <span className="line-clamp-1 text-[12px] leading-[16px] font-medium text-[#fa342c]">
-            품절됐어요
+            🚫 품절됐어요
           </span>
         </div>
       ) : null}

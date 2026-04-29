@@ -16,13 +16,16 @@ const CircleIcon = ({ size, color }: { size: number; color: string }) => {
 type BbangteoCommunitySectionProps = {
   section: CommunitySectionItem;
   onMoreClick?: () => void;
+  /** 제목 행 탭 시 (더보기 제외) — 예: 빵빵 소식에서 빵티클 탭 게시판으로 */
+  onSectionTitleAreaClick?: () => void;
   onCurationCardClick?: (item: NonNullable<CommunitySectionItem["curationItems"]>[number]) => void;
-  onPostItemClick?: () => void;
+  onPostItemClick?: (item: NonNullable<CommunitySectionItem["postItems"]>[number]) => void;
 };
 
 const BbangteoCommunitySection = ({
   section,
   onMoreClick,
+  onSectionTitleAreaClick,
   onCurationCardClick,
   onPostItemClick,
 }: BbangteoCommunitySectionProps) => {
@@ -36,6 +39,7 @@ const BbangteoCommunitySection = ({
           title={section.title}
           actionLabel="더보기"
           onActionClick={onMoreClick ?? (() => {})}
+          onTitleAreaClick={onSectionTitleAreaClick}
           icon={<CircleIcon size={18} color="#dcdee3" />}
         />
 
@@ -59,7 +63,7 @@ const BbangteoCommunitySection = ({
                 >
                   <button
                     type="button"
-                    onClick={onPostItemClick}
+                    onClick={() => onPostItemClick?.(post)}
                     className="flex w-full items-center justify-between gap-[8px] text-left"
                   >
                     <p className="flex-1 text-[14px] leading-[19px] font-medium text-gray-800">

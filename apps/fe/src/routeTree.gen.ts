@@ -27,7 +27,10 @@ import { Route as BbangteoTypeCoursesRouteImport } from "./routes/bbangteo-type-
 import { Route as BbangteoThemeCoursesRouteImport } from "./routes/bbangteo-theme-courses";
 import { Route as BbangteoRegionCoursesRouteImport } from "./routes/bbangteo-region-courses";
 import { Route as BbangteoEditorPickCoursesRouteImport } from "./routes/bbangteo-editor-pick-courses";
+import { Route as BbangteoBoardWriteRouteImport } from "./routes/bbangteo-board-write";
+import { Route as BbangteoBoardPostDetailRouteImport } from "./routes/bbangteo-board-post-detail";
 import { Route as BbangteoBoardRouteImport } from "./routes/bbangteo-board";
+import { Route as BbangteoBbangticlePostDetailRouteImport } from "./routes/bbangteo-bbangticle-post-detail";
 import { Route as BbangteoBakeryListRouteImport } from "./routes/bbangteo-bakery-list";
 import { Route as BbangteoBakeryDetailRouteImport } from "./routes/bbangteo-bakery-detail";
 import { Route as BbangteoArticleBoardRouteImport } from "./routes/bbangteo-article-board";
@@ -127,9 +130,24 @@ const BbangteoEditorPickCoursesRoute = BbangteoEditorPickCoursesRouteImport.upda
   path: "/bbangteo-editor-pick-courses",
   getParentRoute: () => rootRouteImport,
 } as any);
+const BbangteoBoardWriteRoute = BbangteoBoardWriteRouteImport.update({
+  id: "/bbangteo-board-write",
+  path: "/bbangteo-board-write",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const BbangteoBoardPostDetailRoute = BbangteoBoardPostDetailRouteImport.update({
+  id: "/bbangteo-board-post-detail",
+  path: "/bbangteo-board-post-detail",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const BbangteoBoardRoute = BbangteoBoardRouteImport.update({
   id: "/bbangteo-board",
   path: "/bbangteo-board",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const BbangteoBbangticlePostDetailRoute = BbangteoBbangticlePostDetailRouteImport.update({
+  id: "/bbangteo-bbangticle-post-detail",
+  path: "/bbangteo-bbangticle-post-detail",
   getParentRoute: () => rootRouteImport,
 } as any);
 const BbangteoBakeryListRoute = BbangteoBakeryListRouteImport.update({
@@ -181,7 +199,10 @@ export interface FileRoutesByFullPath {
   "/bbangteo-article-board": typeof BbangteoArticleBoardRoute;
   "/bbangteo-bakery-detail": typeof BbangteoBakeryDetailRoute;
   "/bbangteo-bakery-list": typeof BbangteoBakeryListRoute;
+  "/bbangteo-bbangticle-post-detail": typeof BbangteoBbangticlePostDetailRoute;
   "/bbangteo-board": typeof BbangteoBoardRoute;
+  "/bbangteo-board-post-detail": typeof BbangteoBoardPostDetailRoute;
+  "/bbangteo-board-write": typeof BbangteoBoardWriteRoute;
   "/bbangteo-editor-pick-courses": typeof BbangteoEditorPickCoursesRoute;
   "/bbangteo-region-courses": typeof BbangteoRegionCoursesRoute;
   "/bbangteo-theme-courses": typeof BbangteoThemeCoursesRoute;
@@ -210,7 +231,10 @@ export interface FileRoutesByTo {
   "/bbangteo-article-board": typeof BbangteoArticleBoardRoute;
   "/bbangteo-bakery-detail": typeof BbangteoBakeryDetailRoute;
   "/bbangteo-bakery-list": typeof BbangteoBakeryListRoute;
+  "/bbangteo-bbangticle-post-detail": typeof BbangteoBbangticlePostDetailRoute;
   "/bbangteo-board": typeof BbangteoBoardRoute;
+  "/bbangteo-board-post-detail": typeof BbangteoBoardPostDetailRoute;
+  "/bbangteo-board-write": typeof BbangteoBoardWriteRoute;
   "/bbangteo-editor-pick-courses": typeof BbangteoEditorPickCoursesRoute;
   "/bbangteo-region-courses": typeof BbangteoRegionCoursesRoute;
   "/bbangteo-theme-courses": typeof BbangteoThemeCoursesRoute;
@@ -240,7 +264,10 @@ export interface FileRoutesById {
   "/bbangteo-article-board": typeof BbangteoArticleBoardRoute;
   "/bbangteo-bakery-detail": typeof BbangteoBakeryDetailRoute;
   "/bbangteo-bakery-list": typeof BbangteoBakeryListRoute;
+  "/bbangteo-bbangticle-post-detail": typeof BbangteoBbangticlePostDetailRoute;
   "/bbangteo-board": typeof BbangteoBoardRoute;
+  "/bbangteo-board-post-detail": typeof BbangteoBoardPostDetailRoute;
+  "/bbangteo-board-write": typeof BbangteoBoardWriteRoute;
   "/bbangteo-editor-pick-courses": typeof BbangteoEditorPickCoursesRoute;
   "/bbangteo-region-courses": typeof BbangteoRegionCoursesRoute;
   "/bbangteo-theme-courses": typeof BbangteoThemeCoursesRoute;
@@ -271,7 +298,10 @@ export interface FileRouteTypes {
     | "/bbangteo-article-board"
     | "/bbangteo-bakery-detail"
     | "/bbangteo-bakery-list"
+    | "/bbangteo-bbangticle-post-detail"
     | "/bbangteo-board"
+    | "/bbangteo-board-post-detail"
+    | "/bbangteo-board-write"
     | "/bbangteo-editor-pick-courses"
     | "/bbangteo-region-courses"
     | "/bbangteo-theme-courses"
@@ -300,7 +330,10 @@ export interface FileRouteTypes {
     | "/bbangteo-article-board"
     | "/bbangteo-bakery-detail"
     | "/bbangteo-bakery-list"
+    | "/bbangteo-bbangticle-post-detail"
     | "/bbangteo-board"
+    | "/bbangteo-board-post-detail"
+    | "/bbangteo-board-write"
     | "/bbangteo-editor-pick-courses"
     | "/bbangteo-region-courses"
     | "/bbangteo-theme-courses"
@@ -329,7 +362,10 @@ export interface FileRouteTypes {
     | "/bbangteo-article-board"
     | "/bbangteo-bakery-detail"
     | "/bbangteo-bakery-list"
+    | "/bbangteo-bbangticle-post-detail"
     | "/bbangteo-board"
+    | "/bbangteo-board-post-detail"
+    | "/bbangteo-board-write"
     | "/bbangteo-editor-pick-courses"
     | "/bbangteo-region-courses"
     | "/bbangteo-theme-courses"
@@ -359,7 +395,10 @@ export interface RootRouteChildren {
   BbangteoArticleBoardRoute: typeof BbangteoArticleBoardRoute;
   BbangteoBakeryDetailRoute: typeof BbangteoBakeryDetailRoute;
   BbangteoBakeryListRoute: typeof BbangteoBakeryListRoute;
+  BbangteoBbangticlePostDetailRoute: typeof BbangteoBbangticlePostDetailRoute;
   BbangteoBoardRoute: typeof BbangteoBoardRoute;
+  BbangteoBoardPostDetailRoute: typeof BbangteoBoardPostDetailRoute;
+  BbangteoBoardWriteRoute: typeof BbangteoBoardWriteRoute;
   BbangteoEditorPickCoursesRoute: typeof BbangteoEditorPickCoursesRoute;
   BbangteoRegionCoursesRoute: typeof BbangteoRegionCoursesRoute;
   BbangteoThemeCoursesRoute: typeof BbangteoThemeCoursesRoute;
@@ -509,11 +548,32 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof BbangteoEditorPickCoursesRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/bbangteo-board-write": {
+      id: "/bbangteo-board-write";
+      path: "/bbangteo-board-write";
+      fullPath: "/bbangteo-board-write";
+      preLoaderRoute: typeof BbangteoBoardWriteRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/bbangteo-board-post-detail": {
+      id: "/bbangteo-board-post-detail";
+      path: "/bbangteo-board-post-detail";
+      fullPath: "/bbangteo-board-post-detail";
+      preLoaderRoute: typeof BbangteoBoardPostDetailRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/bbangteo-board": {
       id: "/bbangteo-board";
       path: "/bbangteo-board";
       fullPath: "/bbangteo-board";
       preLoaderRoute: typeof BbangteoBoardRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/bbangteo-bbangticle-post-detail": {
+      id: "/bbangteo-bbangticle-post-detail";
+      path: "/bbangteo-bbangticle-post-detail";
+      fullPath: "/bbangteo-bbangticle-post-detail";
+      preLoaderRoute: typeof BbangteoBbangticlePostDetailRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/bbangteo-bakery-list": {
@@ -583,7 +643,10 @@ const rootRouteChildren: RootRouteChildren = {
   BbangteoArticleBoardRoute: BbangteoArticleBoardRoute,
   BbangteoBakeryDetailRoute: BbangteoBakeryDetailRoute,
   BbangteoBakeryListRoute: BbangteoBakeryListRoute,
+  BbangteoBbangticlePostDetailRoute: BbangteoBbangticlePostDetailRoute,
   BbangteoBoardRoute: BbangteoBoardRoute,
+  BbangteoBoardPostDetailRoute: BbangteoBoardPostDetailRoute,
+  BbangteoBoardWriteRoute: BbangteoBoardWriteRoute,
   BbangteoEditorPickCoursesRoute: BbangteoEditorPickCoursesRoute,
   BbangteoRegionCoursesRoute: BbangteoRegionCoursesRoute,
   BbangteoThemeCoursesRoute: BbangteoThemeCoursesRoute,
