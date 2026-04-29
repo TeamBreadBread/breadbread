@@ -1,15 +1,13 @@
-import { AppTopBar, BottomDoubleCTA } from "@/components/common";
+import { AppTopBar, Button } from "@/components/common";
 import { useNavigate } from "@tanstack/react-router";
 import { MobileFrame } from "@/components/layout";
 import { cn } from "@/utils/cn";
 import CourseTimeline from "@/components/domain/ai-course/CourseTimeline";
 import ResultSummaryCard from "@/components/domain/ai-course/ResultSummaryCard";
-import SaveRouteBanner from "@/components/domain/ai-course/SaveRouteBanner";
 import type { CoursePlace, CourseSummary } from "@/components/domain/ai-course/types";
 import mapImage from "@/assets/images/map.png";
 import handleArrow from "@/assets/icons/handle_arrowup.png";
 import { useAiSearchBottomSheet } from "@/hooks/useAiSearchBottomSheet";
-import { useEffect, useRef, useState } from "react";
 
 const summary: CourseSummary = {
   title: "커플을 위한 달콤한 빵투어",
@@ -36,31 +34,11 @@ const places: CoursePlace[] = [
 
 export default function AISearchResultPage() {
   const navigate = useNavigate();
-  const [isSaveBannerVisible, setIsSaveBannerVisible] = useState(false);
-  const hideBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { sheetRef, contentRef, isDragging, isHalfSheet, togglePhase } = useAiSearchBottomSheet();
 
-  useEffect(
-    () => () => {
-      if (hideBannerTimerRef.current) {
-        clearTimeout(hideBannerTimerRef.current);
-      }
-    },
-    [],
-  );
-
-  const handleSaveClick = () => {
-    setIsSaveBannerVisible(true);
-
-    if (hideBannerTimerRef.current) {
-      clearTimeout(hideBannerTimerRef.current);
-    }
-
-    hideBannerTimerRef.current = setTimeout(() => {
-      setIsSaveBannerVisible(false);
-      hideBannerTimerRef.current = null;
-    }, 5000);
+  const goBreadTaxiReserve = () => {
+    navigate({ to: "/route" });
   };
 
   return (
@@ -107,30 +85,17 @@ export default function AISearchResultPage() {
           ref={contentRef}
           className={cn(
             "sheet-scrollbar h-[calc(100%-24px)] overflow-y-auto",
-            isSaveBannerVisible
-              ? "pb-[calc(196px+env(safe-area-inset-bottom))]"
-              : "pb-[calc(140px+env(safe-area-inset-bottom))]",
+            "pb-[calc(96px+env(safe-area-inset-bottom))]",
           )}
         >
           <CourseTimeline places={places} />
         </div>
       </aside>
 
-      <div className="absolute inset-x-0 bottom-0 z-30">
-        <div
-          className={cn(
-            "mx-auto max-w-[744px] overflow-hidden transition-all duration-200 ease-out",
-            isSaveBannerVisible ? "max-h-[56px] opacity-100" : "max-h-0 opacity-0",
-          )}
-          aria-hidden={!isSaveBannerVisible}
-        >
-          <SaveRouteBanner onActionClick={() => navigate({ to: "/route" })} />
-        </div>
-        <BottomDoubleCTA
-          leftText="다시 추천"
-          rightText="코스 저장"
-          onRightClick={handleSaveClick}
-        />
+      <div className="absolute inset-x-0 bottom-0 z-30 mx-auto max-w-[744px] w-full border-t border-gray-300 bg-white px-[20px] pb-[max(16px,env(safe-area-inset-bottom))] pt-x3">
+        <Button variant="primary" fullWidth type="button" onClick={goBreadTaxiReserve}>
+          빵택시 예약
+        </Button>
       </div>
     </MobileFrame>
   );

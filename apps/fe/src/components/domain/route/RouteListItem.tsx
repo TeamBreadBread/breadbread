@@ -133,7 +133,7 @@ export default function RouteListItem({ course, onClick }: RouteListItemProps) {
                   >
                     <div className="h-6 w-6 rounded-full bg-gray-500" />
                     <div className="flex-1 font-pretendard text-size-5 font-normal leading-t6 text-gray-1000">
-                      코스 수정
+                      코스 저장
                     </div>
                   </button>
 

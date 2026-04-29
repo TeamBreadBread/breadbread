@@ -45,13 +45,13 @@ const initialQuestions: PreferenceQuestion[] = [
   {
     id: "waiting",
     title: "웨이팅 허용도",
-    allowMultiple: true,
+    allowMultiple: false,
     hideSelectionHint: true,
     options: [
       { id: "no-wait", label: "웨이팅 싫음" },
-      { id: "ok", label: "상관 없음" },
       { id: "10-20", label: "10~20분 가능" },
       { id: "30", label: "30분 가능" },
+      { id: "ok", label: "상관 없음" },
     ],
   },
 ];
@@ -59,6 +59,10 @@ const initialQuestions: PreferenceQuestion[] = [
 export default function BreadPreferencePage() {
   const navigate = useNavigate();
   const [questions, setQuestions] = useState(initialQuestions);
+
+  const allQuestionsAnswered = questions.every((question) =>
+    question.options.some((option) => option.selected),
+  );
 
   const handleToggleOption = (questionId: string, optionId: string) => {
     setQuestions((prevQuestions) =>
@@ -96,7 +100,7 @@ export default function BreadPreferencePage() {
 
   return (
     <MobileFrame>
-      <div className="flex flex-1 flex-col bg-white">
+      <div className="pb-footer-safe flex flex-1 flex-col bg-white">
         <AppTopBar title="선호도 조사" onBack={() => navigate({ to: "/" })} />
 
         <PreferenceIntroSection
@@ -132,8 +136,10 @@ export default function BreadPreferencePage() {
       </div>
 
       <BottomDoubleCTA
+        placement="fixed"
         leftText="건너뛰기"
         rightText="완료"
+        rightDisabled={!allQuestionsAnswered}
         onLeftClick={() => navigate({ to: "/home" })}
         onRightClick={() => navigate({ to: "/home" })}
       />
