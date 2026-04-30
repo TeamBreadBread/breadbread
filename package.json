@@ -4,6 +4,7 @@
   "packageManager": "pnpm@10.8.1",
   "scripts": {
     "prepare": "husky",
+    "build": "pnpm --filter fe build",
     "lint:fe": "pnpm --filter fe lint",
     "lint:be": "pnpm --filter bread-be lint",
     "format:fe": "pnpm --filter fe format",

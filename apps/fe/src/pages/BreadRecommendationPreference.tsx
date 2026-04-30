@@ -12,7 +12,7 @@ import PreferenceQuestionSection from "@/components/domain/ai-course/PreferenceQ
 import PreferenceTopBar from "@/components/domain/ai-course/PreferenceTopBar";
 import RecommendationCTAButton from "@/components/domain/ai-course/RecommendationCTAButton";
 import RecommendationCountStepper from "@/components/domain/ai-course/RecommendationCountStepper";
-import { preferenceSectionAllowsMultiple } from "@/utils/preferenceSelection";
+import { sectionAllowsMultipleChoice } from "@/utils/preferenceSelection";
 import { cn } from "@/utils/cn";
 
 type OptionItem = {
@@ -26,6 +26,8 @@ type QuestionItem = {
   id: string;
   title: string;
   helperText?: string;
+  /** 명시하면 helper 문자열보다 우선 (BreadPreferencePage.allowMultiple 과 동일 개념) */
+  allowMultiple?: boolean;
   columns?: 1 | 2;
   options: OptionItem[];
 };
@@ -35,6 +37,7 @@ const QUESTION_SECTIONS: QuestionItem[] = [
     id: "breadType",
     title: "어떤 빵을 좋아하시나요?",
     helperText: "중복 가능",
+    allowMultiple: true,
     columns: 2,
     options: [
       { label: "빵", withIcon: true },
@@ -107,7 +110,7 @@ export default function BreadRecommendationPreference() {
       const current = prev[sectionId] ?? [];
       const isSelected = current.includes(optionValue);
       const section = QUESTION_SECTIONS.find((s) => s.id === sectionId);
-      const allowsMultiple = preferenceSectionAllowsMultiple(section?.helperText);
+      const allowsMultiple = section ? sectionAllowsMultipleChoice(section) : false;
 
       let nextSectionValues: string[];
       if (allowsMultiple) {
@@ -185,7 +188,7 @@ export default function BreadRecommendationPreference() {
         <div
           className={cn(
             "flex items-start justify-center gap-[10px] overflow-hidden",
-            "mt-x3 border-t border-gray-300 bg-gray-00 px-[20px] py-x3",
+            "mt-x3 border-t border-gray-300 bg-gray-00 px-[20px] pb-[max(12px,env(safe-area-inset-bottom))] pt-x3",
           )}
         >
           <Button
