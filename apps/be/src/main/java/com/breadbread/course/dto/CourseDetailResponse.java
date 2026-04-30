@@ -1,6 +1,7 @@
 package com.breadbread.course.dto;
 
 import com.breadbread.bakery.dto.BakerySummaryResponse;
+import com.breadbread.course.entity.Course;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -17,4 +18,17 @@ public class CourseDetailResponse {
     private Integer estimatedCost;
     private int likeCount;
     private List<BakerySummaryResponse> bakeries;
+
+    public static CourseDetailResponse from(Course course, List<BakerySummaryResponse> bakeries) {
+        return CourseDetailResponse.builder()
+                .id(course.getId())
+                .name(course.getName())
+                .thumbnailUrl(course.getThumbnailUrl())
+                .bakeryCount(course.getCourseBakeries().size())
+                .estimatedTime(course.getEstimatedTime())
+                .estimatedCost(course.getEstimatedCost())
+                .likeCount(course.getCourseLikes().size())
+                .bakeries(bakeries)
+                .build();
+    }
 }

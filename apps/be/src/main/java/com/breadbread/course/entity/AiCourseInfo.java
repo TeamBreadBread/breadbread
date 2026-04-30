@@ -21,8 +21,8 @@ public class AiCourseInfo {
 
     private boolean minimizeRoute;  // 코스 동선
 
-    private Double latitude;    // 출발 위치
-    private Double longitude;
+    private double latitude;    // 출발 위치
+    private double longitude;
 
     private boolean waitingPreference;  // 웨이팅 선호
 
@@ -37,7 +37,7 @@ public class AiCourseInfo {
      public AiCourseInfo(TravelType travelType, BudgetRange budgetRange,
                          boolean waitingPreference, boolean drinkPreference,
                          int bakeryCount, FlexibilityLevel flexibilityLevel,
-                         boolean minimizeRoute, Double latitude, Double longitude) {
+                         boolean minimizeRoute, double latitude, double longitude) {
         this.travelType = travelType;
         this.budgetRange = budgetRange;
         this.waitingPreference = waitingPreference;
