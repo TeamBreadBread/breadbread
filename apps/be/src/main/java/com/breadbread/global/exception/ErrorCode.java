@@ -45,6 +45,7 @@ public enum ErrorCode {
     COURSE_NOT_FOUND(HttpStatus.NOT_FOUND, "E0401", "존재하지 않는 코스입니다."),
     AI_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "E0402", "AI 추천 서버 오류가 발생했습니다."),
     PREFERENCE_NOT_FOUND(HttpStatus.NOT_FOUND, "E0403", "선호도 조사 결과가 없습니다."),
+    NOT_AI_COURSE(HttpStatus.BAD_REQUEST, "E0404", "AI 코스에서만 사용할 수 있는 기능입니다."),
 
     // 예약 E05xx
     RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "E0501", "존재하지 않는 예약입니다."),

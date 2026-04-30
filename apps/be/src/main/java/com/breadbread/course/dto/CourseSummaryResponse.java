@@ -1,0 +1,33 @@
+package com.breadbread.course.dto;
+
+import com.breadbread.course.entity.Course;
+import lombok.Builder;
+import lombok.Getter;
+
+import java.util.List;
+
+@Getter
+@Builder
+public class CourseSummaryResponse {
+    private Long id;
+    private String name;
+    private String thumbnailUrl;
+    private int bakeryCount;
+    private String estimatedTime;
+    private Integer estimatedCost;
+    private int likeCount;
+    private List<String> bakeryNames;  // 코스에 포함된 빵집 이름 리스트
+
+     public static CourseSummaryResponse from(Course course, List<String> bakeryNames) {
+        return CourseSummaryResponse.builder()
+                .id(course.getId())
+                .name(course.getName())
+                .thumbnailUrl(course.getThumbnailUrl())
+                .bakeryCount(course.getCourseBakeries().size())
+                .estimatedTime(course.getEstimatedTime())
+                .estimatedCost(course.getEstimatedCost())
+                .likeCount(course.getCourseLikes().size())
+                .bakeryNames(bakeryNames)
+                .build();
+    }
+}
