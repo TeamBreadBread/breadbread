@@ -10,4 +10,7 @@ import java.util.List;
 public class CourseListResponse {
     private List<CourseSummaryResponse> courses;
     private int total;
+	private int page;
+	private int size;
+	private boolean hasNext;
 }

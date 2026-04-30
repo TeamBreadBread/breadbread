@@ -16,6 +16,7 @@ public class ManualCourseInfo {
     private boolean editorPick;
     private String region;
     private String theme;
+
     @Enumerated(EnumType.STRING)
     private BreadType breadType;
 

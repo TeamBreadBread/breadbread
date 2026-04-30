@@ -47,7 +47,7 @@ public class Course extends BaseEntity {
     @Embedded
     private ManualCourseInfo manualCourseInfo;
 
-    @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<CourseBakery> courseBakeries = new ArrayList<>();
 
     @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
@@ -95,6 +95,26 @@ public class Course extends BaseEntity {
         return course;
     }
 
+    public void addCourseBakery(CourseBakery courseBakery) {
+        this.courseBakeries.add(courseBakery);
+        courseBakery.setCourse(this);
+    }
+
+    public void updateManual(String name, String thumbnailUrl,
+                             String estimatedTime, Integer estimatedCost,
+                             ManualCourseInfo manualCourseInfo) {
+        validateManual();
+        if (name != null) this.name = name;
+        if (thumbnailUrl != null) this.thumbnailUrl = thumbnailUrl;
+        if (estimatedTime != null) this.estimatedTime = estimatedTime;
+        if (estimatedCost != null) this.estimatedCost = estimatedCost;
+        if (manualCourseInfo != null) this.manualCourseInfo = manualCourseInfo;
+    }
+
+    public void clearCourseBakeries() {
+        this.courseBakeries.clear();
+    }
+
     public void updateAiResult(String thumbnailUrl, Integer estimatedCost, String estimatedTime) {
         this.thumbnailUrl = thumbnailUrl;
         this.estimatedCost = estimatedCost;
@@ -114,6 +134,12 @@ public class Course extends BaseEntity {
     private void validateAi() {
         if (this.courseType != CourseType.AI) {
             throw new CustomException(ErrorCode.NOT_AI_COURSE);
+        }
+    }
+
+    private void validateManual() {
+        if (this.courseType != CourseType.MANUAL) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
         }
     }
 }

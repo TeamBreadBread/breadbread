@@ -2,15 +2,13 @@ package com.breadbread.course.entity;
 
 import com.breadbread.bakery.entity.Bakery;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "course_bakery")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@ToString(exclude = {"course", "bakery"})
 public class CourseBakery {
 
     @Id
@@ -35,5 +33,9 @@ public class CourseBakery {
         this.course = course;
         this.bakery = bakery;
         this.reason = reason;
+    }
+
+    void setCourse(Course course) {
+        this.course = course;
     }
 }

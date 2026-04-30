@@ -14,8 +14,10 @@ public enum ErrorCode {
     FORBIDDEN(HttpStatus.FORBIDDEN, "E0003", "권한이 없습니다."),
     NOT_FOUND(HttpStatus.NOT_FOUND, "E0004", "존재하지 않는 리소스입니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "E0005", "서버 오류가 발생했습니다."),
+	FEATURE_NOT_IMPLEMENTED(HttpStatus.NOT_IMPLEMENTED, "E0006", "아직 구현되지 않은 기능입니다."),
 
-    // 회원/인증 E01xx
+
+	// 회원/인증 E01xx
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "E0101", "존재하지 않는 사용자입니다."),
     DUPLICATE_LOGIN_ID(HttpStatus.CONFLICT, "E0102", "이미 사용 중인 아이디입니다."),
     INVALID_LOGIN_ID(HttpStatus.UNAUTHORIZED, "E0103","아이디가 일치하지 않습니다."),
@@ -46,6 +48,11 @@ public enum ErrorCode {
     AI_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "E0402", "AI 추천 서버 오류가 발생했습니다."),
     PREFERENCE_NOT_FOUND(HttpStatus.NOT_FOUND, "E0403", "선호도 조사 결과가 없습니다."),
     NOT_AI_COURSE(HttpStatus.BAD_REQUEST, "E0404", "AI 코스에서만 사용할 수 있는 기능입니다."),
+    COURSE_BAKERY_REQUIRED(HttpStatus.BAD_REQUEST, "E0405", "코스에 빵집이 최소 1개 이상 필요합니다."),
+    ALREADY_COURSE_LIKED(HttpStatus.CONFLICT, "E0406", "이미 좋아요한 코스입니다."),
+    NOT_COURSE_LIKED(HttpStatus.BAD_REQUEST, "E0407", "좋아요하지 않은 코스입니다."),
+    ALREADY_ROUTED(HttpStatus.CONFLICT, "E0408", "이미 저장한 코스입니다."),
+    NOT_ROUTED(HttpStatus.BAD_REQUEST, "E0409", "저장하지 않은 코스입니다."),
 
     // 예약 E05xx
     RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "E0501", "존재하지 않는 예약입니다."),

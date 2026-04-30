@@ -2,8 +2,7 @@ package com.breadbread.course.dto;
 
 import com.breadbread.bakery.entity.BreadType;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -11,9 +10,9 @@ import java.util.List;
 
 @Getter
 @NoArgsConstructor
-public class ManualCourseRequest {
+public class UpdateCourseRequest {
 
-    @NotBlank
+    @Size(min = 1)
     private String name;
     private String thumbnailUrl;
     private String estimatedTime;
@@ -22,13 +21,12 @@ public class ManualCourseRequest {
     private Integer estimatedCost;
 
     // ManualCourseInfo
-    private boolean editorPick;
+    private Boolean editorPick;
     private String region;
     private String theme;
     private BreadType breadType;
 
     // CourseBakeries
-    @NotEmpty
+    @Size(min = 1)
     private List<Long> bakeryIds;
-
 }

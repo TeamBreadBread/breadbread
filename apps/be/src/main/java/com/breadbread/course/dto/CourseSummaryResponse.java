@@ -16,9 +16,9 @@ public class CourseSummaryResponse {
     private String estimatedTime;
     private Integer estimatedCost;
     private int likeCount;
-    private List<String> bakeryNames;  // 코스에 포함된 빵집 이름 리스트
+    private List<CourseBakerySummary> bakeries;
 
-     public static CourseSummaryResponse from(Course course, List<String> bakeryNames) {
+    public static CourseSummaryResponse from(Course course, List<CourseBakerySummary> bakeries) {
         return CourseSummaryResponse.builder()
                 .id(course.getId())
                 .name(course.getName())
@@ -27,7 +27,7 @@ public class CourseSummaryResponse {
                 .estimatedTime(course.getEstimatedTime())
                 .estimatedCost(course.getEstimatedCost())
                 .likeCount(course.getCourseLikes().size())
-                .bakeryNames(bakeryNames)
+                .bakeries(bakeries)
                 .build();
     }
 }
