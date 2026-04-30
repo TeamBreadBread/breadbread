@@ -32,4 +32,14 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    port: 3000,
+    strictPort: true,
+    proxy: {
+      '/api': {
+        target: 'https://breadbread-be-fgtr2kmf6q-du.a.run.app',
+        changeOrigin: true,
+      },
+    },
+  },
 })

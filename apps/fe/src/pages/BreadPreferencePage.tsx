@@ -1,11 +1,41 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { getErrorMessage } from "@/api/types/common";
+import {
+  submitUserPreference,
+  type UserPreferenceBakeryPersonality,
+  type UserPreferenceBakeryType,
+  type UserPreferenceBakeryUseType,
+  type UserPreferenceWaitingTolerance,
+} from "@/api/user";
 import { AppTopBar, BottomDoubleCTA } from "@/components/common";
 import { PreferenceOptionCard } from "@/components/common/cards";
 import PreferenceIntroSection from "@/components/domain/ai-course/PreferenceIntroSection";
 import PreferenceQuestionSection from "@/components/domain/ai-course/PreferenceQuestionSection";
 import MobileFrame from "@/components/layout/MobileFrame";
 import type { PreferenceQuestion } from "@/components/domain/ai-course/types";
+
+const BAKERY_TYPE_MAP: Partial<Record<string, UserPreferenceBakeryType>> = {
+  plain: "PLAIN",
+  dessert: "DESSERT",
+  premium: "DESSERT",
+  traditional: "PLAIN",
+  trendy: "DESSERT",
+};
+
+const BAKERY_PERSONALITY_MAP: Partial<Record<string, UserPreferenceBakeryPersonality>> = {
+  famous: "HIDDEN_GEM",
+  local: "HIDDEN_GEM",
+  sns: "HIDDEN_GEM",
+  classic: "HERITAGE",
+};
+
+const BAKERY_USE_TYPE_MAP: Partial<Record<string, UserPreferenceBakeryUseType>> = {
+  takeout: "TAKEOUT",
+  cafe: "CAFE",
+  mood: "CAFE",
+  practical: "TAKEOUT",
+};
 
 const initialQuestions: PreferenceQuestion[] = [
   {
@@ -59,6 +89,7 @@ const initialQuestions: PreferenceQuestion[] = [
 export default function BreadPreferencePage() {
   const navigate = useNavigate();
   const [questions, setQuestions] = useState(initialQuestions);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const allQuestionsAnswered = questions.every((question) =>
     question.options.some((option) => option.selected),
@@ -96,6 +127,77 @@ export default function BreadPreferencePage() {
         };
       }),
     );
+  };
+
+  const getSelectedOptionIds = (questionId: string): string[] =>
+    questions
+      .find((question) => question.id === questionId)
+      ?.options.filter((option) => option.selected)
+      .map((option) => option.id) ?? [];
+
+  const mapByTable = <T extends string>(
+    selectedIds: string[],
+    table: Partial<Record<string, T>>,
+  ): T[] =>
+    selectedIds.reduce<T[]>((acc, id) => {
+      const mapped = table[id];
+      if (mapped) acc.push(mapped);
+      return acc;
+    }, []);
+
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+    if (!allQuestionsAnswered) {
+      window.alert("모든 항목을 선택해 주세요.");
+      return;
+    }
+
+    const bakeryTypes = mapByTable(getSelectedOptionIds("bread-style"), BAKERY_TYPE_MAP);
+    const bakeryPersonalities = mapByTable(
+      getSelectedOptionIds("bakery-type"),
+      BAKERY_PERSONALITY_MAP,
+    );
+    const bakeryUseTypes = mapByTable(
+      getSelectedOptionIds("store-preference"),
+      BAKERY_USE_TYPE_MAP,
+    );
+    const waitingSelected = getSelectedOptionIds("waiting");
+
+    // TODO: Swagger에는 waitingTolerance가 UNDER_20만 제공됩니다. 다른 UI 옵션은 명세 확정 후 매핑 필요.
+    const waitingTolerance: UserPreferenceWaitingTolerance | undefined =
+      waitingSelected.length > 0 ? "UNDER_20" : undefined;
+
+    if (
+      bakeryTypes.length === 0 ||
+      bakeryPersonalities.length === 0 ||
+      bakeryUseTypes.length === 0 ||
+      !waitingTolerance
+    ) {
+      const invalidGroups: string[] = [];
+      if (bakeryTypes.length === 0) invalidGroups.push("빵 스타일");
+      if (bakeryPersonalities.length === 0) invalidGroups.push("빵집 성향");
+      if (bakeryUseTypes.length === 0) invalidGroups.push("선호 빵집 취향");
+      if (!waitingTolerance) invalidGroups.push("웨이팅 허용도");
+      window.alert(
+        `현재 선택은 API와 매핑되지 않습니다.\n다음 항목을 다시 선택해 주세요:\n- ${invalidGroups.join("\n- ")}`,
+      );
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await submitUserPreference({
+        bakeryTypes,
+        bakeryPersonalities,
+        bakeryUseTypes,
+        waitingTolerance,
+      });
+      navigate({ to: "/home" });
+    } catch (error) {
+      window.alert(getErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -138,10 +240,10 @@ export default function BreadPreferencePage() {
       <BottomDoubleCTA
         placement="fixed"
         leftText="건너뛰기"
-        rightText="완료"
-        rightDisabled={!allQuestionsAnswered}
+        rightText={isSubmitting ? "제출 중..." : "완료"}
+        rightDisabled={!allQuestionsAnswered || isSubmitting}
         onLeftClick={() => navigate({ to: "/home" })}
-        onRightClick={() => navigate({ to: "/home" })}
+        onRightClick={handleSubmit}
       />
     </MobileFrame>
   );
