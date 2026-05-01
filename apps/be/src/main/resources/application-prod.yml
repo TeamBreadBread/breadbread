@@ -11,6 +11,9 @@ spring:
       sql:
         enabled: false
 
+  jpa:
+    show-sql: ${SHOW_SQL:false}
+
 gcs:
   bucket: ${GCS_BUCKET}
 
