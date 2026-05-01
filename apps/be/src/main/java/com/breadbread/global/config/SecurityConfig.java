@@ -83,12 +83,12 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/auth/**",
+                                "/auth/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/bakeries/**").permitAll()
-						.requestMatchers(HttpMethod.GET, "/api/courses/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/bakeries/**").permitAll()
+						.requestMatchers(HttpMethod.GET, "/courses/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(
                         new JwtAuthenticationFilter(jwtProvider, customUserDetailsService),

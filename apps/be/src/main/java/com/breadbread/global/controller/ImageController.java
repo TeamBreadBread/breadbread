@@ -18,7 +18,7 @@ import java.util.List;
 @Slf4j
 @Tag(name = "이미지")
 @RestController
-@RequestMapping("/api/images")
+@RequestMapping("/images")
 @RequiredArgsConstructor
 public class ImageController {
 
