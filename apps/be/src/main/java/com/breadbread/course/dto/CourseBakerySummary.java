@@ -9,7 +9,7 @@ import lombok.Getter;
 public class CourseBakerySummary {
     private String name;
     private String region;
-    private Integer rating;
+    private Double rating;
 
     public static CourseBakerySummary from(Bakery bakery) {
         return CourseBakerySummary.builder()

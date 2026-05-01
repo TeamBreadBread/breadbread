@@ -31,7 +31,7 @@ public class Bakery extends BaseEntity {
     private Double latitude;    // 위도
     private Double longitude;   // 경도
     private String phone;       //• 문의 전화 번호
-    private Integer rating;      //• 별점 (null 허용 위해 Integer로 저장)
+    private Double rating;      //• 별점 평균 (null 허용 위해 Double로 저장)
     private String mapLink;     //• 지도 링크
     private boolean dineInAvailable;   // 매장취식여부
     private boolean parkingAvailable;  // 주차가능여부
@@ -87,6 +87,10 @@ public class Bakery extends BaseEntity {
         this.owner = user;
     }
 
+	public void updateRating(Double rating) {
+		this.rating = rating;
+	}
+
     public void update(UpdateBakeryRequest req) {
         if (req.getName() != null) this.name = req.getName();
         if (req.getAddress() != null) this.address = req.getAddress();
@@ -128,7 +132,7 @@ public class Bakery extends BaseEntity {
                   LocalTime weekdayOpen, LocalTime weekdayClose,
                   LocalTime weekendOpen, LocalTime weekendClose,
                   String lastOrderTime, boolean holidayClosed,
-                  String phone, Integer rating, String mapLink,
+                  String phone, Double rating, String mapLink,
                   BakeryType bakeryType,
                   List<BakeryUseType> bakeryUseTypes,
                   List<BakeryPersonality> bakeryPersonalities,

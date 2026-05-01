@@ -24,7 +24,7 @@ public class BakeryAiResponse {
     private String phone;
     private String mapLink;
     private String note;
-    private Integer rating;
+    private Double rating;
     private boolean dineInAvailable;
     private boolean parkingAvailable;
     private boolean drinkAvailable;
