@@ -83,7 +83,8 @@ public class CourseService {
 		List<BakerySummaryResponse> bakeries = courseBakeries.stream()
 			.map(cb -> BakerySummaryResponse.from(
 				cb.getBakery(),
-				thumbnailMap.get(cb.getBakery().getId())))
+				thumbnailMap.get(cb.getBakery().getId()),
+				0L, false))
 			.toList();
 		return CourseDetailResponse.from(course, bakeries);
 	}
