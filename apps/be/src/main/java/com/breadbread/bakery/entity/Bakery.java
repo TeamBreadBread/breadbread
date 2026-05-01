@@ -91,8 +91,8 @@ public class Bakery extends BaseEntity {
         if (req.getName() != null) this.name = req.getName();
         if (req.getAddress() != null) this.address = req.getAddress();
         if (req.getRegion() != null) this.region = req.getRegion();
-        if (req.getLatitude() != null) this.latitude = req.getLatitude();
-        if (req.getLongitude() != null) this.longitude = req.getLongitude();
+        if (req.getLat() != null) this.latitude = req.getLat();
+        if (req.getLng() != null) this.longitude = req.getLng();
         if (req.getPhone() != null) this.phone = req.getPhone();
         if (req.getMapLink() != null) this.mapLink = req.getMapLink();
         if (req.getNote() != null) this.note = req.getNote();
