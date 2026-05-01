@@ -6,6 +6,7 @@ import com.breadbread.auth.dto.TokenResponse;
 import com.breadbread.auth.entity.SsoAccount;
 import com.breadbread.auth.entity.SsoProvider;
 import com.breadbread.auth.repository.SsoAccountRepository;
+import com.breadbread.global.util.NicknameGenerator;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
@@ -17,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Map;
-import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +27,7 @@ public class SsoService {
     private final SsoAccountRepository ssoAccountRepository;
     private final WebClient webClient;
     private final TokenService tokenService;
-    private static final Random RANDOM = new Random();
+    private final NicknameGenerator nicknameGenerator;
 
     @Transactional
     public TokenResponse socialLogin(SsoProvider provider, SocialLoginRequest request) {
@@ -105,13 +105,22 @@ public class SsoService {
                 .build();
     }
 
+    // 소셜 제공자 닉네임 있으면 중복 체크 후 사용, 없거나 중복이면 자동 생성
+    private String resolveNickname(String nickname) {
+        if (nickname != null && !userRepository.existsByNickname(nickname)) {
+            return nickname;
+        }
+        String generated;
+        do {
+            generated = nicknameGenerator.generate();
+        } while (userRepository.existsByNickname(generated));
+        return generated;
+    }
+
     private SsoAccount createUser(SsoProvider provider, SocialUserInfo userInfo) {
         User user = User.builder()
                 .name(userInfo.getName())
-                // 닉네임 없는 경우 이름 + 랜덤숫자로 대체 (추후 닉네임 생성 로직 개선 예정)
-                .nickname(userInfo.getNickname() != null
-                        ? userInfo.getNickname()
-                        : userInfo.getName() + (RANDOM.nextInt(100) + 1))
+                .nickname(resolveNickname(userInfo.getNickname()))
                 .email(userInfo.getEmail())
                 .role(UserRole.ROLE_USER)
                 .termsAgreed(true)

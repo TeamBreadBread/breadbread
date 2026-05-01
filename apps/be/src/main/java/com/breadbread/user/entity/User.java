@@ -20,6 +20,7 @@ public class User extends BaseEntity {
     private String password;
     @Column(nullable = false)
     private String name;
+	@Column(unique = true)
     private String nickname;
     private String email;
     private String telecom;

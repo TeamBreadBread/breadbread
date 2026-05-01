@@ -5,6 +5,7 @@ import com.breadbread.auth.entity.*;
 import com.breadbread.auth.repository.PhoneVerificationRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.global.util.NicknameGenerator;
 import com.breadbread.global.util.SmsUtil;
 import com.breadbread.auth.dto.CheckIdResponse;
 import com.breadbread.user.entity.User;
@@ -34,6 +35,7 @@ public class AuthService {
     private final SmsUtil smsUtil;
     private final SsoService ssoService;
     private final TokenService tokenService;
+    private final NicknameGenerator nicknameGenerator;
 
     @Value("${coolsms.api.expires-in}")
     private long expiresIn;
@@ -58,7 +60,7 @@ public class AuthService {
                 .loginId(signupRequest.getLoginId())
                 .password(encodedPassword)
                 .name(signupRequest.getName())
-                .nickname(signupRequest.getName() + (RANDOM.nextInt(100) + 1))  // 추후 수정 필요
+                .nickname(generateUniqueNickname())
                 .email(signupRequest.getEmail())
                 .phone(signupRequest.getPhone())
                 .role(signupRequest.getRole() != null ? signupRequest.getRole() : UserRole.ROLE_USER)
@@ -194,6 +196,14 @@ public class AuthService {
     @Scheduled(cron = "0 0 3 * * *") // 매일 새벽 3시
     public void deleteExpiredVerifications() {
         phoneVerificationRepository.deleteByExpiredAtBefore(LocalDateTime.now());
+    }
+
+    private String generateUniqueNickname() {
+        String nickname;
+        do {
+            nickname = nicknameGenerator.generate();
+        } while (userRepository.existsByNickname(nickname));
+        return nickname;
     }
 
     private String maskPhone(String phone) {
