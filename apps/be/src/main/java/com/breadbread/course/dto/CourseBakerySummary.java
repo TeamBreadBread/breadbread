@@ -7,15 +7,19 @@ import lombok.Getter;
 @Getter
 @Builder
 public class CourseBakerySummary {
+    private Long id;
     private String name;
     private String region;
     private Double rating;
+    private String thumbnailUrl;
 
-    public static CourseBakerySummary from(Bakery bakery) {
+    public static CourseBakerySummary from(Bakery bakery, String thumbnailUrl) {
         return CourseBakerySummary.builder()
-                .name(bakery.getName())
+                .id(bakery.getId())
+				.name(bakery.getName())
                 .region(bakery.getRegion())
                 .rating(bakery.getRating())
+                .thumbnailUrl(thumbnailUrl)
                 .build();
     }
 }

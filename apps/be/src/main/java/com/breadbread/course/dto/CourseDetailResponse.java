@@ -17,9 +17,11 @@ public class CourseDetailResponse {
     private String estimatedTime;
     private Integer estimatedCost;
     private int likeCount;
+    private boolean liked;
     private List<BakerySummaryResponse> bakeries;
 
-    public static CourseDetailResponse from(Course course, List<BakerySummaryResponse> bakeries) {
+    public static CourseDetailResponse from(Course course, int likeCount,
+                                            boolean liked, List<BakerySummaryResponse> bakeries) {
         return CourseDetailResponse.builder()
                 .id(course.getId())
                 .name(course.getName())
@@ -27,7 +29,8 @@ public class CourseDetailResponse {
                 .bakeryCount(course.getCourseBakeries().size())
                 .estimatedTime(course.getEstimatedTime())
                 .estimatedCost(course.getEstimatedCost())
-                .likeCount(course.getCourseLikes().size())
+                .likeCount(likeCount)
+                .liked(liked)
                 .bakeries(bakeries)
                 .build();
     }

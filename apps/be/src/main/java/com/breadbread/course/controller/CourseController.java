@@ -11,6 +11,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -37,6 +39,7 @@ public class CourseController {
     })
     @GetMapping
     public ApiResponse<CourseListResponse> search(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(required = false) String region,
             @RequestParam(required = false) BreadType breadType,
             @RequestParam(required = false) String theme,
@@ -51,7 +54,8 @@ public class CourseController {
                 .editorPick(editorPick)
                 .build();
 
-        return ApiResponse.ok(courseService.search(search, PageRequest.of(page, size)));
+        Long userId = userDetails != null ? userDetails.getId() : null;
+        return ApiResponse.ok(courseService.search(search, PageRequest.of(page, size), userId));
     }
 
     @Operation(summary = "코스 상세 조회")
@@ -85,7 +89,7 @@ public class CourseController {
         return ApiResponse.ok(null);
     }
 
-	@Operation(summary = "코스 삭제 (관리자 전용)", description = "MANUAL/AI 코스 모두 삭제 가능")
+    @Operation(summary = "코스 삭제 (관리자 전용)", description = "MANUAL/AI 코스 모두 삭제 가능")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<Void> delete(@PathVariable Long id) {
@@ -93,15 +97,15 @@ public class CourseController {
         return ApiResponse.ok(null);
     }
 
-	@Operation(summary = "AI 코스 추천 요청", description = "AI 서버 연동 후 구현 예정")
-	@PostMapping("/ai")
-	@ResponseStatus(HttpStatus.CREATED)
-	public ApiResponse<Long> createAi(
-		@AuthenticationPrincipal CustomUserDetails userDetails,
-		@Valid @RequestBody AiCourseRequest request) {
-		Long id = courseService.createAi(userDetails.getId(), request);
-		return ApiResponse.ok(id);
-	}
+    @Operation(summary = "AI 코스 추천 요청", description = "AI 서버 연동 후 구현 예정")
+    @PostMapping("/ai")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<Long> createAi(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody AiCourseRequest request) {
+        Long id = courseService.createAi(userDetails.getId(), request);
+        return ApiResponse.ok(id);
+    }
 
     @Operation(summary = "AI 코스 삭제 (본인 코스만 가능)")
     @DeleteMapping("/{id}/ai")
@@ -112,4 +116,47 @@ public class CourseController {
         return ApiResponse.ok(null);
     }
 
+    @Operation(summary = "코스 좋아요", description = "이미 좋아요한 경우 409 반환")
+    @PostMapping("/{id}/likes")
+    public ApiResponse<Void> like(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long id) {
+        courseService.like(id, userDetails.getId());
+        return ApiResponse.ok(null);
+    }
+
+    @Operation(summary = "코스 좋아요 취소", description = "좋아요하지 않은 경우 400 반환")
+    @DeleteMapping("/{id}/likes")
+    public ApiResponse<Void> unlike(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long id) {
+        courseService.unlike(id, userDetails.getId());
+        return ApiResponse.ok(null);
+    }
+
+    @Operation(summary = "내 루트 목록 조회")
+    @GetMapping("/me/routes")
+    public ApiResponse<List<RouteResponse>> findMyRoutes(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ApiResponse.ok(courseService.findMyRoutes(userDetails.getId()));
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "코스 루트로 저장", description = "이미 저장한 경우 409 반환")
+    @PostMapping("/{id}/routes")
+    public ApiResponse<Void> saveRoute(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long id) {
+        courseService.saveRoute(id, userDetails.getId());
+        return ApiResponse.ok(null);
+    }
+
+    @Operation(summary = "루트 저장 해제", description = "저장하지 않은 경우 400 반환")
+    @DeleteMapping("/{id}/routes")
+    public ApiResponse<Void> removeRoute(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long id) {
+        courseService.removeRoute(id, userDetails.getId());
+        return ApiResponse.ok(null);
+    }
 }
