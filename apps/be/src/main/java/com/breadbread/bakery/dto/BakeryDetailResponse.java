@@ -23,7 +23,7 @@ public class BakeryDetailResponse {
     private LocalTime openTime;
     private LocalTime closeTime;
     private String phone;
-    private Integer rating;
+    private Double rating;
     private List<BakeryBreadResponse> breads;
 	private Long likeCount;
 	private boolean liked;
