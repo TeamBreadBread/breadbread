@@ -134,6 +134,7 @@ public class CourseController {
         return ApiResponse.ok(null);
     }
 
+	@PreAuthorize("isAuthenticated()")
     @Operation(summary = "내 루트 목록 조회")
     @GetMapping("/me/routes")
     public ApiResponse<List<RouteResponse>> findMyRoutes(
@@ -141,7 +142,6 @@ public class CourseController {
         return ApiResponse.ok(courseService.findMyRoutes(userDetails.getId()));
     }
 
-    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "코스 루트로 저장", description = "이미 저장한 경우 409 반환")
     @PostMapping("/{id}/routes")
     public ApiResponse<Void> saveRoute(
