@@ -87,6 +87,10 @@ public class Bakery extends BaseEntity {
         this.owner = user;
     }
 
+	public void updateRating(Integer rating) {
+		this.rating = rating;
+	}
+
     public void update(UpdateBakeryRequest req) {
         if (req.getName() != null) this.name = req.getName();
         if (req.getAddress() != null) this.address = req.getAddress();

@@ -13,7 +13,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +32,7 @@ public class BakeryService {
     private final CrowdTimeRepository crowdTimeRepository;
     private final BakeryImageRepository bakeryImageRepository;
 	private final BakeryLikeRepository bakeryLikeRepository;
+	private final ReviewRepository reviewRepository;
     private final GcsService gcsService;
 
     @Transactional(readOnly = true)
@@ -264,6 +267,79 @@ public class BakeryService {
 			() -> new CustomException(ErrorCode.NOT_LIKED)
 		);
 		bakeryLikeRepository.delete(like);
+	}
+
+	@Transactional
+	public Long createReview(Long bakeryId, Long userId, CreateReviewRequest request){
+		Bakery bakery = bakeryRepository.findById(bakeryId)
+			.orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
+		User user = userRepository.findById(userId)
+			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+		Review review = Review.builder()
+			.content(request.getContent())
+			.rating(request.getRating())
+			.imageUrls(request.getImageUrls())
+			.bakery(bakery)
+			.user(user)
+			.build();
+		reviewRepository.save(review);
+		bakery.updateRating(reviewRepository.findAverageRatingByBakeryId(bakeryId).orElse(null));
+		return review.getId();
+	}
+
+	@Transactional(readOnly = true)
+	public ReviewListResponse getReviews(Long bakeryId, ReviewSortType sort, int page, int size) {
+		if (!bakeryRepository.existsById(bakeryId)) {
+			throw new CustomException(ErrorCode.BAKERY_NOT_FOUND);
+		}
+		Sort sorting = switch (sort) {
+			case RATING_HIGH -> Sort.by("rating").descending();
+			case RATING_LOW  -> Sort.by("rating").ascending();
+			default          -> Sort.by("createdAt").descending();
+		};
+		Page<Review> result = reviewRepository.findAllByBakeryId(bakeryId, PageRequest.of(page, size, sorting));
+		return ReviewListResponse.builder()
+			.reviews(result.getContent().stream().map(ReviewResponse::from).toList())
+			.total((int) result.getTotalElements())
+			.page(page)
+			.size(size)
+			.hasNext(result.hasNext())
+			.build();
+	}
+
+	@Transactional
+	public void updateReview(Long bakeryId, Long reviewId, Long userId, UpdateReviewRequest request) {
+		Bakery bakery = bakeryRepository.findById(bakeryId)
+			.orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
+
+		Review review = reviewRepository.findByIdAndBakeryId(reviewId, bakeryId)
+			.orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
+
+		if (!review.getUser().getId().equals(userId)) {
+			throw new CustomException(ErrorCode.FORBIDDEN);
+		}
+
+		review.update(request);
+		bakery.updateRating(reviewRepository.findAverageRatingByBakeryId(bakeryId).orElse(null));
+		log.info("리뷰 수정: reviewId={}, bakeryId={}, userId={}", reviewId, bakeryId, userId);
+	}
+
+	@Transactional
+	public void deleteReview(Long bakeryId, Long reviewId, Long userId, UserRole role) {
+		Bakery bakery = bakeryRepository.findById(bakeryId)
+			.orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
+
+		Review review = reviewRepository.findByIdAndBakeryId(reviewId, bakeryId)
+			.orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
+
+		if (role != UserRole.ROLE_ADMIN && !review.getUser().getId().equals(userId)) {
+			throw new CustomException(ErrorCode.FORBIDDEN);
+		}
+
+		reviewRepository.delete(review);
+		bakery.updateRating(reviewRepository.findAverageRatingByBakeryId(bakeryId).orElse(null));
+		log.info("리뷰 삭제: reviewId={}, bakeryId={}, userId={}", reviewId, bakeryId, userId);
 	}
 
     private void checkAuthority(Bakery bakery, Long userId, UserRole role) {
