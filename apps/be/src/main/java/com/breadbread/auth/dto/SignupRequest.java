@@ -1,6 +1,5 @@
 package com.breadbread.auth.dto;
 
-import com.breadbread.global.validator.PasswordPolicy;
 import com.breadbread.user.entity.UserRole;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
@@ -21,12 +20,15 @@ public class SignupRequest {
     )
     private String loginId;
 
-    @Schema(description = "비밀번호 (영문/숫자/특수문자 포함 8자 이상)", example = "Password1!")
+    @Schema(description = "비밀번호 (8~16자, 영문 대/소문자, 숫자, 특수문자 사용 가능)", example = "Bread123!")
     @NotBlank(message = "비밀번호는 필수입니다.")
-    @PasswordPolicy
+    @Pattern(
+            regexp = "^[A-Za-z0-9!@#$%^&*()_+\\-=\\[\\]{};':\",./<>?\\\\|`~]{8,16}$",
+            message = "비밀번호는 8~16자의 영문 대/소문자, 숫자, 특수문자만 사용 가능합니다."
+    )
     private String password;
 
-    @Schema(description = "비밀번호 확인", example = "Password1!")
+    @Schema(description = "비밀번호 확인", example = "Bread123!")
     @NotBlank(message = "비밀번호 확인은 필수입니다.")
     private String passwordConfirm;
 
