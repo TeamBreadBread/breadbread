@@ -25,8 +25,10 @@ public class BakeryDetailResponse {
     private String phone;
     private Integer rating;
     private List<BakeryBreadResponse> breads;
+	private Long likeCount;
+	private boolean liked;
 
-    public static BakeryDetailResponse from(Bakery bakery) {
+    public static BakeryDetailResponse from(Bakery bakery, Long likeCount, boolean liked) {
         BusinessHours bh = bakery.getBusinessHours();
 
         List<BakeryBreadResponse> breads = bakery.getBreads() == null ? Collections.emptyList() :
@@ -52,6 +54,8 @@ public class BakeryDetailResponse {
                 .openTime(bh != null ? bh.getTodayOpen() : null)
                 .closeTime(bh != null ? bh.getTodayClose() : null)
                 .breads(breads)
+				.likeCount(likeCount)
+				.liked(liked)
                 .build();
     }
 

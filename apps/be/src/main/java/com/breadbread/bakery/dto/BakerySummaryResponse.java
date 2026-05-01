@@ -20,9 +20,10 @@ public class BakerySummaryResponse {
     private Integer rating;
     private LocalTime openTime;
     private LocalTime closeTime;
-    private int likeCount;
+    private Long likeCount;
+	private boolean liked;
 
-    public static BakerySummaryResponse from(Bakery bakery, String thumbnailUrl) {
+    public static BakerySummaryResponse from(Bakery bakery, String thumbnailUrl, Long likeCount, boolean liked) {
         BusinessHours bh = bakery.getBusinessHours();
         return BakerySummaryResponse.builder()
                 .id(bakery.getId())
@@ -34,6 +35,8 @@ public class BakerySummaryResponse {
                 .thumbnailUrl(thumbnailUrl)
                 .openTime(bh != null ? bh.getTodayOpen() : null)
                 .closeTime(bh != null ? bh.getTodayClose() : null)
+				.likeCount(likeCount)
+				.liked(liked)
                 .build();
     }
 }

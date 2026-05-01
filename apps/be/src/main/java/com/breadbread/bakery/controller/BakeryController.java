@@ -45,27 +45,31 @@ public class BakeryController {
     })
     @GetMapping
     public ApiResponse<BakeryListResponse> search(
+			@AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) BakerySortType sort,
             @RequestParam(defaultValue = "false") boolean open,
             @RequestParam(required = false) String region,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-
+		Long userId = userDetails != null ? userDetails.getId() : null;
         BakerySearch search = BakerySearch.builder()
                 .keyword(keyword)
                 .sort(sort)
                 .open(open)
                 .region(region)
                 .build();
-        return ApiResponse.ok(bakeryService.search(search, PageRequest.of(page, size)));
+        return ApiResponse.ok(bakeryService.search(search, PageRequest.of(page, size), userId));
     }
 
     @Operation(summary = "빵집 상세 조회")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200")
     @GetMapping("/{id}")
-    public ApiResponse<BakeryDetailResponse> findOne(@PathVariable Long id) {
-        return ApiResponse.ok(bakeryService.findOne(id));
+    public ApiResponse<BakeryDetailResponse> findOne(
+		@AuthenticationPrincipal CustomUserDetails userDetails,
+		@PathVariable Long id) {
+		Long userId = userDetails != null ? userDetails.getId() : null;
+        return ApiResponse.ok(bakeryService.findOne(id, userId));
     }
 
     @Operation(summary = "빵집 등록")
@@ -126,6 +130,25 @@ public class BakeryController {
             @PathVariable Long bakeryId,
             @PathVariable Long breadId) {
         bakeryService.deleteBread(userDetails.getId(), userDetails.getRole(), bakeryId, breadId);
+        return ApiResponse.ok();
+    }
+
+    @Operation(summary = "빵집 좋아요", description = "이미 좋아요한 경우 409 반환")
+    @PostMapping("/{id}/likes")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<Void> like(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long id) {
+        bakeryService.like(id, userDetails.getId());
+        return ApiResponse.ok();
+    }
+
+    @Operation(summary = "빵집 좋아요 취소", description = "좋아요하지 않은 경우 400 반환")
+    @DeleteMapping("/{id}/likes")
+    public ApiResponse<Void> unlike(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long id) {
+        bakeryService.unlike(id, userDetails.getId());
         return ApiResponse.ok();
     }
 }

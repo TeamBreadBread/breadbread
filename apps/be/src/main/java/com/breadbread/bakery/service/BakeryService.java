@@ -1,14 +1,8 @@
 package com.breadbread.bakery.service;
 
 import com.breadbread.bakery.dto.*;
-import com.breadbread.bakery.entity.Bakery;
-import com.breadbread.bakery.entity.BakeryImage;
-import com.breadbread.bakery.entity.Bread;
-import com.breadbread.bakery.entity.CrowdTime;
-import com.breadbread.bakery.repository.BakeryImageRepository;
-import com.breadbread.bakery.repository.BakeryRepository;
-import com.breadbread.bakery.repository.BreadRepository;
-import com.breadbread.bakery.repository.CrowdTimeRepository;
+import com.breadbread.bakery.entity.*;
+import com.breadbread.bakery.repository.*;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.service.GcsService;
@@ -17,14 +11,13 @@ import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -36,6 +29,7 @@ public class BakeryService {
     private final UserRepository userRepository;
     private final CrowdTimeRepository crowdTimeRepository;
     private final BakeryImageRepository bakeryImageRepository;
+	private final BakeryLikeRepository bakeryLikeRepository;
     private final GcsService gcsService;
 
     @Transactional(readOnly = true)
@@ -57,7 +51,7 @@ public class BakeryService {
     }
 
     @Transactional(readOnly = true)
-    public BakeryListResponse search(BakerySearch search, Pageable pageable) {
+    public BakeryListResponse search(BakerySearch search, Pageable pageable, Long userId) {
         Page<Bakery> result = bakeryRepository.search(search, pageable);
         List<Bakery> bakeries = result.getContent();
 
@@ -66,10 +60,18 @@ public class BakeryService {
                 .findAllByBakeryIdInAndDisplayOrder(ids, 1)
                 .stream()
                 .collect(Collectors.toMap(img -> img.getBakery().getId(), BakeryImage::getImageUrl));
+		Map<Long, Long> likeCountMap = bakeryLikeRepository
+			.countByBakeryIdIn(ids)
+			.stream()
+			.collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+		Set<Long> likeIds = userId != null
+			? new HashSet<>(bakeryLikeRepository.findLikedBakeryIdsByUserId(ids, userId))
+			: Collections.emptySet();
 
         return BakeryListResponse.builder()
                 .bakeries(bakeries.stream()
-                        .map(b -> BakerySummaryResponse.from(b, thumbnailMap.get(b.getId())))
+                        .map(b -> BakerySummaryResponse.from(b, thumbnailMap.get(b.getId()),
+								likeCountMap.getOrDefault(b.getId(), 0L), likeIds.contains(b.getId())))
                         .toList())
                 .total((int) result.getTotalElements())
                 .page(pageable.getPageNumber())
@@ -79,10 +81,12 @@ public class BakeryService {
     }
 
     @Transactional(readOnly = true)
-    public BakeryDetailResponse findOne(Long bakeryId) {
+    public BakeryDetailResponse findOne(Long bakeryId, Long userId) {
         Bakery bakery = bakeryRepository.findById(bakeryId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
-        return BakeryDetailResponse.from(bakery);
+		Long likeCount = bakeryLikeRepository.countByBakery(bakery);
+		boolean liked = userId != null && bakeryLikeRepository.existsByBakeryIdAndUserId(bakeryId, userId);
+        return BakeryDetailResponse.from(bakery, likeCount, liked);
     }
 
     @Transactional
@@ -230,6 +234,37 @@ public class BakeryService {
         }
         breadRepository.delete(bread);
     }
+
+	@Transactional
+	public void like(Long bakeryId, Long userId) {
+		Bakery bakery = bakeryRepository.findById(bakeryId)
+			.orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
+
+		if (bakeryLikeRepository.existsByBakeryIdAndUserId(bakeryId, userId)) {
+			throw new CustomException(ErrorCode.ALREADY_LIKED);
+		}
+
+		User user = userRepository.findById(userId)
+			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+		try {
+			bakeryLikeRepository.save(BakeryLike.builder()
+				.bakery(bakery)
+				.user(user)
+				.build());
+		} catch (DataIntegrityViolationException e) {
+			throw new CustomException(ErrorCode.ALREADY_LIKED);
+		}
+	}
+
+
+	@Transactional
+	public void unlike(Long bakeryId, Long userId) {
+		BakeryLike like = bakeryLikeRepository.findByBakeryIdAndUserId(bakeryId, userId).orElseThrow(
+			() -> new CustomException(ErrorCode.NOT_LIKED)
+		);
+		bakeryLikeRepository.delete(like);
+	}
 
     private void checkAuthority(Bakery bakery, Long userId, UserRole role) {
         if (role == UserRole.ROLE_ADMIN) return;

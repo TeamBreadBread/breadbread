@@ -40,8 +40,8 @@ public enum ErrorCode {
     BAKERY_NOT_FOUND(HttpStatus.NOT_FOUND, "E0301", "존재하지 않는 빵집입니다."),
     MENU_NOT_FOUND(HttpStatus.NOT_FOUND, "E0302", "존재하지 않는 메뉴입니다."),
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "E0303", "존재하지 않는 리뷰입니다."),
-    ALREADY_LIKED(HttpStatus.CONFLICT, "E0304", "이미 찜한 빵집입니다."),
-    NOT_LIKED(HttpStatus.BAD_REQUEST, "E0305", "찜하지 않은 빵집입니다."),
+    ALREADY_LIKED(HttpStatus.CONFLICT, "E0304", "이미 좋아요한 빵집입니다."),
+    NOT_LIKED(HttpStatus.BAD_REQUEST, "E0305", "좋아요하지 않은 빵집입니다."),
 
     // 코스/AI추천 E04xx
     COURSE_NOT_FOUND(HttpStatus.NOT_FOUND, "E0401", "존재하지 않는 코스입니다."),
