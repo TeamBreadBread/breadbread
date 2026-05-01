@@ -13,6 +13,7 @@ jobs:
     if: ${{ github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
     env:
+      RUN_REGION: ${{ secrets.GCP_RUN_REGION }}
       REGION: ${{ secrets.GCP_REGION }}
       PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
       IMAGE_REPO: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/breadbread/be
@@ -39,7 +40,7 @@ jobs:
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: breadbread-be
-          region: ${{ env.REGION }}
+          region: ${{ env.RUN_REGION }}
           project_id: ${{ env.PROJECT_ID }}
           image: ${{ env.IMAGE_REPO }}:${{ github.sha }}
           # v2: public ingress via flags (not allow-unauthenticated). Attach Cloud SQL so
@@ -52,7 +53,7 @@ jobs:
           env_vars: |
             SPRING_PROFILES_ACTIVE=prod
             GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
-            GCP_REGION=${{ secrets.GCP_REGION }}
+            GCP_REGION=${{ env.RUN_REGION }}
             CLOUD_SQL_INSTANCE=${{ secrets.CLOUD_SQL_INSTANCE }}
             GCS_BUCKET=${{ secrets.GCS_BUCKET }}
             DB_NAME=${{ secrets.DB_NAME }}

@@ -48,6 +48,8 @@ public class SecurityConfig {
         config.setAllowedOrigins(List.of(
                 "https://breadbread.app",
                 "https://breadbread.vercel.app",
+				"https://breadbread.pages.dev",
+				"https://www.breadbread.io",
                 "http://localhost:3000"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
