@@ -53,7 +53,7 @@ jobs:
           env_vars: |
             SPRING_PROFILES_ACTIVE=prod
             GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
-            GCP_REGION=${{ env.RUN_REGION }}
+            GCP_REGION=${{ secrets.GCP_REGION }}
             CLOUD_SQL_INSTANCE=${{ secrets.CLOUD_SQL_INSTANCE }}
             GCS_BUCKET=${{ secrets.GCS_BUCKET }}
             DB_NAME=${{ secrets.DB_NAME }}
