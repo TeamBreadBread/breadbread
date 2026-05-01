@@ -33,12 +33,12 @@ public class BakeryController {
 
     @Operation(
             summary = "빵집 목록 조회",
-            description = "키워드 검색, 지역 필터, 정렬, 영업 중 필터, 페이징 지원"
+            description = "키워드 검색, 지역 필터, 정렬, 영업 중 우선 배치, 페이징 지원"
     )
     @Parameters({
             @Parameter(name = "keyword", description = "빵집 이름 검색어", example = "성심당"),
             @Parameter(name = "sort", description = "정렬 기준 (RATING: 별점순 / REVIEW_COUNT: 리뷰순 / LIKE_COUNT: 하트순)"),
-            @Parameter(name = "open", description = "영업 중인 빵집만 조회 (기본값: false)"),
+            @Parameter(name = "open", description = "true 시 영업 중인 빵집을 상단에 우선 배치 (기본값: false)"),
             @Parameter(name = "region", description = "지역구 필터", example = "대전 중구"),
             @Parameter(name = "page", description = "페이지 번호 (0부터 시작, 기본값: 0)"),
             @Parameter(name = "size", description = "페이지 크기 (기본값: 10)")
@@ -79,7 +79,7 @@ public class BakeryController {
     }
 
     @Operation(summary = "빵집 수정")
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     public ApiResponse<Void> updateBakery(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long id,
@@ -109,7 +109,7 @@ public class BakeryController {
     }
 
     @Operation(summary = "빵집 메뉴 수정")
-    @PutMapping("/{bakeryId}/breads/{breadId}")
+    @PatchMapping("/{bakeryId}/breads/{breadId}")
     public ApiResponse<Void> updateBread(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long bakeryId,
