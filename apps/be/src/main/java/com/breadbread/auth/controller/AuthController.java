@@ -104,7 +104,7 @@ public class AuthController {
     @PostMapping("/social/{provider}")
     public ApiResponse<TokenResponse> socialLogin(
             @Parameter(description = "소셜 로그인 제공자 (KAKAO, NAVER, GOOGLE)") @PathVariable SsoProvider provider,
-            @RequestBody SocialLoginRequest request) {
+            @Valid @RequestBody SocialLoginRequest request) {
         return ApiResponse.ok(authService.socialLogin(provider, request));
     }
 }
