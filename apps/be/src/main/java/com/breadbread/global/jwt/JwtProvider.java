@@ -1,10 +1,11 @@
 package com.breadbread.global.jwt;
 
+import com.breadbread.global.config.JwtProperties;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -13,27 +14,18 @@ import java.time.ZoneId;
 import java.util.Date;
 
 @Component
+@RequiredArgsConstructor
 @Slf4j
 public class JwtProvider {
-    @Value("${jwt.secret}")
-    private String accessSecret;
-
-    @Value("${jwt.refresh-secret}")
-    private String refreshSecret;
-
-    @Value("${jwt.expires-in}")
-    private long accessTokenExpiration;     // 초단위
-
-    @Value("${jwt.refresh-expires-in}")
-    private long refreshTokenExpiration;    // 초단위
+    private final JwtProperties jwtProperties;
 
     private SecretKey accessKey;
     private SecretKey refreshKey;
 
     @PostConstruct
     public void init() {
-        this.accessKey = Keys.hmacShaKeyFor(accessSecret.getBytes());
-        this.refreshKey = Keys.hmacShaKeyFor(refreshSecret.getBytes());
+        this.accessKey = Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes());
+        this.refreshKey = Keys.hmacShaKeyFor(jwtProperties.getRefreshSecret().getBytes());
     }
 
     public String createAccessToken(String userId) {
@@ -41,7 +33,7 @@ public class JwtProvider {
         return Jwts.builder()
                 .subject(userId)
                 .issuedAt(now)
-                .expiration(new Date(now.getTime() + accessTokenExpiration * 1000))
+                .expiration(new Date(now.getTime() + jwtProperties.getExpiresIn() * 1000))
                 .signWith(accessKey)
                 .compact();
     }
@@ -51,7 +43,7 @@ public class JwtProvider {
         return Jwts.builder()
                 .subject(userId)
                 .issuedAt(now)
-                .expiration(new Date(now.getTime() + refreshTokenExpiration * 1000))
+                .expiration(new Date(now.getTime() + jwtProperties.getRefreshExpiresIn() * 1000))
                 .signWith(refreshKey)
                 .compact();
     }

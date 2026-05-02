@@ -3,10 +3,11 @@ package com.breadbread.auth.service;
 import com.breadbread.auth.dto.*;
 import com.breadbread.auth.entity.*;
 import com.breadbread.auth.repository.PhoneVerificationRepository;
+import com.breadbread.auth.config.CoolSmsProperties;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.util.NicknameGenerator;
-import com.breadbread.global.util.SmsUtil;
+import com.breadbread.auth.util.SmsUtil;
 import com.breadbread.auth.dto.CheckIdResponse;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
@@ -14,7 +15,6 @@ import com.breadbread.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -36,9 +36,7 @@ public class AuthService {
     private final SsoService ssoService;
     private final TokenService tokenService;
     private final NicknameGenerator nicknameGenerator;
-
-    @Value("${coolsms.api.expires-in}")
-    private long expiresIn;
+    private final CoolSmsProperties coolSmsProperties;
 
     private static final Random RANDOM = new Random();
 
@@ -148,7 +146,7 @@ public class AuthService {
         PhoneVerification verification = PhoneVerification.builder()
                 .phone(sendPhoneRequest.getPhone())
                 .code(code)
-                .expiredAt(LocalDateTime.now().plusSeconds(expiresIn))
+                .expiredAt(LocalDateTime.now().plusSeconds(coolSmsProperties.getExpiresIn()))
                 .authType(AuthType.SMS)
                 .purpose(sendPhoneRequest.getPurpose())
                 .build();
