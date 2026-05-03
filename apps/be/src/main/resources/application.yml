@@ -32,6 +32,13 @@ spring:
       max-request-size: 50MB    # 요청 전체 크기 (여러 파일)
       enabled: true
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: ${REDIS_TIMEOUT:3s}
+
 gcs:
   bucket: ${GCS_BUCKET:your-bucket-name}
 

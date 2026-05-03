@@ -53,12 +53,15 @@ jobs:
           env_vars: |
             SPRING_PROFILES_ACTIVE=prod
             GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
-            GCP_REGION=${{ secrets.GCP_REGION }}
+            GCP_REGION=${{ env.REGION }}
             CLOUD_SQL_INSTANCE=${{ secrets.CLOUD_SQL_INSTANCE }}
             GCS_BUCKET=${{ secrets.GCS_BUCKET }}
             DB_NAME=${{ secrets.DB_NAME }}
             DB_USERNAME=${{ secrets.DB_USERNAME }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            REDIS_HOST=${{ secrets.REDIS_HOST }}
+            REDIS_PORT=${{ secrets.REDIS_PORT }}
+            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
             JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}
