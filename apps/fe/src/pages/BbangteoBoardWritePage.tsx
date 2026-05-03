@@ -56,12 +56,34 @@ const WriteHeader = ({
   );
 };
 
-/**
- * CodeQL(js): React `<img src={...}>`에 파일 기반 object URL이 흐르지 않도록,
- * 네이티브 img에만 src를 할당합니다.
- */
+/** 백엔드 GCS 허용 타입과 동일 */
 const ALLOWED_PREVIEW_IMAGE_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
 
+const PREVIEW_PX = 88;
+
+function drawImageCover(
+  ctx: CanvasRenderingContext2D,
+  bitmap: ImageBitmap,
+  width: number,
+  height: number,
+): void {
+  const bw = bitmap.width;
+  const bh = bitmap.height;
+  if (bw === 0 || bh === 0) {
+    return;
+  }
+  const scale = Math.max(width / bw, height / bh);
+  const dw = bw * scale;
+  const dh = bh * scale;
+  const dx = (width - dw) / 2;
+  const dy = (height - dh) / 2;
+  ctx.drawImage(bitmap, 0, 0, bw, bh, dx, dy, dw, dh);
+}
+
+/**
+ * CodeQL js/xss-through-dom: `img.src` / `blob:` 경로를 쓰지 않고,
+ * `createImageBitmap` → canvas 픽셀 복사로만 미리보기합니다.
+ */
 function LocalImageThumbnail({
   file,
   previewIndex,
@@ -71,34 +93,62 @@ function LocalImageThumbnail({
   previewIndex: number;
   onRemove: () => void;
 }) {
-  const hostRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const host = hostRef.current;
-    if (!host) {
-      return;
-    }
-    if (!ALLOWED_PREVIEW_IMAGE_TYPES.has(file.type)) {
+    const canvas = canvasRef.current;
+    if (!canvas || !ALLOWED_PREVIEW_IMAGE_TYPES.has(file.type)) {
       return;
     }
 
-    const img = document.createElement("img");
-    img.alt = `선택 이미지 ${previewIndex + 1}`;
-    img.className = "h-full w-full object-cover";
+    let cancelled = false;
 
-    const objectUrl = URL.createObjectURL(file);
-    img.src = objectUrl;
-    host.appendChild(img);
+    const paint = async () => {
+      let bitmap: ImageBitmap | null = null;
+      try {
+        bitmap = await createImageBitmap(file);
+      } catch {
+        return;
+      }
+      if (cancelled) {
+        bitmap.close();
+        return;
+      }
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        bitmap.close();
+        return;
+      }
+
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const px = Math.round(PREVIEW_PX * dpr);
+      canvas.width = px;
+      canvas.height = px;
+      canvas.style.width = `${PREVIEW_PX}px`;
+      canvas.style.height = `${PREVIEW_PX}px`;
+      ctx.clearRect(0, 0, px, px);
+      drawImageCover(ctx, bitmap, px, px);
+      bitmap.close();
+    };
+
+    void paint();
 
     return () => {
-      URL.revokeObjectURL(objectUrl);
-      host.removeChild(img);
+      cancelled = true;
     };
   }, [file, previewIndex]);
 
   return (
     <div className="relative h-[88px] w-[88px] shrink-0">
-      <div ref={hostRef} className="h-full w-full overflow-hidden rounded-[10px] bg-[#eeeff1]" />
+      <canvas
+        ref={canvasRef}
+        className="block rounded-[10px] bg-[#eeeff1]"
+        width={PREVIEW_PX}
+        height={PREVIEW_PX}
+        aria-label={`선택 이미지 ${previewIndex + 1}`}
+        role="img"
+      />
       <button
         type="button"
         aria-label={`이미지 ${previewIndex + 1} 삭제`}
