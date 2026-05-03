@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { apiClient } from "@/api/client";
 import { uploadImages } from "@/api/image";
@@ -6,12 +6,16 @@ import { getErrorMessage, type ApiEnvelope } from "@/api/types/common";
 import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
-import { blobUrlForImagePreview } from "@/utils/safeMediaUrl";
 
 type BoardPostPayload = {
   title: string;
   content: string;
   imageUrls: string[];
+};
+
+type SelectedLocalImage = {
+  id: string;
+  file: File;
 };
 
 async function createBoardPost(payload: BoardPostPayload): Promise<void> {
@@ -52,28 +56,68 @@ const WriteHeader = ({
   );
 };
 
+/**
+ * CodeQL(js): React `<img src={...}>`에 파일 기반 object URL이 흐르지 않도록,
+ * 네이티브 img에만 src를 할당합니다.
+ */
+const ALLOWED_PREVIEW_IMAGE_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
+
+function LocalImageThumbnail({
+  file,
+  previewIndex,
+  onRemove,
+}: {
+  file: File;
+  previewIndex: number;
+  onRemove: () => void;
+}) {
+  const hostRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) {
+      return;
+    }
+    if (!ALLOWED_PREVIEW_IMAGE_TYPES.has(file.type)) {
+      return;
+    }
+
+    const img = document.createElement("img");
+    img.alt = `선택 이미지 ${previewIndex + 1}`;
+    img.className = "h-full w-full object-cover";
+
+    const objectUrl = URL.createObjectURL(file);
+    img.src = objectUrl;
+    host.appendChild(img);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+      host.removeChild(img);
+    };
+  }, [file, previewIndex]);
+
+  return (
+    <div className="relative h-[88px] w-[88px] shrink-0">
+      <div ref={hostRef} className="h-full w-full overflow-hidden rounded-[10px] bg-[#eeeff1]" />
+      <button
+        type="button"
+        aria-label={`이미지 ${previewIndex + 1} 삭제`}
+        className="absolute right-[4px] top-[4px] flex h-[20px] w-[20px] items-center justify-center rounded-full bg-black/60 text-[12px] text-white"
+        onClick={onRemove}
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
 const BbangteoBoardWritePage = () => {
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [selectedImages, setSelectedImages] = useState<SelectedLocalImage[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const imagePreviews = useMemo(
-    () =>
-      selectedImages.map((file, index) => ({
-        id: `${file.name}-${file.lastModified}-${index}`,
-        src: URL.createObjectURL(file),
-      })),
-    [selectedImages],
-  );
-
-  useEffect(() => {
-    return () => {
-      imagePreviews.forEach((preview) => URL.revokeObjectURL(preview.src));
-    };
-  }, [imagePreviews]);
 
   const canSubmit = title.trim().length > 0 && body.trim().length > 0;
 
@@ -82,12 +126,15 @@ const BbangteoBoardWritePage = () => {
     if (files.length === 0) {
       return;
     }
-    setSelectedImages((prev) => [...prev, ...files]);
+    setSelectedImages((prev) => [
+      ...prev,
+      ...files.map((file) => ({ id: crypto.randomUUID(), file })),
+    ]);
     event.target.value = "";
   };
 
-  const handleRemoveImage = (index: number) => {
-    setSelectedImages((prev) => prev.filter((_, currentIndex) => currentIndex !== index));
+  const handleRemoveImage = (id: string) => {
+    setSelectedImages((prev) => prev.filter((item) => item.id !== id));
   };
 
   const handleSubmit = async () => {
@@ -97,7 +144,8 @@ const BbangteoBoardWritePage = () => {
 
     setIsSubmitting(true);
     try {
-      const imageUrls = selectedImages.length > 0 ? await uploadImages(selectedImages) : [];
+      const files = selectedImages.map((item) => item.file);
+      const imageUrls = files.length > 0 ? await uploadImages(files) : [];
 
       await createBoardPost({
         title: title.trim(),
@@ -140,31 +188,16 @@ const BbangteoBoardWritePage = () => {
             rows={14}
             className="min-h-[200px] w-full resize-y bg-transparent text-[16px] leading-[22px] text-[#1a1c20] placeholder:text-[#b0b3ba] outline-none"
           />
-          {imagePreviews.length > 0 ? (
+          {selectedImages.length > 0 ? (
             <div className="mt-[8px] flex gap-[10px] overflow-x-auto pb-[4px]">
-              {imagePreviews.map((preview, index) => {
-                const safeSrc = blobUrlForImagePreview(preview.src);
-                if (!safeSrc) {
-                  return null;
-                }
-                return (
-                  <div key={preview.id} className="relative h-[88px] w-[88px] shrink-0">
-                    <img
-                      src={safeSrc}
-                      alt={`선택 이미지 ${index + 1}`}
-                      className="h-full w-full rounded-[10px] object-cover"
-                    />
-                    <button
-                      type="button"
-                      aria-label={`이미지 ${index + 1} 삭제`}
-                      className="absolute right-[4px] top-[4px] flex h-[20px] w-[20px] items-center justify-center rounded-full bg-black/60 text-[12px] text-white"
-                      onClick={() => handleRemoveImage(index)}
-                    >
-                      ×
-                    </button>
-                  </div>
-                );
-              })}
+              {selectedImages.map((item, index) => (
+                <LocalImageThumbnail
+                  key={item.id}
+                  file={item.file}
+                  previewIndex={index}
+                  onRemove={() => handleRemoveImage(item.id)}
+                />
+              ))}
             </div>
           ) : null}
         </main>
