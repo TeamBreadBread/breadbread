@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UserPreferenceRouteImport } from './routes/user-preference'
 import { Route as TaxiReserveRouteImport } from './routes/taxi-reserve'
+import { Route as TaxiReservationCompleteRouteImport } from './routes/taxi-reservation-complete'
+import { Route as TaxiPaymentRouteImport } from './routes/taxi-payment'
 import { Route as SignupResultRouteImport } from './routes/signup-result'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -49,6 +51,16 @@ const UserPreferenceRoute = UserPreferenceRouteImport.update({
 const TaxiReserveRoute = TaxiReserveRouteImport.update({
   id: '/taxi-reserve',
   path: '/taxi-reserve',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TaxiReservationCompleteRoute = TaxiReservationCompleteRouteImport.update({
+  id: '/taxi-reservation-complete',
+  path: '/taxi-reservation-complete',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TaxiPaymentRoute = TaxiPaymentRouteImport.update({
+  id: '/taxi-payment',
+  path: '/taxi-payment',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupResultRoute = SignupResultRouteImport.update({
@@ -228,6 +240,8 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/signup-result': typeof SignupResultRoute
+  '/taxi-payment': typeof TaxiPaymentRoute
+  '/taxi-reservation-complete': typeof TaxiReservationCompleteRoute
   '/taxi-reserve': typeof TaxiReserveRoute
   '/user-preference': typeof UserPreferenceRoute
   '/route/': typeof RouteIndexRoute
@@ -261,6 +275,8 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/signup-result': typeof SignupResultRoute
+  '/taxi-payment': typeof TaxiPaymentRoute
+  '/taxi-reservation-complete': typeof TaxiReservationCompleteRoute
   '/taxi-reserve': typeof TaxiReserveRoute
   '/user-preference': typeof UserPreferenceRoute
   '/route': typeof RouteIndexRoute
@@ -295,6 +311,8 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/signup-result': typeof SignupResultRoute
+  '/taxi-payment': typeof TaxiPaymentRoute
+  '/taxi-reservation-complete': typeof TaxiReservationCompleteRoute
   '/taxi-reserve': typeof TaxiReserveRoute
   '/user-preference': typeof UserPreferenceRoute
   '/route/': typeof RouteIndexRoute
@@ -330,6 +348,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/signup-result'
+    | '/taxi-payment'
+    | '/taxi-reservation-complete'
     | '/taxi-reserve'
     | '/user-preference'
     | '/route/'
@@ -363,6 +383,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/signup-result'
+    | '/taxi-payment'
+    | '/taxi-reservation-complete'
     | '/taxi-reserve'
     | '/user-preference'
     | '/route'
@@ -396,6 +418,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/signup-result'
+    | '/taxi-payment'
+    | '/taxi-reservation-complete'
     | '/taxi-reserve'
     | '/user-preference'
     | '/route/'
@@ -430,6 +454,8 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   SignupResultRoute: typeof SignupResultRoute
+  TaxiPaymentRoute: typeof TaxiPaymentRoute
+  TaxiReservationCompleteRoute: typeof TaxiReservationCompleteRoute
   TaxiReserveRoute: typeof TaxiReserveRoute
   UserPreferenceRoute: typeof UserPreferenceRoute
   RouteIndexRoute: typeof RouteIndexRoute
@@ -449,6 +475,20 @@ declare module '@tanstack/react-router' {
       path: '/taxi-reserve'
       fullPath: '/taxi-reserve'
       preLoaderRoute: typeof TaxiReserveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/taxi-reservation-complete': {
+      id: '/taxi-reservation-complete'
+      path: '/taxi-reservation-complete'
+      fullPath: '/taxi-reservation-complete'
+      preLoaderRoute: typeof TaxiReservationCompleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/taxi-payment': {
+      id: '/taxi-payment'
+      path: '/taxi-payment'
+      fullPath: '/taxi-payment'
+      preLoaderRoute: typeof TaxiPaymentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup-result': {
@@ -686,6 +726,8 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   SignupResultRoute: SignupResultRoute,
+  TaxiPaymentRoute: TaxiPaymentRoute,
+  TaxiReservationCompleteRoute: TaxiReservationCompleteRoute,
   TaxiReserveRoute: TaxiReserveRoute,
   UserPreferenceRoute: UserPreferenceRoute,
   RouteIndexRoute: RouteIndexRoute,
