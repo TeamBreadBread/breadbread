@@ -33,6 +33,8 @@ public class GcsService {
     public String upload(MultipartFile file, String folder) {
         String originalFilename = Optional.ofNullable(file.getOriginalFilename())
                 .filter(name -> !name.isBlank())
+                .map(GcsService::sanitizeClientFilename)
+                .filter(name -> !name.isBlank())
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_FILE_NAME));
 
         if (!ALLOWED_TYPES.contains(file.getContentType())) {
@@ -55,6 +57,23 @@ public class GcsService {
         }
 
         return "https://storage.googleapis.com/" + bucketName + "/" + fileName;
+    }
+
+    /**
+     * 클라이언트가 보낸 파일명에서 경로 구분자·상위 디렉터리 시퀀스를 제거해 GCS 객체 키에 안전하게 쓸 수 있는
+     * 파일명만 남깁니다. (CodeQL 경로 주입 경고 및 악의적 경로 조작 방지)
+     */
+    static String sanitizeClientFilename(String raw) {
+        String name = raw.replace('\\', '/');
+        int slash = name.lastIndexOf('/');
+        if (slash >= 0) {
+            name = name.substring(slash + 1);
+        }
+        name = name.strip();
+        if (name.isEmpty() || name.contains("..") || name.contains("/")) {
+            return "";
+        }
+        return name;
     }
 
     public List<String> uploadAll(List<MultipartFile> files, String folder) {
