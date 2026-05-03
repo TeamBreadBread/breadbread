@@ -6,6 +6,7 @@ import { getErrorMessage, type ApiEnvelope } from "@/api/types/common";
 import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
+import { blobUrlForImagePreview } from "@/utils/safeMediaUrl";
 
 type BoardPostPayload = {
   title: string;
@@ -141,23 +142,29 @@ const BbangteoBoardWritePage = () => {
           />
           {imagePreviews.length > 0 ? (
             <div className="mt-[8px] flex gap-[10px] overflow-x-auto pb-[4px]">
-              {imagePreviews.map((preview, index) => (
-                <div key={preview.id} className="relative h-[88px] w-[88px] shrink-0">
-                  <img
-                    src={preview.src}
-                    alt={`선택 이미지 ${index + 1}`}
-                    className="h-full w-full rounded-[10px] object-cover"
-                  />
-                  <button
-                    type="button"
-                    aria-label={`이미지 ${index + 1} 삭제`}
-                    className="absolute right-[4px] top-[4px] flex h-[20px] w-[20px] items-center justify-center rounded-full bg-black/60 text-[12px] text-white"
-                    onClick={() => handleRemoveImage(index)}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
+              {imagePreviews.map((preview, index) => {
+                const safeSrc = blobUrlForImagePreview(preview.src);
+                if (!safeSrc) {
+                  return null;
+                }
+                return (
+                  <div key={preview.id} className="relative h-[88px] w-[88px] shrink-0">
+                    <img
+                      src={safeSrc}
+                      alt={`선택 이미지 ${index + 1}`}
+                      className="h-full w-full rounded-[10px] object-cover"
+                    />
+                    <button
+                      type="button"
+                      aria-label={`이미지 ${index + 1} 삭제`}
+                      className="absolute right-[4px] top-[4px] flex h-[20px] w-[20px] items-center justify-center rounded-full bg-black/60 text-[12px] text-white"
+                      onClick={() => handleRemoveImage(index)}
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           ) : null}
         </main>
