@@ -295,6 +295,18 @@ export default function TaxiReservePage() {
           <button
             type="button"
             disabled={!isCheckoutEnabled}
+            onClick={() => {
+              if (!isCheckoutEnabled) return;
+              navigate({
+                to: "/taxi-payment",
+                search: {
+                  departureDate,
+                  departureTime,
+                  departurePlace,
+                  passengers: passengerCount,
+                },
+              });
+            }}
             className={cn(
               "flex h-[56px] flex-1 flex-row items-center justify-center overflow-hidden rounded-[12px] px-[20px] py-[16px] font-['Pretendard',sans-serif] text-[18px] font-bold leading-[24px] tracking-normal transition-colors",
               isCheckoutEnabled
