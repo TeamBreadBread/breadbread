@@ -8,9 +8,8 @@ import org.springframework.context.annotation.Configuration;
 @Getter
 @Setter
 @Configuration
-@ConfigurationProperties(prefix = "coolsms.api")
-public class CoolSmsProperties {
-    private String key;
-    private String secret;
-    private String sender;
+@ConfigurationProperties(prefix = "phone-verification")
+public class PhoneVerificationProperties {
+    private long codeExpiresIn;
+    private long tokenExpiresIn;
 }

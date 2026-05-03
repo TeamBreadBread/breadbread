@@ -24,6 +24,7 @@ public class User extends BaseEntity {
     private String nickname;
     private String email;
     private String telecom;
+	@Column(unique = true)
     private String phone;
 
     @Column(nullable = false)

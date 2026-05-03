@@ -65,7 +65,10 @@ coolsms:
     key: ${COOLSMS_API_KEY:temp-api-key}
     secret: ${COOLSMS_API_SECRET:temp-api-secret}
     sender: ${COOLSMS_SENDER:"01000000000"}
-    expires-in: ${COOLSMS_EXPIRES_IN:300}
+
+phone-verification: # 초 단위
+  code-expires-in: ${PHONE_CODE_EXPIRES_IN:300}
+  token-expires-in: ${PHONE_TOKEN_EXPIRES_IN:600}
 
 oauth2:
   google:
@@ -76,6 +79,7 @@ oauth2:
     allowed-redirect-uris:
       - http://localhost:3000/auth/google/callback
       - https://breadbread.pages.dev/auth/google/callback
+      - https://www.breadbread.io/auth/google/callback
     use-pkce: true
 
   naver:
@@ -86,6 +90,7 @@ oauth2:
     allowed-redirect-uris:
       - http://localhost:3000/auth/naver/callback
       - https://breadbread.pages.dev/auth/naver/callback
+      - https://www.breadbread.io/auth/naver/callback
     use-pkce: false
 
   kakao:
@@ -96,5 +101,6 @@ oauth2:
     allowed-redirect-uris:
       - http://localhost:3000/auth/kakao/callback
       - https://breadbread.pages.dev/auth/kakao/callback
+      - https://www.breadbread.io/auth/kakao/callback
     use-pkce: true
 
