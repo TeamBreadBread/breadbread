@@ -1,13 +1,11 @@
 package com.breadbread.auth.service;
 
 import com.breadbread.auth.dto.TokenResponse;
-import com.breadbread.auth.entity.RefreshToken;
-import com.breadbread.auth.repository.RefreshTokenRepository;
+import com.breadbread.global.config.JwtProperties;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.jwt.JwtProvider;
 import com.breadbread.user.entity.User;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,50 +20,41 @@ import java.util.Base64;
 @Slf4j
 public class TokenService {
     private final JwtProvider jwtProvider;
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final JwtProperties jwtProperties;
+    private final RefreshTokenRedisService refreshTokenRedisService;
 
-    @Transactional
     public TokenResponse issueTokens(User user) {
-        refreshTokenRepository.deleteByUser_Id(user.getId());
-        return generateTokens(user);
+        String userId = user.getId().toString();
+        refreshTokenRedisService.deleteByUserId(userId);
+        return generateTokens(userId);
     }
 
-    @Transactional
     public TokenResponse refresh(String refreshToken) {
-        if (!jwtProvider.validateRefreshToken(refreshToken)) {
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
-        }
-        RefreshToken token = refreshTokenRepository.findByToken(hashToken(refreshToken))
+        jwtProvider.validateRefreshTokenOrThrow(refreshToken);
+        String hashedToken = hashToken(refreshToken);
+        String userId = refreshTokenRedisService.findUserIdByToken(hashedToken)
                 .orElseThrow(() -> new CustomException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
 
-        refreshTokenRepository.delete(token);
-        log.info("토큰 재발급 userId={}", token.getUser().getId());
-        return generateTokens(token.getUser());
+        refreshTokenRedisService.deleteByToken(hashedToken);
+        log.info("토큰 재발급 userId={}", userId);
+        return generateTokens(userId);
     }
 
-    private TokenResponse generateTokens(User user) {
-        String userId = user.getId().toString();
+    public void logout(String accessToken) {
+        String userId = jwtProvider.getUserIdFromAccessToken(accessToken);
+        refreshTokenRedisService.deleteByUserId(userId);
+        log.info("로그아웃 userId={}", userId);
+    }
+
+    private TokenResponse generateTokens(String userId) {
         String accessToken = jwtProvider.createAccessToken(userId);
         String refreshToken = jwtProvider.createRefreshToken(userId);
-
-        refreshTokenRepository.save(RefreshToken.builder()
-                .user(user)
-                .token(hashToken(refreshToken))
-                .expiredAt(jwtProvider.getRefreshTokenExpiration(refreshToken))
-                .build());
+        refreshTokenRedisService.save(hashToken(refreshToken), userId, jwtProperties.getRefreshExpiresIn());
 
         return TokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
-    }
-
-    @Transactional
-    public void logout(String accessToken) {
-        String extractedUserId = jwtProvider.getUserIdFromAccessToken(accessToken);
-        Long userId = Long.parseLong(extractedUserId);
-        refreshTokenRepository.deleteByUser_Id(userId);
-        log.info("로그아웃 userId={}", userId);
     }
 
     private String hashToken(String token) {
