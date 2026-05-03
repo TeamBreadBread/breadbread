@@ -48,6 +48,15 @@ jwt:
   refresh-secret: ${JWT_REFRESH_SECRET:temp-refresh-secret-key-minimum-32-characters-x}
   refresh-expires-in: ${JWT_REFRESH_EXPIRES_IN:604800}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+
 server:
   port: ${PORT:8080}
 
