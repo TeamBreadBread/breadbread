@@ -2,6 +2,8 @@ package com.breadbread.global.service;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.UUID;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -43,5 +45,15 @@ class GcsServiceTest {
     void safeExtensionForImageType_unknownThrows() {
         assertThatThrownBy(() -> GcsService.safeExtensionForImageType("image/gif"))
                 .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void isAllowedObjectKey_acceptsGeneratedUploadKeys() {
+        String id = UUID.randomUUID().toString();
+        assertThat(GcsService.isAllowedObjectKey("reviews/" + id + ".jpg")).isTrue();
+        assertThat(GcsService.isAllowedObjectKey("bakeries/" + id + ".png")).isTrue();
+        assertThat(GcsService.isAllowedObjectKey("reviews/" + id + ".exe")).isFalse();
+        assertThat(GcsService.isAllowedObjectKey("other/" + id + ".jpg")).isFalse();
+        assertThat(GcsService.isAllowedObjectKey("reviews/../" + id + ".jpg")).isFalse();
     }
 }

@@ -12,10 +12,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
@@ -24,12 +27,26 @@ public class GcsService {
 
     private static final Set<String> ALLOWED_TYPES = Set.of("image/jpeg", "image/jpg", "image/png", "image/webp");
 
+    /** {@link com.breadbread.global.dto.UploadFolder} 과 동일한 업로드 루트만 허용 */
+    private static final Set<String> ALLOWED_OBJECT_PREFIXES = Set.of("bakeries", "breads", "reviews", "profiles");
+
+    /**
+     * 업로드 시 생성하는 객체 키 형식만 삭제에 허용합니다. (CodeQL 경로/URL taint 완화)
+     */
+    private static final Pattern ALLOWED_OBJECT_KEY = Pattern.compile(
+            "^(bakeries|breads|reviews|profiles)/[0-9a-fA-F-]{36}\\.(jpg|png|webp)$");
+
     private final Storage storage;
 
     @Value("${gcs.bucket}")
     private String bucketName;
 
     public String upload(MultipartFile file, String folder) {
+        if (!ALLOWED_OBJECT_PREFIXES.contains(folder)) {
+            log.warn("허용되지 않는 업로드 폴더: {}", folder);
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+
         String contentType = file.getContentType();
         if (!ALLOWED_TYPES.contains(contentType)) {
             log.warn("허용되지 않는 파일 타입: {}", contentType);
@@ -38,6 +55,9 @@ public class GcsService {
 
         // GCS 객체 키에는 클라이언트 파일명을 넣지 않음(경로·CodeQL taint 차단). 확장자만 MIME 기준으로 고정.
         String fileName = folder + "/" + UUID.randomUUID() + safeExtensionForImageType(contentType);
+        if (!isAllowedObjectKey(fileName)) {
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
 
         BlobInfo blobInfo = BlobInfo.newBuilder(bucketName, fileName)
                 .setContentType(contentType)
@@ -100,17 +120,7 @@ public class GcsService {
     }
 
     public void delete(String fileUrl) {
-        String prefix = "https://storage.googleapis.com/" + bucketName + "/";
-        if (!fileUrl.startsWith(prefix)) {
-            log.warn("유효하지 않은 GCS URL: {}", fileUrl);
-            throw new CustomException(ErrorCode.INVALID_GCS_URL);
-        }
-
-        String fileName = fileUrl.substring(prefix.length());
-        if (fileName.isEmpty() || fileName.startsWith("/") || fileName.contains("..")) {
-            log.warn("유효하지 않은 GCS 객체 경로: {}", fileName);
-            throw new CustomException(ErrorCode.INVALID_GCS_URL);
-        }
+        String fileName = parseVerifiedObjectKeyFromPublicUrl(fileUrl);
 
         try {
             storage.delete(BlobId.of(bucketName, fileName));
@@ -127,5 +137,50 @@ public class GcsService {
         } catch (Exception e) {
             log.warn("GCS 파일 삭제 실패 (무시됨): {}", url, e);
         }
+    }
+
+    /**
+     * 공개 GCS URL에서 객체 키만 추출합니다. 호스트·경로·키 형식을 모두 검증합니다.
+     */
+    private String parseVerifiedObjectKeyFromPublicUrl(String fileUrl) {
+        final URI uri;
+        try {
+            uri = new URI(fileUrl);
+        } catch (URISyntaxException e) {
+            log.warn("GCS URL 파싱 실패: {}", fileUrl);
+            throw new CustomException(ErrorCode.INVALID_GCS_URL);
+        }
+
+        if (!"https".equalsIgnoreCase(uri.getScheme())) {
+            throw new CustomException(ErrorCode.INVALID_GCS_URL);
+        }
+        if (!"storage.googleapis.com".equalsIgnoreCase(uri.getHost())) {
+            throw new CustomException(ErrorCode.INVALID_GCS_URL);
+        }
+        if (uri.getRawQuery() != null || uri.getRawFragment() != null) {
+            throw new CustomException(ErrorCode.INVALID_GCS_URL);
+        }
+
+        String path = uri.getRawPath();
+        if (path == null || !path.startsWith("/")) {
+            throw new CustomException(ErrorCode.INVALID_GCS_URL);
+        }
+
+        String expectedPrefix = "/" + bucketName + "/";
+        if (!path.startsWith(expectedPrefix)) {
+            log.warn("GCS URL 버킷 경로 불일치: {}", fileUrl);
+            throw new CustomException(ErrorCode.INVALID_GCS_URL);
+        }
+
+        String fileName = path.substring(expectedPrefix.length());
+        if (!isAllowedObjectKey(fileName)) {
+            log.warn("GCS 객체 키 형식 불일치: {}", fileName);
+            throw new CustomException(ErrorCode.INVALID_GCS_URL);
+        }
+        return fileName;
+    }
+
+    static boolean isAllowedObjectKey(String objectKey) {
+        return ALLOWED_OBJECT_KEY.matcher(objectKey).matches();
     }
 }
