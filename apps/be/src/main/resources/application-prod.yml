@@ -14,6 +14,13 @@ spring:
   jpa:
     show-sql: ${SHOW_SQL:false}
 
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: ${REDIS_TIMEOUT:3s}
+
 gcs:
   bucket: ${GCS_BUCKET}
 
