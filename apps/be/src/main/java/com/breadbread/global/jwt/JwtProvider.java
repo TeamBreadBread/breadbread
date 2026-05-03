@@ -1,6 +1,8 @@
 package com.breadbread.global.jwt;
 
 import com.breadbread.global.config.JwtProperties;
+import com.breadbread.global.exception.CustomException;
+import com.breadbread.global.exception.ErrorCode;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
@@ -68,6 +70,18 @@ public class JwtProvider {
 
     public boolean validateRefreshToken(String token) {
         return validate(token, refreshKey);
+    }
+
+    public void validateRefreshTokenOrThrow(String token) {
+        try {
+            parseClaims(token, refreshKey);
+        } catch (ExpiredJwtException e) {
+            log.warn("리프레시 토큰 만료");
+            throw new CustomException(ErrorCode.EXPIRED_TOKEN);
+        } catch (JwtException | IllegalArgumentException e) {
+            log.warn("리프레시 토큰 검증 실패");
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
+        }
     }
 
     private boolean validate(String token, SecretKey key) {
