@@ -3,16 +3,14 @@ import type { ApiEnvelope } from "@/api/types/common";
 
 const PATH = "/api/images";
 
-/** `UploadFolder` */
-export type UploadFolder = "bakeries" | "breads" | "reviews" | "profiles";
+export type ImageFolder = "reviews";
 
-export async function uploadImages(files: Blob[], folder: UploadFolder): Promise<string[]> {
+export async function uploadImages(images: File[]): Promise<string[]> {
   const formData = new FormData();
-  for (const file of files) {
-    formData.append("images", file);
-  }
-  formData.append("folder", folder);
+  images.forEach((image) => {
+    formData.append("images", image);
+  });
 
-  const { data } = await apiClient.post<ApiEnvelope<string[]>>(PATH, formData);
+  const { data } = await apiClient.post<ApiEnvelope<string[]>>(`${PATH}?folder=reviews`, formData);
   return extractData(data);
 }
