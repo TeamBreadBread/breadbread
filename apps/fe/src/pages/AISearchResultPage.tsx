@@ -38,7 +38,7 @@ export default function AISearchResultPage() {
   const { sheetRef, contentRef, isDragging, isHalfSheet, togglePhase } = useAiSearchBottomSheet();
 
   const goBreadTaxiReserve = () => {
-    navigate({ to: "/route" });
+    navigate({ to: "/taxi-reserve" });
   };
 
   return (
