@@ -1,5 +1,5 @@
 import SectionHeader from "@/components/common/section-header/SectionHeader";
-import CurationFooter from "@/components/domain/home/CurationFooter";
+import { CurationBakeryContent } from "@/components/domain/home/CurationBakeryContent";
 import type { CommunitySectionItem } from "./types";
 
 const CircleIcon = ({ size, color }: { size: number; color: string }) => {
@@ -18,7 +18,6 @@ type BbangteoCommunitySectionProps = {
   onMoreClick?: () => void;
   /** 제목 행 탭 시 (더보기 제외) — 예: 빵빵 소식에서 빵티클 탭 게시판으로 */
   onSectionTitleAreaClick?: () => void;
-  onCurationCardClick?: (item: NonNullable<CommunitySectionItem["curationItems"]>[number]) => void;
   onPostItemClick?: (item: NonNullable<CommunitySectionItem["postItems"]>[number]) => void;
 };
 
@@ -26,15 +25,16 @@ const BbangteoCommunitySection = ({
   section,
   onMoreClick,
   onSectionTitleAreaClick,
-  onCurationCardClick,
   onPostItemClick,
 }: BbangteoCommunitySectionProps) => {
+  const isCuration = section.contentType === "curationApi";
+
   return (
     <section
-      className="shrink-0 overflow-hidden bg-white px-[20px] py-[18px]"
-      style={{ height: section.sectionHeight }}
+      className={`shrink-0 bg-white px-[20px] py-[18px] ${isCuration ? "" : "overflow-hidden"}`}
+      style={isCuration ? { minHeight: section.sectionHeight } : { height: section.sectionHeight }}
     >
-      <div className="flex h-full flex-col gap-[12px]">
+      <div className={`flex flex-col gap-[12px] ${isCuration ? "" : "h-full"}`}>
         <SectionHeader
           title={section.title}
           actionLabel="더보기"
@@ -43,15 +43,9 @@ const BbangteoCommunitySection = ({
           icon={<CircleIcon size={18} color="#dcdee3" />}
         />
 
-        {section.contentType === "curationCards" ? (
-          <div className="w-full min-h-0 flex-1">
-            <CurationFooter
-              items={section.curationItems}
-              itemClassName="!w-[160px] !h-[152px]"
-              cardImageClassName="!w-[160px] !h-[152px]"
-              breadIconClassName="!w-[40px] !h-[39px]"
-              onItemClick={onCurationCardClick ? (item) => onCurationCardClick(item) : undefined}
-            />
+        {section.contentType === "curationApi" ? (
+          <div className="w-full shrink-0 overflow-y-hidden">
+            <CurationBakeryContent compact bakeryListEntryFrom="bbangteo" />
           </div>
         ) : section.contentType === "postList" ? (
           <div className="w-full min-h-0 flex-1 overflow-y-auto">

@@ -7,60 +7,60 @@ import currationBreadImg from "@/assets/images/Curration_CardBread.png";
 import soboroImg from "@/assets/images/soboro.png";
 import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
+import { useBakeryDetail } from "@/hooks/useBakeryDetail";
+import type { BakeryDetail, BakeryDetailBread } from "@/api/types/bakery";
+import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 
-const bakery = {
-  name: "성심당 본점",
-  rating: 4.5,
-  reviewCount: 1234,
-  address: "대전 중구 대종로480번길 15",
-  status: "영업 중",
-  phone: "042-229-5302",
-  images: [
-    "Union3606_5681.png",
-    "Union3606_5683.png",
-    "Union3606_5685.png",
-    "Union3606_5687.png",
-    "Union3606_5689.png",
-  ],
-};
-
-type Menu = {
+type MenuRow = {
   id: number;
   name: string;
   price: string;
-  image?: string;
+  imageUrl?: string | null;
   soldOut?: boolean;
 };
 
-const menus: Menu[] = [
-  { id: 1, name: "전설의 팥빙수", price: "6,000", image: "Frame 473606_5737.png" },
-  {
-    id: 2,
-    name: "튀김소보로",
-    price: "1,700",
-    image: "Frame 17074826343613_2743.png",
-    soldOut: true,
-  },
-  { id: 3, name: "튀소구마", price: "1,700" },
-  { id: 4, name: "판타롱부추빵", price: "2,000", image: "Frame 473606_5762.png" },
-  { id: 5, name: "보문산메아리", price: "6,000", soldOut: true },
-  { id: 6, name: "작은메아리", price: "3,000", image: "Frame 473606_5779.png" },
-  { id: 7, name: "성심순크림빵", price: "2,500" },
-  { id: 8, name: "소금빵", price: "1,500", image: "Frame 473606_5793.png" },
-];
+function formatClock(value: string | null | undefined): string | null {
+  if (value == null || value === "") return null;
+  const m = String(value).match(/(\d{1,2}):(\d{2})/);
+  return m ? `${m[1]}:${m[2]}` : null;
+}
+
+function buildHoursLabel(detail: BakeryDetail): string {
+  const open = formatClock(detail.openTime ?? undefined);
+  const close = formatClock(detail.closeTime ?? undefined);
+  if (open && close) return `오늘 ${open} ~ ${close}`;
+  return "영업 시간 정보 없음";
+}
+
+function breadsToMenus(breads: BakeryDetailBread[]): MenuRow[] {
+  return breads.map((b) => ({
+    id: b.id,
+    name: b.name,
+    price: b.price.toLocaleString("ko-KR"),
+    imageUrl: b.imageUrl,
+    soldOut: b.estimatedSoldOut,
+  }));
+}
 
 const CircleIcon = ({ size = 18, color = "#dcdee3" }: { size?: number; color?: string }) => (
   <div className="rounded-full" style={{ width: size, height: size, backgroundColor: color }} />
 );
 
-const BackHeader = () => {
+const BackHeader = ({ listEntryFrom }: { listEntryFrom?: BakeryListEntryFrom }) => {
   const navigate = useNavigate();
+  const goToList = () => {
+    void navigate({
+      to: "/bbangteo-bakery-list",
+      search: { from: listEntryFrom },
+    });
+  };
+
   return (
     <header className="fixed top-0 left-1/2 z-40 flex h-[56px] w-full max-w-[402px] -translate-x-1/2 items-center justify-between border-b border-[#eeeff1] bg-white px-[20px] md:max-w-[744px]">
       <button
         type="button"
         className="flex h-[36px] w-[36px] items-center justify-center text-[22px]"
-        onClick={() => navigate({ to: "/bbangteo-bakery-list" })}
+        onClick={goToList}
       >
         <img src={ArrowLeft} alt="뒤로가기" className="h-[24px] w-[24px]" />
       </button>
@@ -69,33 +69,50 @@ const BackHeader = () => {
   );
 };
 
-const BakeryImageGallery = ({ images }: { images: string[] }) => (
-  <div className="flex flex-col px-[20px] py-[14px]">
-    <div className="flex items-center gap-[10px] overflow-x-auto">
-      {images.map((image, index) => (
-        <div
-          key={`${image}-${index}`}
-          className="relative h-[280px] w-[280px] shrink-0 overflow-hidden rounded-[12px] bg-[#f7f8f9]"
-        >
-          <img
-            className="absolute left-1/2 top-1/2 h-[78px] w-[81px] -translate-x-1/2 -translate-y-1/2 object-contain"
-            src={currationBreadImg}
-            alt={`빵집 이미지 ${index + 1}`}
-          />
-        </div>
-      ))}
+const BakeryImageGallery = ({
+  imageUrls,
+  bakeryName,
+}: {
+  imageUrls: string[];
+  bakeryName: string;
+}) => {
+  const tiles = imageUrls.length > 0 ? imageUrls : [null];
+  return (
+    <div className="flex flex-col px-[20px] py-[14px]">
+      <div className="flex items-center gap-[10px] overflow-x-auto">
+        {tiles.map((url, index) => (
+          <div
+            key={url ?? `ph-${index}`}
+            className="relative h-[280px] w-[280px] shrink-0 overflow-hidden rounded-[12px] bg-[#f7f8f9]"
+          >
+            {url ? (
+              <img
+                src={url}
+                alt={`${bakeryName} 이미지 ${index + 1}`}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <img
+                className="absolute left-1/2 top-1/2 h-[78px] w-[81px] -translate-x-1/2 -translate-y-1/2 object-contain"
+                src={currationBreadImg}
+                alt={`${bakeryName} 이미지 ${index + 1}`}
+              />
+            )}
+          </div>
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const BakeryTitleInfo = ({
   name,
   rating,
-  reviewCount,
+  likeCount,
 }: {
   name: string;
   rating: number;
-  reviewCount: number;
+  likeCount: number;
 }) => (
   <div className="flex flex-col gap-[10px]">
     <h1 className="text-[22px] leading-[30px] font-bold text-[#1a1c20]">{name}</h1>
@@ -109,7 +126,7 @@ const BakeryTitleInfo = ({
         </div>
       </div>
       <span>·</span>
-      <span>리뷰 ({reviewCount.toLocaleString()})</span>
+      <span>찜 ({likeCount.toLocaleString("ko-KR")})</span>
     </div>
   </div>
 );
@@ -126,23 +143,42 @@ const BakeryInfoRow = ({ icon, text }: { icon: "address" | "status" | "phone"; t
   </div>
 );
 
-const BakeryInfoList = () => (
+const BakeryInfoList = ({
+  address,
+  hoursLabel,
+  phoneLabel,
+}: {
+  address: string;
+  hoursLabel: string;
+  phoneLabel: string;
+}) => (
   <div className="flex flex-col gap-[10px]">
-    <BakeryInfoRow icon="address" text={bakery.address} />
-    <BakeryInfoRow icon="status" text={bakery.status} />
-    <BakeryInfoRow icon="phone" text={bakery.phone} />
+    <BakeryInfoRow icon="address" text={address} />
+    <BakeryInfoRow icon="status" text={hoursLabel} />
+    <BakeryInfoRow icon="phone" text={phoneLabel} />
   </div>
 );
 
-const BakeryHero = () => (
-  <section className="flex flex-col">
-    <BakeryImageGallery images={bakery.images} />
-    <div className="flex flex-col gap-[16px] px-[20px] py-[16px]">
-      <BakeryTitleInfo name={bakery.name} rating={bakery.rating} reviewCount={bakery.reviewCount} />
-      <BakeryInfoList />
-    </div>
-  </section>
-);
+const BakeryHero = ({ detail }: { detail: BakeryDetail }) => {
+  const rating = detail.rating != null ? Number(detail.rating) : 0;
+  const likeCount = detail.likeCount ?? 0;
+  const phoneLabel = detail.phone?.trim() ? detail.phone : "등록된 전화번호가 없습니다";
+  const images = detail.imageUrls ?? [];
+
+  return (
+    <section className="flex flex-col">
+      <BakeryImageGallery imageUrls={images} bakeryName={detail.name} />
+      <div className="flex flex-col gap-[16px] px-[20px] py-[16px]">
+        <BakeryTitleInfo name={detail.name} rating={rating} likeCount={likeCount} />
+        <BakeryInfoList
+          address={detail.address}
+          hoursLabel={buildHoursLabel(detail)}
+          phoneLabel={phoneLabel}
+        />
+      </div>
+    </section>
+  );
+};
 
 const BakeryTabs = ({
   activeTab,
@@ -173,7 +209,14 @@ const BakeryTabs = ({
   </div>
 );
 
-const MenuImagePreview = ({ menu }: { menu: Menu }) => {
+const MenuImagePreview = ({ menu }: { menu: MenuRow }) => {
+  if (menu.imageUrl) {
+    return (
+      <div className="relative flex h-[84px] w-[84px] shrink-0 items-center justify-center overflow-hidden bg-gray-100">
+        <img src={menu.imageUrl} alt="" className="h-full w-full object-cover" />
+      </div>
+    );
+  }
   if (menu.name === "튀김소보로") {
     return (
       <div className="relative flex h-[84px] w-[84px] shrink-0 items-center justify-center overflow-hidden bg-gray-100">
@@ -189,57 +232,62 @@ const MenuImagePreview = ({ menu }: { menu: Menu }) => {
   );
 };
 
-const MenuItem = ({ menu }: { menu: Menu }) => (
-  <article
-    className={`flex items-start border-b border-[#f3f4f5] py-[16px] ${menu.image ? "gap-[12px]" : ""}`}
-  >
-    <div className="flex flex-1 flex-col gap-[4px]">
-      <h3 className="line-clamp-1 text-[16px] leading-[22px] font-medium text-[#1a1c20]">
-        {menu.name}
-      </h3>
-      <div className="flex items-start">
-        <span
-          className={`line-clamp-1 text-[16px] leading-[22px] font-bold ${
-            menu.soldOut ? "text-[#b0b3ba]" : "text-[#1a1c20]"
-          }`}
-        >
-          {menu.price}
-        </span>
-        <span
-          className={`line-clamp-1 text-[16px] leading-[22px] ${
-            menu.soldOut ? "text-[#b0b3ba]" : "text-[#1a1c20]"
-          }`}
-        >
-          원
-        </span>
-      </div>
-      {menu.soldOut ? (
-        <div className="flex items-center gap-[2px]">
-          <span className="line-clamp-1 text-[12px] leading-[16px] font-medium text-[#fa342c]">
-            🚫 품절됐어요
+const MenuItem = ({ menu }: { menu: MenuRow }) => {
+  const showThumb = Boolean(menu.imageUrl) || menu.name === "튀김소보로";
+  return (
+    <article
+      className={`flex items-start border-b border-[#f3f4f5] py-[16px] ${showThumb ? "gap-[12px]" : ""}`}
+    >
+      <div className="flex flex-1 flex-col gap-[4px]">
+        <h3 className="line-clamp-1 text-[16px] leading-[22px] font-medium text-[#1a1c20]">
+          {menu.name}
+        </h3>
+        <div className="flex items-start">
+          <span
+            className={`line-clamp-1 text-[16px] leading-[22px] font-bold ${
+              menu.soldOut ? "text-[#b0b3ba]" : "text-[#1a1c20]"
+            }`}
+          >
+            {menu.price}
+          </span>
+          <span
+            className={`line-clamp-1 text-[16px] leading-[22px] ${
+              menu.soldOut ? "text-[#b0b3ba]" : "text-[#1a1c20]"
+            }`}
+          >
+            원
           </span>
         </div>
-      ) : null}
-    </div>
-    {menu.image ? <MenuImagePreview menu={menu} /> : null}
-  </article>
-);
+        {menu.soldOut ? (
+          <div className="flex items-center gap-[2px]">
+            <span className="line-clamp-1 text-[12px] leading-[16px] font-medium text-[#fa342c]">
+              🚫 품절됐어요
+            </span>
+          </div>
+        ) : null}
+      </div>
+      {showThumb ? <MenuImagePreview menu={menu} /> : null}
+    </article>
+  );
+};
 
-const MenuList = () => (
+const MenuList = ({ menus }: { menus: MenuRow[] }) => (
   <div className="flex flex-col px-[20px] pb-[20px]">
-    {menus.map((menu) => (
-      <MenuItem key={menu.id} menu={menu} />
-    ))}
+    {menus.length === 0 ? (
+      <p className="py-[24px] text-[14px] leading-[19px] text-[#868b94]">등록된 메뉴가 없습니다.</p>
+    ) : (
+      menus.map((menu) => <MenuItem key={menu.id} menu={menu} />)
+    )}
   </div>
 );
 
-const BakeryTabSection = () => {
+const BakeryTabSection = ({ menus }: { menus: MenuRow[] }) => {
   const [activeTab, setActiveTab] = useState<"메뉴" | "후기">("메뉴");
   return (
     <section className="flex flex-col">
       <BakeryTabs activeTab={activeTab} onTabChange={setActiveTab} />
       {activeTab === "메뉴" ? (
-        <MenuList />
+        <MenuList menus={menus} />
       ) : (
         <div className="px-[20px] py-[24px] text-[14px] leading-[19px] text-[#868b94]">
           후기는 준비 중입니다.
@@ -249,14 +297,82 @@ const BakeryTabSection = () => {
   );
 };
 
-const BbangteoBakeryDetailPage = () => {
+const MissingBakeryId = ({ listEntryFrom }: { listEntryFrom?: BakeryListEntryFrom }) => {
+  const navigate = useNavigate();
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-[24px] pt-[56px] pb-[56px] text-center">
+      <p className="text-[15px] leading-[22px] text-[#1a1c20]">빵집을 찾을 수 없습니다.</p>
+      <p className="text-[14px] leading-[19px] text-[#868b94]">
+        목록에서 빵집을 다시 선택해 주세요.
+      </p>
+      <button
+        type="button"
+        className="rounded-[10px] bg-[#1a1c20] px-5 py-3 text-[15px] font-semibold text-white"
+        onClick={() =>
+          void navigate({
+            to: "/bbangteo-bakery-list",
+            search: { from: listEntryFrom },
+          })
+        }
+      >
+        빵집 리스트로
+      </button>
+    </div>
+  );
+};
+
+type BbangteoBakeryDetailPageProps = {
+  bakeryId?: number;
+  listEntryFrom?: BakeryListEntryFrom;
+};
+
+const BbangteoBakeryDetailPage = ({ bakeryId, listEntryFrom }: BbangteoBakeryDetailPageProps) => {
+  const navigate = useNavigate();
+  const { data, loading, error } = useBakeryDetail(bakeryId);
+
+  if (bakeryId === undefined) {
+    return (
+      <MobileFrame className="bg-white">
+        <div className="flex min-h-screen flex-1 flex-col bg-white">
+          <BackHeader listEntryFrom={listEntryFrom} />
+          <MissingBakeryId listEntryFrom={listEntryFrom} />
+        </div>
+        <BottomNav />
+      </MobileFrame>
+    );
+  }
+
   return (
     <MobileFrame className="bg-white">
       <div className="flex min-h-screen flex-1 flex-col bg-white">
-        <BackHeader />
+        <BackHeader listEntryFrom={listEntryFrom} />
         <main className="flex flex-1 flex-col pt-[56px] pb-[56px] sm:pb-[60px]">
-          <BakeryHero />
-          <BakeryTabSection />
+          {loading ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-2 px-[20px] py-[40px] text-[14px] text-[#868b94]">
+              불러오는 중…
+            </div>
+          ) : error ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-4 px-[20px] py-[40px] text-center">
+              <p className="text-[14px] text-[#868b94]">{error.message}</p>
+              <button
+                type="button"
+                className="rounded-[10px] bg-[#f3f4f5] px-4 py-2 text-[14px] font-semibold text-[#1a1c20]"
+                onClick={() =>
+                  void navigate({
+                    to: "/bbangteo-bakery-list",
+                    search: { from: listEntryFrom },
+                  })
+                }
+              >
+                목록으로
+              </button>
+            </div>
+          ) : data ? (
+            <>
+              <BakeryHero detail={data} />
+              <BakeryTabSection menus={breadsToMenus(data.breads ?? [])} />
+            </>
+          ) : null}
         </main>
       </div>
       <BottomNav />
