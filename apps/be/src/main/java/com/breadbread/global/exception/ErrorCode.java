@@ -8,14 +8,13 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum ErrorCode {
 
-    // 공통 E00xx
-    INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "E0001", "잘못된 입력값입니다."),
-    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "E0002", "접근 권한이 없습니다."),
-    FORBIDDEN(HttpStatus.FORBIDDEN, "E0003", "권한이 없습니다."),
-    NOT_FOUND(HttpStatus.NOT_FOUND, "E0004", "존재하지 않는 리소스입니다."),
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "E0005", "서버 오류가 발생했습니다."),
+	// 공통 E00xx
+	INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "E0001", "잘못된 입력값입니다."),
+	UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "E0002", "접근 권한이 없습니다."),
+	FORBIDDEN(HttpStatus.FORBIDDEN, "E0003", "권한이 없습니다."),
+	NOT_FOUND(HttpStatus.NOT_FOUND, "E0004", "존재하지 않는 리소스입니다."),
+	INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "E0005", "서버 오류가 발생했습니다."),
 	FEATURE_NOT_IMPLEMENTED(HttpStatus.NOT_IMPLEMENTED, "E0006", "아직 구현되지 않은 기능입니다."),
-
 
 	// 회원/인증 E01xx
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "E0101", "존재하지 않는 사용자입니다."),
@@ -62,6 +61,8 @@ public enum ErrorCode {
     ALREADY_RESERVED(HttpStatus.CONFLICT, "E0502", "이미 예약된 시간입니다."),
     INVALID_RESERVATION_TIME(HttpStatus.BAD_REQUEST, "E0503", "유효하지 않은 예약 시간입니다."),
     RESERVATION_CANCEL_FAILED(HttpStatus.BAD_REQUEST, "E0504", "예약 취소가 불가능합니다."),
+	RESERVATION_ALREADY_CANCELLED(HttpStatus.BAD_REQUEST, "E0505", "이미 취소된 예약입니다."),
+	RESERVATION_NOT_MODIFIABLE(HttpStatus.CONFLICT,"E0506","현재 상태에서는 예약을 변경할 수 없습니다."),
 
     // 결제 E06xx
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "E0601", "존재하지 않는 결제 내역입니다."),
