@@ -4,6 +4,7 @@ import com.breadbread.course.entity.Course;
 import com.breadbread.global.entity.BaseEntity;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.reservation.dto.UpdateReservationRequest;
 import com.breadbread.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -76,18 +77,16 @@ public class Reservation extends BaseEntity {
 		this.courseNameSnapshot = course.getName();
     }
 
-	public void update(LocalDate departureDate, LocalTime departureTime,
-					   String departure, Double departureLat, Double departureLng,
-					   Integer headCount) {
+	public void update(UpdateReservationRequest request) {
 		if (this.status == ReservationStatus.CANCELLED || this.status == ReservationStatus.COMPLETED) {
 			throw new CustomException(ErrorCode.RESERVATION_NOT_MODIFIABLE);
 		}
-		if (departureDate != null) this.departureDate = departureDate;
-		if (departureTime != null) this.departureTime = departureTime;
-		if (departure != null) this.departure = departure;
-		if (departureLat != null) this.departureLat = departureLat;
-		if (departureLng != null) this.departureLng = departureLng;
-		if (headCount != null) this.headCount = headCount;
+		if (request.getDepartureDate() != null) this.departureDate = request.getDepartureDate();
+		if (request.getDepartureTime() != null) this.departureTime = request.getDepartureTime();
+		if (request.getDeparture() != null) this.departure = request.getDeparture();
+		if (request.getLat() != null) this.departureLat = request.getLat();
+		if (request.getLng() != null) this.departureLng = request.getLng();
+		if (request.getHeadCount() != null) this.headCount = request.getHeadCount();
 	}
 
 	public void cancel(){
