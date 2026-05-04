@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
@@ -61,11 +62,8 @@ public class ReservationService {
 
     @Transactional
     public Long createReservation(Long userId, CreateReservationRequest request) {
-        // 출발 시간 정각/30분 검증
-        int minute = request.getDepartureTime().getMinute();
-        if (minute != 0 && minute != 30) {
-            throw new CustomException(ErrorCode.INVALID_RESERVATION_TIME);
-        }
+		validateDepartureDateTime(request.getDepartureDate(), request.getDepartureTime());
+		validateDepartureLocation(request.getDeparture(), request.getLat(), request.getLng());
 
         // 같은 날짜·시간에 활성 예약이 이미 있으면 방지 (코스 무관)
         if (reservationRepository.existsByUserIdAndDepartureDateAndDepartureTimeAndStatusIn(
@@ -103,10 +101,8 @@ public class ReservationService {
         LocalDate newDate = request.getDepartureDate() != null ? request.getDepartureDate() : reservation.getDepartureDate();
         LocalTime newTime = request.getDepartureTime() != null ? request.getDepartureTime() : reservation.getDepartureTime();
 
-        // 출발 시간 정각/30분 검증
-        if (newTime.getMinute() != 0 && newTime.getMinute() != 30) {
-            throw new CustomException(ErrorCode.INVALID_RESERVATION_TIME);
-        }
+		validateDepartureDateTime(newDate, newTime);
+		validateDepartureLocation(request.getDeparture(), request.getLat(), request.getLng());
 
         // 같은 날짜·시간에 다른 활성 예약 중복 방지
         if (reservationRepository.existsByUserIdAndDepartureDateAndDepartureTimeAndStatusInAndIdNot(
@@ -149,4 +145,32 @@ public class ReservationService {
         boolean liked = courseLikeRepository.existsByCourseIdAndUserId(course.getId(), userId);
         return CourseSummaryResponse.from(course, likeCount, liked, bakeries);
     }
+
+	private void validateDepartureDateTime(LocalDate departureDate, LocalTime departureTime) {
+		if (departureDate == null || departureTime == null) {
+			return;
+		}
+
+		int minute = departureTime.getMinute();
+		if (minute != 0 && minute != 30) {
+			throw new CustomException(ErrorCode.INVALID_RESERVATION_TIME);
+		}
+
+		LocalDateTime departureDateTime = LocalDateTime.of(departureDate, departureTime);
+		if (departureDateTime.isBefore(LocalDateTime.now())) {
+			throw new CustomException(ErrorCode.INVALID_RESERVATION_TIME);
+		}
+	}
+
+	private void validateDepartureLocation(String departure, Double lat, Double lng) {
+		boolean hasDeparture = departure != null;
+		boolean hasLat = lat != null;
+		boolean hasLng = lng != null;
+
+		if (hasDeparture || hasLat || hasLng) {
+			if (!(hasDeparture && hasLat && hasLng)) {
+				throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+			}
+		}
+	}
 }
