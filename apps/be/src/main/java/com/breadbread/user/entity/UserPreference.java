@@ -56,9 +56,9 @@ public class UserPreference {
 
     public void update(List<BakeryType> bakeryTypes, List<BakeryPersonality> bakeryPersonalities,
                        List<BakeryUseType> bakeryUseTypes, WaitingTolerance waitingTolerance) {
-        this.bakeryTypes = bakeryTypes;
-        this.bakeryMoods = bakeryPersonalities;
-        this.bakeryUseTypes = bakeryUseTypes;
-        this.waitingTolerance = waitingTolerance;
+        if (bakeryTypes != null) this.bakeryTypes = bakeryTypes;
+        if (bakeryPersonalities != null) this.bakeryMoods = bakeryPersonalities;
+        if (bakeryUseTypes != null) this.bakeryUseTypes = bakeryUseTypes;
+        if (waitingTolerance != null) this.waitingTolerance = waitingTolerance;
     }
 }
