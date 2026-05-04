@@ -49,6 +49,7 @@ public enum ErrorCode {
     COURSE_NOT_FOUND(HttpStatus.NOT_FOUND, "E0401", "존재하지 않는 코스입니다."),
     AI_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "E0402", "AI 추천 서버 오류가 발생했습니다."),
     PREFERENCE_NOT_FOUND(HttpStatus.NOT_FOUND, "E0403", "선호도 조사 결과가 없습니다."),
+    PREFERENCE_ALREADY_EXISTS(HttpStatus.CONFLICT, "E0410", "이미 선호도 조사를 완료했습니다."),
     NOT_AI_COURSE(HttpStatus.BAD_REQUEST, "E0404", "AI 코스에서만 사용할 수 있는 기능입니다."),
     COURSE_BAKERY_REQUIRED(HttpStatus.BAD_REQUEST, "E0405", "코스에 빵집이 최소 1개 이상 필요합니다."),
     ALREADY_COURSE_LIKED(HttpStatus.CONFLICT, "E0406", "이미 좋아요한 코스입니다."),

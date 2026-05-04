@@ -2,7 +2,9 @@ package com.breadbread.user.service;
 
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
-import com.breadbread.user.dto.SavePreferenceRequest;
+import com.breadbread.user.dto.CreatePreferenceRequest;
+import com.breadbread.user.dto.UpdatePreferenceRequest;
+import com.breadbread.user.dto.PreferenceResponse;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserPreference;
 import com.breadbread.user.repository.UserPreferenceRepository;
@@ -18,23 +20,34 @@ public class UserService {
     private final UserPreferenceRepository userPreferenceRepository;
 
     @Transactional
-    public void savePreference(Long userId, SavePreferenceRequest request) {
+    public void savePreference(Long userId, CreatePreferenceRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        userPreferenceRepository.findByUserId(userId)
-                .ifPresentOrElse(
-                        pref -> pref.update(request.getBakeryTypes(), request.getBakeryPersonalities(),
-                                request.getBakeryUseTypes(), request.getWaitingTolerance()),
-                        () -> userPreferenceRepository.save(UserPreference.builder()
-                                .user(user)
-                                .bakeryTypes(request.getBakeryTypes())
-                                .bakeryPersonalities(request.getBakeryPersonalities())
-                                .bakeryUseTypes(request.getBakeryUseTypes())
-                                .waitingTolerance(request.getWaitingTolerance())
-                                .build())
-                );
+        if (userPreferenceRepository.findByUserId(userId).isPresent()) {
+            throw new CustomException(ErrorCode.PREFERENCE_ALREADY_EXISTS);
+        }
+
+        userPreferenceRepository.save(UserPreference.builder()
+                .user(user)
+                .bakeryTypes(request.getBakeryTypes())
+                .bakeryPersonalities(request.getBakeryPersonalities())
+                .bakeryUseTypes(request.getBakeryUseTypes())
+                .waitingTolerance(request.getWaitingTolerance())
+                .build());
     }
 
-}
+    public PreferenceResponse getPreference(Long userId) {
+        UserPreference preference = userPreferenceRepository.findByUserId(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PREFERENCE_NOT_FOUND));
+        return PreferenceResponse.from(preference);
+    }
 
+    @Transactional
+    public void updatePreference(Long userId, UpdatePreferenceRequest request) {
+        UserPreference preference = userPreferenceRepository.findByUserId(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PREFERENCE_NOT_FOUND));
+        preference.update(request.getBakeryTypes(), request.getBakeryPersonalities(),
+                request.getBakeryUseTypes(), request.getWaitingTolerance());
+    }
+}
