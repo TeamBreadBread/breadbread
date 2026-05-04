@@ -2,7 +2,14 @@ import axios, { type AxiosError, type AxiosResponse, type InternalAxiosRequestCo
 
 import { ApiBusinessError, type ApiEnvelope, unwrapApiBody } from "@/api/types/common";
 
-const baseURL = import.meta.env.VITE_API_BASE_URL ?? "";
+/** 빌드 시 `VITE_API_BASE_URL` 미설정이면 요청이 pages.dev / www 로 가 POST가 405가 됨 → prod 기본은 API 서브도메인 */
+const envBase = import.meta.env.VITE_API_BASE_URL;
+const baseURL =
+  typeof envBase === "string" && envBase.trim() !== ""
+    ? envBase.trim()
+    : import.meta.env.PROD
+      ? "https://api.breadbread.io"
+      : "";
 
 export const apiClient = axios.create({
   baseURL,

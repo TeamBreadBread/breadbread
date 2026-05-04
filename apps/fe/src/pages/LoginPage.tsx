@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { clearSessionTokens, login, setSessionTokens } from "@/api/auth";
+import { getErrorMessage } from "@/api/types/common";
 import { AppTopBar, Button } from "@/components/common";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { cn } from "@/utils/cn";
@@ -15,21 +17,38 @@ const credentialInputClassName = cn(
   "text-size-4 leading-t5 tracking-1 text-gray-1000 placeholder:text-gray-500",
 );
 
+/** 데모·QA용 — 서버 로그인 없이 다음 화면으로만 이동 (보호 API는 토큰 없으면 401) */
+const DEMO_LOGIN_ID = "asdf123";
+const DEMO_PASSWORD = "asdf123*";
+
 const LoginPage = () => {
   const navigate = useNavigate();
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isLoginEnabled = userId.trim().length > 0 && password.trim().length > 0;
 
-  const handleLogin = () => {
-    if (userId === "asdf123" && password === "asdf123*") {
-      setLoginError("");
+  const handleLogin = async () => {
+    if (!isLoginEnabled || isSubmitting) return;
+    setLoginError("");
+
+    if (userId.trim() === DEMO_LOGIN_ID && password === DEMO_PASSWORD) {
+      clearSessionTokens();
       navigate({ to: "/user-preference" });
       return;
     }
 
-    setLoginError("아이디 또는 비밀번호가 올바르지 않습니다.");
+    try {
+      setIsSubmitting(true);
+      const tokens = await login({ loginId: userId.trim(), password });
+      setSessionTokens(tokens);
+      navigate({ to: "/user-preference" });
+    } catch (error) {
+      setLoginError(getErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -60,14 +79,14 @@ const LoginPage = () => {
           )}
           <Button
             type="button"
-            disabled={!isLoginEnabled}
+            disabled={!isLoginEnabled || isSubmitting}
             className={cn(
               "mt-x6 h-x12 w-full rounded-r3",
-              isLoginEnabled ? "bg-gray-800" : "bg-gray-200",
+              isLoginEnabled && !isSubmitting ? "bg-gray-800" : "bg-gray-200",
             )}
-            onClick={handleLogin}
+            onClick={() => void handleLogin()}
           >
-            로그인
+            {isSubmitting ? "로그인 중…" : "로그인"}
           </Button>
         </section>
 
