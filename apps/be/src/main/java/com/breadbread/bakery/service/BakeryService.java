@@ -63,6 +63,33 @@ public class BakeryService {
                 .findAllByBakeryIdInAndDisplayOrder(ids, 1)
                 .stream()
                 .collect(Collectors.toMap(img -> img.getBakery().getId(), BakeryImage::getImageUrl));
+        Map<Long, List<String>> previewUrlsByBakery = new HashMap<>();
+        Map<Long, Integer> remainingPreviewByBakery = new HashMap<>();
+        if (!ids.isEmpty()) {
+            List<BakeryImage> allListImages = bakeryImageRepository.findAllByBakeryIdInOrderByDisplayOrderAsc(ids);
+            Map<Long, List<BakeryImage>> imagesByBakery = allListImages.stream()
+                    .collect(Collectors.groupingBy(img -> img.getBakery().getId()));
+            for (Long bakeryId : ids) {
+                List<BakeryImage> ordered = imagesByBakery.getOrDefault(bakeryId, List.of()).stream()
+                        .sorted(Comparator.comparingInt(BakeryImage::getDisplayOrder))
+                        .toList();
+                int total = ordered.size();
+                int remaining = total > 4 ? total - 4 : 0;
+                List<String> firstFour = ordered.stream().limit(4).map(BakeryImage::getImageUrl).toList();
+                if (firstFour.isEmpty()) {
+                    String thumb = thumbnailMap.get(bakeryId);
+                    if (thumb != null) {
+                        previewUrlsByBakery.put(bakeryId, List.of(thumb));
+                    } else {
+                        previewUrlsByBakery.put(bakeryId, List.of());
+                    }
+                    remainingPreviewByBakery.put(bakeryId, 0);
+                } else {
+                    previewUrlsByBakery.put(bakeryId, firstFour);
+                    remainingPreviewByBakery.put(bakeryId, remaining);
+                }
+            }
+        }
 		Map<Long, Long> likeCountMap = bakeryLikeRepository
 			.countByBakeryIdIn(ids)
 			.stream()
@@ -73,8 +100,13 @@ public class BakeryService {
 
         return BakeryListResponse.builder()
                 .bakeries(bakeries.stream()
-                        .map(b -> BakerySummaryResponse.from(b, thumbnailMap.get(b.getId()),
-								likeCountMap.getOrDefault(b.getId(), 0L), likeIds.contains(b.getId())))
+                        .map(b -> BakerySummaryResponse.from(
+                                b,
+                                thumbnailMap.get(b.getId()),
+                                likeCountMap.getOrDefault(b.getId(), 0L),
+                                likeIds.contains(b.getId()),
+                                previewUrlsByBakery.getOrDefault(b.getId(), List.of()),
+                                remainingPreviewByBakery.getOrDefault(b.getId(), 0)))
                         .toList())
                 .total((int) result.getTotalElements())
                 .page(pageable.getPageNumber())

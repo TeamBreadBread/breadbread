@@ -9,14 +9,9 @@ import { useNavigate } from "@tanstack/react-router";
 const sections: CommunitySectionItem[] = [
   {
     title: "큐레이션 문구",
-    sectionHeight: 300,
-    contentType: "curationCards",
-    curationItems: [
-      { title: "성심당 본점", address: "은행동", rate: 4.5 },
-      { title: "빵집 이름 2", address: "소제동", rate: 4.8 },
-      { title: "빵집 이름 3", address: "은행동", rate: 4.2 },
-      { title: "빵집 이름 4", address: "대흥동", rate: 4.9 },
-    ],
+    /** 헤더·패딩·축소 미리보기 카드(이미지 92 + 텍스트) 합에 맞춘 최소 높이 — 데이터는 홈과 동일 API */
+    sectionHeight: 258,
+    contentType: "curationApi",
   },
   {
     title: "자유 게시판",
@@ -48,10 +43,7 @@ const BbangteoPage = () => {
   const navigate = useNavigate();
 
   const goToBakeryList = () => {
-    navigate({ to: "/bbangteo-bakery-list" });
-  };
-  const goToBakeryDetail = () => {
-    navigate({ to: "/bbangteo-bakery-detail" });
+    navigate({ to: "/bbangteo-bakery-list", search: { from: "bbangteo" } });
   };
   const goToBoardList = () => {
     navigate({ to: "/bbangteo-board" });
@@ -91,17 +83,6 @@ const BbangteoPage = () => {
                     : section.title === "빵빵 소식"
                       ? goToArticleBoardList
                       : undefined
-              }
-              onCurationCardClick={
-                section.title === "큐레이션 문구"
-                  ? (item) => {
-                      if (item.title === "성심당 본점") {
-                        goToBakeryDetail();
-                        return;
-                      }
-                      goToBakeryList();
-                    }
-                  : undefined
               }
               onPostItemClick={
                 section.title === "자유 게시판"

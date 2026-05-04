@@ -1,7 +1,8 @@
 import CurationCard from "@/components/common/cards/CurationCard";
 import { cn } from "@/utils/cn";
 
-type CurationItem = {
+export type CurationItem = {
+  bakeryId?: number;
   title: string;
   address: string;
   rate: number;
@@ -16,24 +17,27 @@ type CurationFooterProps = {
 };
 
 const CurationFooter = ({
-  items = [
-    { title: "빵집 이름 1", address: "소제동", rate: 4.5 },
-    { title: "빵집 이름 2", address: "소제동", rate: 4.8 },
-    { title: "빵집 이름 3", address: "은행동", rate: 4.2 },
-    { title: "빵집 이름 4", address: "대흥동", rate: 4.9 },
-  ],
+  items = [],
   itemClassName,
   cardImageClassName,
   breadIconClassName,
   onItemClick,
 }: CurationFooterProps) => {
+  if (items.length === 0) {
+    return (
+      <div className="flex min-h-[240px] w-full items-center justify-center rounded-[var(--radius-r3)] bg-[var(--color-gray-200)] px-4 text-center text-[length:var(--font-size-3)] text-[var(--color-gray-600)]">
+        표시할 빵집이 없어요
+      </div>
+    );
+  }
+
   return (
-    <div className="h-full w-full overflow-x-auto">
-      <div className="flex gap-[var(--spacing-x4)] w-max">
+    <div className="w-full overflow-x-auto overflow-y-hidden">
+      <div className="flex w-max gap-[var(--spacing-x4)]">
         {items.map((item, index) => (
           <div
-            key={`${item.title}-${item.address}-${index}`}
-            className={cn("flex-shrink-0", "w-[254px] h-[240px]", itemClassName)}
+            key={item.bakeryId ?? `${item.title}-${item.address}-${index}`}
+            className={cn("w-[254px] flex-shrink-0 self-start", itemClassName)}
           >
             {onItemClick ? (
               <button

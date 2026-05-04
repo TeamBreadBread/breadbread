@@ -3,12 +3,7 @@ export type CommunitySectionItem = {
   imageHeight?: number;
   imageSrc?: string;
   sectionHeight: number;
-  contentType: "image" | "curationCards" | "postList";
-  curationItems?: {
-    title: string;
-    address: string;
-    rate: number;
-  }[];
+  contentType: "image" | "curationApi" | "postList";
   postItems?: {
     content: string;
     date: string;

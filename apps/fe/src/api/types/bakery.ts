@@ -1,4 +1,4 @@
-/** GET /api/bakeries 단일 항목 (목록 카드 매핑용, 백엔드 Nullable 필드 대응) */
+/** GET /bakeries 목록 단일 항목 (Nullable·시간 문자열은 실응답 기준) */
 export type BakeryListItem = {
   id: number;
   name: string;
@@ -6,11 +6,18 @@ export type BakeryListItem = {
   lat?: number | null;
   lng?: number | null;
   thumbnailUrl?: string | null;
+  /** 정렬된 매장 이미지 최대 4개 */
+  previewImageUrls?: string[] | null;
+  /** 4장을 넘는 나머지 이미지 개수 */
+  remainingPreviewImageCount?: number | null;
   rating?: number | null;
+  openTime?: string | null;
+  closeTime?: string | null;
   likeCount?: number | null;
+  liked?: boolean | null;
 };
 
-/** GET /api/bakeries */
+/** GET /bakeries */
 export type BakeryListResponse = {
   bakeries: BakeryListItem[];
   total: number;
@@ -19,7 +26,7 @@ export type BakeryListResponse = {
   hasNext: boolean;
 };
 
-/** GET /api/bakeries/{id} — breads 항목 */
+/** GET /bakeries/{id} — breads 항목 */
 export type BakeryDetailBread = {
   id: number;
   name: string;
@@ -30,7 +37,7 @@ export type BakeryDetailBread = {
   estimatedSoldOut: boolean;
 };
 
-/** GET /api/bakeries/{id} */
+/** GET /bakeries/{id} */
 export type BakeryDetail = {
   id: number;
   name: string;
@@ -38,12 +45,16 @@ export type BakeryDetail = {
   lat?: number | null;
   lng?: number | null;
   imageUrls?: string[];
+  openTime?: string | null;
+  closeTime?: string | null;
   phone?: string | null;
   rating?: number | null;
   breads: BakeryDetailBread[];
+  likeCount?: number | null;
+  liked?: boolean | null;
 };
 
-/** GET /api/bakeries/ai — breads 간략 타입 */
+/** GET /bakeries/ai — breads 간략 타입 */
 export type BakeryAiBreadItem = {
   name: string;
   price: number;
@@ -51,7 +62,7 @@ export type BakeryAiBreadItem = {
   signature: boolean;
 };
 
-/** GET /api/bakeries/ai */
+/** GET /bakeries/ai */
 export type BakeryForAI = {
   id: number;
   name: string;
@@ -69,7 +80,7 @@ export type BakeryForAI = {
 
 export type BakerySortType = "RATING" | "REVIEW_COUNT" | "LIKE_COUNT";
 
-/** GET /api/bakeries 쿼리 (백엔드 검색 조건과 동일) */
+/** GET /bakeries 쿼리 (백엔드 검색 조건과 동일) */
 export type GetBakeriesParams = {
   keyword?: string;
   sort?: BakerySortType;

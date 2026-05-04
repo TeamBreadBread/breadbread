@@ -4,6 +4,7 @@
  * @example
  * ```tsx
  * const { data, loading, error } = useBakeries({ page: 0, size: 10 });
+ * const paused = useBakeries({ keyword: "단팥" }, { enabled: false });
  * if (loading) return <p>로딩 중...</p>;
  * if (error) return <p>{error.message}</p>;
  * return <ul>{data?.bakeries.map((b) => ...)}</ul>;
@@ -20,7 +21,13 @@ function toError(error: unknown): Error {
   return new Error(typeof error === "string" ? error : "요청 중 오류가 발생했습니다.");
 }
 
-export function useBakeries(params: GetBakeriesParams = {}) {
+type UseBakeriesOptions = {
+  /** false이면 요청하지 않고 data/loading/error를 비움 */
+  enabled?: boolean;
+};
+
+export function useBakeries(params: GetBakeriesParams = {}, options?: UseBakeriesOptions) {
+  const enabled = options?.enabled ?? true;
   const serialized = useMemo(() => JSON.stringify(params), [params]);
 
   const [state, setState] = useState<{
@@ -36,6 +43,10 @@ export function useBakeries(params: GetBakeriesParams = {}) {
   });
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     let cancelled = false;
     const parsed = JSON.parse(serialized) as GetBakeriesParams;
 
@@ -64,11 +75,11 @@ export function useBakeries(params: GetBakeriesParams = {}) {
     return () => {
       cancelled = true;
     };
-  }, [serialized]);
+  }, [serialized, enabled]);
 
-  const loading = state.key !== serialized || state.loading;
-  const error = state.key === serialized ? state.error : null;
-  const data = state.key === serialized ? state.data : null;
+  const loading = enabled && (state.key !== serialized || state.loading);
+  const error = enabled && state.key === serialized ? state.error : null;
+  const data = enabled && state.key === serialized ? state.data : null;
 
   return { data, loading, error };
 }

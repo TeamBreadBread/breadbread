@@ -5,9 +5,17 @@ import type { RouteCourse } from "./types";
 interface RouteListItemProps {
   course: RouteCourse;
   onClick?: () => void;
+  onDeleteCourse?: (courseId: string) => void;
 }
 
-export default function RouteListItem({ course, onClick }: RouteListItemProps) {
+function buildCourseShareLink(courseId: string): string {
+  const { origin, pathname } = window.location;
+  const url = new URL(origin + pathname);
+  url.searchParams.set("course", courseId);
+  return url.toString();
+}
+
+export default function RouteListItem({ course, onClick, onDeleteCourse }: RouteListItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
 
@@ -26,6 +34,42 @@ export default function RouteListItem({ course, onClick }: RouteListItemProps) {
   const handleKebabClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     setIsBottomSheetOpen(true);
+  };
+
+  const closeSheet = () => setIsBottomSheetOpen(false);
+
+  const handleCopyLink = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    const link = buildCourseShareLink(course.id);
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch {
+      window.prompt("링크를 복사하세요", link);
+    }
+    closeSheet();
+  };
+
+  const handleKakaoShare = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    const link = buildCourseShareLink(course.id);
+    const text = `${course.title}\n${link}`;
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: course.title, text, url: link });
+      } catch {
+        /* 사용자 취소 등 */
+      }
+      closeSheet();
+      return;
+    }
+    window.location.href = `kakaotalk://send?text=${encodeURIComponent(text)}`;
+    closeSheet();
+  };
+
+  const handleDeleteCourse = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    onDeleteCourse?.(course.id);
+    closeSheet();
   };
 
   return (
@@ -109,14 +153,14 @@ export default function RouteListItem({ course, onClick }: RouteListItemProps) {
             type="button"
             className="absolute inset-0 bg-black/30"
             aria-label="바텀시트 닫기"
-            onClick={() => setIsBottomSheetOpen(false)}
+            onClick={closeSheet}
           />
 
           <div className="absolute bottom-0 left-1/2 flex max-h-[500px] w-full max-w-[402px] -translate-x-1/2 flex-col items-start justify-start gap-[12px] overflow-hidden rounded-tl-[24px] rounded-tr-[24px] bg-white">
             <div className="relative h-[24px] w-full shrink-0 overflow-hidden bg-white">
               <button
                 type="button"
-                onClick={() => setIsBottomSheetOpen(false)}
+                onClick={closeSheet}
                 aria-label="바텀시트 닫기 핸들"
                 className="absolute left-1/2 top-1/2 h-[20px] w-[72px] -translate-x-1/2 -translate-y-1/2"
               >
@@ -129,19 +173,32 @@ export default function RouteListItem({ course, onClick }: RouteListItemProps) {
                 <div className="flex w-full flex-col items-start justify-start">
                   <button
                     type="button"
+                    onClick={handleCopyLink}
                     className="flex w-full flex-row items-center justify-start gap-x1 overflow-hidden bg-white px-0 py-[16px] text-left"
                   >
-                    <div className="h-6 w-6 rounded-full bg-gray-500" />
+                    <div className="h-6 w-6 shrink-0 rounded-full bg-gray-500" />
                     <div className="flex-1 font-pretendard text-size-5 font-normal leading-t6 text-gray-1000">
-                      코스 저장
+                      링크 복사하기
                     </div>
                   </button>
 
                   <button
                     type="button"
+                    onClick={handleKakaoShare}
                     className="flex w-full flex-row items-center justify-start gap-x1 overflow-hidden bg-white px-0 py-[16px] text-left"
                   >
-                    <div className="h-6 w-6 rounded-full bg-gray-500" />
+                    <div className="h-6 w-6 shrink-0 rounded-full bg-gray-500" />
+                    <div className="flex-1 font-pretendard text-size-5 font-normal leading-t6 text-gray-1000">
+                      카카오톡으로 공유하기
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDeleteCourse}
+                    className="flex w-full flex-row items-center justify-start gap-x1 overflow-hidden bg-white px-0 py-[16px] text-left"
+                  >
+                    <div className="h-6 w-6 shrink-0 rounded-full bg-gray-500" />
                     <div
                       className={cn(
                         "flex-1 font-pretendard text-size-5 font-normal leading-t6",

@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import type { BakeryListItem } from "@/api/types/bakery";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { OverlayFooter } from "@/components/common";
 import { PreferenceOptionCard } from "@/components/common/cards";
 import PreferenceIntro from "@/components/domain/ai-course/PreferenceIntro";
 import PreferenceQuestionSection from "@/components/domain/ai-course/PreferenceQuestionSection";
 import PreferenceTopBar from "@/components/domain/ai-course/PreferenceTopBar";
+import { useBakeries } from "@/hooks/useBakeries";
+import { formatCurationAddress } from "@/utils/formatCurationAddress";
 import { sectionAllowsMultipleChoice } from "@/utils/preferenceSelection";
 import { cn } from "@/utils/cn";
 
@@ -68,7 +71,34 @@ export default function BreadPreference() {
   const [isDepartureBottomSheetOpen, setIsDepartureBottomSheetOpen] = useState(false);
   const [departureKeyword, setDepartureKeyword] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isDepartureBottomSheetOpen) {
+      return;
+    }
+    const id = window.setTimeout(() => setDebouncedSearch(searchKeyword.trim()), 350);
+    return () => window.clearTimeout(id);
+  }, [searchKeyword, isDepartureBottomSheetOpen]);
+
+  const trimmedSearch = debouncedSearch.trim();
+  const {
+    data: bakerySearchData,
+    loading: bakerySearchLoading,
+    error: bakerySearchError,
+  } = useBakeries(
+    {
+      page: 0,
+      size: 20,
+      sort: "RATING",
+      open: false,
+      keyword: trimmedSearch || undefined,
+    },
+    { enabled: isDepartureBottomSheetOpen && trimmedSearch.length > 0 },
+  );
+
+  const bakeryResults: BakeryListItem[] = bakerySearchData?.bakeries ?? [];
 
   const handleSelect = (sectionId: string, optionLabel: string) => {
     setSelectedBySection((prev) => {
@@ -103,7 +133,9 @@ export default function BreadPreference() {
 
   const openDepartureBottomSheet = () => {
     setIsDepartureChecked(true);
-    setSearchKeyword(departureKeyword);
+    const next = departureKeyword;
+    setSearchKeyword(next);
+    setDebouncedSearch(next.trim());
     setIsDepartureBottomSheetOpen(true);
   };
 
@@ -111,12 +143,8 @@ export default function BreadPreference() {
     setIsDepartureBottomSheetOpen(false);
   };
 
-  const isSungsimdangSearch = searchKeyword.trim() === "성심당";
   const hasDepartureResult = departureKeyword.trim().length > 0;
-  const listTitle = isSungsimdangSearch ? "검색 결과" : "최근 검색어";
-  const resultItems = isSungsimdangSearch
-    ? ["성심당 본점", "성심당 부띠끄", "성심당 DCC점"]
-    : ["검색어 1", "검색어 2", "검색어 3"];
+  const listTitle = trimmedSearch.length > 0 ? "검색 결과" : "빵집 검색";
 
   const handleSearchSubmit = () => {
     const trimmed = searchKeyword.trim();
@@ -124,9 +152,10 @@ export default function BreadPreference() {
     closeDepartureBottomSheet();
   };
 
-  const handleResultItemClick = (item: string) => {
-    setDepartureKeyword(item);
-    setSearchKeyword(item);
+  const handleBakeryPick = (bakery: BakeryListItem) => {
+    const label = bakery.name.trim();
+    setDepartureKeyword(label);
+    setSearchKeyword(label);
     closeDepartureBottomSheet();
   };
 
@@ -299,19 +328,49 @@ export default function BreadPreference() {
                 </div>
 
                 <div className="flex flex-col">
-                  {resultItems.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      className="flex h-x14 items-center gap-x1 px-x2_5 text-left"
-                      onClick={() => handleResultItemClick(item)}
-                    >
-                      <span className="text-size-4 text-gray-600">⌕</span>
-                      <span className="flex-1 font-pretendard text-size-6 leading-t6 text-gray-1000">
-                        {item}
-                      </span>
-                    </button>
-                  ))}
+                  {trimmedSearch.length === 0 ? (
+                    <p className="px-x2_5 py-x4 font-pretendard text-size-4 leading-t5 text-gray-600">
+                      이름이나 동네를 입력하면 빵집을 찾아드려요.
+                    </p>
+                  ) : bakerySearchLoading ? (
+                    <p className="px-x2_5 py-x4 font-pretendard text-size-4 leading-t5 text-gray-600">
+                      검색 중…
+                    </p>
+                  ) : bakerySearchError ? (
+                    <p className="px-x2_5 py-x4 font-pretendard text-size-4 leading-t5 text-red-600">
+                      {bakerySearchError.message}
+                    </p>
+                  ) : bakeryResults.length === 0 ? (
+                    <p className="px-x2_5 py-x4 font-pretendard text-size-4 leading-t5 text-gray-600">
+                      검색 결과가 없습니다.
+                    </p>
+                  ) : (
+                    bakeryResults.map((bakery) => {
+                      const addr = bakery.address?.trim()
+                        ? formatCurationAddress(bakery.address.trim())
+                        : "";
+                      return (
+                        <button
+                          key={bakery.id}
+                          type="button"
+                          className="flex min-h-x14 flex-col justify-center gap-x0-5 border-b border-gray-100 px-x2_5 py-x3 text-left last:border-b-0"
+                          onClick={() => handleBakeryPick(bakery)}
+                        >
+                          <div className="flex items-start gap-x1">
+                            <span className="mt-x0_5 text-size-4 text-gray-600">⌕</span>
+                            <span className="flex-1 font-pretendard text-size-6 font-medium leading-t6 text-gray-1000">
+                              {bakery.name}
+                            </span>
+                          </div>
+                          {addr ? (
+                            <span className="pl-x5 font-pretendard text-size-3 leading-t4 text-gray-700">
+                              {addr}
+                            </span>
+                          ) : null}
+                        </button>
+                      );
+                    })
+                  )}
                 </div>
               </div>
             </div>
