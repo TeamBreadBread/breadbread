@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import mapIcon from "@/assets/icons/mapIcon.svg";
@@ -7,6 +7,7 @@ import currationBreadImg from "@/assets/images/Curration_CardBread.png";
 import soboroImg from "@/assets/images/soboro.png";
 import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
+import { ToastBanner } from "@/components/common";
 import { useBakeryDetail } from "@/hooks/useBakeryDetail";
 import type { BakeryDetail, BakeryDetailBread } from "@/api/types/bakery";
 import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
@@ -18,6 +19,19 @@ type MenuRow = {
   imageUrl?: string | null;
   soldOut?: boolean;
 };
+
+type ReviewRow = {
+  id: number;
+  nickname: string;
+  rating: number;
+  date: string;
+  time: string;
+  content: string;
+  images: string[];
+};
+
+const MAX_PREVIEW_IMAGES = 4;
+const MAX_REVIEW_PREVIEWS = 4;
 
 function formatClock(value: string | null | undefined): string | null {
   if (value == null || value === "") return null;
@@ -32,13 +46,28 @@ function buildHoursLabel(detail: BakeryDetail): string {
   return "영업 시간 정보 없음";
 }
 
-function breadsToMenus(breads: BakeryDetailBread[]): MenuRow[] {
+function breadsToMenus(breads: BakeryDetailBread[], bakeryName?: string): MenuRow[] {
   return breads.map((b) => ({
     id: b.id,
     name: b.name,
     price: b.price.toLocaleString("ko-KR"),
     imageUrl: b.imageUrl,
-    soldOut: b.estimatedSoldOut,
+    soldOut: b.estimatedSoldOut || (bakeryName === "성심당 본점" && b.name.trim() === "튀김소보로"),
+  }));
+}
+
+const fallbackReviewImages = [currationBreadImg, soboroImg, currationBreadImg, soboroImg];
+
+function buildMockReviews(): ReviewRow[] {
+  return Array.from({ length: 3 }).map((_, idx) => ({
+    id: idx + 1,
+    nickname: "바삭바삭한 휘낭시에",
+    rating: 4.3,
+    date: "2026.04.29",
+    time: "15:24",
+    content:
+      "매장 들어서자마자 빵 냄새에 행복해짐..ㅠㅠ 본점이라 그런지 분위기도 좋고 빵 고르는 재미가 쏠쏠해요. 대전 여행 중 가장 만족스러웠던 곳!",
+    images: fallbackReviewImages,
   }));
 }
 
@@ -76,7 +105,10 @@ const BakeryImageGallery = ({
   imageUrls: string[];
   bakeryName: string;
 }) => {
-  const tiles = imageUrls.length > 0 ? imageUrls : [null];
+  const tiles = [
+    ...imageUrls.slice(0, MAX_PREVIEW_IMAGES),
+    ...Array.from({ length: Math.max(0, MAX_PREVIEW_IMAGES - imageUrls.length) }, () => null),
+  ];
   return (
     <div className="flex flex-col px-[20px] py-[14px]">
       <div className="flex items-center gap-[10px] overflow-x-auto">
@@ -260,8 +292,8 @@ const MenuItem = ({ menu }: { menu: MenuRow }) => {
         </div>
         {menu.soldOut ? (
           <div className="flex items-center gap-[2px]">
-            <span className="line-clamp-1 text-[12px] leading-[16px] font-medium text-[#fa342c]">
-              🚫 품절됐어요
+            <span className="font-pretendard typo-t2medium line-clamp-1 text-red-700">
+              🚫품절됐어요
             </span>
           </div>
         ) : null}
@@ -281,17 +313,110 @@ const MenuList = ({ menus }: { menus: MenuRow[] }) => (
   </div>
 );
 
-const BakeryTabSection = ({ menus }: { menus: MenuRow[] }) => {
-  const [activeTab, setActiveTab] = useState<"메뉴" | "후기">("메뉴");
+const ReviewCard = ({ review }: { review: ReviewRow }) => (
+  <article className="flex flex-col gap-[14px]">
+    <div className="flex items-start gap-[10px]">
+      <div className="h-[40px] w-[40px] shrink-0 rounded-full border border-[#eeeff1] bg-[#f7f8f9]" />
+      <div className="flex flex-1 flex-col gap-[10px]">
+        <div className="flex items-start justify-between gap-[10px]">
+          <div className="flex flex-col gap-[4px]">
+            <p className="text-[13px] leading-[18px] font-bold text-[#1a1c20]">{review.nickname}</p>
+            <div className="flex items-center gap-[6px] text-[12px] leading-[16px] text-[#868b94]">
+              <div className="flex items-center gap-[2px]">
+                <span>{review.rating}</span>
+                <div className="flex items-center gap-[2px]">
+                  {Array.from({ length: 5 }).map((_, idx) => (
+                    <img key={idx} src={ratingStar} alt="별점" className="h-[12px] w-[12px]" />
+                  ))}
+                </div>
+              </div>
+              <span>{review.date}</span>
+              <span>{review.time}</span>
+            </div>
+          </div>
+          <CircleIcon size={24} />
+        </div>
+        <p className="text-[14px] leading-[19px] text-[#1a1c20]">{review.content}</p>
+      </div>
+    </div>
+    <div className="flex h-[110px] items-center gap-[6px]">
+      {review.images.slice(0, MAX_REVIEW_PREVIEWS).map((_, index) => (
+        <div
+          key={`${review.id}-${index}`}
+          className="flex h-[110px] w-[110px] items-center justify-center rounded-[8px] bg-gray-100"
+        >
+          <img
+            src={currationBreadImg}
+            alt={`후기 미리보기 ${index + 1}`}
+            className="h-[31px] w-[32px]"
+          />
+        </div>
+      ))}
+    </div>
+  </article>
+);
+
+const ReviewList = ({ reviews }: { reviews: ReviewRow[] }) => (
+  <section className="flex flex-col gap-[24px] bg-white px-[20px] py-[24px]">
+    <div className="flex items-center gap-[10px]">
+      <h2 className="text-[20px] leading-[27px] font-bold text-[#1a1c20]">후기</h2>
+      <span className="text-[20px] leading-[27px] font-medium text-[#868b94]">
+        {reviews.length.toLocaleString("ko-KR")}
+      </span>
+    </div>
+    <div className="flex flex-col gap-[20px]">
+      {reviews.map((review, index) => (
+        <div key={review.id} className="flex flex-col gap-[20px]">
+          <ReviewCard review={review} />
+          {index < reviews.length - 1 ? <div className="h-[1px] bg-[#eeeff1]" /> : null}
+        </div>
+      ))}
+    </div>
+  </section>
+);
+
+const BakeryTabSection = ({
+  menus,
+  showReviewTab = false,
+  bakeryId,
+  listEntryFrom,
+}: {
+  menus: MenuRow[];
+  showReviewTab?: boolean;
+  bakeryId?: number;
+  listEntryFrom?: BakeryListEntryFrom;
+}) => {
+  const [activeTab, setActiveTab] = useState<"메뉴" | "후기">(showReviewTab ? "후기" : "메뉴");
+  const reviews = useMemo(() => buildMockReviews(), []);
+  const navigate = useNavigate();
+
   return (
     <section className="flex flex-col">
       <BakeryTabs activeTab={activeTab} onTabChange={setActiveTab} />
       {activeTab === "메뉴" ? (
         <MenuList menus={menus} />
       ) : (
-        <div className="px-[20px] py-[24px] text-[14px] leading-[19px] text-[#868b94]">
-          후기는 준비 중입니다.
-        </div>
+        <>
+          <div className="px-[20px] py-[16px]">
+            <button
+              type="button"
+              className="flex w-full items-center gap-[10px] rounded-[8px] bg-[#eff6ff] px-[16px] py-[18px]"
+              onClick={() =>
+                void navigate({
+                  to: "/bbangteo-bakery-review-write",
+                  search: { bakeryId, from: listEntryFrom },
+                })
+              }
+            >
+              <CircleIcon size={24} />
+              <span className="flex-1 text-left text-[16px] leading-[22px] font-bold text-[#1a1c20]">
+                후기 작성하기
+              </span>
+              <CircleIcon size={24} />
+            </button>
+          </div>
+          <ReviewList reviews={reviews} />
+        </>
       )}
     </section>
   );
@@ -324,11 +449,25 @@ const MissingBakeryId = ({ listEntryFrom }: { listEntryFrom?: BakeryListEntryFro
 type BbangteoBakeryDetailPageProps = {
   bakeryId?: number;
   listEntryFrom?: BakeryListEntryFrom;
+  reviewUploaded?: boolean;
 };
 
-const BbangteoBakeryDetailPage = ({ bakeryId, listEntryFrom }: BbangteoBakeryDetailPageProps) => {
+const BbangteoBakeryDetailPage = ({
+  bakeryId,
+  listEntryFrom,
+  reviewUploaded = false,
+}: BbangteoBakeryDetailPageProps) => {
   const navigate = useNavigate();
   const { data, loading, error } = useBakeryDetail(bakeryId);
+  const [isToastClosed, setIsToastClosed] = useState(false);
+
+  useEffect(() => {
+    if (!reviewUploaded || isToastClosed) return;
+    const timer = window.setTimeout(() => setIsToastClosed(true), 2000);
+    return () => window.clearTimeout(timer);
+  }, [reviewUploaded, isToastClosed]);
+
+  const showToast = reviewUploaded && !isToastClosed;
 
   if (bakeryId === undefined) {
     return (
@@ -370,11 +509,21 @@ const BbangteoBakeryDetailPage = ({ bakeryId, listEntryFrom }: BbangteoBakeryDet
           ) : data ? (
             <>
               <BakeryHero detail={data} />
-              <BakeryTabSection menus={breadsToMenus(data.breads ?? [])} />
+              <BakeryTabSection
+                menus={breadsToMenus(data.breads ?? [], data.name)}
+                showReviewTab={reviewUploaded}
+                bakeryId={bakeryId}
+                listEntryFrom={listEntryFrom}
+              />
             </>
           ) : null}
         </main>
       </div>
+      {showToast ? (
+        <div className="fixed bottom-[68px] left-1/2 z-50 w-full max-w-[402px] -translate-x-1/2 sm:bottom-[72px] md:max-w-[744px]">
+          <ToastBanner message="후기가 업로드 되었습니다." />
+        </div>
+      ) : null}
       <BottomNav />
     </MobileFrame>
   );
