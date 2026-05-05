@@ -15,14 +15,20 @@ function parseBakeryId(value: unknown): number | undefined {
   return undefined;
 }
 
-function parseBoolean(value: unknown): boolean {
+function parseBoolean(value: unknown): boolean | undefined {
+  if (value == null) return undefined;
   if (typeof value === "boolean") return value;
   if (typeof value === "string") {
     const normalized = value.trim().toLowerCase();
-    return normalized === "true" || normalized === "1";
+    if (normalized === "true" || normalized === "1") return true;
+    if (normalized === "false" || normalized === "0") return false;
+    return undefined;
   }
-  if (typeof value === "number") return value === 1;
-  return false;
+  if (typeof value === "number") {
+    if (value === 1) return true;
+    if (value === 0) return false;
+  }
+  return undefined;
 }
 
 export const Route = createFileRoute("/bbangteo-bakery-detail")({
@@ -41,7 +47,7 @@ function BbangteoBakeryDetailRoute() {
     <BbangteoBakeryDetailPage
       bakeryId={bakeryId}
       listEntryFrom={from}
-      reviewUploaded={reviewUploaded || reviewTab}
+      reviewUploaded={Boolean(reviewUploaded || reviewTab)}
     />
   );
 }
