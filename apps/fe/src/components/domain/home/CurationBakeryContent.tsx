@@ -47,7 +47,12 @@ export function CurationBakeryContent({
     if (item.bakeryId != null) {
       void navigate({
         to: "/bbangteo-bakery-detail",
-        search: { bakeryId: item.bakeryId, from: bakeryListEntryFrom },
+        search: {
+          bakeryId: item.bakeryId,
+          from: bakeryListEntryFrom,
+          reviewUploaded: undefined,
+          reviewTab: undefined,
+        },
       });
     }
   };

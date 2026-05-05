@@ -15,15 +15,39 @@ function parseBakeryId(value: unknown): number | undefined {
   return undefined;
 }
 
+function parseBoolean(value: unknown): boolean | undefined {
+  if (value == null) return undefined;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true" || normalized === "1") return true;
+    if (normalized === "false" || normalized === "0") return false;
+    return undefined;
+  }
+  if (typeof value === "number") {
+    if (value === 1) return true;
+    if (value === 0) return false;
+  }
+  return undefined;
+}
+
 export const Route = createFileRoute("/bbangteo-bakery-detail")({
   validateSearch: (search: Record<string, unknown>) => ({
     bakeryId: parseBakeryId(search.bakeryId),
     from: parseBakeryListEntryFrom(search.from),
+    reviewUploaded: parseBoolean(search.reviewUploaded),
+    reviewTab: parseBoolean(search.reviewTab),
   }),
   component: BbangteoBakeryDetailRoute,
 });
 
 function BbangteoBakeryDetailRoute() {
-  const { bakeryId, from } = Route.useSearch();
-  return <BbangteoBakeryDetailPage bakeryId={bakeryId} listEntryFrom={from} />;
+  const { bakeryId, from, reviewUploaded, reviewTab } = Route.useSearch();
+  return (
+    <BbangteoBakeryDetailPage
+      bakeryId={bakeryId}
+      listEntryFrom={from}
+      reviewUploaded={Boolean(reviewUploaded || reviewTab)}
+    />
+  );
 }

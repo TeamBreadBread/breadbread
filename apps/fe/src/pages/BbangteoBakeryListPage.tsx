@@ -337,6 +337,8 @@ const BbangteoBakeryListPage = ({ listEntryFrom }: BbangteoBakeryListPageProps) 
       search: {
         bakeryId: bakery.id,
         from: listEntryFrom,
+        reviewUploaded: undefined,
+        reviewTab: undefined,
       },
     });
   };
