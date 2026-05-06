@@ -5,19 +5,36 @@ import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.dto.CreatePreferenceRequest;
 import com.breadbread.user.dto.UpdatePreferenceRequest;
 import com.breadbread.user.dto.PreferenceResponse;
+import com.breadbread.user.dto.UserProfileResponse;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserPreference;
 import com.breadbread.user.repository.UserPreferenceRepository;
 import com.breadbread.user.repository.UserRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final UserPreferenceRepository userPreferenceRepository;
+
+	@Transactional(readOnly = true)
+	public UserProfileResponse getUserProfile(Long userId) {
+		User user = userRepository.findById(userId)
+			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+		return UserProfileResponse.builder()
+			.loginId(user.getLoginId())
+			.name(user.getName())
+			.nickname(user.getNickname())
+			.email(user.getEmail())
+			.phone(user.getPhone())
+			.profileImageUrl(user.getProfileImageUrl())
+			.grade(user.getGrade().getDisplayName())
+			.build();
+	}
+
 
     @Transactional
     public void savePreference(Long userId, CreatePreferenceRequest request) {
