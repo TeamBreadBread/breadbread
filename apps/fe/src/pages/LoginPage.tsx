@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { clearSessionTokens, login, setSessionTokens } from "@/api/auth";
 import { getErrorMessage } from "@/api/types/common";
+import { getDisplayNameForLoginId, getUserProfile, saveUserProfile } from "@/lib/userProfileCache";
 import { AppTopBar, Button } from "@/components/common";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { cn } from "@/utils/cn";
@@ -41,8 +42,17 @@ const LoginPage = () => {
 
     try {
       setIsSubmitting(true);
-      const tokens = await login({ loginId: userId.trim(), password });
+      const id = userId.trim();
+      const tokens = await login({ loginId: id, password });
       setSessionTokens(tokens);
+      const prev = getUserProfile();
+      if (prev?.loginId !== id) {
+        saveUserProfile({
+          loginId: id,
+          name: getDisplayNameForLoginId(id),
+          email: "",
+        });
+      }
       navigate({ to: "/user-preference" });
     } catch (error) {
       setLoginError(getErrorMessage(error));

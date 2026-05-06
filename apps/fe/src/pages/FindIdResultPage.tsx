@@ -1,24 +1,28 @@
-import { useNavigate } from "@tanstack/react-router";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { BottomDoubleCTA } from "@/components/common";
 import FindIdSuccessSection from "@/components/domain/auth/FindIdSuccessSection";
 import MobileFrame from "@/components/layout/MobileFrame";
 
+const findIdResultRouteApi = getRouteApi("/find-id-result");
+
 export default function FindIdResultPage() {
-  const userName = "유민진";
-  const foundId = "breadbread";
+  const { name, loginId } = findIdResultRouteApi.useSearch();
   const navigate = useNavigate();
 
+  const displayName = name?.trim() || "회원";
+  const foundId = loginId?.trim() ?? "";
+
   const handleFindPasswordClick = () => {
-    // TODO: 비밀번호 찾기 페이지 이동
+    void navigate({ to: "/find-password" });
   };
 
   const handleLoginClick = () => {
-    navigate({ to: "/login" });
+    void navigate({ to: "/login" });
   };
 
   return (
     <MobileFrame>
-      <FindIdSuccessSection name={userName} userId={foundId} />
+      <FindIdSuccessSection name={displayName} userId={foundId} />
 
       <BottomDoubleCTA
         leftText="비밀번호 찾기"

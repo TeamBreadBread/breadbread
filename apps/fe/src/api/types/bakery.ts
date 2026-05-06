@@ -89,3 +89,41 @@ export type GetBakeriesParams = {
   page?: number;
   size?: number;
 };
+
+/** GET /bakeries/{bakeryId}/reviews — sort */
+export type BakeryReviewSortType = "LATEST" | "RATING_HIGH" | "RATING_LOW";
+
+/** 단일 리뷰 (GET 목록 항목) */
+export type BakeryReview = {
+  id: number;
+  authorNickname: string;
+  rating: number;
+  content: string;
+  imageUrls?: string[] | null;
+  createdAt: string;
+};
+
+/** GET /bakeries/{bakeryId}/reviews */
+export type BakeryReviewListResponse = {
+  reviews: BakeryReview[];
+  total: number;
+  page: number;
+  size: number;
+  hasNext: boolean;
+};
+
+/** POST · PATCH /bakeries/.../reviews */
+export type BakeryReviewWritePayload = {
+  rating: number;
+  content: string;
+  imageUrls?: string[];
+};
+
+/** PATCH /bakeries/{bakeryId}/reviews/{reviewId} — 필드 부분 수정 허용 */
+export type UpdateBakeryReviewPayload = Partial<BakeryReviewWritePayload>;
+
+export type GetBakeryReviewsParams = {
+  sort?: BakeryReviewSortType;
+  page?: number;
+  size?: number;
+};

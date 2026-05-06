@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { createBakeryReview, getBakeryReviews, updateBakeryReview } from "@/api/bakery";
 import { uploadImages } from "@/api/image";
 import { getErrorMessage } from "@/api/types/common";
 import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
@@ -8,6 +9,8 @@ import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 
 interface BbangteoBakeryReviewWritePageProps {
   bakeryId?: number;
+  /** 있으면 PATCH(수정) 모드 */
+  reviewId?: number;
   listEntryFrom?: BakeryListEntryFrom;
 }
 
@@ -48,6 +51,7 @@ function ConfirmExitDialog({ onExit, onContinue }: { onExit: () => void; onConti
 
 export default function BbangteoBakeryReviewWritePage({
   bakeryId,
+  reviewId,
   listEntryFrom,
 }: BbangteoBakeryReviewWritePageProps) {
   const navigate = useNavigate();
@@ -57,8 +61,43 @@ export default function BbangteoBakeryReviewWritePage({
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [isLoadingReview, setIsLoadingReview] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const canSubmit = useMemo(() => rating > 0 && content.trim().length > 0, [rating, content]);
+
+  useEffect(() => {
+    if (bakeryId === undefined || reviewId === undefined) return;
+
+    let cancelled = false;
+    void (async () => {
+      setIsLoadingReview(true);
+      setLoadError("");
+      try {
+        const res = await getBakeryReviews(bakeryId, { sort: "LATEST", page: 0, size: 100 });
+        const found = res.reviews.find((r) => r.id === reviewId);
+        if (cancelled) return;
+        if (!found) {
+          setLoadError("리뷰를 찾을 수 없습니다.");
+          return;
+        }
+        setRating(found.rating);
+        setContent(found.content);
+        setUploadedImageUrls(found.imageUrls ? [...found.imageUrls] : []);
+      } catch (e) {
+        if (!cancelled) {
+          setLoadError(getErrorMessage(e));
+        }
+      } finally {
+        if (!cancelled) setIsLoadingReview(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bakeryId, reviewId]);
 
   const goToBakeryDetail = (reviewUploaded: boolean) => {
     void navigate({
@@ -72,14 +111,45 @@ export default function BbangteoBakeryReviewWritePage({
     });
   };
 
+  const handleSubmit = () => {
+    if (!canSubmit || bakeryId === undefined || isSubmitting) return;
+    void (async () => {
+      try {
+        setIsSubmitting(true);
+        const payload = {
+          rating,
+          content: content.trim(),
+          imageUrls: uploadedImageUrls.length > 0 ? uploadedImageUrls.slice(0, 2) : undefined,
+        };
+        if (reviewId !== undefined) {
+          await updateBakeryReview(bakeryId, reviewId, payload);
+        } else {
+          await createBakeryReview(bakeryId, payload);
+        }
+        goToBakeryDetail(true);
+      } catch (error) {
+        alert(getErrorMessage(error));
+      } finally {
+        setIsSubmitting(false);
+      }
+    })();
+  };
+
+  const MAX_REVIEW_IMAGES = 2;
+
   const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
     if (files.length === 0) return;
 
     setIsUploadingImages(true);
     try {
-      const uploadedUrls = await uploadImages(files);
-      setUploadedImageUrls((prev) => [...prev, ...uploadedUrls]);
+      const room = Math.max(0, MAX_REVIEW_IMAGES - uploadedImageUrls.length);
+      if (room === 0) {
+        alert(`이미지는 최대 ${MAX_REVIEW_IMAGES}장까지 첨부할 수 있습니다.`);
+        return;
+      }
+      const uploadedUrls = await uploadImages(files.slice(0, room));
+      setUploadedImageUrls((prev) => [...prev, ...uploadedUrls].slice(0, MAX_REVIEW_IMAGES));
     } catch (error) {
       alert(getErrorMessage(error) || "이미지 업로드 중 오류가 발생했습니다.");
     } finally {
@@ -103,16 +173,24 @@ export default function BbangteoBakeryReviewWritePage({
           <button
             type="button"
             className={`text-[18px] leading-[24px] font-medium ${
-              canSubmit ? "text-[#1a1c20]" : "text-[#b0b3ba]"
+              canSubmit && !isSubmitting && !isLoadingReview && !loadError
+                ? "text-[#1a1c20]"
+                : "text-[#b0b3ba]"
             }`}
-            disabled={!canSubmit}
-            onClick={() => goToBakeryDetail(true)}
+            disabled={!canSubmit || isSubmitting || isLoadingReview || !!loadError}
+            onClick={() => handleSubmit()}
           >
-            게시
+            {isSubmitting ? "등록 중…" : reviewId !== undefined ? "수정" : "게시"}
           </button>
         </header>
 
         <main className="flex flex-1 flex-col items-center px-[20px] pb-[64px] pt-[97px]">
+          {isLoadingReview ? (
+            <p className="text-[14px] text-[#868b94]">후기를 불러오는 중…</p>
+          ) : null}
+          {!isLoadingReview && loadError ? (
+            <p className="text-center text-[14px] text-red-600">{loadError}</p>
+          ) : null}
           <section className="flex w-[204px] flex-col items-center gap-[16px]">
             <h1 className="text-center text-[18px] leading-[24px] font-bold text-[#1a1c20]">
               후기를 작성해 보세요!

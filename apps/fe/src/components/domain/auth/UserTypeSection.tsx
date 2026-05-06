@@ -1,29 +1,31 @@
-import { useState } from "react";
+import type { UserRole } from "@/api/auth";
 import { FieldLabel, RadioRow } from "@/components/common";
 
-export default function UserTypeSection() {
-  const [selectedUserType, setSelectedUserType] = useState("빵빵 이용자");
+const OPTIONS: { label: string; role: UserRole }[] = [
+  { label: "빵빵 이용자", role: "ROLE_USER" },
+  { label: "빵집 사장님", role: "ROLE_BUSINESS" },
+  { label: "택시 기사님", role: "ROLE_DRIVER" },
+];
 
+type UserTypeSectionProps = {
+  value: UserRole;
+  onChange: (role: UserRole) => void;
+};
+
+export default function UserTypeSection({ value, onChange }: UserTypeSectionProps) {
   return (
     <section className="flex flex-col gap-x1_5">
       <FieldLabel>이용자 선택</FieldLabel>
 
       <div className="flex flex-col gap-x4 py-x2">
-        <RadioRow
-          label="빵빵 이용자"
-          checked={selectedUserType === "빵빵 이용자"}
-          onCheckedChange={() => setSelectedUserType("빵빵 이용자")}
-        />
-        <RadioRow
-          label="빵집 사장님"
-          checked={selectedUserType === "빵집 사장님"}
-          onCheckedChange={() => setSelectedUserType("빵집 사장님")}
-        />
-        <RadioRow
-          label="택시 기사님"
-          checked={selectedUserType === "택시 기사님"}
-          onCheckedChange={() => setSelectedUserType("택시 기사님")}
-        />
+        {OPTIONS.map(({ label, role }) => (
+          <RadioRow
+            key={role}
+            label={label}
+            checked={value === role}
+            onCheckedChange={() => onChange(role)}
+          />
+        ))}
       </div>
     </section>
   );

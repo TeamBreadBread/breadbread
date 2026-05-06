@@ -13,6 +13,8 @@ const baseURL =
 
 export const apiClient = axios.create({
   baseURL,
+  // 인증 플로우(SMS/로그인)가 느린 환경에서도 너무 빨리 끊기지 않도록 여유를 둡니다.
+  timeout: 60_000,
   headers: {
     "Content-Type": "application/json",
   },

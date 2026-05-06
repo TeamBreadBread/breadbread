@@ -43,6 +43,7 @@ import { Route as AiSearchResultRouteImport } from './routes/ai-search-result'
 import { Route as AccountSettingsRouteImport } from './routes/account-settings'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RouteIndexRouteImport } from './routes/route.index'
+import { Route as AuthKakaoCallbackRouteImport } from './routes/auth.kakao.callback'
 
 const UserPreferenceRoute = UserPreferenceRouteImport.update({
   id: '/user-preference',
@@ -217,6 +218,11 @@ const RouteIndexRoute = RouteIndexRouteImport.update({
   path: '/route/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthKakaoCallbackRoute = AuthKakaoCallbackRouteImport.update({
+  id: '/auth/kakao/callback',
+  path: '/auth/kakao/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -253,6 +259,7 @@ export interface FileRoutesByFullPath {
   '/taxi-reserve': typeof TaxiReserveRoute
   '/user-preference': typeof UserPreferenceRoute
   '/route/': typeof RouteIndexRoute
+  '/auth/kakao/callback': typeof AuthKakaoCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -289,6 +296,7 @@ export interface FileRoutesByTo {
   '/taxi-reserve': typeof TaxiReserveRoute
   '/user-preference': typeof UserPreferenceRoute
   '/route': typeof RouteIndexRoute
+  '/auth/kakao/callback': typeof AuthKakaoCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -326,6 +334,7 @@ export interface FileRoutesById {
   '/taxi-reserve': typeof TaxiReserveRoute
   '/user-preference': typeof UserPreferenceRoute
   '/route/': typeof RouteIndexRoute
+  '/auth/kakao/callback': typeof AuthKakaoCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -364,6 +373,7 @@ export interface FileRouteTypes {
     | '/taxi-reserve'
     | '/user-preference'
     | '/route/'
+    | '/auth/kakao/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -400,6 +410,7 @@ export interface FileRouteTypes {
     | '/taxi-reserve'
     | '/user-preference'
     | '/route'
+    | '/auth/kakao/callback'
   id:
     | '__root__'
     | '/'
@@ -436,6 +447,7 @@ export interface FileRouteTypes {
     | '/taxi-reserve'
     | '/user-preference'
     | '/route/'
+    | '/auth/kakao/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -473,6 +485,7 @@ export interface RootRouteChildren {
   TaxiReserveRoute: typeof TaxiReserveRoute
   UserPreferenceRoute: typeof UserPreferenceRoute
   RouteIndexRoute: typeof RouteIndexRoute
+  AuthKakaoCallbackRoute: typeof AuthKakaoCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -715,6 +728,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RouteIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/kakao/callback': {
+      id: '/auth/kakao/callback'
+      path: '/auth/kakao/callback'
+      fullPath: '/auth/kakao/callback'
+      preLoaderRoute: typeof AuthKakaoCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -753,6 +773,7 @@ const rootRouteChildren: RootRouteChildren = {
   TaxiReserveRoute: TaxiReserveRoute,
   UserPreferenceRoute: UserPreferenceRoute,
   RouteIndexRoute: RouteIndexRoute,
+  AuthKakaoCallbackRoute: AuthKakaoCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
