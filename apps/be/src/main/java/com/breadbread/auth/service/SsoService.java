@@ -21,6 +21,7 @@
 
 	import java.util.List;
 	import java.util.Map;
+	import java.util.UUID;
 
 	@Service
 	@RequiredArgsConstructor
@@ -30,13 +31,15 @@
 		private final TokenService tokenService;
 		private final OAuth2Properties oAuth2Properties;
 		private final SsoAccountService ssoAccountService;
+		private final NaverStateRedisService naverStateRedisService;
 
 		public TokenResponse socialLogin(SsoProvider provider, SocialLoginRequest request) {
+			log.info("소셜 로그인 시도: provider={}", provider);
 			String accessToken = exchangeAccessToken(provider, request);
 			SocialUserInfo userInfo = getUserInfo(provider, accessToken);
 			SsoAccount ssoAccount = ssoAccountService.findOrCreateSsoAccount(provider, userInfo);
 			User user = ssoAccount.getUser();
-			log.info("소셜 로그인 성공 provider={} userId={}", provider, user.getId());
+			log.info("소셜 로그인 성공: provider={}, userId={}", provider, user.getId());
 			return tokenService.issueTokens(user);
 		}
 
@@ -55,11 +58,8 @@
 			formData.add("redirect_uri", request.getRedirectUri());
 			formData.add("grant_type", "authorization_code");
 
-			// TODO: Redis 도입 시 Naver OAuth state 서버 검증 추가
 			if (provider == SsoProvider.NAVER) {
-				if (request.getState() == null || request.getState().isBlank()) {
-					throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
-				}
+				validateNaverState(request.getState());
 				formData.add("state", request.getState());
 			}
 
@@ -74,6 +74,7 @@
 				formData.add("code_verifier", request.getCodeVerifier());
 			}
 
+			log.debug("액세스 토큰 교환 요청: provider={}", provider);
 			Map<String, Object> body = webClient.post()
 				.uri(config.getTokenUri())
 				.contentType(MediaType.APPLICATION_FORM_URLENCODED)
@@ -81,21 +82,24 @@
 				.retrieve()
 				.onStatus(status -> !status.is2xxSuccessful(), response ->
 					response.bodyToMono(String.class).flatMap(errorBody -> {
-						log.error("토큰 교환 실패 provider={} status={}", provider, response.statusCode());
+						log.error("액세스 토큰 교환 실패: provider={}, status={}", provider, response.statusCode());
 						return Mono.error(new CustomException(ErrorCode.SOCIAL_LOGIN_FAILED));
 					}))
 				.bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
 				.block();
 
 			if (body == null || body.get("access_token") == null) {
+				log.error("액세스 토큰 교환 실패: provider={}, 응답 없음 또는 토큰 누락", provider);
 				throw new CustomException(ErrorCode.SOCIAL_LOGIN_FAILED);
 			}
 
+			log.debug("액세스 토큰 교환 성공: provider={}", provider);
 			return (String) body.get("access_token");
 		}
 
 		private void validateRedirectUri(List<String> allowedRedirectUris, String redirectUri) {
 			if (!allowedRedirectUris.contains(redirectUri)) {
+				log.debug("허용되지 않은 redirectUri: {}", redirectUri);
 				throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
 			}
 		}
@@ -114,18 +118,20 @@
 					.header("Authorization", "Bearer " + accessToken)
 					.retrieve()
 					.onStatus(status -> !status.is2xxSuccessful(), response -> {
-						log.error("유저정보 조회 실패 provider=kakao status={}", response.statusCode());
+						log.error("유저정보 조회 실패: provider=kakao, status={}", response.statusCode());
 						return Mono.error(new CustomException(ErrorCode.SOCIAL_LOGIN_FAILED));
 					})
 					.bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
 					.block();
 
 			if (body == null) {
+				log.error("유저정보 조회 실패: provider=kakao, 응답 없음");
 				throw new CustomException(ErrorCode.SOCIAL_LOGIN_FAILED);
 			}
 
 			Map<String, Object> kakaoAccount = (Map<String, Object>) body.get("kakao_account");
 			if (kakaoAccount == null) {
+				log.error("유저정보 조회 실패: provider=kakao, kakao_account 누락");
 				throw new CustomException(ErrorCode.SOCIAL_LOGIN_FAILED);
 			}
 
@@ -137,6 +143,7 @@
 				name = (nickname != null && !nickname.isBlank()) ? nickname : "카카오 사용자";
 			}
 
+			log.debug("카카오 유저정보 조회 성공: providerUserId={}", body.get("id"));
 			return SocialUserInfo.builder()
 					.providerUserId(body.get("id").toString())
 					.email((String) kakaoAccount.get("email"))
@@ -151,21 +158,24 @@
 					.header("Authorization", "Bearer " + accessToken)
 					.retrieve()
 					.onStatus(status -> !status.is2xxSuccessful(), response -> {
-						log.error("유저정보 조회 실패 provider=naver status={}", response.statusCode());
+						log.error("유저정보 조회 실패: provider=naver, status={}", response.statusCode());
 						return Mono.error(new CustomException(ErrorCode.SOCIAL_LOGIN_FAILED));
 					})
 					.bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
 					.block();
 
 			if (body == null) {
+				log.error("유저정보 조회 실패: provider=naver, 응답 없음");
 				throw new CustomException(ErrorCode.SOCIAL_LOGIN_FAILED);
 			}
 
 			Map<String, Object> responseBody = (Map<String, Object>) body.get("response");
 			if (responseBody == null) {
+				log.error("유저정보 조회 실패: provider=naver, response 필드 누락");
 				throw new CustomException(ErrorCode.SOCIAL_LOGIN_FAILED);
 			}
 
+			log.debug("네이버 유저정보 조회 성공: providerUserId={}", responseBody.get("id"));
 			return SocialUserInfo.builder()
 					.providerUserId((String) responseBody.get("id"))
 					.email((String) responseBody.get("email"))
@@ -180,20 +190,42 @@
 					.header("Authorization", "Bearer " + accessToken)
 					.retrieve()
 					.onStatus(status -> !status.is2xxSuccessful(), response -> {
-						log.error("유저정보 조회 실패 provider=google status={}", response.statusCode());
+						log.error("유저정보 조회 실패: provider=google, status={}", response.statusCode());
 						return Mono.error(new CustomException(ErrorCode.SOCIAL_LOGIN_FAILED));
 					})
 					.bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
 					.block();
 
 			if (body == null) {
+				log.error("유저정보 조회 실패: provider=google, 응답 없음");
 				throw new CustomException(ErrorCode.SOCIAL_LOGIN_FAILED);
 			}
 
+			log.debug("구글 유저정보 조회 성공: providerUserId={}", body.get("sub"));
 			return SocialUserInfo.builder()
 					.providerUserId((String) body.get("sub"))
 					.email((String) body.get("email"))
 					.name((String) body.get("name"))
 					.build();
+		}
+
+		public String issueNaverState() {
+			String state = UUID.randomUUID().toString();
+			long ttl = oAuth2Properties.getNaver().getStateTtlSeconds();
+			naverStateRedisService.save(state, ttl);
+			log.info("네이버 state 발급: ttl={}s", ttl);
+			return state;
+		}
+
+		private void validateNaverState(String state) {
+			if (state == null || state.isBlank()) {
+				log.warn("네이버 state 검증 실패: state가 비어있음");
+				throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+			}
+			if (!naverStateRedisService.consume(state)) {
+				log.warn("네이버 state 검증 실패: 유효하지 않거나 만료된 state");
+				throw new CustomException(ErrorCode.INVALID_SOCIAL_STATE);
+			}
+			log.debug("네이버 state 검증 성공");
 		}
 	}

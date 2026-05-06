@@ -31,6 +31,7 @@ public enum ErrorCode {
     ALREADY_VERIFIED(HttpStatus.BAD_REQUEST, "E0112", "이미 인증된 전화번호입니다."),
 	SOCIAL_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "E0113", "소셜 로그인에 실패했습니다."),
 	DUPLICATE_PHONE(HttpStatus.CONFLICT, "E0114", "이미 가입된 전화번호입니다."),
+	INVALID_SOCIAL_STATE(HttpStatus.BAD_REQUEST, "E0115", "유효하지 않은 소셜 로그인 state입니다."),
 
     // 토큰 E02xx
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "E0201", "유효하지 않은 토큰입니다."),

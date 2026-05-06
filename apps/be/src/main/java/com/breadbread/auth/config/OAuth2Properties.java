@@ -22,7 +22,7 @@ public class OAuth2Properties {
 	@Valid
 	private Provider kakao = new Provider();
 	@Valid
-	private Provider naver = new Provider();
+	private NaverProvider naver = new NaverProvider();
 
 	@Getter
 	@Setter
@@ -37,5 +37,11 @@ public class OAuth2Properties {
 		@NotEmpty
 		private List<String> allowedRedirectUris;
 		private boolean usePkce;
+	}
+
+	@Getter
+	@Setter
+	public static class NaverProvider extends Provider {
+		private long stateTtlSeconds = 300;
 	}
 }

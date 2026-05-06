@@ -107,4 +107,11 @@ public class AuthController {
             @Valid @RequestBody SocialLoginRequest request) {
         return ApiResponse.ok(authService.socialLogin(provider, request));
     }
+
+	@SecurityRequirements
+	@Operation(summary = "네이버 로그인용 state 발급")
+	@PostMapping("/naver/state")
+	public ApiResponse<String> issueNaverState() {
+		return ApiResponse.ok(authService.issueNaverState());
+	}
 }
