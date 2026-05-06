@@ -43,6 +43,8 @@ public class User extends BaseEntity {
 
     private boolean active = true;
 
+	private String profileImageUrl;
+
     @Builder
     public User(String loginId, String password, String name, String nickname,
                 String email, String telecom, String phone, UserRole role,
@@ -66,4 +68,6 @@ public class User extends BaseEntity {
     public void updatePassword(String password) {
         this.password = password;
     }
+
+	public void updateProfileImageUrl(String url){ this.profileImageUrl = url;}
 }

@@ -8,6 +8,7 @@ import com.breadbread.user.dto.CreatePreferenceRequest;
 import com.breadbread.user.dto.MyProfileResponse;
 import com.breadbread.user.dto.UpdatePreferenceRequest;
 import com.breadbread.user.dto.PreferenceResponse;
+import com.breadbread.user.dto.UserProfileResponse;
 import com.breadbread.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,12 +27,9 @@ public class UserController {
 
     @Operation(summary = "내 프로필 조회")
     @GetMapping("/me")
-    public ApiResponse<MyProfileResponse> getMyProfile(
+    public ApiResponse<UserProfileResponse> getMyProfile(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        if (userDetails == null) {
-            throw new CustomException(ErrorCode.UNAUTHORIZED);
-        }
-        return ApiResponse.ok(userService.getMyProfile(userDetails.getId()));
+        return ApiResponse.ok(userService.getUserProfile(userDetails.getId()));
     }
 
     @Operation(summary = "선호도 조사 등록")
