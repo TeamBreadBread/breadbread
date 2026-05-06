@@ -54,7 +54,7 @@ public class AiCourseAsyncService {
 
 			// 1. 읽기 트랜잭션: lazy 컬렉션 포함 전체 데이터 로드 + DTO 변환까지 트랜잭션 안에서 완료
 			AiCourseWebhookRequest webhookRequest = transactionTemplate.execute(status -> {
-				User user = userRepository.findById(userId)
+				userRepository.findById(userId)
 					.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 				UserPreference userPreference = userPreferenceRepository.findByUserId(userId)
 					.orElseThrow(() -> new CustomException(ErrorCode.PREFERENCE_NOT_FOUND));
