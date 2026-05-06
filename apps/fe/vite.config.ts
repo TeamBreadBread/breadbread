@@ -40,6 +40,10 @@ export default defineConfig({
         target: 'https://api.breadbread.io',
         changeOrigin: true,
       },
+      '/auth': {
+        target: 'https://api.breadbread.io',
+        changeOrigin: true,
+      },
       '/bakeries': {
         target: 'https://api.breadbread.io',
         changeOrigin: true,

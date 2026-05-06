@@ -13,6 +13,9 @@ interface ActionFieldProps {
   inputClassName?: string;
   actionClassName?: string;
   type?: InputHTMLAttributes<HTMLInputElement>["type"];
+  /** 휴대전화 OTP 등: 숫자 키패드·자동완성 힌트 */
+  inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
+  autoComplete?: InputHTMLAttributes<HTMLInputElement>["autoComplete"];
 }
 
 export default function ActionField({
@@ -27,6 +30,8 @@ export default function ActionField({
   inputClassName,
   actionClassName,
   type = "text",
+  inputMode,
+  autoComplete,
 }: ActionFieldProps) {
   return (
     <div
@@ -42,6 +47,8 @@ export default function ActionField({
         onChange={(event) => onChange?.(event.target.value)}
         placeholder={placeholder}
         disabled={disabled}
+        inputMode={inputMode}
+        autoComplete={autoComplete}
         className={cn(
           "font-pretendard typo-t5regular flex-1 bg-transparent outline-none",
           value ? "text-gray-1000" : "text-gray-500",

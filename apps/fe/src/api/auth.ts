@@ -1,7 +1,7 @@
 import { apiClient, extractData } from "@/api/client";
 import type { ApiEnvelope } from "@/api/types/common";
 
-const PATH = "/api/auth";
+const PATH = "/auth";
 
 export type TokenResponse = {
   accessToken: string;
@@ -18,7 +18,15 @@ export type TokenRequestBody = {
 };
 
 /** 백엔드 `UserRole` */
-export type UserRole = "ROLE_USER" | "ROLE_ADMIN" | "ROLE_BUSINESS" | "ROLE_DRIVER";
+export type UserRole =
+  | "ROLE_USER"
+  | "ROLE_ADMIN"
+  | "ROLE_BUSINESS"
+  | "ROLE_DRIVER"
+  | "USER"
+  | "ADMIN"
+  | "BUSINESS"
+  | "DRIVER";
 
 export type SignupRequest = {
   loginId: string;
@@ -32,6 +40,26 @@ export type SignupRequest = {
   privacyAgreed: boolean;
   verificationToken: string;
 };
+
+function toBackendRole(
+  role: UserRole | undefined,
+): "ROLE_USER" | "ROLE_ADMIN" | "ROLE_BUSINESS" | "ROLE_DRIVER" | undefined {
+  if (!role) return undefined;
+  switch (role) {
+    case "USER":
+    case "ROLE_USER":
+      return "ROLE_USER";
+    case "ADMIN":
+    case "ROLE_ADMIN":
+      return "ROLE_ADMIN";
+    case "BUSINESS":
+    case "ROLE_BUSINESS":
+      return "ROLE_BUSINESS";
+    case "DRIVER":
+    case "ROLE_DRIVER":
+      return "ROLE_DRIVER";
+  }
+}
 
 export type CheckIdResponse = {
   available: boolean;
@@ -86,7 +114,10 @@ export type VerifyPhoneResponse = {
 export type SsoProvider = "GOOGLE" | "KAKAO" | "NAVER";
 
 export type SocialLoginRequest = {
-  accessToken: string;
+  code: string;
+  redirectUri: string;
+  codeVerifier?: string;
+  state?: string;
 };
 
 export const SESSION_ACCESS_KEY = "breadbread_access_token";
@@ -103,7 +134,11 @@ export function clearSessionTokens(): void {
 }
 
 export async function signup(body: SignupRequest): Promise<void> {
-  const { data } = await apiClient.post<ApiEnvelope<void>>(`${PATH}/signup`, body);
+  const payload: SignupRequest = {
+    ...body,
+    role: toBackendRole(body.role),
+  };
+  const { data } = await apiClient.post<ApiEnvelope<void>>(`${PATH}/signup`, payload);
   extractData(data);
 }
 

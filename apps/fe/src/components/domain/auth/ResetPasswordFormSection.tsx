@@ -4,9 +4,13 @@ import PasswordField from "@/components/common/form/PasswordField";
 
 interface ResetPasswordFormSectionProps {
   onFormChange?: (isComplete: boolean) => void;
+  onPasswordPairChange?: (password: string, confirmPassword: string) => void;
 }
 
-export default function ResetPasswordFormSection({ onFormChange }: ResetPasswordFormSectionProps) {
+export default function ResetPasswordFormSection({
+  onFormChange,
+  onPasswordPairChange,
+}: ResetPasswordFormSectionProps) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -34,6 +38,10 @@ export default function ResetPasswordFormSection({ onFormChange }: ResetPassword
       ),
     );
   }, [confirmPassword, onFormChange, password, isPasswordValid]);
+
+  useEffect(() => {
+    onPasswordPairChange?.(password, confirmPassword);
+  }, [confirmPassword, onPasswordPairChange, password]);
 
   // 안내 메시지 및 색상
   let passwordMessage = "";
