@@ -1,4 +1,4 @@
-package com.breadbread.course.dto;
+package com.breadbread.course.dto.ai;
 
 import com.breadbread.bakery.entity.BreadType;
 import com.breadbread.course.entity.BudgetRange;

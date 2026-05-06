@@ -30,6 +30,8 @@ public class AiCourseInfo {
 
     private int bakeryCount;            // 추천 빵집 수
 
+	private String recommendReason;
+
     @Enumerated(EnumType.STRING)
     private FlexibilityLevel flexibilityLevel;  // 일정 유연성
 
@@ -37,13 +39,15 @@ public class AiCourseInfo {
      public AiCourseInfo(TravelType travelType, BudgetRange budgetRange,
                          boolean waitingPreference, boolean drinkPreference,
                          int bakeryCount, FlexibilityLevel flexibilityLevel,
-                         boolean minimizeRoute, double latitude, double longitude) {
+						 String recommendReason, boolean minimizeRoute,
+						 double latitude, double longitude) {
         this.travelType = travelType;
         this.budgetRange = budgetRange;
         this.waitingPreference = waitingPreference;
         this.drinkPreference = drinkPreference;
         this.bakeryCount = bakeryCount;
         this.flexibilityLevel = flexibilityLevel;
+		this.recommendReason = recommendReason;
         this.minimizeRoute = minimizeRoute;
         this.latitude = latitude;
         this.longitude = longitude;

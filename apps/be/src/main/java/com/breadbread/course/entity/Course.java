@@ -33,6 +33,12 @@ public class Course extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private CourseType courseType;
 
+	private String region;
+
+	private String theme;
+
+	private String summary;
+
     private String thumbnailUrl;
 
     private Integer estimatedCost;
@@ -70,6 +76,7 @@ public class Course extends BaseEntity {
     // 정적 팩토리
     public static Course createManual(String name, String thumbnailUrl,
                                       String estimatedTime, Integer estimatedCost,
+									  String theme, String region,
                                       ManualCourseInfo manualCourseInfo) {
         Course course = new Course();
         course.name = name;
@@ -77,6 +84,8 @@ public class Course extends BaseEntity {
         course.thumbnailUrl = thumbnailUrl;
         course.estimatedTime = estimatedTime;
         course.estimatedCost = estimatedCost;
+		course.theme = theme;
+		course.region = region;
         course.manualCourseInfo = manualCourseInfo;
         course.shared = true;
         return course;
@@ -102,12 +111,15 @@ public class Course extends BaseEntity {
 
     public void updateManual(String name, String thumbnailUrl,
                              String estimatedTime, Integer estimatedCost,
+							 String theme, String region,
                              ManualCourseInfo manualCourseInfo) {
         validateManual();
         if (name != null) this.name = name;
         if (thumbnailUrl != null) this.thumbnailUrl = thumbnailUrl;
         if (estimatedTime != null) this.estimatedTime = estimatedTime;
         if (estimatedCost != null) this.estimatedCost = estimatedCost;
+		if (theme != null) this.theme = theme;
+		if (region != null) this.region = region;
         if (manualCourseInfo != null) this.manualCourseInfo = manualCourseInfo;
     }
 
@@ -115,10 +127,12 @@ public class Course extends BaseEntity {
         this.courseBakeries.clear();
     }
 
-    public void updateAiResult(String thumbnailUrl, Integer estimatedCost, String estimatedTime) {
-        this.thumbnailUrl = thumbnailUrl;
+    public void updateAiResult(Integer estimatedCost,String estimatedTime,
+							   String theme, String summary) {
         this.estimatedCost = estimatedCost;
         this.estimatedTime = estimatedTime;
+		this.theme = theme;
+		this.summary = summary;
     }
 
     public void share() {

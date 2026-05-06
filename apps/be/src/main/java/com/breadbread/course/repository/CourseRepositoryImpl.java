@@ -47,7 +47,7 @@ public class CourseRepositoryImpl implements CourseRepositoryCustom {
     }
 
     private BooleanExpression eqRegion(QCourse course, String region) {
-        return StringUtils.hasText(region) ? course.manualCourseInfo.region.eq(region) : null;
+        return StringUtils.hasText(region) ? course.region.eq(region) : null;
     }
 
     private BooleanExpression eqBreadType(QCourse course, BreadType breadType) {
@@ -55,7 +55,7 @@ public class CourseRepositoryImpl implements CourseRepositoryCustom {
     }
 
     private BooleanExpression eqTheme(QCourse course, String theme) {
-        return StringUtils.hasText(theme) ? course.manualCourseInfo.theme.eq(theme) : null;
+        return StringUtils.hasText(theme) ? course.theme.eq(theme) : null;
     }
 
     private BooleanExpression eqEditorPick(QCourse course, Boolean editorPick) {

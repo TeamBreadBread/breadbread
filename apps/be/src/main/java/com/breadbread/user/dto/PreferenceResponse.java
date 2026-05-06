@@ -20,9 +20,9 @@ public class PreferenceResponse {
 
     public static PreferenceResponse from(UserPreference preference) {
         return PreferenceResponse.builder()
-                .bakeryTypes(preference.getBakeryTypes())
-                .bakeryPersonalities(preference.getBakeryMoods())
-                .bakeryUseTypes(preference.getBakeryUseTypes())
+                .bakeryTypes(List.copyOf(preference.getBakeryTypes()))
+                .bakeryPersonalities(List.copyOf(preference.getBakeryMoods()))
+                .bakeryUseTypes(List.copyOf(preference.getBakeryUseTypes()))
                 .waitingTolerance(preference.getWaitingTolerance())
                 .build();
     }

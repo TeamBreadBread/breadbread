@@ -1,17 +1,19 @@
 package com.breadbread.course.service;
 
 import com.breadbread.bakery.dto.BakerySummaryResponse;
-import com.breadbread.bakery.entity.Bakery;
-import com.breadbread.bakery.entity.BakeryImage;
-import com.breadbread.bakery.entity.BakeryLike;
+import com.breadbread.bakery.entity.*;
 import com.breadbread.bakery.repository.BakeryImageRepository;
 import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.course.dto.*;
+import com.breadbread.course.dto.ai.AiCourseRequest;
+import com.breadbread.course.dto.ai.AiJobStatusResponse;
 import com.breadbread.course.entity.*;
 import com.breadbread.course.repository.CourseBakeryRepository;
 import com.breadbread.course.repository.CourseLikeRepository;
 import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.course.repository.RouteRepository;
+import com.breadbread.course.service.ai.AiCourseAsyncService;
+import com.breadbread.course.service.ai.AiCourseRedisService;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.entity.User;
@@ -24,10 +26,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -43,6 +43,8 @@ public class CourseService {
     private final CourseLikeRepository courseLikeRepository;
     private final UserRepository userRepository;
     private final RouteRepository routeRepository;
+    private final AiCourseAsyncService aiCourseAsyncService;
+    private final AiCourseRedisService aiCourseRedisService;
 
     @Transactional(readOnly = true)
     public CourseListResponse search(CourseSearch courseSearch, Pageable pageable, Long userId) {
@@ -138,8 +140,6 @@ public class CourseService {
 
         ManualCourseInfo manualCourseInfo = ManualCourseInfo.builder()
                 .editorPick(request.isEditorPick())
-                .region(request.getRegion())
-                .theme(request.getTheme())
                 .breadType(request.getBreadType())
                 .build();
 
@@ -148,6 +148,8 @@ public class CourseService {
                 request.getThumbnailUrl(),
                 request.getEstimatedTime(),
                 request.getEstimatedCost(),
+				request.getTheme(),
+				request.getRegion(),
                 manualCourseInfo
         );
 
@@ -196,8 +198,6 @@ public class CourseService {
             ManualCourseInfo current = course.getManualCourseInfo();
             manualCourseInfo = ManualCourseInfo.builder()
                     .editorPick(request.getEditorPick() != null ? request.getEditorPick() : (current != null && current.isEditorPick()))
-                    .region(request.getRegion() != null ? request.getRegion() : (current != null ? current.getRegion() : null))
-                    .theme(request.getTheme() != null ? request.getTheme() : (current != null ? current.getTheme() : null))
                     .breadType(request.getBreadType() != null ? request.getBreadType() : (current != null ? current.getBreadType() : null))
                     .build();
         }
@@ -207,6 +207,8 @@ public class CourseService {
                 request.getThumbnailUrl(),
                 request.getEstimatedTime(),
                 request.getEstimatedCost(),
+				request.getTheme(),
+				request.getRegion(),
                 manualCourseInfo
         );
 
@@ -254,10 +256,32 @@ public class CourseService {
         log.info("코스 삭제: courseId={}", courseId);
     }
 
-    @Transactional
-    public Long createAi(Long userId, AiCourseRequest request) {
-        // TODO: AI 서버 연동 후 구현
-        throw new CustomException(ErrorCode.FEATURE_NOT_IMPLEMENTED);
+    public String createAi(Long userId, AiCourseRequest request) {
+        String jobId = UUID.randomUUID().toString();
+        aiCourseRedisService.savePending(jobId, userId);
+        try {
+            aiCourseAsyncService.processAiCourse(jobId, userId, request)
+                .whenComplete((unused, throwable) -> {
+                    if (throwable == null) {
+                        return;
+                    }
+                    Throwable cause = throwable instanceof CompletionException
+                        ? throwable.getCause() : throwable;
+                    log.error("[AI 코스 생성] 비동기 실행 실패 후처리 jobId={}", jobId, cause);
+                    aiCourseRedisService.saveFailed(jobId, "작업 처리 중 오류가 발생했습니다.");
+                });
+        } catch (Exception e) {
+            log.error("[AI 코스 생성] 비동기 작업 제출 실패 jobId={}", jobId, e);
+            aiCourseRedisService.saveFailed(jobId, "작업 제출에 실패했습니다.");
+            throw new CustomException(ErrorCode.AI_SERVER_ERROR);
+        }
+        log.info("[AI 코스 생성] 비동기 작업 시작: jobId={}, userId={}", jobId, userId);
+        return jobId;
+    }
+
+    public AiJobStatusResponse getAiJobStatus(String jobId, Long requesterId) {
+        return aiCourseRedisService.findByJobId(jobId, requesterId)
+            .orElseThrow(() -> new CustomException(ErrorCode.AI_JOB_NOT_FOUND));
     }
 
     @Transactional
