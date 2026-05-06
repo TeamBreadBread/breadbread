@@ -2,6 +2,8 @@ package com.breadbread.course.controller;
 
 import com.breadbread.auth.dto.CustomUserDetails;
 import com.breadbread.bakery.entity.BreadType;
+import com.breadbread.course.dto.ai.AiCourseRequest;
+import com.breadbread.course.dto.ai.AiJobStatusResponse;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.course.dto.*;
 import com.breadbread.course.service.CourseService;
@@ -97,18 +99,29 @@ public class CourseController {
         return ApiResponse.ok(null);
     }
 
-    @Operation(summary = "AI 코스 추천 요청", description = "AI 서버 연동 후 구현 예정")
+    @Operation(summary = "AI 코스 추천 요청", description = "비동기로 처리되며 jobId를 즉시 반환합니다. GET /courses/ai/status/{jobId}로 결과를 폴링하세요.")
     @PostMapping("/ai")
-    @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<Long> createAi(
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<String> createAi(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody AiCourseRequest request) {
-        Long id = courseService.createAi(userDetails.getId(), request);
-        return ApiResponse.ok(id);
+        String jobId = courseService.createAi(userDetails.getId(), request);
+        return ApiResponse.ok(jobId);
+    }
+
+    @Operation(summary = "AI 코스 추천 상태 조회", description = "status: PENDING | COMPLETED | FAILED. COMPLETED 시 courseId로 코스를 조회하세요.")
+    @GetMapping("/ai/status/{jobId}")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<AiJobStatusResponse> getAiJobStatus(
+            @PathVariable String jobId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ApiResponse.ok(courseService.getAiJobStatus(jobId, userDetails.getId()));
     }
 
     @Operation(summary = "AI 코스 삭제 (본인 코스만 가능)")
     @DeleteMapping("/{id}/ai")
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<Void> deleteAi(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long id) {

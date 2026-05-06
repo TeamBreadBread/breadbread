@@ -104,3 +104,8 @@ oauth2:
       - https://www.breadbread.io/auth/kakao/callback
     use-pkce: true
 
+ai:
+  webhook-url: ${AI_COURSE_WEBHOOK_URL}
+  webhook-timeout-seconds: ${AI_WEBHOOK_TIMEOUT_SECONDS:60}
+  job-ttl-hours: ${AI_JOB_TTL_HOURS:1}
+

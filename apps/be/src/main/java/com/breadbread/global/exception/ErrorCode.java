@@ -55,6 +55,7 @@ public enum ErrorCode {
     NOT_COURSE_LIKED(HttpStatus.BAD_REQUEST, "E0407", "좋아요하지 않은 코스입니다."),
     ALREADY_ROUTED(HttpStatus.CONFLICT, "E0408", "이미 저장한 코스입니다."),
     NOT_ROUTED(HttpStatus.BAD_REQUEST, "E0409", "저장하지 않은 코스입니다."),
+    AI_JOB_NOT_FOUND(HttpStatus.NOT_FOUND, "E0411", "존재하지 않는 AI 작업입니다."),
 
     // 예약 E05xx
     RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "E0501", "존재하지 않는 예약입니다."),

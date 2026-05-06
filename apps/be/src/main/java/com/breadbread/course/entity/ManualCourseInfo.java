@@ -14,17 +14,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ManualCourseInfo {
     private boolean editorPick;
-    private String region;
-    private String theme;
 
     @Enumerated(EnumType.STRING)
     private BreadType breadType;
 
     @Builder
-    public ManualCourseInfo(boolean editorPick, String region, String theme, BreadType breadType) {
+    public ManualCourseInfo(boolean editorPick, BreadType breadType) {
         this.editorPick = editorPick;
-        this.region = region;
-        this.theme = theme;
         this.breadType = breadType;
     }
 }
