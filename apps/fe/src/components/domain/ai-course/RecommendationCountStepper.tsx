@@ -1,5 +1,4 @@
 import { cn } from "@/utils/cn";
-import Button from "@/components/common/Button/Button";
 
 interface RecommendationCountStepperProps {
   value: number;
@@ -26,37 +25,43 @@ export default function RecommendationCountStepper({
   const isIncreaseDisabled = value >= max;
 
   return (
-    <div className="flex w-full items-center justify-between gap-x3 rounded-r3 bg-gray-100 px-x4 py-x4">
-      <Button
-        type="button"
-        variant="secondary"
-        onClick={handleDecrease}
-        disabled={isDecreaseDisabled}
-        className={cn("h-x10 w-x10 rounded-full px-0 py-0", isDecreaseDisabled && "opacity-40")}
-        aria-label="추천 개수 줄이기"
-      >
-        -
-      </Button>
-
-      <div className="flex min-w-x16 flex-col items-center justify-center">
-        <span className="font-sans text-size-8 leading-t8 font-bold tracking-2 text-gray-1000">
-          {value}
-        </span>
-        <span className="font-sans text-size-2 leading-t3 font-medium tracking-1 text-gray-700">
-          개
-        </span>
+    <div className="mx-auto flex h-[56px] w-full max-w-[362px] shrink-0 flex-row items-center justify-between overflow-hidden rounded-[12px] border border-solid border-[#dcdee3] px-[20px] py-[16px]">
+      <div className="font-sans whitespace-nowrap text-[16px] leading-[22px] text-[#555d6d]">
+        {value}개
       </div>
-
-      <Button
-        type="button"
-        variant="secondary"
-        onClick={handleIncrease}
-        disabled={isIncreaseDisabled}
-        className={cn("h-x10 w-x10 rounded-full px-0 py-0", isIncreaseDisabled && "opacity-40")}
-        aria-label="추천 개수 늘리기"
-      >
-        +
-      </Button>
+      <div className="flex w-[100px] shrink-0 flex-row items-center justify-start">
+        <button
+          type="button"
+          onClick={handleDecrease}
+          disabled={isDecreaseDisabled}
+          className={cn(
+            "flex shrink-0 flex-row items-center justify-start rounded-[4px] bg-[#f7f8f9] p-[4px]",
+            isDecreaseDisabled && "cursor-not-allowed opacity-40",
+          )}
+          aria-label="추천 개수 줄이기"
+        >
+          <span className="flex h-6 w-6 items-center justify-center font-sans text-[18px] leading-none font-medium text-[#1a1c20]">
+            −
+          </span>
+        </button>
+        <div className="flex flex-1 flex-col justify-center self-stretch text-center font-sans text-[18px] leading-[24px] text-[#1a1c20]">
+          {value}
+        </div>
+        <button
+          type="button"
+          onClick={handleIncrease}
+          disabled={isIncreaseDisabled}
+          className={cn(
+            "flex shrink-0 flex-row items-center justify-start rounded-[4px] bg-[#f7f8f9] p-[4px]",
+            isIncreaseDisabled && "cursor-not-allowed opacity-40",
+          )}
+          aria-label="추천 개수 늘리기"
+        >
+          <span className="flex h-6 w-6 items-center justify-center font-sans text-[18px] leading-none font-medium text-[#1a1c20]">
+            +
+          </span>
+        </button>
+      </div>
     </div>
   );
 }

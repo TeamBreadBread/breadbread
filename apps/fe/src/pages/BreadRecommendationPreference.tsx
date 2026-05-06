@@ -155,6 +155,13 @@ export default function BreadRecommendationPreference() {
               title={section.title}
               helperText={section.helperText}
               columns={section.columns}
+              icon={
+                section.id === "count" ? (
+                  <div className="flex flex-row items-center justify-start p-[3px]">
+                    <div className="h-[18px] w-[18px] shrink-0 rounded-full bg-[#dcdee3]" />
+                  </div>
+                ) : undefined
+              }
             >
               {section.id === "count" ? (
                 <RecommendationCountStepper

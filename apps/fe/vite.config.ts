@@ -37,7 +37,11 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'https://breadbread-be-fgtr2kmf6q-du.a.run.app',
+        target: 'https://api.breadbread.io',
+        changeOrigin: true,
+      },
+      '/bakeries': {
+        target: 'https://api.breadbread.io',
         changeOrigin: true,
       },
     },

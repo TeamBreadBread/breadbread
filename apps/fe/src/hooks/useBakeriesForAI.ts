@@ -1,5 +1,5 @@
 /**
- * AI용 빵집 전체 목록 조회 (`GET /api/bakeries/ai`).
+ * AI용 빵집 전체 목록 조회 (`GET /bakeries/ai`).
  *
  * @example
  * ```tsx

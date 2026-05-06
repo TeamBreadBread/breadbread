@@ -18,7 +18,8 @@ export type {
   GetBakeriesParams,
 } from "@/api/types/bakery";
 
-const PATH = "/api/bakeries";
+/** 공개 목록/상세는 `/bakeries` — `/api/bakeries` 는 게이트웨이에서 401 처리됨 */
+const PATH = "/bakeries";
 
 /** Swagger `CreateBakeryRequest` 등 — 필요 시 세부 타입 분리 가능 */
 export type CreateBakeryPayload = Record<string, unknown>;

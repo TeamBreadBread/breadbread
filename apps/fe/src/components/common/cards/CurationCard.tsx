@@ -51,16 +51,24 @@ const CurationCard = ({
         </p>
         <div
           className={cn(
-            "flex items-center gap-[var(--spacing-x0-5)]",
+            "flex w-full min-w-0 items-center gap-[var(--spacing-x0-5)]",
             "text-[length:var(--font-size-1)] leading-[var(--leading-t2)] font-medium",
             "text-[var(--color-gray-700)]",
           )}
         >
-          <img src={mapIcon} alt="위치" className="h-[var(--spacing-x3)] w-[var(--spacing-x3)]" />
-          <span>{address}</span>
-          <span>·</span>
-          <img src={starIcon} alt="별점" className="h-[var(--spacing-x3)] w-[var(--spacing-x3)]" />
-          <span>{rate}</span>
+          <img
+            src={mapIcon}
+            alt="위치"
+            className="h-[var(--spacing-x3)] w-[var(--spacing-x3)] shrink-0"
+          />
+          <span className="min-w-0 flex-1 truncate">{address}</span>
+          <span className="shrink-0">·</span>
+          <img
+            src={starIcon}
+            alt="별점"
+            className="h-[var(--spacing-x3)] w-[var(--spacing-x3)] shrink-0"
+          />
+          <span className="shrink-0">{rate}</span>
         </div>
       </div>
     </div>

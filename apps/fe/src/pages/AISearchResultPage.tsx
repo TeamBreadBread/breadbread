@@ -1,6 +1,7 @@
 import { AppTopBar, Button } from "@/components/common";
 import { useNavigate } from "@tanstack/react-router";
 import { MobileFrame } from "@/components/layout";
+import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
 import { cn } from "@/utils/cn";
 import CourseTimeline from "@/components/domain/ai-course/CourseTimeline";
 import ResultSummaryCard from "@/components/domain/ai-course/ResultSummaryCard";
@@ -92,7 +93,12 @@ export default function AISearchResultPage() {
         </div>
       </aside>
 
-      <div className="absolute inset-x-0 bottom-0 z-30 mx-auto max-w-[744px] w-full border-t border-gray-300 bg-white px-[20px] pb-[max(16px,env(safe-area-inset-bottom))] pt-x3">
+      <div
+        className={cn(
+          "fixed bottom-0 left-1/2 z-30 -translate-x-1/2 border-t border-gray-300 bg-white px-[20px] pb-[max(16px,env(safe-area-inset-bottom))] pt-x3",
+          RESPONSIVE_FRAME_WIDTH,
+        )}
+      >
         <Button variant="primary" fullWidth type="button" onClick={goBreadTaxiReserve}>
           빵택시 예약
         </Button>

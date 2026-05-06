@@ -1,78 +1,59 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import ratingStar from "@/assets/icons/ratingStar.svg";
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
 import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
+import { useBakeries } from "@/hooks/useBakeries";
+import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
+import { cn } from "@/utils/cn";
 
-type Bakery = {
+const PAGE_SIZE = 6;
+
+type BakeryRow = {
   id: number;
   name: string;
   address: string;
   rating: number;
   reviewCount: number;
   bookmarkCount: number;
+  /** 최대 4개 미리보기 URL */
   images: string[];
+  /** 4장 초과분 — 4번째 타일에 더보기 오버레이 */
+  remainingPreviewImageCount: number;
 };
-
-const bakeries: Bakery[] = [
-  {
-    id: 1,
-    name: "성심당 본점",
-    address: "대전 중구 대종로480번길 15",
-    rating: 4.5,
-    reviewCount: 12836,
-    bookmarkCount: 12,
-    images: [
-      "Frame 473587_4115.png",
-      "Frame 17074825803587_4117.png",
-      "Frame 17074825813587_4119.png",
-      "Frame 17074825823587_4121.png",
-    ],
-  },
-  {
-    id: 2,
-    name: "땡큐베리머치",
-    address: "대전 중구 중교로 49",
-    rating: 4.5,
-    reviewCount: 8,
-    bookmarkCount: 12,
-    images: [
-      "Frame 473587_4139.png",
-      "Frame 17074825803587_4141.png",
-      "Frame 17074825813587_4143.png",
-      "Frame 17074825823587_4145.png",
-    ],
-  },
-  {
-    id: 3,
-    name: "땡큐베리머치",
-    address: "대전 중구 중교로 49",
-    rating: 4.5,
-    reviewCount: 8,
-    bookmarkCount: 12,
-    images: [
-      "Frame 473587_4163.png",
-      "Frame 17074825803587_4165.png",
-      "Frame 17074825813587_4167.png",
-      "Frame 17074825823587_4169.png",
-    ],
-  },
-];
 
 const CircleIcon = ({ size = 18, color = "#dcdee3" }: { size?: number; color?: string }) => (
   <div className="rounded-full" style={{ width: size, height: size, backgroundColor: color }} />
 );
 
-const PageHeader = ({ title }: { title: string }) => {
+const PageHeader = ({
+  title,
+  listEntryFrom,
+}: {
+  title: string;
+  listEntryFrom?: BakeryListEntryFrom;
+}) => {
   const navigate = useNavigate();
+  const handleBack = () => {
+    if (listEntryFrom === "home") {
+      void navigate({ to: "/home" });
+      return;
+    }
+    if (listEntryFrom === "bbangteo") {
+      void navigate({ to: "/bbangteo" });
+      return;
+    }
+    window.history.back();
+  };
+
   return (
     <header className="fixed top-0 left-1/2 z-40 flex h-[56px] w-full max-w-[402px] -translate-x-1/2 items-center justify-between border-b border-[#eeeff1] bg-white px-[20px] md:max-w-[744px]">
       <button
         type="button"
         className="flex h-[36px] w-[36px] items-center justify-center text-[22px]"
-        onClick={() => navigate({ to: "/bbangteo" })}
+        onClick={handleBack}
       >
         <img src={ArrowLeft} alt="뒤로가기" className="h-[24px] w-[24px]" />
       </button>
@@ -129,7 +110,7 @@ const BakeryMeta = ({
   rating,
   reviewCount,
   bookmarkCount,
-}: Pick<Bakery, "rating" | "reviewCount" | "bookmarkCount">) => (
+}: Pick<BakeryRow, "rating" | "reviewCount" | "bookmarkCount">) => (
   <div className="flex h-[18px] items-center gap-[4px]">
     <div className="flex items-center gap-[2px]">
       <img src={ratingStar} alt="별점" className="h-[14px] w-[14px]" />
@@ -146,23 +127,65 @@ const BakeryMeta = ({
   </div>
 );
 
-const BakeryImageRow = ({ images, bakeryName }: { images: string[]; bakeryName: string }) => (
-  <div className="w-full overflow-x-auto">
-    <div className="flex w-max items-center gap-[6px]">
-      {images.map((image, index) => (
-        <div
-          key={`${image}-${index}`}
-          className="flex h-[110px] w-[110px] shrink-0 items-center justify-center rounded-[8px] bg-[#f3f4f5]"
-          aria-label={`${bakeryName} 이미지 ${index + 1}`}
-        >
-          <img src={currationBreadImg} alt="" className="h-[31px] w-[32px] object-contain" />
-        </div>
-      ))}
-    </div>
-  </div>
-);
+const PREVIEW_SLOTS = 4 as const;
 
-const BakeryCard = ({ bakery, onClick }: { bakery: Bakery; onClick?: () => void }) => (
+const BakeryImageRow = ({
+  images,
+  remainingPreviewImageCount,
+  bakeryName,
+}: {
+  images: string[];
+  remainingPreviewImageCount: number;
+  bakeryName: string;
+}) => {
+  const slots: (string | null)[] = Array.from(
+    { length: PREVIEW_SLOTS },
+    (_, i) => images[i] ?? null,
+  );
+  const showMoreOnLast = remainingPreviewImageCount > 0 && slots[PREVIEW_SLOTS - 1] != null;
+
+  return (
+    <div className="grid w-full grid-cols-4 gap-[6px]">
+      {slots.map((url, index) => {
+        const isLast = index === PREVIEW_SLOTS - 1;
+        const showOverlay = isLast && showMoreOnLast;
+        return (
+          <div
+            key={`${bakeryName}-slot-${index}`}
+            className="relative aspect-square w-full overflow-hidden rounded-[8px] bg-[#f3f4f5]"
+            aria-label={
+              showOverlay
+                ? `${bakeryName} 이미지 ${index + 1}, 더보기 ${remainingPreviewImageCount}장`
+                : `${bakeryName} 이미지 ${index + 1}`
+            }
+          >
+            {url ? (
+              <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center">
+                <img
+                  src={currationBreadImg}
+                  alt=""
+                  className="h-[28px] w-[29px] object-contain opacity-60"
+                />
+              </div>
+            )}
+            {showOverlay ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-[2px] bg-black/50 px-1 text-center text-white">
+                <span className="text-[12px] leading-[16px] font-semibold">더보기</span>
+                <span className="text-[11px] leading-[14px] font-medium opacity-95">
+                  +{remainingPreviewImageCount}
+                </span>
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const BakeryCard = ({ bakery, onClick }: { bakery: BakeryRow; onClick?: () => void }) => (
   <article
     className="flex flex-col gap-[12px] border-b border-[#f3f4f5] px-[20px] py-[18px]"
     onClick={onClick}
@@ -187,7 +210,11 @@ const BakeryCard = ({ bakery, onClick }: { bakery: Bakery; onClick?: () => void 
         />
       </div>
     </div>
-    <BakeryImageRow images={bakery.images} bakeryName={bakery.name} />
+    <BakeryImageRow
+      images={bakery.images}
+      remainingPreviewImageCount={bakery.remainingPreviewImageCount}
+      bakeryName={bakery.name}
+    />
   </article>
 );
 
@@ -195,8 +222,8 @@ const BakeryList = ({
   items,
   onItemClick,
 }: {
-  items: Bakery[];
-  onItemClick?: (bakery: Bakery) => void;
+  items: BakeryRow[];
+  onItemClick?: (bakery: BakeryRow) => void;
 }) => (
   <section className="flex flex-col">
     {items.map((bakery) => (
@@ -209,30 +236,139 @@ const BakeryList = ({
   </section>
 );
 
-const BbangteoBakeryListPage = () => {
+function PageNumberNav({
+  currentPage,
+  totalPages,
+  onSelectPage,
+}: {
+  currentPage: number;
+  totalPages: number;
+  onSelectPage: (pageIndex: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+
+  return (
+    <nav
+      className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 border-t border-[#eeeff1] px-[16px] py-[14px] pb-[max(14px,env(safe-area-inset-bottom))]"
+      aria-label="페이지"
+    >
+      {Array.from({ length: totalPages }, (_, i) => {
+        const isActive = i === currentPage;
+        return (
+          <button
+            key={i}
+            type="button"
+            onClick={() => onSelectPage(i)}
+            className={cn(
+              "flex h-[36px] min-w-[36px] items-center justify-center rounded-[10px] px-2 text-[15px] font-semibold transition-colors",
+              isActive
+                ? "bg-[#1a1c20] text-white"
+                : "bg-[#f3f4f5] text-[#1a1c20] hover:bg-[#e8eaed]",
+            )}
+            aria-current={isActive ? "page" : undefined}
+          >
+            {i + 1}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
+type BbangteoBakeryListPageProps = {
+  listEntryFrom?: BakeryListEntryFrom;
+};
+
+const BbangteoBakeryListPage = ({ listEntryFrom }: BbangteoBakeryListPageProps) => {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState("");
-  const filteredBakeries = useMemo(
-    () =>
-      bakeries.filter(
-        (bakery) => bakery.name.includes(keyword.trim()) || bakery.address.includes(keyword.trim()),
-      ),
-    [keyword],
-  );
+  const [page, setPage] = useState(0);
 
-  const handleBakeryClick = (bakery: Bakery) => {
-    if (bakery.name === "성심당 본점") {
-      navigate({ to: "/bbangteo-bakery-detail" });
-    }
+  const handleKeywordChange = (value: string) => {
+    setKeyword(value);
+    setPage(0);
+  };
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [page]);
+
+  const queryKeyword = keyword.trim() || undefined;
+  const { data, loading, error } = useBakeries({
+    page,
+    size: PAGE_SIZE,
+    sort: "RATING",
+    open: false,
+    keyword: queryKeyword,
+  });
+
+  const rows: BakeryRow[] = useMemo(() => {
+    if (!data?.bakeries?.length) return [];
+    return data.bakeries.map((b) => {
+      const previews =
+        b.previewImageUrls != null && b.previewImageUrls.length > 0
+          ? b.previewImageUrls.slice(0, PREVIEW_SLOTS)
+          : b.thumbnailUrl
+            ? [b.thumbnailUrl]
+            : [];
+      const remaining =
+        b.remainingPreviewImageCount != null && Number.isFinite(b.remainingPreviewImageCount)
+          ? Math.max(0, Math.floor(b.remainingPreviewImageCount))
+          : 0;
+      return {
+        id: b.id,
+        name: b.name,
+        address: b.address,
+        rating: b.rating != null ? Number(b.rating) : 0,
+        reviewCount: 0,
+        bookmarkCount: b.likeCount ?? 0,
+        images: previews,
+        remainingPreviewImageCount: remaining,
+      };
+    });
+  }, [data]);
+
+  const total = data?.total ?? 0;
+  const totalPages = total === 0 ? 0 : Math.ceil(total / PAGE_SIZE);
+
+  const handleBakeryClick = (bakery: BakeryRow) => {
+    void navigate({
+      to: "/bbangteo-bakery-detail",
+      search: {
+        bakeryId: bakery.id,
+        from: listEntryFrom,
+        reviewUploaded: undefined,
+        reviewTab: undefined,
+      },
+    });
   };
 
   return (
     <MobileFrame className="bg-white">
       <div className="flex min-h-screen flex-1 flex-col bg-white">
-        <PageHeader title="빵집 리스트" />
+        <PageHeader title="빵집 리스트" listEntryFrom={listEntryFrom} />
         <main className="flex flex-1 flex-col pt-[56px] pb-[56px] sm:pb-[60px]">
-          <SearchFilterSection keyword={keyword} onKeywordChange={setKeyword} />
-          <BakeryList items={filteredBakeries} onItemClick={handleBakeryClick} />
+          <SearchFilterSection keyword={keyword} onKeywordChange={handleKeywordChange} />
+          {loading ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-2 px-[20px] py-[40px] text-[14px] text-[#868b94]">
+              불러오는 중…
+            </div>
+          ) : error ? (
+            <div className="flex flex-1 flex-col items-center justify-center px-[20px] py-[40px] text-center text-[14px] text-[#868b94]">
+              {error.message}
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="flex flex-1 flex-col items-center justify-center px-[20px] py-[40px] text-[14px] text-[#868b94]">
+              빵집이 없습니다.
+            </div>
+          ) : (
+            <>
+              <BakeryList items={rows} onItemClick={handleBakeryClick} />
+              {totalPages > 0 ? (
+                <PageNumberNav currentPage={page} totalPages={totalPages} onSelectPage={setPage} />
+              ) : null}
+            </>
+          )}
         </main>
       </div>
       <BottomNav />

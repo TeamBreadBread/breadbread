@@ -2,11 +2,11 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { getErrorMessage } from "@/api/types/common";
 import {
-  submitUserPreference,
-  type UserPreferenceBakeryPersonality,
-  type UserPreferenceBakeryType,
-  type UserPreferenceBakeryUseType,
-  type UserPreferenceWaitingTolerance,
+  savePreference,
+  type BakeryPersonality,
+  type BakeryType,
+  type BakeryUseType,
+  type WaitingTolerance,
 } from "@/api/user";
 import { AppTopBar, BottomDoubleCTA } from "@/components/common";
 import { PreferenceOptionCard } from "@/components/common/cards";
@@ -15,26 +15,33 @@ import PreferenceQuestionSection from "@/components/domain/ai-course/PreferenceQ
 import MobileFrame from "@/components/layout/MobileFrame";
 import type { PreferenceQuestion } from "@/components/domain/ai-course/types";
 
-const BAKERY_TYPE_MAP: Partial<Record<string, UserPreferenceBakeryType>> = {
+const BAKERY_TYPE_MAP: Partial<Record<string, BakeryType>> = {
   plain: "PLAIN",
   dessert: "DESSERT",
-  premium: "DESSERT",
-  traditional: "PLAIN",
-  trendy: "DESSERT",
+  premium: "GOURMET",
+  traditional: "CLASSIC",
+  trendy: "TRENDY",
 };
 
-const BAKERY_PERSONALITY_MAP: Partial<Record<string, UserPreferenceBakeryPersonality>> = {
-  famous: "HIDDEN_GEM",
+const BAKERY_PERSONALITY_MAP: Partial<Record<string, BakeryPersonality>> = {
+  famous: "LANDMARK",
   local: "HIDDEN_GEM",
-  sns: "HIDDEN_GEM",
+  sns: "HOT_PLACE",
   classic: "HERITAGE",
 };
 
-const BAKERY_USE_TYPE_MAP: Partial<Record<string, UserPreferenceBakeryUseType>> = {
+const BAKERY_USE_TYPE_MAP: Partial<Record<string, BakeryUseType>> = {
   takeout: "TAKEOUT",
   cafe: "CAFE",
-  mood: "CAFE",
-  practical: "TAKEOUT",
+  mood: "MOODY_SPACE",
+  practical: "PRACTICAL",
+};
+
+const WAITING_MAP: Record<string, WaitingTolerance> = {
+  "no-wait": "NO_WAIT",
+  "10-20": "UNDER_20",
+  "30": "UNDER_30",
+  ok: "ANYTIME",
 };
 
 const initialQuestions: PreferenceQuestion[] = [
@@ -145,6 +152,8 @@ export default function BreadPreferencePage() {
       return acc;
     }, []);
 
+  const dedupe = <T extends string>(values: T[]): T[] => [...new Set(values)];
+
   const handleSubmit = async () => {
     if (isSubmitting) return;
     if (!allQuestionsAnswered) {
@@ -152,20 +161,16 @@ export default function BreadPreferencePage() {
       return;
     }
 
-    const bakeryTypes = mapByTable(getSelectedOptionIds("bread-style"), BAKERY_TYPE_MAP);
-    const bakeryPersonalities = mapByTable(
-      getSelectedOptionIds("bakery-type"),
-      BAKERY_PERSONALITY_MAP,
+    const bakeryTypes = dedupe(mapByTable(getSelectedOptionIds("bread-style"), BAKERY_TYPE_MAP));
+    const bakeryPersonalities = dedupe(
+      mapByTable(getSelectedOptionIds("bakery-type"), BAKERY_PERSONALITY_MAP),
     );
-    const bakeryUseTypes = mapByTable(
-      getSelectedOptionIds("store-preference"),
-      BAKERY_USE_TYPE_MAP,
+    const bakeryUseTypes = dedupe(
+      mapByTable(getSelectedOptionIds("store-preference"), BAKERY_USE_TYPE_MAP),
     );
     const waitingSelected = getSelectedOptionIds("waiting");
-
-    // TODO: Swagger에는 waitingTolerance가 UNDER_20만 제공됩니다. 다른 UI 옵션은 명세 확정 후 매핑 필요.
-    const waitingTolerance: UserPreferenceWaitingTolerance | undefined =
-      waitingSelected.length > 0 ? "UNDER_20" : undefined;
+    const waitingId = waitingSelected[0];
+    const waitingTolerance = waitingId !== undefined ? WAITING_MAP[waitingId] : undefined;
 
     if (
       bakeryTypes.length === 0 ||
@@ -186,7 +191,7 @@ export default function BreadPreferencePage() {
 
     try {
       setIsSubmitting(true);
-      await submitUserPreference({
+      await savePreference({
         bakeryTypes,
         bakeryPersonalities,
         bakeryUseTypes,
@@ -195,6 +200,7 @@ export default function BreadPreferencePage() {
       navigate({ to: "/home" });
     } catch (error) {
       window.alert(getErrorMessage(error));
+      navigate({ to: "/home" });
     } finally {
       setIsSubmitting(false);
     }
