@@ -20,6 +20,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
 import java.util.Random;
 import java.util.UUID;
 
@@ -41,7 +42,8 @@ public class AuthService {
 
     @Transactional
     public void signup(SignupRequest signupRequest) {
-        if(userRepository.findByLoginId(signupRequest.getLoginId()).isPresent()) {
+        String loginId = normalizeLoginId(signupRequest.getLoginId());
+        if (userRepository.existsByLoginIdIgnoreCase(loginId)) {
             throw new CustomException(ErrorCode.DUPLICATE_LOGIN_ID);
         }
         if(!signupRequest.getPassword().equals(signupRequest.getPasswordConfirm())) {
@@ -59,7 +61,7 @@ public class AuthService {
         }
         String encodedPassword = passwordEncoder.encode(signupRequest.getPassword());
         User user = User.builder()
-                .loginId(signupRequest.getLoginId())
+                .loginId(loginId)
                 .password(encodedPassword)
                 .name(signupRequest.getName())
                 .nickname(generateUniqueNickname())
@@ -71,12 +73,13 @@ public class AuthService {
                 .build();
         userRepository.save(user);
 		phoneVerificationRedisService.deleteByVerificationToken(signupRequest.getVerificationToken());
-		log.info("회원가입 완료 loginId={}", signupRequest.getLoginId());
+		log.info("회원가입 완료 loginId={}", loginId);
     }
 
     @Transactional
     public TokenResponse login(LoginRequest loginRequest) {
-        User user = userRepository.findByLoginId(loginRequest.getLoginId()).orElseThrow(
+        String loginId = normalizeLoginId(loginRequest.getLoginId());
+        User user = userRepository.findByLoginIdIgnoreCase(loginId).orElseThrow(
                 () -> new CustomException(ErrorCode.INVALID_LOGIN_ID)
         );
         authenticationManager.authenticate(
@@ -99,7 +102,11 @@ public class AuthService {
     }
 
     public CheckIdResponse checkId(String loginId) {
-        boolean available = !userRepository.existsByLoginId(loginId);
+        String normalized = normalizeLoginId(loginId);
+        if (normalized.isEmpty()) {
+            return CheckIdResponse.builder().available(false).build();
+        }
+        boolean available = !userRepository.existsByLoginIdIgnoreCase(normalized);
         return CheckIdResponse.builder().available(available).build();
     }
 
@@ -126,7 +133,7 @@ public class AuthService {
 			findPwRequest.getVerificationToken(),
 			VerificationPurpose.FIND_PW
 		);
-        User user = userRepository.findByLoginId(findPwRequest.getLoginId())
+        User user = userRepository.findByLoginIdIgnoreCase(normalizeLoginId(findPwRequest.getLoginId()))
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         if(!user.getName().equals(findPwRequest.getName()) || !user.getPhone().equals(verification.getPhone())) {
             throw new CustomException(ErrorCode.USER_INFO_MISMATCH);
@@ -217,5 +224,12 @@ public class AuthService {
 
     private String maskPhone(String phone) {
         return phone.substring(0, 3) + "****" + phone.substring(7);
+    }
+
+    private static String normalizeLoginId(String loginId) {
+        if (loginId == null) {
+            return "";
+        }
+        return loginId.trim().toLowerCase(Locale.ROOT);
     }
 }

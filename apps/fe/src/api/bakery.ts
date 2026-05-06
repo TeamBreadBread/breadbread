@@ -4,7 +4,11 @@ import type {
   BakeryDetail,
   BakeryForAI,
   BakeryListResponse,
+  BakeryReviewListResponse,
+  BakeryReviewWritePayload,
   GetBakeriesParams,
+  GetBakeryReviewsParams,
+  UpdateBakeryReviewPayload,
 } from "@/api/types/bakery";
 
 export type {
@@ -16,10 +20,18 @@ export type {
   BakeryListResponse,
   BakerySortType,
   GetBakeriesParams,
+  BakeryReview,
+  BakeryReviewListResponse,
+  GetBakeryReviewsParams,
+  BakeryReviewWritePayload,
+  UpdateBakeryReviewPayload,
 } from "@/api/types/bakery";
 
 /** 공개 목록/상세는 `/bakeries` — `/api/bakeries` 는 게이트웨이에서 401 처리됨 */
 const PATH = "/bakeries";
+
+/** Swagger `GET /bakeries/{bakeryId}/reviews` 기본 `size` */
+export const BAKERY_REVIEWS_DEFAULT_SIZE = 10;
 
 /** Swagger `CreateBakeryRequest` 등 — 필요 시 세부 타입 분리 가능 */
 export type CreateBakeryPayload = Record<string, unknown>;
@@ -55,6 +67,18 @@ export async function getBakeries(params: GetBakeriesParams = {}): Promise<Baker
 export async function getBakeryById(id: number): Promise<BakeryDetail> {
   const { data } = await apiClient.get<ApiEnvelope<BakeryDetail>>(`${PATH}/${id}`);
   return extractData(data);
+}
+
+/** Swagger `POST /bakeries/{id}/likes` — 이미 좋아요 시 409 */
+export async function likeBakery(bakeryId: number): Promise<void> {
+  const { data } = await apiClient.post<ApiEnvelope<void>>(`${PATH}/${bakeryId}/likes`);
+  extractData(data);
+}
+
+/** Swagger `DELETE /bakeries/{id}/likes` — 좋아요 없음 시 400 */
+export async function unlikeBakery(bakeryId: number): Promise<void> {
+  const { data } = await apiClient.delete<ApiEnvelope<void>>(`${PATH}/${bakeryId}/likes`);
+  extractData(data);
 }
 
 export async function getBakeriesForAI(): Promise<BakeryForAI[]> {
@@ -100,6 +124,57 @@ export async function updateBakeryBread(
 export async function deleteBakeryBread(bakeryId: number, breadId: number): Promise<void> {
   const { data } = await apiClient.delete<ApiEnvelope<void>>(
     `${PATH}/${bakeryId}/breads/${breadId}`,
+  );
+  extractData(data);
+}
+
+function buildReviewsQuery(params: GetBakeryReviewsParams = {}): string {
+  const q = new URLSearchParams();
+  q.set("sort", params.sort ?? "LATEST");
+  q.set("page", String(params.page ?? 0));
+  q.set("size", String(params.size ?? BAKERY_REVIEWS_DEFAULT_SIZE));
+  const s = q.toString();
+  return s ? `?${s}` : "";
+}
+
+/** Swagger `GET /bakeries/{bakeryId}/reviews` — `sort`·`page`·`size` 쿼리 */
+export async function getBakeryReviews(
+  bakeryId: number,
+  params?: GetBakeryReviewsParams,
+): Promise<BakeryReviewListResponse> {
+  const { data } = await apiClient.get<ApiEnvelope<BakeryReviewListResponse>>(
+    `${PATH}/${bakeryId}/reviews${buildReviewsQuery(params)}`,
+  );
+  return extractData(data);
+}
+
+/** Swagger `POST /bakeries/{bakeryId}/reviews` — 응답 201, `data`는 생성된 리뷰 id */
+export async function createBakeryReview(
+  bakeryId: number,
+  payload: BakeryReviewWritePayload,
+): Promise<number> {
+  const { data } = await apiClient.post<ApiEnvelope<number>>(
+    `${PATH}/${bakeryId}/reviews`,
+    payload,
+  );
+  return extractData(data);
+}
+
+export async function updateBakeryReview(
+  bakeryId: number,
+  reviewId: number,
+  payload: UpdateBakeryReviewPayload,
+): Promise<void> {
+  const { data } = await apiClient.patch<ApiEnvelope<void>>(
+    `${PATH}/${bakeryId}/reviews/${reviewId}`,
+    payload,
+  );
+  extractData(data);
+}
+
+export async function deleteBakeryReview(bakeryId: number, reviewId: number): Promise<void> {
+  const { data } = await apiClient.delete<ApiEnvelope<void>>(
+    `${PATH}/${bakeryId}/reviews/${reviewId}`,
   );
   extractData(data);
 }

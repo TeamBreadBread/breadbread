@@ -18,12 +18,15 @@ function parseBakeryId(value: unknown): number | undefined {
 export const Route = createFileRoute("/bbangteo-bakery-review-write")({
   validateSearch: (search: Record<string, unknown>) => ({
     bakeryId: parseBakeryId(search.bakeryId),
+    reviewId: parseBakeryId(search.reviewId),
     from: parseBakeryListEntryFrom(search.from),
   }),
   component: BbangteoBakeryReviewWriteRoute,
 });
 
 function BbangteoBakeryReviewWriteRoute() {
-  const { bakeryId, from } = Route.useSearch();
-  return <BbangteoBakeryReviewWritePage bakeryId={bakeryId} listEntryFrom={from} />;
+  const { bakeryId, reviewId, from } = Route.useSearch();
+  return (
+    <BbangteoBakeryReviewWritePage bakeryId={bakeryId} reviewId={reviewId} listEntryFrom={from} />
+  );
 }

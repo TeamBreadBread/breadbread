@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { AppTopBar, Button } from "@/components/common";
 import MobileFrame from "@/components/layout/MobileFrame";
+import { startKakaoLogin } from "@/lib/kakaoOAuth";
 import { cn } from "@/utils/cn";
 
 const SOCIAL_BUTTONS = [
@@ -48,7 +49,11 @@ export default function LoginEntryPage() {
       navigate({ to: "/login" });
       return;
     }
-    // TODO: 소셜 로그인 연동
+    if (provider === "kakao") {
+      void startKakaoLogin();
+      return;
+    }
+    window.alert("네이버·구글 로그인은 준비 중입니다. 키 설정 후 연결할 예정입니다.");
   };
 
   return (

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { checkId, signup, type UserRole } from "@/api/auth";
+import { getErrorMessage } from "@/api/types/common";
 import { ActionField, AppTopBar, BottomCTA, TextField } from "@/components/common";
 import {
   PhoneVerificationSection,
@@ -8,6 +10,7 @@ import {
   UserTypeSection,
 } from "@/components/domain/auth";
 import MobileFrame from "@/components/layout/MobileFrame";
+import { saveUserProfile } from "@/lib/userProfileCache";
 import { cn } from "@/utils/cn";
 
 export default function SignupPage() {
@@ -15,10 +18,15 @@ export default function SignupPage() {
   const [name, setName] = useState("");
   const [userId, setUserId] = useState("");
   const [isUserIdDupChecked, setIsUserIdDupChecked] = useState(false);
+  const [isDuplicateLoginId, setIsDuplicateLoginId] = useState(false);
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [phoneVerificationToken, setPhoneVerificationToken] = useState<string | null>(null);
+  const [phoneDigits, setPhoneDigits] = useState("");
+  const [role, setRole] = useState<UserRole>("ROLE_USER");
   const [isAllAgreed, setIsAllAgreed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const removeKorean = (value: string) => value.replace(/[ㄱ-ㅎㅏ-ㅣ가-힣]/g, "");
 
@@ -30,6 +38,7 @@ export default function SignupPage() {
 
     setUserId(sanitized);
     setIsUserIdDupChecked(false);
+    setIsDuplicateLoginId(false);
   };
 
   const handlePasswordChange = (value: string) => {
@@ -54,9 +63,11 @@ export default function SignupPage() {
 
   const userIdHelperText = isUserIdFilled
     ? isUserIdValid
-      ? isUserIdDupChecked
-        ? "사용할 수 있는 아이디입니다."
-        : "아이디 중복확인을 해주세요."
+      ? isDuplicateLoginId
+        ? "아이디 중복입니다."
+        : isUserIdDupChecked
+          ? "사용할 수 있는 아이디입니다."
+          : "아이디 중복확인을 해주세요."
       : "아이디를 5자 이상 입력해주세요."
     : "5~20자의 영문 소문자, 숫자와 특수기호(_),(-)만 사용 가능합니다.";
 
@@ -113,6 +124,8 @@ export default function SignupPage() {
   );
 
   const isNameValid = name.trim().length > 0;
+  const isPhoneReady = /^010\d{8}$/.test(phoneDigits);
+
   const canSubmit =
     isNameValid &&
     isUserIdValid &&
@@ -120,19 +133,44 @@ export default function SignupPage() {
     isPasswordValid &&
     isEmailValid &&
     isPhoneVerified &&
+    isPhoneReady &&
+    phoneVerificationToken !== null &&
     isAllAgreed;
 
   const handleSubmit = () => {
-    if (!canSubmit) return;
+    if (!canSubmit || !phoneVerificationToken) return;
 
-    navigate({ to: "/signup-result" });
-
-    // Fallback for cases where router transition is delayed or blocked in dev.
-    requestAnimationFrame(() => {
-      if (window.location.pathname !== "/signup-result") {
-        window.location.assign("/signup-result");
+    void (async () => {
+      setIsSubmitting(true);
+      try {
+        await signup({
+          loginId: userId.trim(),
+          password,
+          passwordConfirm: password,
+          name: name.trim(),
+          email: email.trim(),
+          phone: phoneDigits,
+          role,
+          termsAgreed: true,
+          privacyAgreed: true,
+          verificationToken: phoneVerificationToken,
+        });
+        saveUserProfile({
+          loginId: userId.trim(),
+          name: name.trim(),
+          email: email.trim(),
+          phone: phoneDigits,
+        });
+        await navigate({
+          to: "/signup-result",
+          search: { name: name.trim() },
+        });
+      } catch (e) {
+        alert(getErrorMessage(e));
+      } finally {
+        setIsSubmitting(false);
       }
-    });
+    })();
   };
 
   return (
@@ -155,9 +193,17 @@ export default function SignupPage() {
             value={userId}
             onChange={handleUserIdChange}
             onActionClick={() => {
-              if (isUserIdValid) {
-                setIsUserIdDupChecked(true);
-              }
+              void (async () => {
+                if (!isUserIdValid) return;
+                try {
+                  const { available } = await checkId(userId.trim());
+                  setIsUserIdDupChecked(available);
+                  setIsDuplicateLoginId(!available);
+                } catch (e) {
+                  setIsDuplicateLoginId(false);
+                  alert(getErrorMessage(e));
+                }
+              })();
             }}
             containerClassName={userIdContainerClassName}
             inputClassName={userIdInputClassName}
@@ -192,12 +238,21 @@ export default function SignupPage() {
           />
         </SignupSection>
 
-        <UserTypeSection />
-        <PhoneVerificationSection onVerificationChange={setIsPhoneVerified} />
+        <UserTypeSection value={role} onChange={setRole} />
+        <PhoneVerificationSection
+          purpose="SIGNUP"
+          onVerificationChange={setIsPhoneVerified}
+          onVerificationTokenChange={setPhoneVerificationToken}
+          onPhoneDigitsChange={setPhoneDigits}
+        />
         <TermsAgreementSection onAllCheckedChange={setIsAllAgreed} />
       </main>
 
-      <BottomCTA text="가입하기" disabled={!canSubmit} onClick={handleSubmit} />
+      <BottomCTA
+        text={isSubmitting ? "가입 처리 중…" : "가입하기"}
+        disabled={!canSubmit || isSubmitting}
+        onClick={handleSubmit}
+      />
     </MobileFrame>
   );
 }

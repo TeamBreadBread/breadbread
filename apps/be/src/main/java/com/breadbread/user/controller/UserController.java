@@ -2,7 +2,10 @@ package com.breadbread.user.controller;
 
 import com.breadbread.auth.dto.CustomUserDetails;
 import com.breadbread.global.dto.ApiResponse;
+import com.breadbread.global.exception.CustomException;
+import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.dto.CreatePreferenceRequest;
+import com.breadbread.user.dto.MyProfileResponse;
 import com.breadbread.user.dto.UpdatePreferenceRequest;
 import com.breadbread.user.dto.PreferenceResponse;
 import com.breadbread.user.service.UserService;
@@ -20,6 +23,16 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
+
+    @Operation(summary = "내 프로필 조회")
+    @GetMapping("/me")
+    public ApiResponse<MyProfileResponse> getMyProfile(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED);
+        }
+        return ApiResponse.ok(userService.getMyProfile(userDetails.getId()));
+    }
 
     @Operation(summary = "선호도 조사 등록")
     @ResponseStatus(HttpStatus.CREATED)

@@ -3,6 +3,13 @@ import type { ApiEnvelope } from "@/api/types/common";
 
 const PATH = "/api/users";
 
+export type MyProfileResponse = {
+  loginId: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+};
+
 /** `BakeryType` 나열값 — Swagger 참고 */
 export type BakeryType = "CLASSIC" | "DESSERT" | "K_DESSERT" | "GOURMET" | "TRENDY" | "PLAIN";
 
@@ -47,4 +54,9 @@ export async function savePreference(body: SavePreferenceRequest): Promise<void>
 export async function submitUserPreference(payload: UserPreferenceRequest): Promise<void> {
   const { data } = await apiClient.post<ApiEnvelope<void>>(`${PATH}/preference`, payload);
   extractData(data);
+}
+
+export async function getMyProfile(): Promise<MyProfileResponse> {
+  const { data } = await apiClient.get<ApiEnvelope<MyProfileResponse>>(`${PATH}/me`);
+  return extractData(data);
 }

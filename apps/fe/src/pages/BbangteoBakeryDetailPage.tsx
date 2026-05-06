@@ -1,5 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import axios from "axios";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import {
+  BAKERY_REVIEWS_DEFAULT_SIZE,
+  deleteBakeryReview,
+  getBakeryReviews,
+  likeBakery,
+  unlikeBakery,
+} from "@/api/bakery";
+import type { BakeryReview } from "@/api/types/bakery";
+import { getErrorMessage } from "@/api/types/common";
 import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import mapIcon from "@/assets/icons/mapIcon.svg";
 import ratingStar from "@/assets/icons/ratingStar.svg";
@@ -20,18 +30,22 @@ type MenuRow = {
   soldOut?: boolean;
 };
 
-type ReviewRow = {
-  id: number;
-  nickname: string;
-  rating: number;
-  date: string;
-  time: string;
-  content: string;
-  images: string[];
-};
-
 const MAX_PREVIEW_IMAGES = 4;
 const MAX_REVIEW_PREVIEWS = 4;
+
+function formatReviewDateTime(iso: string): { date: string; time: string } {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return { date: "-", time: "" };
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return {
+    date: `${y}.${m}.${day}`,
+    time: `${hh}:${mm}`,
+  };
+}
 
 function formatClock(value: string | null | undefined): string | null {
   if (value == null || value === "") return null;
@@ -56,23 +70,25 @@ function breadsToMenus(breads: BakeryDetailBread[], bakeryName?: string): MenuRo
   }));
 }
 
-const fallbackReviewImages = [currationBreadImg, soboroImg, currationBreadImg, soboroImg];
-
-function buildMockReviews(): ReviewRow[] {
-  return Array.from({ length: 3 }).map((_, idx) => ({
-    id: idx + 1,
-    nickname: "바삭바삭한 휘낭시에",
-    rating: 4.3,
-    date: "2026.04.29",
-    time: "15:24",
-    content:
-      "매장 들어서자마자 빵 냄새에 행복해짐..ㅠㅠ 본점이라 그런지 분위기도 좋고 빵 고르는 재미가 쏠쏠해요. 대전 여행 중 가장 만족스러웠던 곳!",
-    images: fallbackReviewImages,
-  }));
-}
-
 const CircleIcon = ({ size = 18, color = "#dcdee3" }: { size?: number; color?: string }) => (
   <div className="rounded-full" style={{ width: size, height: size, backgroundColor: color }} />
+);
+
+const HeartIcon = ({ filled }: { filled: boolean }) => (
+  <svg
+    width="28"
+    height="28"
+    viewBox="0 0 24 24"
+    aria-hidden
+    className={filled ? "text-red-500" : "text-[#b0b3ba]"}
+    fill={filled ? "currentColor" : "none"}
+    stroke="currentColor"
+    strokeWidth="1.75"
+    strokeLinejoin="round"
+    strokeLinecap="round"
+  >
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  </svg>
 );
 
 const BackHeader = ({ listEntryFrom }: { listEntryFrom?: BakeryListEntryFrom }) => {
@@ -141,13 +157,31 @@ const BakeryTitleInfo = ({
   name,
   rating,
   likeCount,
+  liked,
+  onToggleLike,
+  likeBusy,
 }: {
   name: string;
   rating: number;
   likeCount: number;
+  liked: boolean;
+  onToggleLike: () => void;
+  likeBusy: boolean;
 }) => (
   <div className="flex flex-col gap-[10px]">
-    <h1 className="text-[22px] leading-[30px] font-bold text-[#1a1c20]">{name}</h1>
+    <div className="flex items-start justify-between gap-[12px]">
+      <h1 className="flex-1 text-[22px] leading-[30px] font-bold text-[#1a1c20]">{name}</h1>
+      <button
+        type="button"
+        aria-label={liked ? "좋아요 취소" : "좋아요"}
+        aria-pressed={liked}
+        disabled={likeBusy}
+        onClick={onToggleLike}
+        className="shrink-0 rounded-full p-[4px] disabled:opacity-45"
+      >
+        <HeartIcon filled={liked} />
+      </button>
+    </div>
     <div className="flex items-center gap-[4px] text-[14px] leading-[19px] font-medium text-[#868b94]">
       <div className="flex items-center gap-[2px]">
         <span>{rating}</span>
@@ -191,9 +225,20 @@ const BakeryInfoList = ({
   </div>
 );
 
-const BakeryHero = ({ detail }: { detail: BakeryDetail }) => {
+const BakeryHero = ({
+  detail,
+  liked,
+  likeCount,
+  onToggleLike,
+  likeBusy,
+}: {
+  detail: BakeryDetail;
+  liked: boolean;
+  likeCount: number;
+  onToggleLike: () => void;
+  likeBusy: boolean;
+}) => {
   const rating = detail.rating != null ? Number(detail.rating) : 0;
-  const likeCount = detail.likeCount ?? 0;
   const phoneLabel = detail.phone?.trim() ? detail.phone : "등록된 전화번호가 없습니다";
   const images = detail.imageUrls ?? [];
 
@@ -201,7 +246,14 @@ const BakeryHero = ({ detail }: { detail: BakeryDetail }) => {
     <section className="flex flex-col">
       <BakeryImageGallery imageUrls={images} bakeryName={detail.name} />
       <div className="flex flex-col gap-[16px] px-[20px] py-[16px]">
-        <BakeryTitleInfo name={detail.name} rating={rating} likeCount={likeCount} />
+        <BakeryTitleInfo
+          name={detail.name}
+          rating={rating}
+          likeCount={likeCount}
+          liked={liked}
+          onToggleLike={onToggleLike}
+          likeBusy={likeBusy}
+        />
         <BakeryInfoList
           address={detail.address}
           hoursLabel={buildHoursLabel(detail)}
@@ -313,65 +365,153 @@ const MenuList = ({ menus }: { menus: MenuRow[] }) => (
   </div>
 );
 
-const ReviewCard = ({ review }: { review: ReviewRow }) => (
-  <article className="flex flex-col gap-[14px]">
-    <div className="flex items-start gap-[10px]">
-      <div className="h-[40px] w-[40px] shrink-0 rounded-full border border-[#eeeff1] bg-[#f7f8f9]" />
-      <div className="flex flex-1 flex-col gap-[10px]">
-        <div className="flex items-start justify-between gap-[10px]">
-          <div className="flex flex-col gap-[4px]">
-            <p className="text-[13px] leading-[18px] font-bold text-[#1a1c20]">{review.nickname}</p>
-            <div className="flex items-center gap-[6px] text-[12px] leading-[16px] text-[#868b94]">
-              <div className="flex items-center gap-[2px]">
-                <span>{review.rating}</span>
+const ReviewCard = ({
+  review,
+  onEdit,
+  onDelete,
+}: {
+  review: BakeryReview;
+  onEdit: () => void;
+  onDelete: () => void;
+}) => {
+  const { date, time } = formatReviewDateTime(review.createdAt);
+  const imgs = (review.imageUrls ?? []).slice(0, MAX_REVIEW_PREVIEWS);
+
+  return (
+    <article className="flex flex-col gap-[14px]">
+      <div className="flex items-start gap-[10px]">
+        <div className="h-[40px] w-[40px] shrink-0 rounded-full border border-[#eeeff1] bg-[#f7f8f9]" />
+        <div className="flex flex-1 flex-col gap-[10px]">
+          <div className="flex items-start justify-between gap-[10px]">
+            <div className="flex flex-col gap-[4px]">
+              <p className="text-[13px] leading-[18px] font-bold text-[#1a1c20]">
+                {review.authorNickname}
+              </p>
+              <div className="flex items-center gap-[6px] text-[12px] leading-[16px] text-[#868b94]">
                 <div className="flex items-center gap-[2px]">
-                  {Array.from({ length: 5 }).map((_, idx) => (
-                    <img key={idx} src={ratingStar} alt="별점" className="h-[12px] w-[12px]" />
-                  ))}
+                  <span>{review.rating}</span>
+                  <div className="flex items-center gap-[2px]">
+                    {Array.from({ length: 5 }).map((_, idx) => (
+                      <img
+                        key={idx}
+                        src={ratingStar}
+                        alt=""
+                        className={`h-[12px] w-[12px] ${
+                          idx < review.rating ? "opacity-100" : "opacity-25"
+                        }`}
+                      />
+                    ))}
+                  </div>
                 </div>
+                <span>{date}</span>
+                <span>{time}</span>
               </div>
-              <span>{review.date}</span>
-              <span>{review.time}</span>
+            </div>
+            <div className="flex shrink-0 gap-[10px]">
+              <button
+                type="button"
+                className="text-[12px] font-medium text-[#555d6d] underline underline-offset-2"
+                onClick={onEdit}
+              >
+                수정
+              </button>
+              <button
+                type="button"
+                className="text-[12px] font-medium text-red-600 underline underline-offset-2"
+                onClick={onDelete}
+              >
+                삭제
+              </button>
             </div>
           </div>
-          <CircleIcon size={24} />
+          <p className="text-[14px] leading-[19px] text-[#1a1c20]">{review.content}</p>
         </div>
-        <p className="text-[14px] leading-[19px] text-[#1a1c20]">{review.content}</p>
       </div>
-    </div>
-    <div className="flex h-[110px] items-center gap-[6px]">
-      {review.images.slice(0, MAX_REVIEW_PREVIEWS).map((_, index) => (
-        <div
-          key={`${review.id}-${index}`}
-          className="flex h-[110px] w-[110px] items-center justify-center rounded-[8px] bg-gray-100"
-        >
-          <img
-            src={currationBreadImg}
-            alt={`후기 미리보기 ${index + 1}`}
-            className="h-[31px] w-[32px]"
-          />
+      {imgs.length > 0 ? (
+        <div className="flex h-[110px] items-center gap-[6px]">
+          {imgs.map((url, index) => (
+            <div
+              key={`${review.id}-img-${index}`}
+              className="flex h-[110px] w-[110px] shrink-0 overflow-hidden rounded-[8px] bg-gray-100"
+            >
+              <img src={url} alt="" className="h-full w-full object-cover" />
+            </div>
+          ))}
         </div>
-      ))}
-    </div>
-  </article>
-);
+      ) : null}
+    </article>
+  );
+};
 
-const ReviewList = ({ reviews }: { reviews: ReviewRow[] }) => (
+const ReviewList = ({
+  reviews,
+  totalCount,
+  loading,
+  error,
+  onRetry,
+  onEditReview,
+  onDeleteReview,
+  hasNext,
+  loadingMore,
+  onLoadMore,
+}: {
+  reviews: BakeryReview[];
+  /** Swagger `ReviewListResponse.total` */
+  totalCount: number;
+  loading: boolean;
+  error: string | null;
+  onRetry: () => void;
+  onEditReview: (review: BakeryReview) => void;
+  onDeleteReview: (review: BakeryReview) => void;
+  hasNext: boolean;
+  loadingMore: boolean;
+  onLoadMore: () => void;
+}) => (
   <section className="flex flex-col gap-[24px] bg-white px-[20px] py-[24px]">
     <div className="flex items-center gap-[10px]">
       <h2 className="text-[20px] leading-[27px] font-bold text-[#1a1c20]">후기</h2>
       <span className="text-[20px] leading-[27px] font-medium text-[#868b94]">
-        {reviews.length.toLocaleString("ko-KR")}
+        {totalCount.toLocaleString("ko-KR")}
       </span>
     </div>
+    {loading ? <p className="py-[8px] text-[14px] text-[#868b94]">후기를 불러오는 중…</p> : null}
+    {error ? (
+      <div className="flex flex-col gap-[10px] py-[8px]">
+        <p className="text-[14px] text-red-600">{error}</p>
+        <button
+          type="button"
+          className="self-start text-[14px] font-semibold text-[#555d6d] underline"
+          onClick={onRetry}
+        >
+          다시 시도
+        </button>
+      </div>
+    ) : null}
+    {!loading && !error && reviews.length === 0 ? (
+      <p className="py-[8px] text-[14px] text-[#868b94]">아직 등록된 후기가 없습니다.</p>
+    ) : null}
     <div className="flex flex-col gap-[20px]">
       {reviews.map((review, index) => (
         <div key={review.id} className="flex flex-col gap-[20px]">
-          <ReviewCard review={review} />
+          <ReviewCard
+            review={review}
+            onEdit={() => onEditReview(review)}
+            onDelete={() => onDeleteReview(review)}
+          />
           {index < reviews.length - 1 ? <div className="h-[1px] bg-[#eeeff1]" /> : null}
         </div>
       ))}
     </div>
+    {hasNext ? (
+      <button
+        type="button"
+        className="mx-auto mt-[8px] rounded-[10px] border border-[#dcdee3] px-[20px] py-[12px] text-[14px] font-semibold text-[#1a1c20] disabled:opacity-50"
+        disabled={loadingMore}
+        onClick={() => onLoadMore()}
+      >
+        {loadingMore ? "불러오는 중…" : "후기 더 보기"}
+      </button>
+    ) : null}
   </section>
 );
 
@@ -387,8 +527,89 @@ const BakeryTabSection = ({
   listEntryFrom?: BakeryListEntryFrom;
 }) => {
   const [activeTab, setActiveTab] = useState<"메뉴" | "후기">(showReviewTab ? "후기" : "메뉴");
-  const reviews = useMemo(() => buildMockReviews(), []);
+  const [reviews, setReviews] = useState<BakeryReview[]>([]);
+  const [reviewTotal, setReviewTotal] = useState(0);
+  const [reviewPage, setReviewPage] = useState(0);
+  const [hasNextReviews, setHasNextReviews] = useState(false);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsLoadingMore, setReviewsLoadingMore] = useState(false);
+  const [reviewsError, setReviewsError] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  const loadReviewsFirstPage = useCallback(async () => {
+    if (bakeryId === undefined) return;
+    setReviewsLoading(true);
+    setReviewsLoadingMore(false);
+    setReviewsError(null);
+    try {
+      const res = await getBakeryReviews(bakeryId, {
+        sort: "LATEST",
+        page: 0,
+        size: BAKERY_REVIEWS_DEFAULT_SIZE,
+      });
+      setReviews(res.reviews);
+      setReviewTotal(res.total);
+      setReviewPage(0);
+      setHasNextReviews(res.hasNext);
+    } catch (e) {
+      setReviewsError(getErrorMessage(e));
+    } finally {
+      setReviewsLoading(false);
+    }
+  }, [bakeryId]);
+
+  const loadReviewsNextPage = useCallback(async () => {
+    if (bakeryId === undefined || !hasNextReviews || reviewsLoadingMore || reviewsLoading) return;
+    const nextPage = reviewPage + 1;
+    setReviewsLoadingMore(true);
+    setReviewsError(null);
+    try {
+      const res = await getBakeryReviews(bakeryId, {
+        sort: "LATEST",
+        page: nextPage,
+        size: BAKERY_REVIEWS_DEFAULT_SIZE,
+      });
+      setReviews((prev) => [...prev, ...res.reviews]);
+      setReviewPage(nextPage);
+      setHasNextReviews(res.hasNext);
+    } catch (e) {
+      setReviewsError(getErrorMessage(e));
+    } finally {
+      setReviewsLoadingMore(false);
+    }
+  }, [bakeryId, hasNextReviews, reviewPage, reviewsLoading, reviewsLoadingMore]);
+
+  useEffect(() => {
+    if (activeTab === "후기" && bakeryId !== undefined) {
+      void loadReviewsFirstPage();
+    }
+  }, [activeTab, bakeryId, loadReviewsFirstPage]);
+
+  const handleDeleteReview = useCallback(
+    (review: BakeryReview) => {
+      if (bakeryId === undefined) return;
+      if (!window.confirm("이 후기를 삭제할까요?")) return;
+      void (async () => {
+        try {
+          await deleteBakeryReview(bakeryId, review.id);
+          await loadReviewsFirstPage();
+        } catch (e) {
+          alert(getErrorMessage(e));
+        }
+      })();
+    },
+    [bakeryId, loadReviewsFirstPage],
+  );
+
+  const handleEditReview = useCallback(
+    (review: BakeryReview) => {
+      void navigate({
+        to: "/bbangteo-bakery-review-write",
+        search: { bakeryId, from: listEntryFrom, reviewId: review.id },
+      });
+    },
+    [bakeryId, listEntryFrom, navigate],
+  );
 
   return (
     <section className="flex flex-col">
@@ -404,7 +625,7 @@ const BakeryTabSection = ({
               onClick={() =>
                 void navigate({
                   to: "/bbangteo-bakery-review-write",
-                  search: { bakeryId, from: listEntryFrom },
+                  search: { bakeryId, from: listEntryFrom, reviewId: undefined },
                 })
               }
             >
@@ -415,7 +636,18 @@ const BakeryTabSection = ({
               <CircleIcon size={24} />
             </button>
           </div>
-          <ReviewList reviews={reviews} />
+          <ReviewList
+            reviews={reviews}
+            totalCount={reviewTotal}
+            loading={reviewsLoading}
+            error={reviewsError}
+            onRetry={loadReviewsFirstPage}
+            onEditReview={handleEditReview}
+            onDeleteReview={handleDeleteReview}
+            hasNext={hasNextReviews}
+            loadingMore={reviewsLoadingMore}
+            onLoadMore={loadReviewsNextPage}
+          />
         </>
       )}
     </section>
@@ -460,6 +692,45 @@ const BbangteoBakeryDetailPage = ({
   const navigate = useNavigate();
   const { data, loading, error } = useBakeryDetail(bakeryId);
   const [isToastClosed, setIsToastClosed] = useState(false);
+  const [likeState, setLikeState] = useState<{ liked: boolean; count: number } | null>(null);
+  const [likeBusy, setLikeBusy] = useState(false);
+
+  useEffect(() => {
+    if (data) {
+      setLikeState({ liked: Boolean(data.liked), count: data.likeCount ?? 0 });
+    } else {
+      setLikeState(null);
+    }
+  }, [data]);
+
+  const handleToggleLike = useCallback(async () => {
+    if (bakeryId === undefined || likeBusy || likeState === null) return;
+    setLikeBusy(true);
+    try {
+      if (likeState.liked) {
+        await unlikeBakery(bakeryId);
+        setLikeState((s) => (s ? { liked: false, count: Math.max(0, s.count - 1) } : s));
+      } else {
+        await likeBakery(bakeryId);
+        setLikeState((s) => (s ? { liked: true, count: s.count + 1 } : s));
+      }
+    } catch (e) {
+      if (axios.isAxiosError(e)) {
+        const st = e.response?.status;
+        if (st === 409 && !likeState.liked) {
+          setLikeState((s) => (s ? { liked: true, count: s.count } : s));
+          return;
+        }
+        if (st === 400 && likeState.liked) {
+          setLikeState((s) => (s ? { liked: false, count: s.count } : s));
+          return;
+        }
+      }
+      alert(getErrorMessage(e));
+    } finally {
+      setLikeBusy(false);
+    }
+  }, [bakeryId, likeBusy, likeState]);
 
   useEffect(() => {
     if (!reviewUploaded || isToastClosed) return;
@@ -508,7 +779,13 @@ const BbangteoBakeryDetailPage = ({
             </div>
           ) : data ? (
             <>
-              <BakeryHero detail={data} />
+              <BakeryHero
+                detail={data}
+                liked={likeState?.liked ?? Boolean(data.liked)}
+                likeCount={likeState?.count ?? data.likeCount ?? 0}
+                onToggleLike={() => void handleToggleLike()}
+                likeBusy={likeBusy}
+              />
               <BakeryTabSection
                 menus={breadsToMenus(data.breads ?? [], data.name)}
                 showReviewTab={reviewUploaded}

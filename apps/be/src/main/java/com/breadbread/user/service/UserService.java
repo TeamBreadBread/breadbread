@@ -3,6 +3,7 @@ package com.breadbread.user.service;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.dto.CreatePreferenceRequest;
+import com.breadbread.user.dto.MyProfileResponse;
 import com.breadbread.user.dto.UpdatePreferenceRequest;
 import com.breadbread.user.dto.PreferenceResponse;
 import com.breadbread.user.entity.User;
@@ -49,5 +50,11 @@ public class UserService {
                 .orElseThrow(() -> new CustomException(ErrorCode.PREFERENCE_NOT_FOUND));
         preference.update(request.getBakeryTypes(), request.getBakeryPersonalities(),
                 request.getBakeryUseTypes(), request.getWaitingTolerance());
+    }
+
+    public MyProfileResponse getMyProfile(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        return MyProfileResponse.from(user);
     }
 }

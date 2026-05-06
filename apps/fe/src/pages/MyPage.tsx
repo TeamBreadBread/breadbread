@@ -1,3 +1,4 @@
+import { getDisplayNameForLoginId, getUserProfile } from "@/lib/userProfileCache";
 import { AppTopBar } from "@/components/common";
 import MyLevelCard from "@/components/domain/my/MyLevelCard";
 import MyMenuSection from "@/components/domain/my/MyMenuSection";
@@ -9,6 +10,11 @@ import { useNavigate } from "@tanstack/react-router";
 
 export default function MyPage() {
   const navigate = useNavigate();
+  const profile = getUserProfile();
+  const displayName = profile?.loginId?.trim()
+    ? getDisplayNameForLoginId(profile.loginId)
+    : profile?.name?.trim() || "회원";
+  const displayEmail = profile?.email?.trim() || "";
   const goToAccountSettings = () => navigate({ to: "/account-settings" });
 
   const activityMenus: MyMenu[] = [
@@ -31,8 +37,8 @@ export default function MyPage() {
         <div className="flex flex-1 flex-col pb-[calc(56px+30px)] sm:pb-[calc(72px+30px)]">
           <div className="bg-white">
             <MyProfileCard
-              nickname="노릇노릇한 소금빵"
-              email="breadbread@bread.com"
+              nickname={displayName}
+              email={displayEmail || "—"}
               onClick={goToAccountSettings}
             />
 

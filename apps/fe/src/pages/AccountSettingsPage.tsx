@@ -5,14 +5,13 @@ import AccountProfileSection from "@/components/domain/account/AccountProfileSec
 import type { AccountInfo } from "@/components/domain/account/types";
 import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
+import { getUserProfile } from "@/lib/userProfileCache";
 import { useNavigate } from "@tanstack/react-router";
 
-const profileItems: AccountInfo[] = [
-  { id: "name", label: "이름", value: "유민진" },
-  { id: "nickname", label: "닉네임", value: "노릇노릇한 소금빵" },
-  { id: "email", label: "이메일", value: "breadbread@bread.com" },
-  { id: "phone", label: "전화번호", value: "010-1234-1234" },
-];
+function formatKoreanMobile(phone: string | undefined): string {
+  if (!phone || !/^010\d{8}$/.test(phone)) return "—";
+  return `${phone.slice(0, 3)}-${phone.slice(3, 7)}-${phone.slice(7)}`;
+}
 
 const paymentItems: AccountInfo[] = [{ id: "payment", label: "결제 수단 관리" }];
 
@@ -23,6 +22,15 @@ const accountItems: AccountInfo[] = [
 
 export default function AccountSettingsPage() {
   const navigate = useNavigate();
+  const p = getUserProfile();
+  const name = p?.name?.trim() || "—";
+  const email = p?.email?.trim() || "—";
+  const profileItems: AccountInfo[] = [
+    { id: "name", label: "이름", value: name },
+    { id: "nickname", label: "닉네임", value: "—" },
+    { id: "email", label: "이메일", value: email },
+    { id: "phone", label: "전화번호", value: formatKoreanMobile(p?.phone) },
+  ];
 
   return (
     <MobileFrame>

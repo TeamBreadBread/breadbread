@@ -1,11 +1,14 @@
-import { useNavigate } from "@tanstack/react-router";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { BottomCTA } from "@/components/common";
 import SignupWelcomeSection from "@/components/domain/auth/SignupWelcomeSection";
 
+const routeApi = getRouteApi("/signup-result");
+
 export default function SignupResultPage() {
   const navigate = useNavigate();
-  const userName = "유민진";
+  const { name: nameFromSearch } = routeApi.useSearch();
+  const userName = nameFromSearch?.trim() || "회원";
 
   const handleLoginClick = () => {
     navigate({ to: "/login" });
