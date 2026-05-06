@@ -50,6 +50,9 @@ public class AuthService {
 		if (userRepository.existsByPhone(signupRequest.getPhone())) {
 			throw new CustomException(ErrorCode.DUPLICATE_PHONE);
 		}
+		if (signupRequest.getRole() == UserRole.ROLE_ADMIN) {
+			throw new CustomException(ErrorCode.FORBIDDEN);
+		}
 		PhoneVerificationCache verification = validateVerificationToken(
 			signupRequest.getVerificationToken(),
 			VerificationPurpose.SIGNUP
@@ -193,6 +196,10 @@ public class AuthService {
     public TokenResponse socialLogin(SsoProvider provider, SocialLoginRequest request) {
         return ssoService.socialLogin(provider, request);
     }
+
+	public String issueNaverState() {
+		return ssoService.issueNaverState();
+	}
 
     private PhoneVerificationCache validateVerificationToken(String token, VerificationPurpose purpose) {
 		PhoneVerificationCache verification = phoneVerificationRedisService.findByVerificationToken(token)

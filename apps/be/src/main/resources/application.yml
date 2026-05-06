@@ -92,6 +92,7 @@ oauth2:
       - https://breadbread.pages.dev/auth/naver/callback
       - https://www.breadbread.io/auth/naver/callback
     use-pkce: false
+    state-ttl-seconds: 300
 
   kakao:
     client-id: ${KAKAO_CLIENT_ID}
