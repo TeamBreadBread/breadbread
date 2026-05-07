@@ -6,6 +6,7 @@ import { cn } from "@/utils/cn";
 import CourseTimeline from "@/components/domain/ai-course/CourseTimeline";
 import ResultSummaryCard from "@/components/domain/ai-course/ResultSummaryCard";
 import type { CoursePlace, CourseSummary } from "@/components/domain/ai-course/types";
+import { getDevFallbackCourseId } from "@/lib/courseIdFallback";
 import mapImage from "@/assets/images/map.png";
 import handleArrow from "@/assets/icons/handle_arrowup.png";
 import { useAiSearchBottomSheet } from "@/hooks/useAiSearchBottomSheet";
@@ -33,13 +34,24 @@ const places: CoursePlace[] = [
   },
 ];
 
-export default function AISearchResultPage() {
+type AISearchResultPageProps = {
+  courseId: number | null;
+};
+
+export default function AISearchResultPage({ courseId }: AISearchResultPageProps) {
   const navigate = useNavigate();
+  const effectiveCourseId = courseId ?? getDevFallbackCourseId();
 
   const { sheetRef, contentRef, isDragging, isHalfSheet, togglePhase } = useAiSearchBottomSheet();
 
   const goBreadTaxiReserve = () => {
-    navigate({ to: "/taxi-reserve" });
+    if (!effectiveCourseId) {
+      window.alert(
+        "예약 가능한 코스 정보를 찾지 못했습니다. 개발 환경에서는 VITE_DEV_FALLBACK_COURSE_ID를 설정해 주세요.",
+      );
+      return;
+    }
+    navigate({ to: "/taxi-reserve", search: { courseId: effectiveCourseId } });
   };
 
   return (

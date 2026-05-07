@@ -2,14 +2,31 @@ import axios, { type AxiosError, type AxiosResponse, type InternalAxiosRequestCo
 
 import { ApiBusinessError, type ApiEnvelope, unwrapApiBody } from "@/api/types/common";
 
-/** 빌드 시 `VITE_API_BASE_URL` 미설정이면 요청이 pages.dev / www 로 가 POST가 405가 됨 → prod 기본은 API 서브도메인 */
+/** 빌드 시 `VITE_API_BASE_URL` 가 있으면 최우선 사용 */
 const envBase = import.meta.env.VITE_API_BASE_URL;
-const baseURL =
-  typeof envBase === "string" && envBase.trim() !== ""
-    ? envBase.trim()
-    : import.meta.env.PROD
-      ? "https://api.breadbread.io"
-      : "";
+
+function resolveBaseUrl(): string {
+  if (typeof envBase === "string" && envBase.trim() !== "") {
+    return envBase.trim();
+  }
+
+  // Firebase Hosting(web.app/firebaseapp.com) 배포는 리라이트로 same-origin 경유 시 CORS 이슈를 피할 수 있습니다.
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname.toLowerCase();
+    if (host.endsWith(".web.app") || host.endsWith(".firebaseapp.com")) {
+      return "";
+    }
+  }
+
+  // 그 외 프로덕션은 API 서브도메인을 기본값으로 사용합니다.
+  if (import.meta.env.PROD) {
+    return "https://api.breadbread.io";
+  }
+
+  return "";
+}
+
+const baseURL = resolveBaseUrl();
 
 export const apiClient = axios.create({
   baseURL,

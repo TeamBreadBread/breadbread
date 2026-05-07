@@ -133,7 +133,7 @@ export default function TaxiReservationCompletePage({
         <div className="flex w-full flex-row items-start justify-start gap-[10px] overflow-hidden border-t border-[#eeeff1] bg-white px-[20px] py-[12px]">
           <button
             type="button"
-            onClick={() => navigate({ to: "/my" })}
+            onClick={() => navigate({ to: "/my-reservations" })}
             className="flex h-[56px] flex-1 flex-row items-center justify-center overflow-hidden rounded-[12px] bg-[#eeeff1] px-[20px] py-[16px] font-['Pretendard',sans-serif] text-[18px] font-bold leading-[24px] tracking-normal text-[#1a1c20]"
           >
             예약 내역

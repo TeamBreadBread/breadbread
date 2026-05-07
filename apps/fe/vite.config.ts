@@ -48,6 +48,14 @@ export default defineConfig({
         target: 'https://api.breadbread.io',
         changeOrigin: true,
       },
+      '/reservations': {
+        target: 'https://api.breadbread.io',
+        changeOrigin: true,
+      },
+      '/users': {
+        target: 'https://api.breadbread.io',
+        changeOrigin: true,
+      },
     },
   },
 })

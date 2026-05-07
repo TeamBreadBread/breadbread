@@ -18,7 +18,7 @@ export default function MyPage() {
   const goToAccountSettings = () => navigate({ to: "/account-settings" });
 
   const activityMenus: MyMenu[] = [
-    { id: "reservation", label: "예약 내역" },
+    { id: "reservation", label: "예약 내역", onClick: () => navigate({ to: "/my-reservations" }) },
     { id: "review", label: "내가 쓴 리뷰" },
     { id: "badge", label: "획득한 뱃지" },
   ];
