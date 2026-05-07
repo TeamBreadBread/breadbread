@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ApiBusinessError, getErrorMessage } from "@/api/types/common";
+import { getErrorMessage } from "@/api/types/common";
 import {
   getMyPreference,
-  savePreference,
   updateMyPreference,
   type BakeryPersonality,
   type BakeryType,
@@ -95,19 +94,23 @@ const initialQuestions: PreferenceQuestion[] = [
   },
 ];
 
-type BreadPreferencePageProps = {
-  isEditMode?: boolean;
+type PreferenceSnapshot = {
+  bakeryTypes: BakeryType[];
+  bakeryPersonalities: BakeryPersonality[];
+  bakeryUseTypes: BakeryUseType[];
+  waitingTolerance: WaitingTolerance | null;
 };
 
-export default function BreadPreferencePage({ isEditMode = false }: BreadPreferencePageProps) {
+function sortUnique<T extends string>(values: T[]): T[] {
+  return [...new Set(values)].sort();
+}
+
+export default function UserPreferenceEditPage() {
   const navigate = useNavigate();
   const [questions, setQuestions] = useState(initialQuestions);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingPreference, setIsLoadingPreference] = useState(false);
-
-  const allQuestionsAnswered = questions.every((question) =>
-    question.options.some((option) => option.selected),
-  );
+  const [isLoading, setIsLoading] = useState(true);
+  const [originalSnapshot, setOriginalSnapshot] = useState<PreferenceSnapshot | null>(null);
 
   const handleToggleOption = (questionId: string, optionId: string) => {
     setQuestions((prevQuestions) =>
@@ -124,7 +127,6 @@ export default function BreadPreferencePage({ isEditMode = false }: BreadPrefere
         }
 
         const tapped = question.options.find((option) => option.id === optionId);
-        // Same chip again clears selection so only 다른 옵션 is not needed to 해제.
         if (tapped?.selected) {
           return {
             ...question,
@@ -159,14 +161,35 @@ export default function BreadPreferencePage({ isEditMode = false }: BreadPrefere
       return acc;
     }, []);
 
-  const dedupe = <T extends string>(values: T[]): T[] => [...new Set(values)];
+  const currentSnapshot = useMemo<PreferenceSnapshot>(() => {
+    const bakeryTypes = sortUnique(
+      mapByTable(getSelectedOptionIds("bread-style"), BAKERY_TYPE_MAP),
+    );
+    const bakeryPersonalities = sortUnique(
+      mapByTable(getSelectedOptionIds("bakery-type"), BAKERY_PERSONALITY_MAP),
+    );
+    const bakeryUseTypes = sortUnique(
+      mapByTable(getSelectedOptionIds("store-preference"), BAKERY_USE_TYPE_MAP),
+    );
+    const waitingSelected = getSelectedOptionIds("waiting")[0];
+    const waitingTolerance = waitingSelected ? WAITING_MAP[waitingSelected] : null;
+    return { bakeryTypes, bakeryPersonalities, bakeryUseTypes, waitingTolerance };
+  }, [questions]);
+
+  const allQuestionsAnswered = questions.every((question) =>
+    question.options.some((option) => option.selected),
+  );
+
+  const hasChanges = useMemo(() => {
+    if (!originalSnapshot) return false;
+    return JSON.stringify(currentSnapshot) !== JSON.stringify(originalSnapshot);
+  }, [currentSnapshot, originalSnapshot]);
 
   useEffect(() => {
-    if (!isEditMode) return;
     let mounted = true;
     const loadMyPreference = async () => {
       try {
-        setIsLoadingPreference(true);
+        setIsLoading(true);
         const preference = await getMyPreference();
         if (!mounted) return;
 
@@ -230,80 +253,40 @@ export default function BreadPreferencePage({ isEditMode = false }: BreadPrefere
             return question;
           }),
         );
-      } catch {
-        // no preference yet: keep empty selections
+
+        setOriginalSnapshot({
+          bakeryTypes: sortUnique(preference.bakeryTypes ?? []),
+          bakeryPersonalities: sortUnique(preference.bakeryPersonalities ?? []),
+          bakeryUseTypes: sortUnique(preference.bakeryUseTypes ?? []),
+          waitingTolerance: preference.waitingTolerance ?? null,
+        });
+      } catch (error) {
+        window.alert(getErrorMessage(error));
+        navigate({ to: "/my" });
       } finally {
-        if (mounted) setIsLoadingPreference(false);
+        if (mounted) setIsLoading(false);
       }
     };
+
     void loadMyPreference();
     return () => {
       mounted = false;
     };
-  }, [isEditMode]);
+  }, [navigate]);
 
   const handleSubmit = async () => {
-    if (isSubmitting) return;
-    if (!allQuestionsAnswered) {
-      window.alert("모든 항목을 선택해 주세요.");
+    if (!allQuestionsAnswered || !hasChanges || isSubmitting || !currentSnapshot.waitingTolerance)
       return;
-    }
-
-    const bakeryTypes = dedupe(mapByTable(getSelectedOptionIds("bread-style"), BAKERY_TYPE_MAP));
-    const bakeryPersonalities = dedupe(
-      mapByTable(getSelectedOptionIds("bakery-type"), BAKERY_PERSONALITY_MAP),
-    );
-    const bakeryUseTypes = dedupe(
-      mapByTable(getSelectedOptionIds("store-preference"), BAKERY_USE_TYPE_MAP),
-    );
-    const waitingSelected = getSelectedOptionIds("waiting");
-    const waitingId = waitingSelected[0];
-    const waitingTolerance = waitingId !== undefined ? WAITING_MAP[waitingId] : undefined;
-
-    if (
-      bakeryTypes.length === 0 ||
-      bakeryPersonalities.length === 0 ||
-      bakeryUseTypes.length === 0 ||
-      !waitingTolerance
-    ) {
-      const invalidGroups: string[] = [];
-      if (bakeryTypes.length === 0) invalidGroups.push("빵 스타일");
-      if (bakeryPersonalities.length === 0) invalidGroups.push("빵집 성향");
-      if (bakeryUseTypes.length === 0) invalidGroups.push("선호 빵집 취향");
-      if (!waitingTolerance) invalidGroups.push("웨이팅 허용도");
-      window.alert(
-        `현재 선택은 API와 매핑되지 않습니다.\n다음 항목을 다시 선택해 주세요:\n- ${invalidGroups.join("\n- ")}`,
-      );
-      return;
-    }
-
     try {
       setIsSubmitting(true);
-      const payload = {
-        bakeryTypes,
-        bakeryPersonalities,
-        bakeryUseTypes,
-        waitingTolerance,
-      };
-      if (isEditMode) {
-        await updateMyPreference(payload);
-        window.alert("수정을 완료했습니다.");
-      } else {
-        try {
-          await savePreference(payload);
-        } catch (error) {
-          const alreadyCompleted =
-            error instanceof ApiBusinessError &&
-            (error.code === "E0005" || /이미\s*선호도|already/i.test(error.message));
-          if (alreadyCompleted) {
-            await updateMyPreference(payload);
-            window.alert("수정을 완료했습니다.");
-          } else {
-            throw error;
-          }
-        }
-      }
-      navigate({ to: "/home" });
+      await updateMyPreference({
+        bakeryTypes: currentSnapshot.bakeryTypes,
+        bakeryPersonalities: currentSnapshot.bakeryPersonalities,
+        bakeryUseTypes: currentSnapshot.bakeryUseTypes,
+        waitingTolerance: currentSnapshot.waitingTolerance,
+      });
+      window.alert("수정을 완료했습니다.");
+      navigate({ to: "/my" });
     } catch (error) {
       window.alert(getErrorMessage(error));
     } finally {
@@ -314,22 +297,13 @@ export default function BreadPreferencePage({ isEditMode = false }: BreadPrefere
   return (
     <MobileFrame>
       <div className="pb-footer-safe flex flex-1 flex-col bg-white">
-        <AppTopBar
-          title={isEditMode ? "내 선호도 수정" : "선호도 조사"}
-          onBack={() => navigate({ to: isEditMode ? "/my" : "/" })}
-        />
-        {isLoadingPreference ? (
+        <AppTopBar title="내 선호도 수정" onBack={() => navigate({ to: "/my" })} />
+
+        {isLoading ? (
           <p className="px-x5 py-x3 text-size-4 text-gray-700">내 선호도 불러오는 중...</p>
         ) : null}
 
-        <PreferenceIntroSection
-          title={
-            isEditMode
-              ? "현재 선호도를 수정해 주세요"
-              : "정확한 빵 취향을 위해\n선호도 조사를 해주세요"
-          }
-          description="설명 문구"
-        />
+        <PreferenceIntroSection title={"현재 선호도를 수정해 주세요"} description="설명 문구" />
 
         <div className="flex flex-col gap-x2_5">
           {questions.map((question) => {
@@ -360,10 +334,10 @@ export default function BreadPreferencePage({ isEditMode = false }: BreadPrefere
 
       <BottomDoubleCTA
         placement="fixed"
-        leftText={isEditMode ? "취소하기" : "건너뛰기"}
-        rightText={isSubmitting ? "저장 중..." : isEditMode ? "수정 완료" : "완료"}
-        rightDisabled={!allQuestionsAnswered || isSubmitting}
-        onLeftClick={() => navigate({ to: isEditMode ? "/my" : "/home" })}
+        leftText="취소하기"
+        rightText={isSubmitting ? "저장 중..." : "수정하기"}
+        rightDisabled={isLoading || !allQuestionsAnswered || !hasChanges || isSubmitting}
+        onLeftClick={() => navigate({ to: "/my" })}
         onRightClick={handleSubmit}
       />
     </MobileFrame>

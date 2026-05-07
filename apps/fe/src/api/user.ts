@@ -46,8 +46,25 @@ export type SavePreferenceRequest = {
   waitingTolerance?: WaitingTolerance;
 };
 
+export type MyPreferenceResponse = {
+  bakeryTypes: BakeryType[];
+  bakeryPersonalities: BakeryPersonality[];
+  bakeryUseTypes: BakeryUseType[];
+  waitingTolerance: WaitingTolerance;
+};
+
 export async function savePreference(body: SavePreferenceRequest): Promise<void> {
   const { data } = await apiClient.post<ApiEnvelope<void>>(`${PATH}/preference`, body);
+  extractData(data);
+}
+
+export async function getMyPreference(): Promise<MyPreferenceResponse> {
+  const { data } = await apiClient.get<ApiEnvelope<MyPreferenceResponse>>(`${PATH}/preference`);
+  return extractData(data);
+}
+
+export async function updateMyPreference(body: SavePreferenceRequest): Promise<void> {
+  const { data } = await apiClient.patch<ApiEnvelope<void>>(`${PATH}/preference`, body);
   extractData(data);
 }
 

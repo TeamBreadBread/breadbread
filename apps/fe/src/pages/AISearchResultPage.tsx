@@ -1,5 +1,6 @@
 import { AppTopBar, Button } from "@/components/common";
 import { useNavigate } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { MobileFrame } from "@/components/layout";
 import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
 import { cn } from "@/utils/cn";
@@ -10,6 +11,8 @@ import { getDevFallbackCourseId } from "@/lib/courseIdFallback";
 import mapImage from "@/assets/images/map.png";
 import handleArrow from "@/assets/icons/handle_arrowup.png";
 import { useAiSearchBottomSheet } from "@/hooks/useAiSearchBottomSheet";
+import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
+import type { CourseDetail } from "@/api/courses";
 
 const summary: CourseSummary = {
   title: "커플을 위한 달콤한 빵투어",
@@ -41,6 +44,42 @@ type AISearchResultPageProps = {
 export default function AISearchResultPage({ courseId }: AISearchResultPageProps) {
   const navigate = useNavigate();
   const effectiveCourseId = courseId ?? getDevFallbackCourseId();
+  const storedCourseDetail = useMemo((): CourseDetail | null => {
+    if (typeof window === "undefined") return null;
+    const raw = sessionStorage.getItem(AI_COURSE_RESULT_STORAGE_KEY);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as CourseDetail;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const dynamicSummary: CourseSummary | null = useMemo(() => {
+    if (!storedCourseDetail) return null;
+    const costLabel =
+      Number.isFinite(storedCourseDetail.estimatedCost) && storedCourseDetail.estimatedCost > 0
+        ? `${storedCourseDetail.estimatedCost.toLocaleString("ko-KR")}원`
+        : summary.price;
+    return {
+      title: storedCourseDetail.name || summary.title,
+      duration: storedCourseDetail.estimatedTime || summary.duration,
+      price: costLabel,
+    };
+  }, [storedCourseDetail]);
+
+  const dynamicPlaces: CoursePlace[] | null = useMemo(() => {
+    if (!storedCourseDetail) return null;
+    if (!Array.isArray(storedCourseDetail.bakeries)) return null;
+    return storedCourseDetail.bakeries.map((bakery, index) => {
+      return {
+        id: String(bakery.id ?? index + 1),
+        name: bakery.name || `빵집 ${index + 1}`,
+        address: bakery.address || "",
+        menu: Number.isFinite(bakery.rating) ? `평점 ${bakery.rating}` : "빵집 정보",
+      };
+    });
+  }, [storedCourseDetail]);
 
   const { sheetRef, contentRef, isDragging, isHalfSheet, togglePhase } = useAiSearchBottomSheet();
 
@@ -58,7 +97,7 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
     <MobileFrame className="relative h-screen overflow-hidden bg-white">
       <div className="relative h-full flex-1 bg-white">
         <AppTopBar title="AI 추천 코스" onBack={() => navigate({ to: "/home" })} />
-        <ResultSummaryCard summary={summary} />
+        <ResultSummaryCard summary={dynamicSummary ?? summary} />
 
         <div className="h-[200px] w-full overflow-hidden">
           <img src={mapImage} alt="코스 지도" className="h-full w-full object-cover" />
@@ -101,7 +140,7 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
             "pb-[calc(96px+env(safe-area-inset-bottom))]",
           )}
         >
-          <CourseTimeline places={places} />
+          <CourseTimeline places={dynamicPlaces ?? places} />
         </div>
       </aside>
 

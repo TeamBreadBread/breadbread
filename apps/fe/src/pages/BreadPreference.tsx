@@ -11,6 +11,7 @@ import { useBakeries } from "@/hooks/useBakeries";
 import { formatCurationAddress } from "@/utils/formatCurationAddress";
 import { sectionAllowsMultipleChoice } from "@/utils/preferenceSelection";
 import { cn } from "@/utils/cn";
+import { saveAiCoursePreferenceDraft } from "@/utils/aiCourseStorage";
 
 type OptionItem = {
   label: string;
@@ -72,6 +73,7 @@ export default function BreadPreference() {
   const [departureKeyword, setDepartureKeyword] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [departureLatLng, setDepartureLatLng] = useState<{ lat: number; lng: number } | null>(null);
   const navigate = useNavigate();
   const deferredSearchKeyword = useDeferredValue(searchKeyword);
 
@@ -151,6 +153,7 @@ export default function BreadPreference() {
   const handleSearchSubmit = () => {
     const trimmed = searchKeyword.trim();
     setDepartureKeyword(trimmed);
+    setDepartureLatLng(null);
     closeDepartureBottomSheet();
   };
 
@@ -158,6 +161,11 @@ export default function BreadPreference() {
     const label = bakery.name.trim();
     setDepartureKeyword(label);
     setSearchKeyword(label);
+    if (typeof bakery.lat === "number" && typeof bakery.lng === "number") {
+      setDepartureLatLng({ lat: bakery.lat, lng: bakery.lng });
+    } else {
+      setDepartureLatLng(null);
+    }
     closeDepartureBottomSheet();
   };
 
@@ -165,6 +173,17 @@ export default function BreadPreference() {
     (section) => (selectedBySection[section.id]?.length ?? 0) > 0,
   );
   const canGoNext = allQuestionSectionsAnswered && hasDepartureResult;
+  const handleGoRecommendation = () => {
+    if (!canGoNext) return;
+    saveAiCoursePreferenceDraft({
+      companion: selectedBySection.companion?.[0] ?? "",
+      budget: selectedBySection.budget?.[0] ?? "",
+      minimizeRoute: selectedBySection.route?.[0] === "최소화해주세요",
+      latitude: departureLatLng?.lat ?? 36.3504,
+      longitude: departureLatLng?.lng ?? 127.3845,
+    });
+    navigate({ to: "/recommendation" });
+  };
 
   return (
     <MobileFrame>
@@ -387,7 +406,7 @@ export default function BreadPreference() {
       <OverlayFooter
         nextDisabled={!canGoNext}
         onLeftClick={() => navigate({ to: "/home" })}
-        onRightClick={() => navigate({ to: "/recommendation" })}
+        onRightClick={handleGoRecommendation}
       />
     </MobileFrame>
   );

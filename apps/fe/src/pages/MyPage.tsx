@@ -1,4 +1,6 @@
-import { getDisplayNameForLoginId, getUserProfile } from "@/lib/userProfileCache";
+import { useEffect, useMemo, useState } from "react";
+import { getMyProfile } from "@/api/user";
+import { getDisplayNameForLoginId, getUserProfile, saveUserProfile } from "@/lib/userProfileCache";
 import { AppTopBar } from "@/components/common";
 import MyLevelCard from "@/components/domain/my/MyLevelCard";
 import MyMenuSection from "@/components/domain/my/MyMenuSection";
@@ -10,14 +12,49 @@ import { useNavigate } from "@tanstack/react-router";
 
 export default function MyPage() {
   const navigate = useNavigate();
-  const profile = getUserProfile();
-  const displayName = profile?.loginId?.trim()
-    ? getDisplayNameForLoginId(profile.loginId)
-    : profile?.name?.trim() || "회원";
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const [profile, setProfile] = useState(() => getUserProfile());
+  const displayName = useMemo(() => {
+    if (profile?.name?.trim()) return profile.name.trim();
+    if (profile?.loginId?.trim()) return getDisplayNameForLoginId(profile.loginId);
+    return "회원";
+  }, [profile]);
   const displayEmail = profile?.email?.trim() || "";
   const goToAccountSettings = () => navigate({ to: "/account-settings" });
 
+  useEffect(() => {
+    let mounted = true;
+    const fetchProfile = async () => {
+      try {
+        setIsProfileLoading(true);
+        const me = await getMyProfile();
+        if (!mounted) return;
+        const nextProfile = {
+          loginId: me.loginId,
+          name: me.name,
+          email: me.email ?? "",
+          phone: me.phone ?? "",
+        };
+        saveUserProfile(nextProfile);
+        setProfile(nextProfile);
+      } catch {
+        // ignore and use cached profile
+      } finally {
+        if (mounted) setIsProfileLoading(false);
+      }
+    };
+    void fetchProfile();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const activityMenus: MyMenu[] = [
+    {
+      id: "preference",
+      label: "내 선호도 조회/수정",
+      onClick: () => navigate({ to: "/user-preference", search: { mode: "edit" } }),
+    },
     { id: "reservation", label: "예약 내역", onClick: () => navigate({ to: "/my-reservations" }) },
     { id: "review", label: "내가 쓴 리뷰" },
     { id: "badge", label: "획득한 뱃지" },
@@ -38,7 +75,7 @@ export default function MyPage() {
           <div className="bg-white">
             <MyProfileCard
               nickname={displayName}
-              email={displayEmail || "—"}
+              email={isProfileLoading ? "불러오는 중..." : displayEmail || "—"}
               onClick={goToAccountSettings}
             />
 

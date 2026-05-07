@@ -59,7 +59,7 @@ export default function KakaoCallbackPage(props: Props) {
         });
         clearKakaoPkceSession();
         setSessionTokens(tokens);
-        await navigate({ to: "/user-preference" });
+        await navigate({ to: "/user-preference", search: { mode: "create" } });
       } catch (e) {
         clearKakaoPkceSession();
         setMessage(getErrorMessage(e));
