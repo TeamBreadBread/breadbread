@@ -10,7 +10,7 @@ import java.util.List;
 public class AiCourseWebhookResponse {
 	private String name;
 	private String theme;
-	private Integer estimatedCost;
+	private Long estimatedCost;
 	private String estimatedTime;
 	private String summary;
 	private String recommendReason;

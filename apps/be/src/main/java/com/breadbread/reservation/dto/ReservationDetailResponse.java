@@ -21,10 +21,14 @@ public class ReservationDetailResponse {
     private LocalDateTime createdAt;
     private CourseSummaryResponse course;
     private int headCount;
-    private Integer quotedAmount;
+    private Long quotedAmount;
     private LocalDateTime cancelledAt;
+	private ReservationPaymentInfo payment;
 
-    public static ReservationDetailResponse from(Reservation reservation, CourseSummaryResponse course) {
+    public static ReservationDetailResponse from(
+		Reservation reservation,
+		CourseSummaryResponse course,
+		ReservationPaymentInfo payment) {
         return ReservationDetailResponse.builder()
                 .id(reservation.getId())
                 .departureDate(reservation.getDepartureDate())
@@ -36,6 +40,7 @@ public class ReservationDetailResponse {
                 .headCount(reservation.getHeadCount())
                 .quotedAmount(reservation.getQuotedAmount())
                 .cancelledAt(reservation.getCancelledAt())
+				.payment(payment)
                 .build();
     }
 }

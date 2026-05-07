@@ -17,9 +17,9 @@ public class ReservationSummaryResponse {
     private String departure;
     private LocalDate departureDate;
     private LocalTime departureTime;
-    private int headCount;
     private ReservationStatus status;
     private LocalDateTime createdAt;
+	private long quoteAmount;
 
     public static ReservationSummaryResponse from(Reservation reservation) {
         return ReservationSummaryResponse.builder()
@@ -28,9 +28,9 @@ public class ReservationSummaryResponse {
                 .departure(reservation.getDeparture())
                 .departureDate(reservation.getDepartureDate())
                 .departureTime(reservation.getDepartureTime())
-                .headCount(reservation.getHeadCount())
                 .status(reservation.getStatus())
                 .createdAt(reservation.getCreatedAt())
+				.quoteAmount(reservation.getQuotedAmount())
                 .build();
     }
 }

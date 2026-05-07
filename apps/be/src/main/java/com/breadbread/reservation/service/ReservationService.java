@@ -10,6 +10,9 @@ import com.breadbread.course.repository.CourseLikeRepository;
 import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.payment.entity.Payment;
+import com.breadbread.payment.entity.PaymentStatus;
+import com.breadbread.payment.repository.PaymentRepository;
 import com.breadbread.reservation.dto.*;
 import com.breadbread.reservation.entity.Reservation;
 import com.breadbread.reservation.entity.ReservationStatus;
@@ -38,6 +41,7 @@ public class ReservationService {
     private final UserRepository userRepository;
     private final CourseLikeRepository courseLikeRepository;
     private final BakeryImageRepository bakeryImageRepository;
+	private final PaymentRepository paymentRepository;
 
     private static final Set<ReservationStatus> ACTIVE_STATUSES = Set.of(
             ReservationStatus.PENDING, ReservationStatus.CONFIRMED);
@@ -57,7 +61,13 @@ public class ReservationService {
         validateOwner(reservation, userId);
 
         CourseSummaryResponse courseSummary = buildCourseSummary(reservation.getCourse(), userId);
-        return ReservationDetailResponse.from(reservation, courseSummary);
+
+		Payment payment = paymentRepository
+			.findTopByReservationIdAndStatusOrderByPaidAtDesc(reservationId, PaymentStatus.PAID)
+			.orElse(null);
+		ReservationPaymentInfo paymentInfo = payment != null ? ReservationPaymentInfo.from(payment) : null;
+
+        return ReservationDetailResponse.from(reservation, courseSummary, paymentInfo);
     }
 
     @Transactional

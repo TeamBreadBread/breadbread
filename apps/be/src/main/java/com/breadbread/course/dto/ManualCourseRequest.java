@@ -19,7 +19,7 @@ public class ManualCourseRequest {
     private String estimatedTime;
 
     @Min(0)
-    private Integer estimatedCost;
+    private Long estimatedCost;
 
     // ManualCourseInfo
     private boolean editorPick;

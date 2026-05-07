@@ -37,12 +37,14 @@ public class Reservation extends BaseEntity {
 
     private Double departureLng;
 
-	private Integer quotedAmount;
+	private Long quotedAmount;
 
     @Enumerated(EnumType.STRING)
     private ReservationStatus status;
 
     private LocalDateTime cancelledAt;
+
+	private LocalDateTime confirmedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -89,7 +91,7 @@ public class Reservation extends BaseEntity {
 		if (request.getHeadCount() != null) this.headCount = request.getHeadCount();
 	}
 
-	public void cancel(){
+	public void cancel() {
 		if (this.status == ReservationStatus.CANCELLED) {
 			throw new CustomException(ErrorCode.RESERVATION_ALREADY_CANCELLED);
 		}
@@ -98,5 +100,16 @@ public class Reservation extends BaseEntity {
 		}
 		this.status = ReservationStatus.CANCELLED;
 		this.cancelledAt = LocalDateTime.now();
+	}
+
+	public void confirm() {
+		if (this.status == ReservationStatus.CONFIRMED) {
+			throw new CustomException(ErrorCode.RESERVATION_ALREADY_CONFIRMED);
+		}
+		if (this.status != ReservationStatus.PENDING) {
+			throw new CustomException(ErrorCode.RESERVATION_CONFIRM_FAILED);
+		}
+		this.status = ReservationStatus.CONFIRMED;
+		this.confirmedAt = LocalDateTime.now();
 	}
 }

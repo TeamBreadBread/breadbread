@@ -15,6 +15,7 @@ public enum ErrorCode {
 	NOT_FOUND(HttpStatus.NOT_FOUND, "E0004", "존재하지 않는 리소스입니다."),
 	INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "E0005", "서버 오류가 발생했습니다."),
 	FEATURE_NOT_IMPLEMENTED(HttpStatus.NOT_IMPLEMENTED, "E0006", "아직 구현되지 않은 기능입니다."),
+	TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "E0007", "요청이 너무 많습니다. 잠시 후 다시 시도해주세요."),
 
 	// 회원/인증 E01xx
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "E0101", "존재하지 않는 사용자입니다."),
@@ -65,14 +66,19 @@ public enum ErrorCode {
     RESERVATION_CANCEL_FAILED(HttpStatus.BAD_REQUEST, "E0504", "예약 취소가 불가능합니다."),
 	RESERVATION_ALREADY_CANCELLED(HttpStatus.BAD_REQUEST, "E0505", "이미 취소된 예약입니다."),
 	RESERVATION_NOT_MODIFIABLE(HttpStatus.CONFLICT,"E0506","현재 상태에서는 예약을 변경할 수 없습니다."),
+	RESERVATION_ALREADY_CONFIRMED(HttpStatus.BAD_REQUEST, "E0507", "이미 확정된 예약입니다."),
+	RESERVATION_CONFIRM_FAILED(HttpStatus.BAD_REQUEST, "E0508", "예약 확정이 불가능합니다."),
 
     // 결제 E06xx
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "E0601", "존재하지 않는 결제 내역입니다."),
     PAYMENT_FAILED(HttpStatus.BAD_REQUEST, "E0602", "결제에 실패했습니다."),
     PAYMENT_ALREADY_DONE(HttpStatus.CONFLICT, "E0603", "이미 완료된 결제입니다."),
     PAYMENT_CANCEL_FAILED(HttpStatus.BAD_REQUEST, "E0604", "결제 취소에 실패했습니다."),
+	PAYMENT_ALREADY_CANCELLED(HttpStatus.BAD_REQUEST, "E0605", "이미 취소된 결제입니다."),
+	PAYMENT_ALREADY_REFUNDED(HttpStatus.BAD_REQUEST, "E0606", "이미 환불된 결제입니다."),
+	PAYMENT_STATUS_CHANGE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "E0607", "현재 결제 상태에서는 요청한 변경이 불가능합니다."),
 
-    // 파일/GCS E07xx
+	// 파일/GCS E07xx
     FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E0701", "파일 업로드에 실패했습니다."),
     FILE_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E0702", "파일 삭제에 실패했습니다."),
     INVALID_FILE_NAME(HttpStatus.BAD_REQUEST, "E0703", "유효하지 않은 파일 이름입니다."),
