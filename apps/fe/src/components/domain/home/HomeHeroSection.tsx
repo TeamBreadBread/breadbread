@@ -1,16 +1,45 @@
 // “민진님, 오늘은 명란소금빵 어떠세요?”부터 추천 카드 + 빠른 메뉴 4개까지 전체
 "use client";
 
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { getMyProfile } from "@/api/user";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
 import RecommendationHeroCard from "./RecommendationHeroCard";
 import QuickMenuGrid from "./QuickMenuGrid";
-import { getDisplayNameForLoginId, getUserProfile } from "@/lib/userProfileCache";
+import { getDisplayNameForLoginId, getUserProfile, saveUserProfile } from "@/lib/userProfileCache";
 
 const HomeHeroSection = () => {
   const navigate = useNavigate();
-  const profile = getUserProfile();
-  const displayName = profile?.loginId?.trim() ? getDisplayNameForLoginId(profile.loginId) : "민진";
+  const [displayName, setDisplayName] = useState(() => {
+    const profile = getUserProfile();
+    if (profile?.name?.trim()) return profile.name.trim();
+    if (profile?.loginId?.trim()) return getDisplayNameForLoginId(profile.loginId);
+    return "회원";
+  });
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchProfile = async () => {
+      try {
+        const me = await getMyProfile();
+        if (!mounted) return;
+        saveUserProfile({
+          loginId: me.loginId,
+          name: me.name,
+          email: me.email ?? "",
+          phone: me.phone ?? "",
+        });
+        setDisplayName(me.name?.trim() || me.loginId || "회원");
+      } catch {
+        // keep cached value
+      }
+    };
+    void fetchProfile();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const goAiCoursePreferenceFlow = () => navigate({ to: AI_COURSE_FLOW_START });
 

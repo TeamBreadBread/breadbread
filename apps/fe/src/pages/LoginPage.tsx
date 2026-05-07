@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { clearSessionTokens, login, setSessionTokens } from "@/api/auth";
 import { getErrorMessage } from "@/api/types/common";
-import { getDisplayNameForLoginId, getUserProfile, saveUserProfile } from "@/lib/userProfileCache";
+import { getMyProfile } from "@/api/user";
+import { getDisplayNameForLoginId, saveUserProfile } from "@/lib/userProfileCache";
 import { AppTopBar, Button } from "@/components/common";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { cn } from "@/utils/cn";
@@ -36,7 +37,7 @@ const LoginPage = () => {
 
     if (userId.trim() === DEMO_LOGIN_ID && password === DEMO_PASSWORD) {
       clearSessionTokens();
-      navigate({ to: "/user-preference" });
+      navigate({ to: "/user-preference", search: { mode: "create" } });
       return;
     }
 
@@ -45,15 +46,14 @@ const LoginPage = () => {
       const id = userId.trim();
       const tokens = await login({ loginId: id, password });
       setSessionTokens(tokens);
-      const prev = getUserProfile();
-      if (prev?.loginId !== id) {
-        saveUserProfile({
-          loginId: id,
-          name: getDisplayNameForLoginId(id),
-          email: "",
-        });
-      }
-      navigate({ to: "/user-preference" });
+      const me = await getMyProfile();
+      saveUserProfile({
+        loginId: me.loginId || id,
+        name: me.name?.trim() || getDisplayNameForLoginId(id),
+        email: me.email ?? "",
+        phone: me.phone ?? "",
+      });
+      navigate({ to: "/user-preference", search: { mode: "create" } });
     } catch (error) {
       setLoginError(getErrorMessage(error));
     } finally {

@@ -14,6 +14,18 @@ import RecommendationCTAButton from "@/components/domain/ai-course/Recommendatio
 import RecommendationCountStepper from "@/components/domain/ai-course/RecommendationCountStepper";
 import { sectionAllowsMultipleChoice } from "@/utils/preferenceSelection";
 import { cn } from "@/utils/cn";
+import {
+  getCourseDetail,
+  requestAiCourse,
+  type AiCourseRequest,
+  type BreadType,
+  type BudgetRange,
+  type FlexibilityLevel,
+  type TravelType,
+} from "@/api/courses";
+import { pollAiCourseStatus } from "@/utils/pollAiCourseStatus";
+import { AI_COURSE_RESULT_STORAGE_KEY, readAiCoursePreferenceDraft } from "@/utils/aiCourseStorage";
+import { getErrorMessage } from "@/api/types/common";
 
 type OptionItem = {
   label: string;
@@ -103,6 +115,7 @@ function RecommendationIcon() {
 export default function BreadRecommendationPreference() {
   const [selectedBySection, setSelectedBySection] = useState<SelectedBySection>({});
   const [recommendationCount, setRecommendationCount] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSelect = (sectionId: string, optionValue: string) => {
@@ -131,6 +144,75 @@ export default function BreadRecommendationPreference() {
   const canSubmitRecommendation =
     (selectedBySection[BREAD_TYPE_SECTION_ID]?.length ?? 0) > 0 &&
     REQUIRED_CARD_SECTION_IDS.every((id) => (selectedBySection[id]?.length ?? 0) > 0);
+
+  const mapTravelType = (value: string): TravelType => {
+    if (value === "커플") return "COUPLE";
+    if (value === "친구") return "FRIEND";
+    if (value === "가족") return "FAMILY";
+    return "ALONE";
+  };
+
+  const mapBudgetRange = (value: string): BudgetRange => {
+    if (value === "2만원 이하") return "UNDER_20000";
+    if (value === "2 - 4만원") return "BETWEEN_20000_40000";
+    if (value === "4만원 이상") return "OVER_40000";
+    return "ANY";
+  };
+
+  const mapFlexibilityLevel = (value: string): FlexibilityLevel => {
+    if (value === "상황 변동 시 적극적으로 제안") return "FLEXIBLE";
+    if (value === "최초 계획을 최대한 유지") return "STRICT";
+    return "SOLDOUT_ONLY";
+  };
+
+  const mapBreadType = (value: string): BreadType | null => {
+    if (value === "빵") return "BREAD";
+    if (value === "샌드위치") return "SANDWICH";
+    if (value === "케이크") return "CAKE";
+    if (value === "떡") return "RICE_CAKE";
+    if (value === "쿠키") return "COOKIE";
+    if (value === "다이어트 빵") return "DIET";
+    return null;
+  };
+
+  const handleAiRecommend = async () => {
+    if (!canSubmitRecommendation || isLoading) return;
+
+    const step1 = readAiCoursePreferenceDraft();
+    if (!step1) {
+      window.alert("선호도 1단계 정보가 없습니다. 처음부터 다시 진행해 주세요.");
+      navigate({ to: "/preference" });
+      return;
+    }
+
+    const body: AiCourseRequest = {
+      travelType: mapTravelType(step1.companion),
+      budgetRange: mapBudgetRange(step1.budget),
+      minimizeRoute: step1.minimizeRoute,
+      breadTypes: (selectedBySection.breadType ?? [])
+        .map(mapBreadType)
+        .filter((value): value is BreadType => value !== null),
+      latitude: step1.latitude,
+      longitude: step1.longitude,
+      waitingPreference: (selectedBySection.waiting?.[0] ?? "") === "괜찮아요",
+      drinkPreference: (selectedBySection.drink?.[0] ?? "") === "drink-0",
+      bakeryCount: recommendationCount,
+      flexibilityLevel: mapFlexibilityLevel(selectedBySection.courseChangePreference?.[0] ?? ""),
+    };
+
+    try {
+      setIsLoading(true);
+      const jobId = await requestAiCourse(body);
+      const courseId = await pollAiCourseStatus(jobId);
+      const courseDetail = await getCourseDetail(courseId);
+      sessionStorage.setItem(AI_COURSE_RESULT_STORAGE_KEY, JSON.stringify(courseDetail));
+      navigate({ to: "/ai-search-result", search: { courseId } });
+    } catch (error) {
+      window.alert(getErrorMessage(error));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <MobileFrame>
@@ -209,10 +291,10 @@ export default function BreadRecommendationPreference() {
 
           <RecommendationCTAButton
             icon={<RecommendationIcon />}
-            disabled={!canSubmitRecommendation}
-            onClick={() => navigate({ to: "/ai-search-result", search: { courseId: null } })}
+            disabled={!canSubmitRecommendation || isLoading}
+            onClick={handleAiRecommend}
           >
-            추천 받기
+            {isLoading ? "AI 코스 생성 중..." : "추천 받기"}
           </RecommendationCTAButton>
         </div>
       </div>
