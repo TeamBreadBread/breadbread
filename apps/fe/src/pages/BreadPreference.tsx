@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useDeferredValue, useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import type { BakeryListItem } from "@/api/types/bakery";
 import MobileFrame from "@/components/layout/MobileFrame";
@@ -73,16 +73,18 @@ export default function BreadPreference() {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const navigate = useNavigate();
+  const deferredSearchKeyword = useDeferredValue(searchKeyword);
 
   useEffect(() => {
     if (!isDepartureBottomSheetOpen) {
       return;
     }
-    const id = window.setTimeout(() => setDebouncedSearch(searchKeyword.trim()), 350);
+    const id = window.setTimeout(() => setDebouncedSearch(deferredSearchKeyword.trim()), 300);
     return () => window.clearTimeout(id);
-  }, [searchKeyword, isDepartureBottomSheetOpen]);
+  }, [deferredSearchKeyword, isDepartureBottomSheetOpen]);
 
   const trimmedSearch = debouncedSearch.trim();
+  const searchQuery = trimmedSearch.length >= 2 ? trimmedSearch : "";
   const {
     data: bakerySearchData,
     loading: bakerySearchLoading,
@@ -93,9 +95,9 @@ export default function BreadPreference() {
       size: 20,
       sort: "RATING",
       open: false,
-      keyword: trimmedSearch || undefined,
+      keyword: searchQuery || undefined,
     },
-    { enabled: isDepartureBottomSheetOpen && trimmedSearch.length > 0 },
+    { enabled: isDepartureBottomSheetOpen && searchQuery.length > 0 },
   );
 
   const bakeryResults: BakeryListItem[] = bakerySearchData?.bakeries ?? [];
@@ -144,7 +146,7 @@ export default function BreadPreference() {
   };
 
   const hasDepartureResult = departureKeyword.trim().length > 0;
-  const listTitle = trimmedSearch.length > 0 ? "검색 결과" : "빵집 검색";
+  const listTitle = searchQuery.length > 0 ? "검색 결과" : "빵집 검색";
 
   const handleSearchSubmit = () => {
     const trimmed = searchKeyword.trim();
@@ -328,7 +330,11 @@ export default function BreadPreference() {
                 </div>
 
                 <div className="flex flex-col">
-                  {trimmedSearch.length === 0 ? (
+                  {searchKeyword.trim().length > 0 && searchQuery.length === 0 ? (
+                    <p className="px-x2_5 py-x4 font-pretendard text-size-4 leading-t5 text-gray-600">
+                      두 글자 이상 입력해 주세요.
+                    </p>
+                  ) : searchQuery.length === 0 ? (
                     <p className="px-x2_5 py-x4 font-pretendard text-size-4 leading-t5 text-gray-600">
                       이름이나 동네를 입력하면 빵집을 찾아드려요.
                     </p>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { getErrorMessage } from "@/api/types/common";
+import { ApiBusinessError, getErrorMessage } from "@/api/types/common";
 import {
   savePreference,
   type BakeryPersonality,
@@ -32,7 +32,7 @@ const BAKERY_PERSONALITY_MAP: Partial<Record<string, BakeryPersonality>> = {
 
 const BAKERY_USE_TYPE_MAP: Partial<Record<string, BakeryUseType>> = {
   takeout: "TAKEOUT",
-  cafe: "CAFE",
+  cafe: "CAFE_STYLE",
   mood: "MOODY_SPACE",
   practical: "PRACTICAL",
 };
@@ -199,8 +199,11 @@ export default function BreadPreferencePage() {
       });
       navigate({ to: "/home" });
     } catch (error) {
-      window.alert(getErrorMessage(error));
-      navigate({ to: "/home" });
+      if (error instanceof ApiBusinessError && error.code === "E0005") {
+        window.alert("서버 설정 문제로 선호도 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+      } else {
+        window.alert(getErrorMessage(error));
+      }
     } finally {
       setIsSubmitting(false);
     }

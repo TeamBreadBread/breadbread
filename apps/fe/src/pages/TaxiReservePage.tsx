@@ -5,6 +5,7 @@ import DepartureDateBottomSheet from "@/components/domain/taxi-reserve/Departure
 import DepartureTimeBottomSheet from "@/components/domain/taxi-reserve/DepartureTimeBottomSheet";
 import DeparturePlaceBottomSheet from "@/components/domain/taxi-reserve/DeparturePlaceBottomSheet";
 import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
+import { getDevFallbackCourseId } from "@/lib/courseIdFallback";
 import { cn } from "@/utils/cn";
 
 const FIELD_MAX = "w-full max-w-[362px] shrink-0 md:max-w-full";
@@ -21,6 +22,19 @@ function formatKoreanTime(value: string) {
   const [h, min] = value.split(":").map(Number);
   if (Number.isNaN(h) || Number.isNaN(min)) return value;
   return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+}
+
+function parseLatLngFromPlace(value: string): { lat: number; lng: number } {
+  const m = value.match(/\(([-\d.]+)\s*,\s*([-\d.]+)\)/);
+  if (m) {
+    const lat = Number.parseFloat(m[1]);
+    const lng = Number.parseFloat(m[2]);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      return { lat, lng };
+    }
+  }
+  // 좌표가 없는 일반 주소 입력의 임시 기본값(서울시청)
+  return { lat: 37.5665, lng: 126.978 };
 }
 
 function CalendarGlyph({ className }: { className?: string }) {
@@ -57,8 +71,13 @@ function PinGlyph({ className }: { className?: string }) {
 
 const courseStops = ["성심당 본점", "몽심 대흥점", "땡큐베리머치", "뮤제 베이커리"];
 
-export default function TaxiReservePage() {
+type TaxiReservePageProps = {
+  courseId: number | null;
+};
+
+export default function TaxiReservePage({ courseId }: TaxiReservePageProps) {
   const navigate = useNavigate();
+  const effectiveCourseId = courseId ?? getDevFallbackCourseId();
   const [departureDate, setDepartureDate] = useState("");
   const [departureTime, setDepartureTime] = useState("");
   const [departurePlace, setDeparturePlace] = useState("");
@@ -81,7 +100,7 @@ export default function TaxiReservePage() {
         <button
           type="button"
           className="flex h-[36px] w-[36px] shrink-0 flex-row items-center justify-center"
-          onClick={() => navigate({ to: "/ai-search-result" })}
+          onClick={() => navigate({ to: "/ai-search-result", search: { courseId: null } })}
           aria-label="뒤로가기"
         >
           <img width={24} height={24} src={ArrowLeft} alt="" />
@@ -297,6 +316,13 @@ export default function TaxiReservePage() {
             disabled={!isCheckoutEnabled}
             onClick={() => {
               if (!isCheckoutEnabled) return;
+              if (!effectiveCourseId) {
+                window.alert(
+                  "예약할 코스 정보가 없습니다. 개발 환경에서는 VITE_DEV_FALLBACK_COURSE_ID를 설정해 주세요.",
+                );
+                return;
+              }
+              const { lat, lng } = parseLatLngFromPlace(departurePlace);
               navigate({
                 to: "/taxi-payment",
                 search: {
@@ -304,6 +330,9 @@ export default function TaxiReservePage() {
                   departureTime,
                   departurePlace,
                   passengers: passengerCount,
+                  lat,
+                  lng,
+                  courseId: effectiveCourseId,
                 },
               });
             }}

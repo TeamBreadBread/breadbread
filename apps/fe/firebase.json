@@ -15,6 +15,27 @@
         }
       },
       {
+        "source": "/auth/**",
+        "run": {
+          "serviceId": "bread-be",
+          "region": "asia-northeast3"
+        }
+      },
+      {
+        "source": "/bakeries/**",
+        "run": {
+          "serviceId": "bread-be",
+          "region": "asia-northeast3"
+        }
+      },
+      {
+        "source": "/reservations/**",
+        "run": {
+          "serviceId": "bread-be",
+          "region": "asia-northeast3"
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

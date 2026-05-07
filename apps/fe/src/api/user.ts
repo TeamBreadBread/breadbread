@@ -1,7 +1,7 @@
 import { apiClient, extractData } from "@/api/client";
 import type { ApiEnvelope } from "@/api/types/common";
 
-const PATH = "/api/users";
+const PATH = "/users";
 
 export type MyProfileResponse = {
   loginId: string;
@@ -22,14 +22,14 @@ export type BakeryPersonality =
   | "HIP_AND_INDUSTRIAL";
 
 /** `BakeryUseType` */
-export type BakeryUseType = "TAKEOUT" | "CAFE" | "CAFE_STYLE" | "MOODY_SPACE" | "PRACTICAL";
+export type BakeryUseType = "TAKEOUT" | "CAFE_STYLE" | "MOODY_SPACE" | "PRACTICAL";
 
 /** `WaitingTolerance` */
 export type WaitingTolerance = "NO_WAIT" | "UNDER_20" | "UNDER_30" | "ANYTIME";
 
 export type UserPreferenceBakeryType = "PLAIN" | "DESSERT";
 export type UserPreferenceBakeryPersonality = "HIDDEN_GEM" | "HERITAGE";
-export type UserPreferenceBakeryUseType = "TAKEOUT" | "CAFE";
+export type UserPreferenceBakeryUseType = "TAKEOUT" | "CAFE_STYLE";
 export type UserPreferenceWaitingTolerance = "UNDER_20";
 
 export interface UserPreferenceRequest {

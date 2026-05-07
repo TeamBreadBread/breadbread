@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { createReservation } from "@/api/reservation";
+import { getErrorMessage } from "@/api/types/common";
 import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
 import { cn } from "@/utils/cn";
@@ -9,6 +11,9 @@ export interface TaxiPaymentPageProps {
   departureTime: string;
   departurePlace: string;
   passengers: number;
+  courseId: number;
+  lat: number;
+  lng: number;
 }
 
 const WEEKDAY_KO = ["일", "월", "화", "수", "목", "금", "토"] as const;
@@ -57,6 +62,9 @@ export default function TaxiPaymentPage({
   departureTime,
   departurePlace,
   passengers,
+  courseId,
+  lat,
+  lng,
 }: TaxiPaymentPageProps) {
   const navigate = useNavigate();
   const [selectedMethod, setSelectedMethod] = useState<(typeof PAYMENT_METHODS)[number] | null>(
@@ -65,9 +73,11 @@ export default function TaxiPaymentPage({
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [agreeRefund, setAgreeRefund] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const allTermsAgreed = agreeTerms && agreePrivacy && agreeRefund;
-  const isPayEnabled = selectedMethod !== null && allTermsAgreed;
+  const isPayEnabled = selectedMethod !== null && allTermsAgreed && !isSubmitting;
 
   const displayDate = formatPaymentDate(departureDate) || formatPaymentDate("2026-04-29");
   const displayTime = formatKoreanTime(departureTime) || "15:00";
@@ -92,7 +102,7 @@ export default function TaxiPaymentPage({
         <button
           type="button"
           className="flex h-[36px] w-[36px] shrink-0 flex-row items-center justify-center"
-          onClick={() => navigate({ to: "/taxi-reserve" })}
+          onClick={() => navigate({ to: "/taxi-reserve", search: { courseId } })}
           aria-label="뒤로가기"
         >
           <img width={24} height={24} src={ArrowLeft} alt="" />
@@ -249,6 +259,11 @@ export default function TaxiPaymentPage({
               </span>
             </div>
           ))}
+          {submitError ? (
+            <p className="font-['Pretendard',sans-serif] text-[14px] leading-[19px] text-[#d32f2f]">
+              {submitError}
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -264,15 +279,40 @@ export default function TaxiPaymentPage({
             disabled={!isPayEnabled}
             onClick={() => {
               if (!isPayEnabled) return;
-              navigate({
-                to: "/taxi-reservation-complete",
-                search: {
-                  departureDate,
-                  departureTime,
-                  departurePlace,
-                  passengers,
-                },
-              });
+              void (async () => {
+                try {
+                  setSubmitError("");
+                  if (courseId <= 0) {
+                    setSubmitError(
+                      "예약할 코스 정보가 없습니다. 코스 화면에서 다시 시도해 주세요.",
+                    );
+                    return;
+                  }
+                  setIsSubmitting(true);
+                  await createReservation({
+                    courseId,
+                    departureDate,
+                    departureTime,
+                    headCount: passengers,
+                    departure: departurePlace,
+                    lat,
+                    lng,
+                  });
+                  navigate({
+                    to: "/taxi-reservation-complete",
+                    search: {
+                      departureDate,
+                      departureTime,
+                      departurePlace,
+                      passengers,
+                    },
+                  });
+                } catch (error) {
+                  setSubmitError(getErrorMessage(error));
+                } finally {
+                  setIsSubmitting(false);
+                }
+              })();
             }}
             className={cn(
               "flex h-[56px] flex-1 flex-row items-center justify-center gap-[8px] overflow-hidden rounded-[12px] px-[20px] py-[16px] font-['Pretendard',sans-serif] text-[18px] leading-[24px] tracking-normal transition-colors",
@@ -282,7 +322,7 @@ export default function TaxiPaymentPage({
             )}
           >
             <span className="font-bold">30,000원</span>
-            <span className="font-medium">결제하기</span>
+            <span className="font-medium">{isSubmitting ? "처리 중..." : "결제하기"}</span>
           </button>
         </div>
         <div className="relative h-[33px] w-full shrink-0 bg-white">

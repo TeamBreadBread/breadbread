@@ -38,6 +38,9 @@ public class UserController {
     public ApiResponse<Void> savePreference(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody CreatePreferenceRequest request) {
+        if (userDetails == null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED);
+        }
         userService.savePreference(userDetails.getId(), request);
         return ApiResponse.ok();
     }

@@ -57,9 +57,13 @@ function buildSearchQuery(params: GetBakeriesParams): string {
   return s ? `?${s}` : "";
 }
 
-export async function getBakeries(params: GetBakeriesParams = {}): Promise<BakeryListResponse> {
+export async function getBakeries(
+  params: GetBakeriesParams = {},
+  signal?: AbortSignal,
+): Promise<BakeryListResponse> {
   const { data } = await apiClient.get<ApiEnvelope<BakeryListResponse>>(
     `${PATH}${buildSearchQuery(params)}`,
+    { signal },
   );
   return extractData(data);
 }

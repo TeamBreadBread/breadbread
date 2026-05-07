@@ -11,6 +11,7 @@
  * ```
  */
 import { useEffect, useMemo, useState } from "react";
+import axios from "axios";
 import { getBakeries } from "@/api/bakery";
 import type { BakeryListResponse, GetBakeriesParams } from "@/api/types/bakery";
 
@@ -26,9 +27,12 @@ type UseBakeriesOptions = {
   enabled?: boolean;
 };
 
+const bakeryListCache = new Map<string, BakeryListResponse>();
+
 export function useBakeries(params: GetBakeriesParams = {}, options?: UseBakeriesOptions) {
   const enabled = options?.enabled ?? true;
   const serialized = useMemo(() => JSON.stringify(params), [params]);
+  const cachedForKey = enabled ? (bakeryListCache.get(serialized) ?? null) : null;
 
   const [state, setState] = useState<{
     key: string;
@@ -37,8 +41,8 @@ export function useBakeries(params: GetBakeriesParams = {}, options?: UseBakerie
     error: Error | null;
   }>({
     key: serialized,
-    data: null,
-    loading: true,
+    data: cachedForKey,
+    loading: cachedForKey === null,
     error: null,
   });
 
@@ -47,12 +51,18 @@ export function useBakeries(params: GetBakeriesParams = {}, options?: UseBakerie
       return;
     }
 
+    if (cachedForKey) {
+      return;
+    }
+
     let cancelled = false;
+    const controller = new AbortController();
     const parsed = JSON.parse(serialized) as GetBakeriesParams;
 
-    void getBakeries(parsed)
+    void getBakeries(parsed, controller.signal)
       .then((response) => {
         if (!cancelled) {
+          bakeryListCache.set(serialized, response);
           setState({
             key: serialized,
             data: response,
@@ -62,6 +72,9 @@ export function useBakeries(params: GetBakeriesParams = {}, options?: UseBakerie
         }
       })
       .catch((errorUnknown: unknown) => {
+        if (axios.isAxiosError(errorUnknown) && errorUnknown.code === "ERR_CANCELED") {
+          return;
+        }
         if (!cancelled) {
           setState({
             key: serialized,
@@ -74,12 +87,17 @@ export function useBakeries(params: GetBakeriesParams = {}, options?: UseBakerie
 
     return () => {
       cancelled = true;
+      controller.abort();
     };
-  }, [serialized, enabled]);
+  }, [serialized, enabled, cachedForKey]);
 
-  const loading = enabled && (state.key !== serialized || state.loading);
+  const loading = enabled && cachedForKey === null && (state.key !== serialized || state.loading);
   const error = enabled && state.key === serialized ? state.error : null;
-  const data = enabled && state.key === serialized ? state.data : null;
+  const data = enabled
+    ? state.key === serialized
+      ? (state.data ?? cachedForKey)
+      : cachedForKey
+    : null;
 
   return { data, loading, error };
 }
