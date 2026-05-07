@@ -69,3 +69,14 @@ jobs:
             COOLSMS_API_KEY=${{ secrets.COOLSMS_API_KEY }}
             COOLSMS_API_SECRET=${{ secrets.COOLSMS_API_SECRET }}
             COOLSMS_SENDER=${{ secrets.COOLSMS_SENDER }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            NAVER_CLIENT_ID=${{ secrets.NAVER_CLIENT_ID }}
+            NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}
+            KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
+            KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
+            AI_COURSE_WEBHOOK_URL=${{ secrets.AI_COURSE_WEBHOOK_URL }}
+            PORTONE_API_SECRET=${{ secrets.PORTONE_API_SECRET }}
+            PORTONE_STORE_ID=${{ secrets.PORTONE_STORE_ID }}
+            PORTONE_CHANNEL_KEY=${{ secrets.PORTONE_CHANNEL_KEY }}
+            PORTONE_WEBHOOK_SECRET=${{ secrets.PORTONE_WEBHOOK_SECRET }}
