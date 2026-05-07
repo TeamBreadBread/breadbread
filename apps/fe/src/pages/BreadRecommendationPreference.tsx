@@ -210,7 +210,7 @@ export default function BreadRecommendationPreference() {
           <RecommendationCTAButton
             icon={<RecommendationIcon />}
             disabled={!canSubmitRecommendation}
-            onClick={() => navigate({ to: "/ai-search-result" })}
+            onClick={() => navigate({ to: "/ai-search-result", search: { courseId: null } })}
           >
             추천 받기
           </RecommendationCTAButton>

@@ -100,7 +100,7 @@ export default function TaxiReservePage({ courseId }: TaxiReservePageProps) {
         <button
           type="button"
           className="flex h-[36px] w-[36px] shrink-0 flex-row items-center justify-center"
-          onClick={() => navigate({ to: "/ai-search-result" })}
+          onClick={() => navigate({ to: "/ai-search-result", search: { courseId: null } })}
           aria-label="뒤로가기"
         >
           <img width={24} height={24} src={ArrowLeft} alt="" />
