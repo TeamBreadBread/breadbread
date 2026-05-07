@@ -59,6 +59,9 @@ dependencies {
 	annotationProcessor 'com.querydsl:querydsl-apt::jakarta'
 	annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
 	annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
+
+    // portone
+    implementation 'io.portone:server-sdk:0.24.0'
 }
 
 tasks.named('test') {

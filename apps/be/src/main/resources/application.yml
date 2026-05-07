@@ -110,3 +110,9 @@ ai:
   webhook-timeout-seconds: ${AI_WEBHOOK_TIMEOUT_SECONDS:60}
   job-ttl-hours: ${AI_JOB_TTL_HOURS:1}
 
+portone:
+  api-base-url: ${PORTONE_API_BASE_URL:https://api.portone.io}
+  api-secret: ${PORTONE_API_SECRET:}
+  store-id: ${PORTONE_STORE_ID:}
+  channel-key: ${PORTONE_CHANNEL_KEY:}
+  webhook-secret: ${PORTONE_WEBHOOK_SECRET:}

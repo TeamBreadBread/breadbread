@@ -41,7 +41,7 @@ public class Course extends BaseEntity {
 
     private String thumbnailUrl;
 
-    private Integer estimatedCost;
+    private Long estimatedCost;
 
     private String estimatedTime;
 
@@ -75,7 +75,7 @@ public class Course extends BaseEntity {
 
     // 정적 팩토리
     public static Course createManual(String name, String thumbnailUrl,
-                                      String estimatedTime, Integer estimatedCost,
+                                      String estimatedTime, Long estimatedCost,
 									  String theme, String region,
                                       ManualCourseInfo manualCourseInfo) {
         Course course = new Course();
@@ -110,7 +110,7 @@ public class Course extends BaseEntity {
     }
 
     public void updateManual(String name, String thumbnailUrl,
-                             String estimatedTime, Integer estimatedCost,
+                             String estimatedTime, Long estimatedCost,
 							 String theme, String region,
                              ManualCourseInfo manualCourseInfo) {
         validateManual();
@@ -127,7 +127,7 @@ public class Course extends BaseEntity {
         this.courseBakeries.clear();
     }
 
-    public void updateAiResult(Integer estimatedCost,String estimatedTime,
+    public void updateAiResult(Long estimatedCost,String estimatedTime,
 							   String theme, String summary) {
         this.estimatedCost = estimatedCost;
         this.estimatedTime = estimatedTime;

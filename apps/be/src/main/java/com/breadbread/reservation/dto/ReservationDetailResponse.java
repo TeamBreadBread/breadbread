@@ -21,7 +21,7 @@ public class ReservationDetailResponse {
     private LocalDateTime createdAt;
     private CourseSummaryResponse course;
     private int headCount;
-    private Integer quotedAmount;
+    private Long quotedAmount;
     private LocalDateTime cancelledAt;
 
     public static ReservationDetailResponse from(Reservation reservation, CourseSummaryResponse course) {

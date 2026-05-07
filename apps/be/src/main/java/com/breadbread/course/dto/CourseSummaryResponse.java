@@ -14,7 +14,7 @@ public class CourseSummaryResponse {
     private String thumbnailUrl;
     private int bakeryCount;
     private String estimatedTime;
-    private Integer estimatedCost;
+    private Long estimatedCost;
     private int likeCount;
     private boolean liked;
     private List<CourseBakerySummary> bakeries;
