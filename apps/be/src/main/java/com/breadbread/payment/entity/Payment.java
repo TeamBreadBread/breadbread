@@ -10,6 +10,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
 @Table(name = "payment")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@ToString(exclude = {"reservation", "user"})
 public class Payment extends BaseEntity {
 
     @Id
@@ -121,7 +123,6 @@ public class Payment extends BaseEntity {
 		this.failReason = null;
 	}
 
-
 	public void markFailed(String failReason) {
 		if (this.status == PaymentStatus.PAID) {
 			throw new CustomException(ErrorCode.PAYMENT_ALREADY_DONE);
@@ -171,5 +172,4 @@ public class Payment extends BaseEntity {
 		this.status = PaymentStatus.REFUNDED;
 		this.refundedAt = LocalDateTime.now();
 	}
-
 }

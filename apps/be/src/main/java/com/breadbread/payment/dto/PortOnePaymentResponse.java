@@ -5,6 +5,7 @@ import com.breadbread.payment.entity.PaymentStatus;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.time.OffsetDateTime;
 
@@ -19,6 +20,7 @@ public class PortOnePaymentResponse {
 	private OffsetDateTime statusChangedAt;
 
 	@Getter
+	@ToString
 	public static class Amount {
 		private long total;
 	}
