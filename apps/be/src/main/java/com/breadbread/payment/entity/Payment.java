@@ -47,6 +47,10 @@ public class Payment extends BaseEntity {
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
+	private PaymentMethodDetail paymentMethodDetail;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
 	private PgProvider pgProvider;
 
     private LocalDateTime paidAt;
@@ -65,7 +69,9 @@ public class Payment extends BaseEntity {
     @Builder
     public Payment(String paymentId, Long originalAmount,
 				   Long discountAmount, Long finalAmount,
-				   PaymentMethod paymentMethod, PgProvider pgProvider,
+				   PaymentMethod paymentMethod,
+				   PaymentMethodDetail paymentMethodDetail,
+				   PgProvider pgProvider,
 				   User user, Reservation reservation) {
 		this.paymentId = paymentId;
         this.status  = PaymentStatus.READY;
@@ -73,6 +79,7 @@ public class Payment extends BaseEntity {
 		this.discountAmount = discountAmount;
 		this.finalAmount = finalAmount;
         this.paymentMethod = paymentMethod;
+		this.paymentMethodDetail = paymentMethodDetail;
 		this.pgProvider = pgProvider;
         this.user = user;
         this.reservation = reservation;

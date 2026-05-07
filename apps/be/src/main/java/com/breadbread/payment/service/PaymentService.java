@@ -64,6 +64,7 @@ public class PaymentService {
 			.finalAmount(reservation.getQuotedAmount())
 			.user(reservation.getUser())
 			.paymentMethod(request.getPaymentMethod())
+			.paymentMethodDetail(request.getPaymentMethodDetail())
 			.reservation(reservation)
 			.build();
 
