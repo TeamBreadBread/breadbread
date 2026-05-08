@@ -1,6 +1,6 @@
 import { AppTopBar, Button } from "@/components/common";
 import { useNavigate } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { MobileFrame } from "@/components/layout";
 import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
 import { cn } from "@/utils/cn";
@@ -13,6 +13,8 @@ import handleArrow from "@/assets/icons/handle_arrowup.png";
 import { useAiSearchBottomSheet } from "@/hooks/useAiSearchBottomSheet";
 import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
 import type { CourseDetail } from "@/api/courses";
+import { likeCourse, unlikeCourse } from "@/api/courses";
+import { getErrorMessage } from "@/api/types/common";
 
 const summary: CourseSummary = {
   title: "커플을 위한 달콤한 빵투어",
@@ -81,6 +83,11 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
     });
   }, [storedCourseDetail]);
 
+  const [likeState, setLikeState] = useState(() => ({
+    liked: Boolean(storedCourseDetail?.liked),
+    count: storedCourseDetail?.likeCount ?? 0,
+  }));
+
   const { sheetRef, contentRef, isDragging, isHalfSheet, togglePhase } = useAiSearchBottomSheet();
 
   const goBreadTaxiReserve = () => {
@@ -93,11 +100,48 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
     navigate({ to: "/taxi-reserve", search: { courseId: effectiveCourseId } });
   };
 
+  const handlePlaceClick = (place: CoursePlace) => {
+    const bakeryId = Number.parseInt(place.id, 10);
+    if (!Number.isFinite(bakeryId) || bakeryId <= 0) return;
+    void navigate({
+      to: "/bbangteo-bakery-detail",
+      search: {
+        bakeryId,
+        from: "ai-result",
+        courseId: effectiveCourseId ?? undefined,
+      },
+    });
+  };
+
+  const handleToggleCourseLike = async () => {
+    if (!effectiveCourseId) return;
+    const prev = likeState;
+    const next = prev.liked
+      ? { liked: false, count: Math.max(0, prev.count - 1) }
+      : { liked: true, count: prev.count + 1 };
+    setLikeState(next);
+    try {
+      if (prev.liked) {
+        await unlikeCourse(effectiveCourseId);
+      } else {
+        await likeCourse(effectiveCourseId);
+      }
+    } catch (error) {
+      setLikeState(prev);
+      window.alert(getErrorMessage(error));
+    }
+  };
+
   return (
     <MobileFrame className="relative h-screen overflow-hidden bg-white">
       <div className="relative h-full flex-1 bg-white">
         <AppTopBar title="AI 추천 코스" onBack={() => navigate({ to: "/home" })} />
-        <ResultSummaryCard summary={dynamicSummary ?? summary} />
+        <ResultSummaryCard
+          summary={dynamicSummary ?? summary}
+          liked={likeState.liked}
+          likeCount={likeState.count}
+          onToggleLike={() => void handleToggleCourseLike()}
+        />
 
         <div className="h-[200px] w-full overflow-hidden">
           <img src={mapImage} alt="코스 지도" className="h-full w-full object-cover" />
@@ -140,7 +184,7 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
             "pb-[calc(96px+env(safe-area-inset-bottom))]",
           )}
         >
-          <CourseTimeline places={dynamicPlaces ?? places} />
+          <CourseTimeline places={dynamicPlaces ?? places} onPlaceClick={handlePlaceClick} />
         </div>
       </aside>
 

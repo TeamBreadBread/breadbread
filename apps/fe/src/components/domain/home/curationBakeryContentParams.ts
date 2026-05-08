@@ -1,9 +1,9 @@
 import type { GetBakeriesParams } from "@/api/types/bakery";
 
-/** 홈·빵터 큐레이션 — 별점순 풀을 넉넉히 받아 온 뒤 클라이언트에서 4곳만 노출 */
+/** 홈·빵터 큐레이션 — 카드 4장만 노출하므로 풀·페이로드를 최소화 */
 export const CURATION_BAKERY_LIST_PARAMS = {
   page: 0,
-  size: 48,
+  size: 8,
   sort: "RATING" as const,
   open: false,
 } satisfies GetBakeriesParams;

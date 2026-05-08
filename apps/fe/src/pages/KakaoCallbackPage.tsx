@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { getErrorMessage } from "@/api/types/common";
 import { socialLogin, setSessionTokens } from "@/api/auth";
+import { hasUserPreferenceSaved } from "@/api/user";
+import { refreshProfileCacheFromServer } from "@/lib/userProfileCache";
 import { kakaoOAuthRedirectUri } from "@/utils/frontBase";
 import { clearKakaoPkceSession, readKakaoPkceSession } from "@/lib/kakaoOAuth";
 import MobileFrame from "@/components/layout/MobileFrame";
@@ -59,7 +61,16 @@ export default function KakaoCallbackPage(props: Props) {
         });
         clearKakaoPkceSession();
         setSessionTokens(tokens);
-        await navigate({ to: "/user-preference", search: { mode: "create" } });
+        refreshProfileCacheFromServer();
+        try {
+          if (await hasUserPreferenceSaved()) {
+            await navigate({ to: "/home" });
+          } else {
+            await navigate({ to: "/user-preference", search: { mode: "create" } });
+          }
+        } catch {
+          await navigate({ to: "/user-preference", search: { mode: "create" } });
+        }
       } catch (e) {
         clearKakaoPkceSession();
         setMessage(getErrorMessage(e));

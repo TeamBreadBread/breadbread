@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { clearSessionTokens, login, setSessionTokens } from "@/api/auth";
 import { getErrorMessage } from "@/api/types/common";
-import { getMyProfile } from "@/api/user";
-import { getDisplayNameForLoginId, saveUserProfile } from "@/lib/userProfileCache";
+import { hasUserPreferenceSaved } from "@/api/user";
+import { seedProfileCacheThenRefreshFromServer } from "@/lib/userProfileCache";
 import { AppTopBar, Button } from "@/components/common";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { cn } from "@/utils/cn";
@@ -46,14 +46,16 @@ const LoginPage = () => {
       const id = userId.trim();
       const tokens = await login({ loginId: id, password });
       setSessionTokens(tokens);
-      const me = await getMyProfile();
-      saveUserProfile({
-        loginId: me.loginId || id,
-        name: me.name?.trim() || getDisplayNameForLoginId(id),
-        email: me.email ?? "",
-        phone: me.phone ?? "",
-      });
-      navigate({ to: "/user-preference", search: { mode: "create" } });
+      seedProfileCacheThenRefreshFromServer(id);
+      try {
+        if (await hasUserPreferenceSaved()) {
+          navigate({ to: "/home" });
+        } else {
+          navigate({ to: "/user-preference", search: { mode: "create" } });
+        }
+      } catch {
+        navigate({ to: "/user-preference", search: { mode: "create" } });
+      }
     } catch (error) {
       setLoginError(getErrorMessage(error));
     } finally {
@@ -66,13 +68,20 @@ const LoginPage = () => {
       <AppTopBar title="아이디로 로그인" />
 
       <main className="flex flex-1 flex-col items-center pb-x8 pt-[60px]">
-        <section className="flex w-full flex-col px-x5">
+        <form
+          className="flex w-full flex-col px-x5"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleLogin();
+          }}
+        >
           <label className="font-pretendard typo-t4medium text-gray-800">아이디</label>
           <input
             value={userId}
             onChange={(event) => setUserId(event.target.value)}
             className={cn(credentialInputClassName, "mt-x2")}
             placeholder="아이디를 입력해 주세요"
+            autoComplete="username"
           />
           <label className="mt-x5 font-pretendard typo-t4medium text-gray-800">비밀번호</label>
           <input
@@ -81,6 +90,7 @@ const LoginPage = () => {
             onChange={(event) => setPassword(event.target.value)}
             className={cn(credentialInputClassName, "mt-x2")}
             placeholder="비밀번호를 입력해 주세요"
+            autoComplete="current-password"
           />
           {!!loginError && (
             <p className="mt-x2 pl-x1 text-size-3 leading-t4 tracking-1 text-red-500">
@@ -88,17 +98,16 @@ const LoginPage = () => {
             </p>
           )}
           <Button
-            type="button"
+            type="submit"
             disabled={!isLoginEnabled || isSubmitting}
             className={cn(
               "mt-x6 h-x12 w-full rounded-r3",
               isLoginEnabled && !isSubmitting ? "bg-gray-800" : "bg-gray-200",
             )}
-            onClick={() => void handleLogin()}
           >
             {isSubmitting ? "로그인 중…" : "로그인"}
           </Button>
-        </section>
+        </form>
 
         <nav
           aria-label="로그인 하단 링크"

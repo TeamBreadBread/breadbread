@@ -52,6 +52,10 @@ export default defineConfig({
         target: 'https://api.breadbread.io',
         changeOrigin: true,
       },
+      '/courses': {
+        target: 'https://api.breadbread.io',
+        changeOrigin: true,
+      },
       '/users': {
         target: 'https://api.breadbread.io',
         changeOrigin: true,

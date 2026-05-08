@@ -11,7 +11,6 @@
  * ```
  */
 import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
 import { getBakeries } from "@/api/bakery";
 import type { BakeryListResponse, GetBakeriesParams } from "@/api/types/bakery";
 
@@ -28,6 +27,37 @@ type UseBakeriesOptions = {
 };
 
 const bakeryListCache = new Map<string, BakeryListResponse>();
+const bakeryListInflight = new Map<string, Promise<BakeryListResponse>>();
+
+/**
+ * 네트워크 요청 1번만 나가도록 dedupe하고 결과를 훅 캐시에 적재합니다.
+ * 라우트 loader 등에서 먼저 호출하면 큐레이션 섹션까지 네트워크 왕복이 줄어듭니다.
+ */
+export function ensureBakeriesListLoaded(
+  params: GetBakeriesParams = {},
+): Promise<BakeryListResponse> {
+  const serialized = JSON.stringify(params);
+  const cached = bakeryListCache.get(serialized);
+  if (cached) {
+    return Promise.resolve(cached);
+  }
+
+  let pending = bakeryListInflight.get(serialized);
+  if (!pending) {
+    pending = getBakeries(JSON.parse(serialized) as GetBakeriesParams)
+      .then((response) => {
+        bakeryListCache.set(serialized, response);
+        bakeryListInflight.delete(serialized);
+        return response;
+      })
+      .catch((errorUnknown: unknown) => {
+        bakeryListInflight.delete(serialized);
+        throw errorUnknown;
+      });
+    bakeryListInflight.set(serialized, pending);
+  }
+  return pending;
+}
 
 export function useBakeries(params: GetBakeriesParams = {}, options?: UseBakeriesOptions) {
   const enabled = options?.enabled ?? true;
@@ -56,13 +86,11 @@ export function useBakeries(params: GetBakeriesParams = {}, options?: UseBakerie
     }
 
     let cancelled = false;
-    const controller = new AbortController();
     const parsed = JSON.parse(serialized) as GetBakeriesParams;
 
-    void getBakeries(parsed, controller.signal)
+    void ensureBakeriesListLoaded(parsed)
       .then((response) => {
         if (!cancelled) {
-          bakeryListCache.set(serialized, response);
           setState({
             key: serialized,
             data: response,
@@ -72,9 +100,6 @@ export function useBakeries(params: GetBakeriesParams = {}, options?: UseBakerie
         }
       })
       .catch((errorUnknown: unknown) => {
-        if (axios.isAxiosError(errorUnknown) && errorUnknown.code === "ERR_CANCELED") {
-          return;
-        }
         if (!cancelled) {
           setState({
             key: serialized,
@@ -87,7 +112,6 @@ export function useBakeries(params: GetBakeriesParams = {}, options?: UseBakerie
 
     return () => {
       cancelled = true;
-      controller.abort();
     };
   }, [serialized, enabled, cachedForKey]);
 

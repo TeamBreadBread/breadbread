@@ -1,14 +1,22 @@
+import {
+  BBANGTEO_FIXED_HEADER_OUTER_CLASS,
+  FIXED_TOP_BAR_SPACER_CLASS,
+} from "@/components/layout/layout.constants";
+
 type BbangteoHeaderProps = {
   title: string;
 };
 
 const BbangteoHeader = ({ title }: BbangteoHeaderProps) => {
   return (
-    <header className="fixed top-0 left-1/2 z-40 h-[56px] w-full max-w-[402px] -translate-x-1/2 border-b border-[#eeeff1] bg-white px-5 md:max-w-[744px]">
-      <div className="flex h-full items-center justify-start">
-        <h1 className="text-[18px] leading-[24px] font-bold text-[#1a1c20]">{title}</h1>
-      </div>
-    </header>
+    <>
+      <header className={BBANGTEO_FIXED_HEADER_OUTER_CLASS}>
+        <div className="flex h-[56px] items-center justify-start px-5">
+          <h1 className="text-[18px] leading-[24px] font-bold text-[#1a1c20]">{title}</h1>
+        </div>
+      </header>
+      <div className={FIXED_TOP_BAR_SPACER_CLASS} aria-hidden />
+    </>
   );
 };
 

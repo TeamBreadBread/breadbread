@@ -35,6 +35,7 @@ export const Route = createFileRoute("/bbangteo-bakery-detail")({
   validateSearch: (search: Record<string, unknown>) => ({
     bakeryId: parseBakeryId(search.bakeryId),
     from: parseBakeryListEntryFrom(search.from),
+    courseId: parseBakeryId(search.courseId),
     reviewUploaded: parseBoolean(search.reviewUploaded),
     reviewTab: parseBoolean(search.reviewTab),
   }),
@@ -42,11 +43,12 @@ export const Route = createFileRoute("/bbangteo-bakery-detail")({
 });
 
 function BbangteoBakeryDetailRoute() {
-  const { bakeryId, from, reviewUploaded, reviewTab } = Route.useSearch();
+  const { bakeryId, from, courseId, reviewUploaded, reviewTab } = Route.useSearch();
   return (
     <BbangteoBakeryDetailPage
       bakeryId={bakeryId}
       listEntryFrom={from}
+      returnCourseId={courseId}
       reviewUploaded={Boolean(reviewUploaded || reviewTab)}
     />
   );

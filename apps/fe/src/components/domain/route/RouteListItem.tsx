@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { cn } from "@/utils/cn";
+import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
 import type { RouteCourse } from "./types";
 
 interface RouteListItemProps {
   course: RouteCourse;
   onClick?: () => void;
   onDeleteCourse?: (courseId: string) => void;
+  onToggleCourseLike?: (courseId: string) => void;
 }
 
 function buildCourseShareLink(courseId: string): string {
@@ -15,7 +17,31 @@ function buildCourseShareLink(courseId: string): string {
   return url.toString();
 }
 
-export default function RouteListItem({ course, onClick, onDeleteCourse }: RouteListItemProps) {
+function HeartIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      aria-hidden
+      className={filled ? "text-red-500" : "text-[#b0b3ba]"}
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinejoin="round"
+      strokeLinecap="round"
+    >
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+    </svg>
+  );
+}
+
+export default function RouteListItem({
+  course,
+  onClick,
+  onDeleteCourse,
+  onToggleCourseLike,
+}: RouteListItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
 
@@ -72,6 +98,11 @@ export default function RouteListItem({ course, onClick, onDeleteCourse }: Route
     closeSheet();
   };
 
+  const handleToggleLike = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    onToggleCourseLike?.(course.id);
+  };
+
   return (
     <div className="w-full border-b border-gray-100 bg-gray-00">
       <div
@@ -115,6 +146,22 @@ export default function RouteListItem({ course, onClick, onDeleteCourse }: Route
                 <div className="h-[18px] w-[18px] rounded-full bg-gray-500" />
               </div>
             </div>
+
+            <span className="font-pretendard typo-t3regular whitespace-nowrap text-gray-700">
+              ·
+            </span>
+            <button
+              type="button"
+              aria-label={course.liked ? "코스 좋아요 취소" : "코스 좋아요"}
+              aria-pressed={course.liked}
+              onClick={handleToggleLike}
+              className="flex items-center gap-x1"
+            >
+              <HeartIcon filled={course.liked} />
+              <span className="font-pretendard typo-t3regular whitespace-nowrap text-gray-900">
+                {course.likeCount}
+              </span>
+            </button>
           </div>
         </div>
 
@@ -131,11 +178,11 @@ export default function RouteListItem({ course, onClick, onDeleteCourse }: Route
       </div>
 
       {isExpanded ? (
-        <div className="mx-auto mb-x6 flex h-[130px] w-[362px] flex-col items-start justify-start overflow-hidden rounded-r2 border border-gray-200 bg-gray-100 p-[14px]">
+        <div className="mx-auto mb-x6 flex h-[130px] w-full max-w-[362px] flex-col items-start justify-start overflow-hidden rounded-r2 border border-gray-200 bg-gray-100 p-[14px] md:max-w-full">
           <div className="relative flex w-full flex-col items-start justify-start gap-[6px] px-0 py-[4px]">
             <div className="absolute bottom-0 left-[2px] top-0 w-[2px] bg-gray-300" />
 
-            {["성심당 본점", "몽심 대흥점", "땡큐베리머치", "뮤제 베이커리"].map((store) => (
+            {course.bakeryNames.map((store) => (
               <div key={store} className="flex w-full items-center justify-start gap-[6.5px]">
                 <div className="z-10 h-[6px] w-[6px] rounded-full bg-gray-500" />
                 <div className="flex-1 font-pretendard text-size-3 font-normal leading-t4 text-gray-800">
@@ -156,7 +203,12 @@ export default function RouteListItem({ course, onClick, onDeleteCourse }: Route
             onClick={closeSheet}
           />
 
-          <div className="absolute bottom-0 left-1/2 flex max-h-[500px] w-full max-w-[402px] -translate-x-1/2 flex-col items-start justify-start gap-[12px] overflow-hidden rounded-tl-[24px] rounded-tr-[24px] bg-white">
+          <div
+            className={cn(
+              "absolute bottom-0 left-1/2 flex max-h-[500px] w-full -translate-x-1/2 flex-col items-start justify-start gap-[12px] overflow-hidden rounded-tl-[24px] rounded-tr-[24px] bg-white",
+              RESPONSIVE_FRAME_WIDTH,
+            )}
+          >
             <div className="relative h-[24px] w-full shrink-0 overflow-hidden bg-white">
               <button
                 type="button"
