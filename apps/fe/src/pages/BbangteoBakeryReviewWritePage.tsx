@@ -109,6 +109,7 @@ export default function BbangteoBakeryReviewWritePage({
       search: {
         bakeryId,
         from: listEntryFrom,
+        courseId: undefined,
         reviewTab: true,
         reviewUploaded,
       },

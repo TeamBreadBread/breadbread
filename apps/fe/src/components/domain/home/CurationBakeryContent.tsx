@@ -50,6 +50,7 @@ export function CurationBakeryContent({
         search: {
           bakeryId: item.bakeryId,
           from: bakeryListEntryFrom,
+          courseId: undefined,
           reviewUploaded: undefined,
           reviewTab: undefined,
         },

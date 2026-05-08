@@ -346,6 +346,7 @@ const BbangteoBakeryListPage = ({ listEntryFrom }: BbangteoBakeryListPageProps) 
       search: {
         bakeryId: bakery.id,
         from: listEntryFrom,
+        courseId: undefined,
         reviewUploaded: undefined,
         reviewTab: undefined,
       },

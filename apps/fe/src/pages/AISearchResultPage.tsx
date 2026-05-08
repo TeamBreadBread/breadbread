@@ -109,6 +109,8 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
         bakeryId,
         from: "ai-result",
         courseId: effectiveCourseId ?? undefined,
+        reviewUploaded: undefined,
+        reviewTab: undefined,
       },
     });
   };

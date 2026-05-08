@@ -157,7 +157,7 @@ export default function TaxiReservePage({ courseId }: TaxiReservePageProps) {
               navigate({
                 to: "/ai-search-result",
                 search: {
-                  courseId: effectiveCourseId ?? undefined,
+                  courseId: effectiveCourseId ?? null,
                 },
               })
             }
