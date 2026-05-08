@@ -2,6 +2,8 @@ package com.breadbread.user.controller;
 
 import com.breadbread.auth.dto.CustomUserDetails;
 import com.breadbread.global.dto.ApiResponse;
+import com.breadbread.global.exception.CustomException;
+import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.dto.CreatePreferenceRequest;
 import com.breadbread.user.dto.PreferenceResponse;
 import com.breadbread.user.dto.UpdatePreferenceRequest;
@@ -35,6 +37,9 @@ public class UserController {
     public ApiResponse<Void> savePreference(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody CreatePreferenceRequest request) {
+        if (userDetails == null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED);
+        }
         userService.savePreference(userDetails.getId(), request);
         return ApiResponse.ok();
     }
