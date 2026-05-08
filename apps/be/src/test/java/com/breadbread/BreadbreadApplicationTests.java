@@ -10,11 +10,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 @SpringBootTest(properties = "spring.cloud.gcp.sql.enabled=false")
 class BreadbreadApplicationTests {
 
-	@MockitoBean
-	Storage storage;
+    @MockitoBean Storage storage;
 
-	@Test
-	void contextLoads() {
-	}
-
+    @Test
+    void contextLoads() {}
 }
