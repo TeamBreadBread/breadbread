@@ -42,6 +42,7 @@ import { Route as BbangteoBakeryDetailRouteImport } from "./routes/bbangteo-bake
 import { Route as BbangteoArticleBoardRouteImport } from "./routes/bbangteo-article-board";
 import { Route as BbangteoRouteImport } from "./routes/bbangteo";
 import { Route as AiSearchResultRouteImport } from "./routes/ai-search-result";
+import { Route as AiCourseGeneratingRouteImport } from "./routes/ai-course-generating";
 import { Route as AccountSettingsRouteImport } from "./routes/account-settings";
 import { Route as IndexRouteImport } from "./routes/index";
 import { Route as RouteIndexRouteImport } from "./routes/route.index";
@@ -212,6 +213,11 @@ const AiSearchResultRoute = AiSearchResultRouteImport.update({
   path: "/ai-search-result",
   getParentRoute: () => rootRouteImport,
 } as any);
+const AiCourseGeneratingRoute = AiCourseGeneratingRouteImport.update({
+  id: "/ai-course-generating",
+  path: "/ai-course-generating",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const AccountSettingsRoute = AccountSettingsRouteImport.update({
   id: "/account-settings",
   path: "/account-settings",
@@ -236,6 +242,7 @@ const AuthKakaoCallbackRoute = AuthKakaoCallbackRouteImport.update({
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/account-settings": typeof AccountSettingsRoute;
+  "/ai-course-generating": typeof AiCourseGeneratingRoute;
   "/ai-search-result": typeof AiSearchResultRoute;
   "/bbangteo": typeof BbangteoRoute;
   "/bbangteo-article-board": typeof BbangteoArticleBoardRoute;
@@ -275,6 +282,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
   "/account-settings": typeof AccountSettingsRoute;
+  "/ai-course-generating": typeof AiCourseGeneratingRoute;
   "/ai-search-result": typeof AiSearchResultRoute;
   "/bbangteo": typeof BbangteoRoute;
   "/bbangteo-article-board": typeof BbangteoArticleBoardRoute;
@@ -315,6 +323,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   "/": typeof IndexRoute;
   "/account-settings": typeof AccountSettingsRoute;
+  "/ai-course-generating": typeof AiCourseGeneratingRoute;
   "/ai-search-result": typeof AiSearchResultRoute;
   "/bbangteo": typeof BbangteoRoute;
   "/bbangteo-article-board": typeof BbangteoArticleBoardRoute;
@@ -356,6 +365,7 @@ export interface FileRouteTypes {
   fullPaths:
     | "/"
     | "/account-settings"
+    | "/ai-course-generating"
     | "/ai-search-result"
     | "/bbangteo"
     | "/bbangteo-article-board"
@@ -395,6 +405,7 @@ export interface FileRouteTypes {
   to:
     | "/"
     | "/account-settings"
+    | "/ai-course-generating"
     | "/ai-search-result"
     | "/bbangteo"
     | "/bbangteo-article-board"
@@ -434,6 +445,7 @@ export interface FileRouteTypes {
     | "__root__"
     | "/"
     | "/account-settings"
+    | "/ai-course-generating"
     | "/ai-search-result"
     | "/bbangteo"
     | "/bbangteo-article-board"
@@ -474,6 +486,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   AccountSettingsRoute: typeof AccountSettingsRoute;
+  AiCourseGeneratingRoute: typeof AiCourseGeneratingRoute;
   AiSearchResultRoute: typeof AiSearchResultRoute;
   BbangteoRoute: typeof BbangteoRoute;
   BbangteoArticleBoardRoute: typeof BbangteoArticleBoardRoute;
@@ -744,6 +757,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AiSearchResultRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/ai-course-generating": {
+      id: "/ai-course-generating";
+      path: "/ai-course-generating";
+      fullPath: "/ai-course-generating";
+      preLoaderRoute: typeof AiCourseGeneratingRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/account-settings": {
       id: "/account-settings";
       path: "/account-settings";
@@ -778,6 +798,7 @@ declare module "@tanstack/react-router" {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountSettingsRoute: AccountSettingsRoute,
+  AiCourseGeneratingRoute: AiCourseGeneratingRoute,
   AiSearchResultRoute: AiSearchResultRoute,
   BbangteoRoute: BbangteoRoute,
   BbangteoArticleBoardRoute: BbangteoArticleBoardRoute,

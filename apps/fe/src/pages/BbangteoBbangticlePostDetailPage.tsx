@@ -2,6 +2,10 @@ import { useNavigate } from "@tanstack/react-router";
 import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
 import BottomNav from "@/components/layout/BottomNav";
+import {
+  BBANGTEO_FIXED_HEADER_OUTER_CLASS,
+  FIXED_TOP_BAR_SPACER_CLASS,
+} from "@/components/layout/layout.constants";
 import MobileFrame from "@/components/layout/MobileFrame";
 
 type Post = {
@@ -37,16 +41,21 @@ const CircleIcon = ({ size = 24, color = "#dcdee3" }: { size?: number; color?: s
 const BackHeader = () => {
   const navigate = useNavigate();
   return (
-    <header className="fixed top-0 left-1/2 z-40 flex h-[56px] w-full max-w-[402px] -translate-x-1/2 items-center justify-between border-b border-[#eeeff1] bg-white px-[20px] md:max-w-[744px]">
-      <button
-        type="button"
-        className="flex h-[36px] w-[36px] items-center justify-center"
-        onClick={() => navigate({ to: "/bbangteo-article-board" })}
-      >
-        <img src={ArrowLeft} alt="뒤로가기" className="h-[24px] w-[24px]" />
-      </button>
-      <div className="h-[36px] w-[36px]" />
-    </header>
+    <>
+      <header className={BBANGTEO_FIXED_HEADER_OUTER_CLASS}>
+        <div className="flex h-[56px] items-center justify-between px-[20px]">
+          <button
+            type="button"
+            className="flex h-[36px] w-[36px] items-center justify-center"
+            onClick={() => navigate({ to: "/bbangteo-article-board" })}
+          >
+            <img src={ArrowLeft} alt="뒤로가기" className="h-[24px] w-[24px]" />
+          </button>
+          <div className="h-[36px] w-[36px]" />
+        </div>
+      </header>
+      <div className={FIXED_TOP_BAR_SPACER_CLASS} aria-hidden />
+    </>
   );
 };
 
@@ -139,7 +148,7 @@ const BbangticlePostDetailPage = () => {
     <MobileFrame className="bg-[#f3f4f5]">
       <div className="flex min-h-screen flex-1 flex-col bg-[#f3f4f5]">
         <BackHeader />
-        <main className="flex flex-1 flex-col pb-[56px] pt-[56px] sm:pb-[60px]">
+        <main className="flex flex-1 flex-col pb-[56px] sm:pb-[60px]">
           <PostDetail post={bbangticlePost} />
         </main>
       </div>

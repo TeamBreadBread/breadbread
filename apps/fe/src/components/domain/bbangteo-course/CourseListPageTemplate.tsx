@@ -15,7 +15,7 @@ const CourseListPageTemplate = ({ title, courses }: CourseListPageTemplateProps)
     <MobileFrame className="bg-[#f3f4f5]">
       <div className="flex min-h-screen flex-1 flex-col bg-[#f3f4f5]">
         <CoursePageHeader title={title} />
-        <div className="flex flex-1 flex-col pt-[56px]">
+        <div className="flex flex-1 flex-col">
           <CourseFilterBar />
           <CourseList courses={courses} />
         </div>

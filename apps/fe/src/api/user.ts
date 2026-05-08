@@ -1,5 +1,5 @@
 import { apiClient, extractData } from "@/api/client";
-import type { ApiEnvelope } from "@/api/types/common";
+import { ApiBusinessError, type ApiEnvelope } from "@/api/types/common";
 
 const PATH = "/users";
 
@@ -58,9 +58,36 @@ export async function savePreference(body: SavePreferenceRequest): Promise<void>
   extractData(data);
 }
 
+let inflightMyPreference: Promise<MyPreferenceResponse> | null = null;
+
 export async function getMyPreference(): Promise<MyPreferenceResponse> {
-  const { data } = await apiClient.get<ApiEnvelope<MyPreferenceResponse>>(`${PATH}/preference`);
-  return extractData(data);
+  if (!inflightMyPreference) {
+    inflightMyPreference = apiClient
+      .get<ApiEnvelope<MyPreferenceResponse>>(`${PATH}/preference`)
+      .then((response) => extractData(response.data))
+      .finally(() => {
+        inflightMyPreference = null;
+      });
+  }
+  return inflightMyPreference;
+}
+
+/** 로그인 직후 라우팅용 — 저장된 선호도가 있으면 true, 없으면 false. 네트워크 등 그 외 오류는 throw */
+export async function hasUserPreferenceSaved(): Promise<boolean> {
+  try {
+    await getMyPreference();
+    return true;
+  } catch (e) {
+    if (
+      e instanceof ApiBusinessError &&
+      (e.code === "E0403" ||
+        e.status === 404 ||
+        /선호도 조사 결과가 없습니다/.test(e.message ?? ""))
+    ) {
+      return false;
+    }
+    throw e;
+  }
 }
 
 export async function updateMyPreference(body: SavePreferenceRequest): Promise<void> {

@@ -1,3 +1,5 @@
+import { getMyProfile } from "@/api/user";
+
 /**
  * 서버에 `GET /users/me` 같은 프로필 API가 없을 때, 회원가입·로그인 시점에 저장해
  * 마이페이지 등에 표시할 이름/이메일을 유지합니다. (같은 기기·브라우저)
@@ -73,6 +75,51 @@ export function clearUserProfile(): void {
   } catch {
     /* ignore */
   }
+}
+
+/**
+ * 로그인 직후 다음 화면 전환을 막지 않도록, 아이디 기준 낙관적 캐시를 둔 뒤
+ * GET /users/me로 서버 값을 백그라운드에서 반영합니다.
+ */
+export function seedProfileCacheThenRefreshFromServer(loginId: string): void {
+  const trimmed = loginId.trim();
+  if (!trimmed) return;
+  saveUserProfile({
+    loginId: trimmed,
+    name: getDisplayNameForLoginId(trimmed),
+    email: "",
+    phone: "",
+  });
+  void getMyProfile()
+    .then((me) => {
+      const id = me.loginId?.trim() || trimmed;
+      saveUserProfile({
+        loginId: id,
+        name: me.name?.trim() || getDisplayNameForLoginId(id),
+        email: me.email ?? "",
+        phone: me.phone ?? "",
+      });
+    })
+    .catch(() => {
+      /* 낙관적 캐시 유지 */
+    });
+}
+
+/** 소셜 로그인 등 아이디를 미리 알 수 없을 때 — 토큰 저장 직후 비동기로 프로필만 갱신 */
+export function refreshProfileCacheFromServer(): void {
+  void getMyProfile()
+    .then((me) => {
+      const id = me.loginId.trim();
+      saveUserProfile({
+        loginId: me.loginId || id,
+        name: me.name?.trim() || getDisplayNameForLoginId(id),
+        email: me.email ?? "",
+        phone: me.phone ?? "",
+      });
+    })
+    .catch(() => {
+      /* ignore */
+    });
 }
 
 function getNamesByLoginId(): Record<string, string> {

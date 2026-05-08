@@ -1,9 +1,9 @@
 import { apiClient, extractData } from "@/api/client";
 import type { ApiEnvelope } from "@/api/types/common";
 
-export type TravelType = "COUPLE" | "FRIEND" | "FAMILY" | "ALONE";
+export type TravelType = "COUPLE" | "FRIENDS" | "FAMILY" | "ALONE";
 export type BudgetRange = "UNDER_20000" | "BETWEEN_20000_40000" | "OVER_40000" | "ANY";
-export type FlexibilityLevel = "SOLDOUT_ONLY" | "FLEXIBLE" | "STRICT";
+export type FlexibilityLevel = "SOLDOUT_ONLY" | "ACTIVE" | "MAINTAIN";
 export type BreadType = "BREAD" | "SANDWICH" | "CAKE" | "RICE_CAKE" | "COOKIE" | "DIET";
 
 const PATH = "/courses";
@@ -104,6 +104,14 @@ export type AiCourseStatusResponse = {
   errorMessage: string | null;
 };
 
+export type MyRouteCourse = {
+  courseId: number;
+  name: string;
+  estimatedTime: string;
+  bakeryCount: number;
+  bakeryNames: string[];
+};
+
 export async function getCourses(params?: GetCoursesParams): Promise<CourseListResponse> {
   const { data } = await apiClient.get<ApiEnvelope<CourseListResponse>>(PATH, { params });
   return extractData(data);
@@ -163,6 +171,18 @@ export async function deleteAiCourse(courseId: number): Promise<void> {
     `${PATH}/${courseId}/ai`,
   );
   extractData(data);
+}
+
+export async function deleteCourse(courseId: number): Promise<void> {
+  const { data } = await apiClient.delete<ApiEnvelope<Record<string, never>>>(
+    `${PATH}/${courseId}`,
+  );
+  extractData(data);
+}
+
+export async function getMyCourseRoutes(): Promise<MyRouteCourse[]> {
+  const { data } = await apiClient.get<ApiEnvelope<MyRouteCourse[]>>(`${PATH}/me/routes`);
+  return extractData(data);
 }
 
 export async function requestAiCourse(body: AiCourseRequest): Promise<string> {

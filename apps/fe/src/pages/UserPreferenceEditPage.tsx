@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { getErrorMessage } from "@/api/types/common";
 import {
@@ -15,84 +15,14 @@ import PreferenceIntroSection from "@/components/domain/ai-course/PreferenceIntr
 import PreferenceQuestionSection from "@/components/domain/ai-course/PreferenceQuestionSection";
 import MobileFrame from "@/components/layout/MobileFrame";
 import type { PreferenceQuestion } from "@/components/domain/ai-course/types";
-
-const BAKERY_TYPE_MAP: Partial<Record<string, BakeryType>> = {
-  plain: "PLAIN",
-  dessert: "DESSERT",
-  premium: "GOURMET",
-  traditional: "CLASSIC",
-  trendy: "TRENDY",
-};
-
-const BAKERY_PERSONALITY_MAP: Partial<Record<string, BakeryPersonality>> = {
-  famous: "LANDMARK",
-  local: "HIDDEN_GEM",
-  sns: "HOT_PLACE",
-  classic: "HERITAGE",
-};
-
-const BAKERY_USE_TYPE_MAP: Partial<Record<string, BakeryUseType>> = {
-  takeout: "TAKEOUT",
-  cafe: "CAFE_STYLE",
-  mood: "MOODY_SPACE",
-  practical: "PRACTICAL",
-};
-
-const WAITING_MAP: Record<string, WaitingTolerance> = {
-  "no-wait": "NO_WAIT",
-  "10-20": "UNDER_20",
-  "30": "UNDER_30",
-  ok: "ANYTIME",
-};
-
-const initialQuestions: PreferenceQuestion[] = [
-  {
-    id: "bread-style",
-    title: "빵 스타일",
-    allowMultiple: true,
-    options: [
-      { id: "plain", label: "담백한 빵" },
-      { id: "dessert", label: "달달한 디저트" },
-      { id: "premium", label: "고급 베이커리" },
-      { id: "traditional", label: "전통 스타일" },
-      { id: "trendy", label: "요즘 핫한 메뉴" },
-    ],
-  },
-  {
-    id: "bakery-type",
-    title: "빵집 성향",
-    allowMultiple: true,
-    options: [
-      { id: "famous", label: "유명 맛집" },
-      { id: "local", label: "동네 숨은 맛집" },
-      { id: "sns", label: "SNS 핫플" },
-      { id: "classic", label: "전통 빵집" },
-    ],
-  },
-  {
-    id: "store-preference",
-    title: "선호 빵집 취향",
-    allowMultiple: true,
-    options: [
-      { id: "takeout", label: "포장 위주" },
-      { id: "cafe", label: "카페형" },
-      { id: "mood", label: "SNS 감성" },
-      { id: "practical", label: "실속형" },
-    ],
-  },
-  {
-    id: "waiting",
-    title: "웨이팅 허용도",
-    allowMultiple: false,
-    hideSelectionHint: true,
-    options: [
-      { id: "no-wait", label: "웨이팅 싫음" },
-      { id: "10-20", label: "10~20분 가능" },
-      { id: "30", label: "30분 가능" },
-      { id: "ok", label: "상관 없음" },
-    ],
-  },
-];
+import {
+  hydrateQuestionsFromMyPreference,
+  INITIAL_USER_PREFERENCE_QUESTIONS,
+  USER_PREFERENCE_BAKERY_PERSONALITY_MAP as BAKERY_PERSONALITY_MAP,
+  USER_PREFERENCE_BAKERY_TYPE_MAP as BAKERY_TYPE_MAP,
+  USER_PREFERENCE_BAKERY_USE_TYPE_MAP as BAKERY_USE_TYPE_MAP,
+  USER_PREFERENCE_WAITING_MAP as WAITING_MAP,
+} from "@/lib/userPreferenceHydrate";
 
 type PreferenceSnapshot = {
   bakeryTypes: BakeryType[];
@@ -107,7 +37,9 @@ function sortUnique<T extends string>(values: T[]): T[] {
 
 export default function UserPreferenceEditPage() {
   const navigate = useNavigate();
-  const [questions, setQuestions] = useState(initialQuestions);
+  const [questions, setQuestions] = useState<PreferenceQuestion[]>(
+    INITIAL_USER_PREFERENCE_QUESTIONS,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [originalSnapshot, setOriginalSnapshot] = useState<PreferenceSnapshot | null>(null);
@@ -145,11 +77,14 @@ export default function UserPreferenceEditPage() {
     );
   };
 
-  const getSelectedOptionIds = (questionId: string): string[] =>
-    questions
-      .find((question) => question.id === questionId)
-      ?.options.filter((option) => option.selected)
-      .map((option) => option.id) ?? [];
+  const getSelectedOptionIds = useCallback(
+    (questionId: string): string[] =>
+      questions
+        .find((question) => question.id === questionId)
+        ?.options.filter((option) => option.selected)
+        .map((option) => option.id) ?? [],
+    [questions],
+  );
 
   const mapByTable = <T extends string>(
     selectedIds: string[],
@@ -174,7 +109,7 @@ export default function UserPreferenceEditPage() {
     const waitingSelected = getSelectedOptionIds("waiting")[0];
     const waitingTolerance = waitingSelected ? WAITING_MAP[waitingSelected] : null;
     return { bakeryTypes, bakeryPersonalities, bakeryUseTypes, waitingTolerance };
-  }, [questions]);
+  }, [getSelectedOptionIds]);
 
   const allQuestionsAnswered = questions.every((question) =>
     question.options.some((option) => option.selected),
@@ -193,66 +128,7 @@ export default function UserPreferenceEditPage() {
         const preference = await getMyPreference();
         if (!mounted) return;
 
-        const typeIdSet = new Set(
-          Object.entries(BAKERY_TYPE_MAP)
-            .filter(([, value]) => value && preference.bakeryTypes.includes(value))
-            .map(([id]) => id),
-        );
-        const personalityIdSet = new Set(
-          Object.entries(BAKERY_PERSONALITY_MAP)
-            .filter(([, value]) => value && preference.bakeryPersonalities.includes(value))
-            .map(([id]) => id),
-        );
-        const useTypeIdSet = new Set(
-          Object.entries(BAKERY_USE_TYPE_MAP)
-            .filter(([, value]) => value && preference.bakeryUseTypes.includes(value))
-            .map(([id]) => id),
-        );
-        const waitingId = Object.entries(WAITING_MAP).find(
-          ([, value]) => value === preference.waitingTolerance,
-        )?.[0];
-
-        setQuestions((prev) =>
-          prev.map((question) => {
-            if (question.id === "bread-style") {
-              return {
-                ...question,
-                options: question.options.map((option) => ({
-                  ...option,
-                  selected: typeIdSet.has(option.id),
-                })),
-              };
-            }
-            if (question.id === "bakery-type") {
-              return {
-                ...question,
-                options: question.options.map((option) => ({
-                  ...option,
-                  selected: personalityIdSet.has(option.id),
-                })),
-              };
-            }
-            if (question.id === "store-preference") {
-              return {
-                ...question,
-                options: question.options.map((option) => ({
-                  ...option,
-                  selected: useTypeIdSet.has(option.id),
-                })),
-              };
-            }
-            if (question.id === "waiting") {
-              return {
-                ...question,
-                options: question.options.map((option) => ({
-                  ...option,
-                  selected: option.id === waitingId,
-                })),
-              };
-            }
-            return question;
-          }),
-        );
+        setQuestions(hydrateQuestionsFromMyPreference(preference));
 
         setOriginalSnapshot({
           bakeryTypes: sortUnique(preference.bakeryTypes ?? []),

@@ -5,6 +5,10 @@ import { uploadImages } from "@/api/image";
 import { getErrorMessage, type ApiEnvelope } from "@/api/types/common";
 import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import BottomNav from "@/components/layout/BottomNav";
+import {
+  BBANGTEO_FIXED_HEADER_OUTER_CLASS,
+  FIXED_TOP_BAR_SPACER_CLASS,
+} from "@/components/layout/layout.constants";
 import MobileFrame from "@/components/layout/MobileFrame";
 
 type BoardPostPayload = {
@@ -34,25 +38,30 @@ const WriteHeader = ({
   const navigate = useNavigate();
 
   return (
-    <header className="fixed top-0 left-1/2 z-40 flex h-[56px] w-full max-w-[402px] -translate-x-1/2 items-center justify-between border-b border-[#eeeff1] bg-white px-[20px] py-[10px] md:max-w-[744px]">
-      <button
-        type="button"
-        className="flex h-[36px] w-[36px] shrink-0 items-center justify-center"
-        onClick={() => navigate({ to: "/bbangteo-board" })}
-      >
-        <img src={ArrowLeft} alt="뒤로가기" className="h-[24px] w-[24px]" />
-      </button>
-      <button
-        type="button"
-        className={`shrink-0 text-[18px] leading-[24px] font-medium ${
-          canSubmit && !isSubmitting ? "text-[#1a1c20]" : "text-[#b0b3ba]"
-        }`}
-        disabled={!canSubmit || isSubmitting}
-        onClick={onSubmit}
-      >
-        {isSubmitting ? "게시 중..." : "게시"}
-      </button>
-    </header>
+    <>
+      <header className={BBANGTEO_FIXED_HEADER_OUTER_CLASS}>
+        <div className="flex h-[56px] items-center justify-between px-[20px]">
+          <button
+            type="button"
+            className="flex h-[36px] w-[36px] shrink-0 items-center justify-center"
+            onClick={() => navigate({ to: "/bbangteo-board" })}
+          >
+            <img src={ArrowLeft} alt="뒤로가기" className="h-[24px] w-[24px]" />
+          </button>
+          <button
+            type="button"
+            className={`shrink-0 text-[18px] leading-[24px] font-medium ${
+              canSubmit && !isSubmitting ? "text-[#1a1c20]" : "text-[#b0b3ba]"
+            }`}
+            disabled={!canSubmit || isSubmitting}
+            onClick={onSubmit}
+          >
+            {isSubmitting ? "게시 중..." : "게시"}
+          </button>
+        </div>
+      </header>
+      <div className={FIXED_TOP_BAR_SPACER_CLASS} aria-hidden />
+    </>
   );
 };
 
@@ -215,7 +224,7 @@ const BbangteoBoardWritePage = () => {
     <MobileFrame className="bg-white">
       <div className="flex min-h-screen flex-1 flex-col bg-white">
         <WriteHeader canSubmit={canSubmit} isSubmitting={isSubmitting} onSubmit={handleSubmit} />
-        <main className="flex flex-1 flex-col gap-[10px] px-[20px] pb-[calc(56px+52px)] pt-[76px] sm:pb-[calc(60px+52px)]">
+        <main className="flex flex-1 flex-col gap-[10px] px-[20px] pb-[calc(56px+52px)] pt-5 sm:pb-[calc(60px+52px)]">
           <label className="sr-only" htmlFor="post-title">
             제목
           </label>

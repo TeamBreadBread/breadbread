@@ -16,6 +16,10 @@ import ratingStar from "@/assets/icons/ratingStar.svg";
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
 import soboroImg from "@/assets/images/soboro.png";
 import BottomNav from "@/components/layout/BottomNav";
+import {
+  BBANGTEO_FIXED_HEADER_OUTER_CLASS,
+  FIXED_TOP_BAR_SPACER_CLASS,
+} from "@/components/layout/layout.constants";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { ToastBanner } from "@/components/common";
 import { useBakeryDetail } from "@/hooks/useBakeryDetail";
@@ -91,9 +95,22 @@ const HeartIcon = ({ filled }: { filled: boolean }) => (
   </svg>
 );
 
-const BackHeader = ({ listEntryFrom }: { listEntryFrom?: BakeryListEntryFrom }) => {
+const BackHeader = ({
+  listEntryFrom,
+  returnCourseId,
+}: {
+  listEntryFrom?: BakeryListEntryFrom;
+  returnCourseId?: number;
+}) => {
   const navigate = useNavigate();
   const goToList = () => {
+    if (listEntryFrom === "ai-result") {
+      void navigate({
+        to: "/ai-search-result",
+        search: { courseId: returnCourseId ?? null },
+      });
+      return;
+    }
     void navigate({
       to: "/bbangteo-bakery-list",
       search: { from: listEntryFrom },
@@ -101,16 +118,21 @@ const BackHeader = ({ listEntryFrom }: { listEntryFrom?: BakeryListEntryFrom }) 
   };
 
   return (
-    <header className="fixed top-0 left-1/2 z-40 flex h-[56px] w-full max-w-[402px] -translate-x-1/2 items-center justify-between border-b border-[#eeeff1] bg-white px-[20px] md:max-w-[744px]">
-      <button
-        type="button"
-        className="flex h-[36px] w-[36px] items-center justify-center text-[22px]"
-        onClick={goToList}
-      >
-        <img src={ArrowLeft} alt="뒤로가기" className="h-[24px] w-[24px]" />
-      </button>
-      <div className="h-[36px] w-[36px]" />
-    </header>
+    <>
+      <header className={BBANGTEO_FIXED_HEADER_OUTER_CLASS}>
+        <div className="flex h-[56px] items-center justify-between px-[20px]">
+          <button
+            type="button"
+            className="flex h-[36px] w-[36px] items-center justify-center text-[22px]"
+            onClick={goToList}
+          >
+            <img src={ArrowLeft} alt="뒤로가기" className="h-[24px] w-[24px]" />
+          </button>
+          <div className="h-[36px] w-[36px]" />
+        </div>
+      </header>
+      <div className={FIXED_TOP_BAR_SPACER_CLASS} aria-hidden />
+    </>
   );
 };
 
@@ -654,10 +676,17 @@ const BakeryTabSection = ({
   );
 };
 
-const MissingBakeryId = ({ listEntryFrom }: { listEntryFrom?: BakeryListEntryFrom }) => {
+const MissingBakeryId = ({
+  listEntryFrom,
+  returnCourseId,
+}: {
+  listEntryFrom?: BakeryListEntryFrom;
+  returnCourseId?: number;
+}) => {
   const navigate = useNavigate();
+  const isAiEntry = listEntryFrom === "ai-result";
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-[24px] pt-[56px] pb-[56px] text-center">
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-[24px] pb-[56px] text-center">
       <p className="text-[15px] leading-[22px] text-[#1a1c20]">빵집을 찾을 수 없습니다.</p>
       <p className="text-[14px] leading-[19px] text-[#868b94]">
         목록에서 빵집을 다시 선택해 주세요.
@@ -665,14 +694,21 @@ const MissingBakeryId = ({ listEntryFrom }: { listEntryFrom?: BakeryListEntryFro
       <button
         type="button"
         className="rounded-[10px] bg-[#1a1c20] px-5 py-3 text-[15px] font-semibold text-white"
-        onClick={() =>
+        onClick={() => {
+          if (isAiEntry) {
+            void navigate({
+              to: "/ai-search-result",
+              search: { courseId: returnCourseId ?? null },
+            });
+            return;
+          }
           void navigate({
             to: "/bbangteo-bakery-list",
             search: { from: listEntryFrom },
-          })
-        }
+          });
+        }}
       >
-        빵집 리스트로
+        {isAiEntry ? "AI 추천 코스로" : "빵집 리스트로"}
       </button>
     </div>
   );
@@ -681,12 +717,14 @@ const MissingBakeryId = ({ listEntryFrom }: { listEntryFrom?: BakeryListEntryFro
 type BbangteoBakeryDetailPageProps = {
   bakeryId?: number;
   listEntryFrom?: BakeryListEntryFrom;
+  returnCourseId?: number;
   reviewUploaded?: boolean;
 };
 
 const BbangteoBakeryDetailPage = ({
   bakeryId,
   listEntryFrom,
+  returnCourseId,
   reviewUploaded = false,
 }: BbangteoBakeryDetailPageProps) => {
   const navigate = useNavigate();
@@ -744,8 +782,8 @@ const BbangteoBakeryDetailPage = ({
     return (
       <MobileFrame className="bg-white">
         <div className="flex min-h-screen flex-1 flex-col bg-white">
-          <BackHeader listEntryFrom={listEntryFrom} />
-          <MissingBakeryId listEntryFrom={listEntryFrom} />
+          <BackHeader listEntryFrom={listEntryFrom} returnCourseId={returnCourseId} />
+          <MissingBakeryId listEntryFrom={listEntryFrom} returnCourseId={returnCourseId} />
         </div>
         <BottomNav />
       </MobileFrame>
@@ -755,8 +793,8 @@ const BbangteoBakeryDetailPage = ({
   return (
     <MobileFrame className="bg-white">
       <div className="flex min-h-screen flex-1 flex-col bg-white">
-        <BackHeader listEntryFrom={listEntryFrom} />
-        <main className="flex flex-1 flex-col pt-[56px] pb-[56px] sm:pb-[60px]">
+        <BackHeader listEntryFrom={listEntryFrom} returnCourseId={returnCourseId} />
+        <main className="flex flex-1 flex-col pb-[56px] sm:pb-[60px]">
           {loading ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 px-[20px] py-[40px] text-[14px] text-[#868b94]">
               불러오는 중…
@@ -767,12 +805,19 @@ const BbangteoBakeryDetailPage = ({
               <button
                 type="button"
                 className="rounded-[10px] bg-[#f3f4f5] px-4 py-2 text-[14px] font-semibold text-[#1a1c20]"
-                onClick={() =>
+                onClick={() => {
+                  if (listEntryFrom === "ai-result") {
+                    void navigate({
+                      to: "/ai-search-result",
+                      search: { courseId: returnCourseId ?? null },
+                    });
+                    return;
+                  }
                   void navigate({
                     to: "/bbangteo-bakery-list",
                     search: { from: listEntryFrom },
-                  })
-                }
+                  });
+                }}
               >
                 목록으로
               </button>

@@ -15,7 +15,6 @@ import RecommendationCountStepper from "@/components/domain/ai-course/Recommenda
 import { sectionAllowsMultipleChoice } from "@/utils/preferenceSelection";
 import { cn } from "@/utils/cn";
 import {
-  getCourseDetail,
   requestAiCourse,
   type AiCourseRequest,
   type BreadType,
@@ -23,8 +22,7 @@ import {
   type FlexibilityLevel,
   type TravelType,
 } from "@/api/courses";
-import { pollAiCourseStatus } from "@/utils/pollAiCourseStatus";
-import { AI_COURSE_RESULT_STORAGE_KEY, readAiCoursePreferenceDraft } from "@/utils/aiCourseStorage";
+import { readAiCoursePreferenceDraft } from "@/utils/aiCourseStorage";
 import { getErrorMessage } from "@/api/types/common";
 
 type OptionItem = {
@@ -69,12 +67,12 @@ const QUESTION_SECTIONS: QuestionItem[] = [
   },
   {
     id: "drink",
-    title: "음료수 ~~~시나요?",
+    title: "음료수가 필요하시나요?",
     helperText: "",
     columns: 1,
     options: [
-      { label: "ㅇㅇㅇㅇㅇ", value: "drink-0" },
-      { label: "ㅇㅇㅇㅇㅇ", value: "drink-1" },
+      { label: "네", value: "drink-0" },
+      { label: "아니오", value: "drink-1" },
     ],
   },
   {
@@ -90,9 +88,9 @@ const QUESTION_SECTIONS: QuestionItem[] = [
     helperText: "",
     columns: 1,
     options: [
-      { label: "최초 계획을 최대한 유지" },
-      { label: "상황 변동 시 적극적으로 제안" },
-      { label: "품절 시에만 제안" },
+      { label: "최초 계획을 최대한 유지", value: "MAINTAIN" },
+      { label: "상황 변동 시 적극적으로 제안", value: "ACTIVE" },
+      { label: "품절 시에만 제안", value: "SOLDOUT_ONLY" },
     ],
   },
 ];
@@ -115,7 +113,7 @@ function RecommendationIcon() {
 export default function BreadRecommendationPreference() {
   const [selectedBySection, setSelectedBySection] = useState<SelectedBySection>({});
   const [recommendationCount, setRecommendationCount] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const handleSelect = (sectionId: string, optionValue: string) => {
@@ -147,7 +145,7 @@ export default function BreadRecommendationPreference() {
 
   const mapTravelType = (value: string): TravelType => {
     if (value === "커플") return "COUPLE";
-    if (value === "친구") return "FRIEND";
+    if (value === "친구") return "FRIENDS";
     if (value === "가족") return "FAMILY";
     return "ALONE";
   };
@@ -160,9 +158,11 @@ export default function BreadRecommendationPreference() {
   };
 
   const mapFlexibilityLevel = (value: string): FlexibilityLevel => {
-    if (value === "상황 변동 시 적극적으로 제안") return "FLEXIBLE";
-    if (value === "최초 계획을 최대한 유지") return "STRICT";
-    return "SOLDOUT_ONLY";
+    if (value === "MAINTAIN" || value === "ACTIVE" || value === "SOLDOUT_ONLY") {
+      return value;
+    }
+    // 알 수 없는 값이면 백엔드와 동일하게 "최초 계획 유지"를 기본값으로 사용
+    return "MAINTAIN";
   };
 
   const mapBreadType = (value: string): BreadType | null => {
@@ -176,7 +176,7 @@ export default function BreadRecommendationPreference() {
   };
 
   const handleAiRecommend = async () => {
-    if (!canSubmitRecommendation || isLoading) return;
+    if (!canSubmitRecommendation || isSubmitting) return;
 
     const step1 = readAiCoursePreferenceDraft();
     if (!step1) {
@@ -201,16 +201,13 @@ export default function BreadRecommendationPreference() {
     };
 
     try {
-      setIsLoading(true);
+      setIsSubmitting(true);
       const jobId = await requestAiCourse(body);
-      const courseId = await pollAiCourseStatus(jobId);
-      const courseDetail = await getCourseDetail(courseId);
-      sessionStorage.setItem(AI_COURSE_RESULT_STORAGE_KEY, JSON.stringify(courseDetail));
-      navigate({ to: "/ai-search-result", search: { courseId } });
+      navigate({ to: "/ai-course-generating", search: { jobId } });
     } catch (error) {
       window.alert(getErrorMessage(error));
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -291,10 +288,10 @@ export default function BreadRecommendationPreference() {
 
           <RecommendationCTAButton
             icon={<RecommendationIcon />}
-            disabled={!canSubmitRecommendation || isLoading}
+            disabled={!canSubmitRecommendation || isSubmitting}
             onClick={handleAiRecommend}
           >
-            {isLoading ? "AI 코스 생성 중..." : "추천 받기"}
+            추천 받기
           </RecommendationCTAButton>
         </div>
       </div>

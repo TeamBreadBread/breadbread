@@ -1,5 +1,12 @@
 import { getAiCourseStatus } from "@/api/courses";
 
+/** 폴링·로딩 화면 예상 시간과 동일하게 유지 */
+export const AI_COURSE_POLL_MAX_ATTEMPTS = 30;
+export const AI_COURSE_POLL_INTERVAL_MS = 2_000;
+export const AI_COURSE_MAX_WAIT_SECONDS = Math.ceil(
+  (AI_COURSE_POLL_MAX_ATTEMPTS * AI_COURSE_POLL_INTERVAL_MS) / 1000,
+);
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms);
@@ -7,8 +14,8 @@ function sleep(ms: number): Promise<void> {
 }
 
 export async function pollAiCourseStatus(jobId: string): Promise<number> {
-  const maxTryCount = 30;
-  const intervalMs = 2_000;
+  const maxTryCount = AI_COURSE_POLL_MAX_ATTEMPTS;
+  const intervalMs = AI_COURSE_POLL_INTERVAL_MS;
 
   for (let i = 0; i < maxTryCount; i += 1) {
     const statusResult = await getAiCourseStatus(jobId);

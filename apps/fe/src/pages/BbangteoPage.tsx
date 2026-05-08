@@ -66,7 +66,7 @@ const BbangteoPage = () => {
       <div className="flex min-h-screen flex-1 flex-col bg-[#f3f4f5]">
         <BbangteoHeader title="빵터" />
 
-        <main className="flex flex-1 flex-col gap-[10px] pt-[56px] pb-[114px] sm:pb-[118px]">
+        <main className="flex flex-1 flex-col gap-[10px] pb-[114px] sm:pb-[118px]">
           <BbangteoSearchSection onCategoryClick={handleCategoryClick} />
           {sections.map((section) => (
             <BbangteoCommunitySection

@@ -1,11 +1,18 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import DepartureDateBottomSheet from "@/components/domain/taxi-reserve/DepartureDateBottomSheet";
 import DepartureTimeBottomSheet from "@/components/domain/taxi-reserve/DepartureTimeBottomSheet";
 import DeparturePlaceBottomSheet from "@/components/domain/taxi-reserve/DeparturePlaceBottomSheet";
-import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
+import {
+  BBANGTEO_FIXED_HEADER_OUTER_CLASS,
+  FIXED_TOP_BAR_SPACER_CLASS,
+  RESPONSIVE_FRAME_WIDTH,
+} from "@/components/layout/layout.constants";
+import type { CourseDetail } from "@/api/courses";
+import { getCourseDetail } from "@/api/courses";
 import { getDevFallbackCourseId } from "@/lib/courseIdFallback";
+import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
 import { cn } from "@/utils/cn";
 
 const FIELD_MAX = "w-full max-w-[362px] shrink-0 md:max-w-full";
@@ -69,7 +76,18 @@ function PinGlyph({ className }: { className?: string }) {
   );
 }
 
-const courseStops = ["성심당 본점", "몽심 대흥점", "땡큐베리머치", "뮤제 베이커리"];
+function readSessionCourseDetail(courseId: number): CourseDetail | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(AI_COURSE_RESULT_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CourseDetail;
+    if (!parsed || typeof parsed.id !== "number" || parsed.id !== courseId) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
 
 type TaxiReservePageProps = {
   courseId: number | null;
@@ -78,6 +96,9 @@ type TaxiReservePageProps = {
 export default function TaxiReservePage({ courseId }: TaxiReservePageProps) {
   const navigate = useNavigate();
   const effectiveCourseId = courseId ?? getDevFallbackCourseId();
+  const [courseDetail, setCourseDetail] = useState<CourseDetail | null>(() =>
+    effectiveCourseId != null ? readSessionCourseDetail(effectiveCourseId) : null,
+  );
   const [departureDate, setDepartureDate] = useState("");
   const [departureTime, setDepartureTime] = useState("");
   const [departurePlace, setDeparturePlace] = useState("");
@@ -89,27 +110,68 @@ export default function TaxiReservePage({ courseId }: TaxiReservePageProps) {
   const isCheckoutEnabled =
     departureDate.length > 0 && departureTime.length > 0 && departurePlace.trim().length > 0;
 
+  useEffect(() => {
+    if (effectiveCourseId == null || courseDetail != null) return;
+    let cancelled = false;
+    void getCourseDetail(effectiveCourseId)
+      .then((detail) => {
+        if (!cancelled) setCourseDetail(detail);
+      })
+      .catch(() => {
+        /* 코스 카드 영역만 비어 보일 수 있음 */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveCourseId, courseDetail]);
+
+  const reservationCourseTitle = courseDetail?.name?.trim() || "코스 정보";
+  const reservationDuration = courseDetail?.estimatedTime?.trim() || "—";
+  const reservationCost =
+    courseDetail && Number.isFinite(courseDetail.estimatedCost) && courseDetail.estimatedCost > 0
+      ? `${courseDetail.estimatedCost.toLocaleString("ko-KR")}원`
+      : "—";
+  const stopNames = useMemo(() => {
+    const list = courseDetail?.bakeries ?? [];
+    if (list.length > 0) {
+      return list.map((b, i) => b.name?.trim() || `방문지 ${i + 1}`);
+    }
+    return [] as string[];
+  }, [courseDetail]);
+
+  const visitCount = stopNames.length > 0 ? stopNames.length : (courseDetail?.bakeryCount ?? 0);
+
   return (
     <div
       className={cn(
-        "mx-auto flex min-h-screen flex-col items-start justify-start overflow-hidden bg-[#f3f4f5]",
+        "relative mx-auto flex min-h-screen flex-col items-start justify-start overflow-hidden bg-[#f3f4f5]",
         RESPONSIVE_FRAME_WIDTH,
       )}
     >
-      <div className="relative flex h-[56px] w-full shrink-0 flex-row items-center justify-between overflow-hidden border-b border-[#eeeff1] bg-white px-[20px] py-[10px]">
-        <button
-          type="button"
-          className="flex h-[36px] w-[36px] shrink-0 flex-row items-center justify-center"
-          onClick={() => navigate({ to: "/ai-search-result", search: { courseId: null } })}
-          aria-label="뒤로가기"
-        >
-          <img width={24} height={24} src={ArrowLeft} alt="" />
-        </button>
-        <div className="h-[36px] w-[36px] shrink-0" />
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-center font-['Pretendard',sans-serif] text-[18px] font-bold leading-[24px] tracking-normal text-[#1a1c20]">
-          택시 예약
+      <header className={BBANGTEO_FIXED_HEADER_OUTER_CLASS}>
+        <div className="relative flex h-[56px] w-full flex-row items-center justify-between px-[20px]">
+          <button
+            type="button"
+            className="flex h-[36px] w-[36px] shrink-0 flex-row items-center justify-center"
+            onClick={() =>
+              navigate({
+                to: "/ai-search-result",
+                search: {
+                  courseId: effectiveCourseId ?? null,
+                },
+              })
+            }
+            aria-label="뒤로가기"
+          >
+            <img width={24} height={24} src={ArrowLeft} alt="" />
+          </button>
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-center font-['Pretendard',sans-serif] text-[18px] font-bold leading-[24px] tracking-normal text-[#1a1c20]">
+            택시 예약
+          </div>
+          <div className="h-[36px] w-[36px] shrink-0" aria-hidden />
         </div>
-      </div>
+      </header>
+      <div className={FIXED_TOP_BAR_SPACER_CLASS} aria-hidden />
 
       <div className="flex min-h-0 w-full flex-1 flex-col items-start justify-start gap-[10px] overflow-y-auto pb-[calc(113px+env(safe-area-inset-bottom,0px))]">
         <div className="flex w-full flex-col items-start justify-start gap-[24px] bg-white px-[20px] py-[24px]">
@@ -246,7 +308,7 @@ export default function TaxiReservePage({ courseId }: TaxiReservePageProps) {
           <div className="flex w-full flex-col items-start justify-start gap-[24px]">
             <div className="flex w-full max-w-[362px] flex-1 flex-col items-start justify-start gap-[6px] md:max-w-full">
               <div className="w-full font-['Pretendard',sans-serif] text-[16px] font-bold leading-[22px] tracking-normal text-[#1a1c20]">
-                커플을 위한 달콤한 빵투어
+                {reservationCourseTitle}
               </div>
               <div className="flex w-full flex-row flex-wrap items-center justify-start gap-[8px]">
                 <div className="flex flex-row items-center justify-start gap-[4px]">
@@ -254,7 +316,7 @@ export default function TaxiReservePage({ courseId }: TaxiReservePageProps) {
                     소요시간
                   </span>
                   <span className="whitespace-nowrap font-['Pretendard',sans-serif] text-[13px] leading-[18px] text-[#2a3038]">
-                    3~4시간
+                    {reservationDuration}
                   </span>
                 </div>
                 <span className="whitespace-nowrap font-['Pretendard',sans-serif] text-[13px] leading-[18px] text-[#868b94]">
@@ -265,7 +327,7 @@ export default function TaxiReservePage({ courseId }: TaxiReservePageProps) {
                     예상비용
                   </span>
                   <span className="whitespace-nowrap font-['Pretendard',sans-serif] text-[13px] leading-[18px] text-[#2a3038]">
-                    3만원
+                    {reservationCost}
                   </span>
                 </div>
                 <span className="whitespace-nowrap font-['Pretendard',sans-serif] text-[13px] leading-[18px] text-[#868b94]">
@@ -276,7 +338,7 @@ export default function TaxiReservePage({ courseId }: TaxiReservePageProps) {
                     방문 매장 수
                   </span>
                   <span className="whitespace-nowrap font-['Pretendard',sans-serif] text-[13px] leading-[18px] text-[#2a3038]">
-                    4곳{" "}
+                    {visitCount > 0 ? `${visitCount}곳` : "—"}
                   </span>
                 </div>
               </div>
@@ -285,19 +347,25 @@ export default function TaxiReservePage({ courseId }: TaxiReservePageProps) {
             <div className="flex w-full flex-col items-start justify-start overflow-hidden rounded-[8px] border border-solid border-[#f3f4f5] bg-[#f7f8f9] p-[14px]">
               <div className="relative flex w-full flex-col items-start justify-start gap-[6px] px-0 py-[4px]">
                 <div className="absolute bottom-0 left-[7px] top-0 w-[2px] shrink-0 bg-[#eeeff1]" />
-                {courseStops.map((name, i) => (
-                  <div
-                    key={name}
-                    className="flex w-full flex-row items-center justify-start gap-[4px]"
-                  >
-                    <span className="z-[1] flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#dcdee3] text-[10px] font-bold text-[#555d6d]">
-                      {i + 1}
-                    </span>
-                    <div className="flex-1 font-['Pretendard',sans-serif] text-[14px] leading-[19px] tracking-normal text-[#555d6d]">
-                      {name}
+                {stopNames.length > 0 ? (
+                  stopNames.map((name, i) => (
+                    <div
+                      key={`${name}-${i}`}
+                      className="flex w-full flex-row items-center justify-start gap-[4px]"
+                    >
+                      <span className="z-[1] flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#dcdee3] text-[10px] font-bold text-[#555d6d]">
+                        {i + 1}
+                      </span>
+                      <div className="flex-1 font-['Pretendard',sans-serif] text-[14px] leading-[19px] tracking-normal text-[#555d6d]">
+                        {name}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="pl-[20px] font-['Pretendard',sans-serif] text-[14px] leading-[19px] text-[#868b94]">
+                    방문 순서 정보를 불러오는 중이거나 표시할 매장이 없습니다.
+                  </p>
+                )}
               </div>
             </div>
           </div>
