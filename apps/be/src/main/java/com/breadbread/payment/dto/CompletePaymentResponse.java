@@ -2,10 +2,9 @@ package com.breadbread.payment.dto;
 
 import com.breadbread.payment.entity.PaymentStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Getter;
-
-import java.time.LocalDateTime;
 
 @Schema(description = "결제 완료 검증 응답")
 @Getter

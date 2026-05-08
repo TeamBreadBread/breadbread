@@ -11,20 +11,22 @@ import org.springframework.context.annotation.Configuration;
 public class SwaggerConfig {
     @Bean
     public OpenAPI openAPI() {
-        SecurityScheme securityScheme = new SecurityScheme()
-                .type(SecurityScheme.Type.HTTP)
-                .scheme("bearer")
-                .bearerFormat("JWT")
-                .in(SecurityScheme.In.HEADER)
-                .name("Authorization");
+        SecurityScheme securityScheme =
+                new SecurityScheme()
+                        .type(SecurityScheme.Type.HTTP)
+                        .scheme("bearer")
+                        .bearerFormat("JWT")
+                        .in(SecurityScheme.In.HEADER)
+                        .name("Authorization");
 
         SecurityRequirement securityRequirement = new SecurityRequirement().addList("BearerAuth");
 
         return new OpenAPI()
-                .info(new Info()
-                        .title("BreadBread 백엔드 API 명세서")
-                        .description("BreadBread 백엔드 API 명세서")
-                        .version("1.0.0"))
+                .info(
+                        new Info()
+                                .title("BreadBread 백엔드 API 명세서")
+                                .description("BreadBread 백엔드 API 명세서")
+                                .version("1.0.0"))
                 .addSecurityItem(securityRequirement)
                 .schemaRequirement("BearerAuth", securityScheme);
     }

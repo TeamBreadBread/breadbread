@@ -2,12 +2,9 @@ package com.breadbread.user.controller;
 
 import com.breadbread.auth.dto.CustomUserDetails;
 import com.breadbread.global.dto.ApiResponse;
-import com.breadbread.global.exception.CustomException;
-import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.dto.CreatePreferenceRequest;
-import com.breadbread.user.dto.MyProfileResponse;
-import com.breadbread.user.dto.UpdatePreferenceRequest;
 import com.breadbread.user.dto.PreferenceResponse;
+import com.breadbread.user.dto.UpdatePreferenceRequest;
 import com.breadbread.user.dto.UserProfileResponse;
 import com.breadbread.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;

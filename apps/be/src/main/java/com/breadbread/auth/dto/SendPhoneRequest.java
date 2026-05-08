@@ -20,7 +20,9 @@ public class SendPhoneRequest {
     @Schema(description = "인증 수단", example = "SMS")
     private AuthType authType;
 
-    @Schema(description = "인증 목적 (SIGNUP: 회원가입, FIND_ID: 아이디 찾기, FIND_PW: 비밀번호 찾기)", example = "SIGNUP")
+    @Schema(
+            description = "인증 목적 (SIGNUP: 회원가입, FIND_ID: 아이디 찾기, FIND_PW: 비밀번호 찾기)",
+            example = "SIGNUP")
     @NotNull
     private VerificationPurpose purpose;
 }

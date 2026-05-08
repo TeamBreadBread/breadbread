@@ -16,7 +16,7 @@ public class CourseBakerySummary {
     public static CourseBakerySummary from(Bakery bakery, String thumbnailUrl) {
         return CourseBakerySummary.builder()
                 .id(bakery.getId())
-				.name(bakery.getName())
+                .name(bakery.getName())
                 .region(bakery.getRegion())
                 .rating(bakery.getRating())
                 .thumbnailUrl(thumbnailUrl)

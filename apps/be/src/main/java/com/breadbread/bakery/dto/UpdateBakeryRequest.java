@@ -5,13 +5,12 @@ import com.breadbread.bakery.entity.BakeryType;
 import com.breadbread.bakery.entity.BakeryUseType;
 import com.breadbread.bakery.entity.Frequency;
 import jakarta.validation.constraints.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
@@ -26,10 +25,12 @@ public class UpdateBakeryRequest {
     @Size(min = 1)
     private String region;
 
-    @DecimalMin("-90.0") @DecimalMax("90.0")
+    @DecimalMin("-90.0")
+    @DecimalMax("90.0")
     private Double lat;
 
-    @DecimalMin("-180.0") @DecimalMax("180.0")
+    @DecimalMin("-180.0")
+    @DecimalMax("180.0")
     private Double lng;
 
     private String phone;

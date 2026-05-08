@@ -1,13 +1,11 @@
 package com.breadbread.bakery.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Set;
-
+import lombok.*;
 
 @Embeddable
 @Getter
@@ -19,12 +17,16 @@ public class BusinessHours {
     private LocalTime weekendClose;
     private boolean holidayClosed;
     private String lastOrderTime;
-    private String closedDayNote;      // 격주 월 등 비정형 (표시용)
+    private String closedDayNote; // 격주 월 등 비정형 (표시용)
 
     @Builder
-    public BusinessHours(LocalTime weekdayOpen, LocalTime weekdayClose,
-                         LocalTime weekendOpen, LocalTime weekendClose,
-                         boolean holidayClosed, String lastOrderTime) {
+    public BusinessHours(
+            LocalTime weekdayOpen,
+            LocalTime weekdayClose,
+            LocalTime weekendOpen,
+            LocalTime weekendClose,
+            boolean holidayClosed,
+            String lastOrderTime) {
         this.weekdayOpen = weekdayOpen;
         this.weekdayClose = weekdayClose;
         this.weekendOpen = weekendOpen;

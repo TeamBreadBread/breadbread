@@ -1,15 +1,14 @@
 package com.breadbread.bakery.dto;
 
 import com.breadbread.bakery.entity.*;
-import lombok.Builder;
-import lombok.Getter;
-
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.Builder;
+import lombok.Getter;
 
 @Getter
 @Builder
@@ -46,7 +45,8 @@ public class BakeryAiResponse {
     private List<CrowdTimeInfo> crowdTimes;
     private List<String> imageUrls;
 
-    public static BakeryAiResponse from(Bakery bakery, List<Bread> breads, List<CrowdTime> crowdTimes) {
+    public static BakeryAiResponse from(
+            Bakery bakery, List<Bread> breads, List<CrowdTime> crowdTimes) {
         BusinessHours bh = bakery.getBusinessHours();
         return BakeryAiResponse.builder()
                 .id(bakery.getId())
@@ -65,19 +65,20 @@ public class BakeryAiResponse {
                 .bakeryType(bakery.getBakeryType() != null ? bakery.getBakeryType().name() : null)
                 .appearanceTime(bakery.getAppearanceTime())
                 .frequency(bakery.getFrequency() != null ? bakery.getFrequency().name() : null)
-                .closedDays(bakery.getClosedDays().stream()
-                        .map(DayOfWeek::name)
-                        .collect(Collectors.toSet()))
+                .closedDays(
+                        bakery.getClosedDays().stream()
+                                .map(DayOfWeek::name)
+                                .collect(Collectors.toSet()))
                 .closedDayNote(bh != null ? bh.getClosedDayNote() : null)
-                .crowdedDays(bakery.getCrowdedDays().stream()
-                        .map(DayOfWeek::name)
-                        .collect(Collectors.toSet()))
-                .useTypes(bakery.getBakeryUseTypes().stream()
-                        .map(BakeryUseType::name)
-                        .toList())
-                .personalities(bakery.getBakeryPersonalities().stream()
-                        .map(BakeryPersonality::name)
-                        .toList())
+                .crowdedDays(
+                        bakery.getCrowdedDays().stream()
+                                .map(DayOfWeek::name)
+                                .collect(Collectors.toSet()))
+                .useTypes(bakery.getBakeryUseTypes().stream().map(BakeryUseType::name).toList())
+                .personalities(
+                        bakery.getBakeryPersonalities().stream()
+                                .map(BakeryPersonality::name)
+                                .toList())
                 .weekdayOpen(bh != null ? bh.getWeekdayOpen() : null)
                 .weekdayClose(bh != null ? bh.getWeekdayClose() : null)
                 .weekendOpen(bh != null ? bh.getWeekendOpen() : null)
@@ -86,10 +87,11 @@ public class BakeryAiResponse {
                 .holidayClosed(bh != null && bh.isHolidayClosed())
                 .breads(breads.stream().map(BreadInfo::from).toList())
                 .crowdTimes(crowdTimes.stream().map(CrowdTimeInfo::from).toList())
-                .imageUrls(bakery.getImages().stream()
-                        .sorted(Comparator.comparingInt(BakeryImage::getDisplayOrder))
-                        .map(BakeryImage::getImageUrl)
-                        .toList())
+                .imageUrls(
+                        bakery.getImages().stream()
+                                .sorted(Comparator.comparingInt(BakeryImage::getDisplayOrder))
+                                .map(BakeryImage::getImageUrl)
+                                .toList())
                 .build();
     }
 
@@ -129,7 +131,10 @@ public class BakeryAiResponse {
                     .dayType(crowdTime.getDayType() != null ? crowdTime.getDayType().name() : null)
                     .peakStart(crowdTime.getPeakStart())
                     .peakEnd(crowdTime.getPeakEnd())
-                    .crowdLevel(crowdTime.getCrowdLevel() != null ? crowdTime.getCrowdLevel().name() : null)
+                    .crowdLevel(
+                            crowdTime.getCrowdLevel() != null
+                                    ? crowdTime.getCrowdLevel().name()
+                                    : null)
                     .expectedWaitMin(crowdTime.getExpectedWaitMin())
                     .build();
         }

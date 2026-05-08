@@ -5,12 +5,6 @@ import com.breadbread.global.exception.ErrorCode;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -19,22 +13,28 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class GcsService {
 
-    private static final Set<String> ALLOWED_TYPES = Set.of("image/jpeg", "image/jpg", "image/png", "image/webp");
+    private static final Set<String> ALLOWED_TYPES =
+            Set.of("image/jpeg", "image/jpg", "image/png", "image/webp");
 
     /** {@link com.breadbread.global.dto.UploadFolder} 과 동일한 업로드 루트만 허용 */
-    private static final Set<String> ALLOWED_OBJECT_PREFIXES = Set.of("bakeries", "breads", "reviews", "profiles");
+    private static final Set<String> ALLOWED_OBJECT_PREFIXES =
+            Set.of("bakeries", "breads", "reviews", "profiles");
 
-    /**
-     * 업로드 시 생성하는 객체 키 형식만 삭제에 허용합니다. (CodeQL 경로/URL taint 완화)
-     */
-    private static final Pattern ALLOWED_OBJECT_KEY = Pattern.compile(
-            "^(bakeries|breads|reviews|profiles)/[0-9a-fA-F-]{36}\\.(jpg|png|webp)$");
+    /** 업로드 시 생성하는 객체 키 형식만 삭제에 허용합니다. (CodeQL 경로/URL taint 완화) */
+    private static final Pattern ALLOWED_OBJECT_KEY =
+            Pattern.compile(
+                    "^(bakeries|breads|reviews|profiles)/[0-9a-fA-F-]{36}\\.(jpg|png|webp)$");
 
     private final Storage storage;
 
@@ -59,9 +59,8 @@ public class GcsService {
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
 
-        BlobInfo blobInfo = BlobInfo.newBuilder(bucketName, fileName)
-                .setContentType(contentType)
-                .build();
+        BlobInfo blobInfo =
+                BlobInfo.newBuilder(bucketName, fileName).setContentType(contentType).build();
 
         try {
             storage.create(blobInfo, file.getBytes());
@@ -79,13 +78,13 @@ public class GcsService {
             case "image/jpeg", "image/jpg" -> ".jpg";
             case "image/png" -> ".png";
             case "image/webp" -> ".webp";
-            default -> throw new IllegalStateException("Unexpected image content type: " + contentType);
+            default ->
+                    throw new IllegalStateException(
+                            "Unexpected image content type: " + contentType);
         };
     }
 
-    /**
-     * 클라이언트 파일명 검증용. 경로 세그먼트에 {@code .} / {@code ..} / 빈 조각이 있으면 거부합니다.
-     */
+    /** 클라이언트 파일명 검증용. 경로 세그먼트에 {@code .} / {@code ..} / 빈 조각이 있으면 거부합니다. */
     static String sanitizeClientFilename(String raw) {
         String normalized = raw.replace('\\', '/').strip();
         if (normalized.isEmpty()) {
@@ -139,9 +138,7 @@ public class GcsService {
         }
     }
 
-    /**
-     * 공개 GCS URL에서 객체 키만 추출합니다. 호스트·경로·키 형식을 모두 검증합니다.
-     */
+    /** 공개 GCS URL에서 객체 키만 추출합니다. 호스트·경로·키 형식을 모두 검증합니다. */
     private String parseVerifiedObjectKeyFromPublicUrl(String fileUrl) {
         final URI uri;
         try {

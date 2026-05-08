@@ -72,4 +72,5 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - run: chmod +x gradlew
+      - run: ./gradlew spotlessCheck
       - run: ./gradlew test

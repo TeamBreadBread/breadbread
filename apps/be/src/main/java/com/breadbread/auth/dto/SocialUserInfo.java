@@ -15,8 +15,13 @@ public class SocialUserInfo {
     private String nickname;
 
     @Builder
-    public SocialUserInfo(String providerUserId, String email, String name,
-                         String nickname, String profileImageUrl, String provider) {
+    public SocialUserInfo(
+            String providerUserId,
+            String email,
+            String name,
+            String nickname,
+            String profileImageUrl,
+            String provider) {
         this.providerUserId = providerUserId;
         this.email = email;
         this.name = name;

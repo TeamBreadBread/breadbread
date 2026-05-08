@@ -1,10 +1,9 @@
 package com.breadbread.bakery.dto;
 
 import jakarta.validation.constraints.*;
+import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 @Getter
 @NoArgsConstructor
@@ -15,7 +14,7 @@ public class CreateReviewRequest {
     private int rating;
 
     @Size(max = 300)
-	@NotBlank
+    @NotBlank
     private String content;
 
     @Size(max = 2)

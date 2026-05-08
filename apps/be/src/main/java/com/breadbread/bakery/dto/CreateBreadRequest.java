@@ -11,8 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CreateBreadRequest {
 
-    @NotBlank
-    private String name;
+    @NotBlank private String name;
 
     @Min(0)
     private int price;

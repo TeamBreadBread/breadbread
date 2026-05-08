@@ -14,6 +14,7 @@ public class Bread {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String name;
     private int price;
     private String imageUrl;
@@ -31,9 +32,14 @@ public class Bread {
 
     // Builder 객체를 로그로 찍을 때 bakery 전체가 붙어서 출력되거나 순환 참조되므로 주의 필요
     @Builder
-    public Bread(String name, int price, String imageUrl,
-                 Bakery bakery, BreadType breadType,
-                 boolean signature, int selloutMin) {
+    public Bread(
+            String name,
+            int price,
+            String imageUrl,
+            Bakery bakery,
+            BreadType breadType,
+            boolean signature,
+            int selloutMin) {
         this.name = name;
         this.price = price;
         this.imageUrl = imageUrl;

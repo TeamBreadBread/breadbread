@@ -21,7 +21,9 @@ public class VerifyPhoneRequest {
     @Pattern(regexp = "^\\d{6}$", message = "인증번호는 6자리 숫자입니다.")
     private String code;
 
-    @Schema(description = "인증 목적 (SIGNUP: 회원가입, FIND_ID: 아이디 찾기, FIND_PW: 비밀번호 찾기)", example = "SIGNUP")
+    @Schema(
+            description = "인증 목적 (SIGNUP: 회원가입, FIND_ID: 아이디 찾기, FIND_PW: 비밀번호 찾기)",
+            example = "SIGNUP")
     @NotNull
     private VerificationPurpose purpose;
 }

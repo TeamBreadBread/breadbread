@@ -7,14 +7,13 @@ import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.reservation.dto.UpdateReservationRequest;
 import com.breadbread.user.entity.User;
 import jakarta.persistence.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 @Entity
 @Table(name = "reservation")
@@ -37,79 +36,85 @@ public class Reservation extends BaseEntity {
 
     private Double departureLng;
 
-	private Long quotedAmount;
+    private Long quotedAmount;
 
     @Enumerated(EnumType.STRING)
     private ReservationStatus status;
 
     private LocalDateTime cancelledAt;
 
-	private LocalDateTime confirmedAt;
+    private LocalDateTime confirmedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-//    @ManyToOne(fetch = FetchType.LAZY)	// 추후 구현 예정
-//    @JoinColumn(name = "driver_id")
-//    private Driver driver;
+    //    @ManyToOne(fetch = FetchType.LAZY)	// 추후 구현 예정
+    //    @JoinColumn(name = "driver_id")
+    //    private Driver driver;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id")
     private Course course;
 
-	private String courseNameSnapshot;
+    private String courseNameSnapshot;
 
     @Builder
-    public Reservation(LocalDate departureDate, LocalTime departureTime,
-					   int headCount, String departure,
-					   Double departureLat, Double departureLng,
-					   User user, Course course) {
+    public Reservation(
+            LocalDate departureDate,
+            LocalTime departureTime,
+            int headCount,
+            String departure,
+            Double departureLat,
+            Double departureLng,
+            User user,
+            Course course) {
         this.departureDate = departureDate;
-		this.departureTime = departureTime;
+        this.departureTime = departureTime;
         this.headCount = headCount;
         this.departure = departure;
         this.departureLat = departureLat;
         this.departureLng = departureLng;
         this.status = ReservationStatus.PENDING;
         this.user = user;
-        //this.driver = driver;
+        // this.driver = driver;
         this.course = course;
-		this.quotedAmount = course.getEstimatedCost();
-		this.courseNameSnapshot = course.getName();
+        this.quotedAmount = course.getEstimatedCost();
+        this.courseNameSnapshot = course.getName();
     }
 
-	public void update(UpdateReservationRequest request) {
-		if (this.status == ReservationStatus.CANCELLED || this.status == ReservationStatus.COMPLETED) {
-			throw new CustomException(ErrorCode.RESERVATION_NOT_MODIFIABLE);
-		}
-		if (request.getDepartureDate() != null) this.departureDate = request.getDepartureDate();
-		if (request.getDepartureTime() != null) this.departureTime = request.getDepartureTime();
-		if (request.getDeparture() != null) this.departure = request.getDeparture();
-		if (request.getLat() != null) this.departureLat = request.getLat();
-		if (request.getLng() != null) this.departureLng = request.getLng();
-		if (request.getHeadCount() != null) this.headCount = request.getHeadCount();
-	}
+    public void update(UpdateReservationRequest request) {
+        if (this.status == ReservationStatus.CANCELLED
+                || this.status == ReservationStatus.COMPLETED) {
+            throw new CustomException(ErrorCode.RESERVATION_NOT_MODIFIABLE);
+        }
+        if (request.getDepartureDate() != null) this.departureDate = request.getDepartureDate();
+        if (request.getDepartureTime() != null) this.departureTime = request.getDepartureTime();
+        if (request.getDeparture() != null) this.departure = request.getDeparture();
+        if (request.getLat() != null) this.departureLat = request.getLat();
+        if (request.getLng() != null) this.departureLng = request.getLng();
+        if (request.getHeadCount() != null) this.headCount = request.getHeadCount();
+    }
 
-	public void cancel() {
-		if (this.status == ReservationStatus.CANCELLED) {
-			throw new CustomException(ErrorCode.RESERVATION_ALREADY_CANCELLED);
-		}
-		if (this.status == ReservationStatus.COMPLETED) {
-			throw new CustomException(ErrorCode.RESERVATION_CANCEL_FAILED);
-		}
-		this.status = ReservationStatus.CANCELLED;
-		this.cancelledAt = LocalDateTime.now();
-	}
+    public void cancel() {
+        if (this.status == ReservationStatus.CANCELLED) {
+            throw new CustomException(ErrorCode.RESERVATION_ALREADY_CANCELLED);
+        }
+        if (this.status == ReservationStatus.COMPLETED) {
+            throw new CustomException(ErrorCode.RESERVATION_CANCEL_FAILED);
+        }
+        this.status = ReservationStatus.CANCELLED;
+        this.cancelledAt = LocalDateTime.now();
+    }
 
-	public void confirm() {
-		if (this.status == ReservationStatus.CONFIRMED) {
-			throw new CustomException(ErrorCode.RESERVATION_ALREADY_CONFIRMED);
-		}
-		if (this.status != ReservationStatus.PENDING) {
-			throw new CustomException(ErrorCode.RESERVATION_CONFIRM_FAILED);
-		}
-		this.status = ReservationStatus.CONFIRMED;
-		this.confirmedAt = LocalDateTime.now();
-	}
+    public void confirm() {
+        if (this.status == ReservationStatus.CONFIRMED) {
+            throw new CustomException(ErrorCode.RESERVATION_ALREADY_CONFIRMED);
+        }
+        if (this.status != ReservationStatus.PENDING) {
+            throw new CustomException(ErrorCode.RESERVATION_CONFIRM_FAILED);
+        }
+        this.status = ReservationStatus.CONFIRMED;
+        this.confirmedAt = LocalDateTime.now();
+    }
 }

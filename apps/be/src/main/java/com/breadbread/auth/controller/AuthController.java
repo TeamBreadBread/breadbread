@@ -40,7 +40,8 @@ public class AuthController {
     @Operation(summary = "로그아웃")
     @PostMapping("/logout")
     public ApiResponse<Void> logout(
-            @Parameter(description = "Bearer {accessToken}") @RequestHeader("Authorization") String bearerToken) {
+            @Parameter(description = "Bearer {accessToken}") @RequestHeader("Authorization")
+                    String bearerToken) {
         String accessToken = bearerToken.substring(7);
         authService.logout(accessToken);
         return ApiResponse.ok();
@@ -57,7 +58,8 @@ public class AuthController {
     @Operation(summary = "아이디 중복 확인")
     @GetMapping("/check-id")
     public ApiResponse<CheckIdResponse> checkId(
-            @Parameter(description = "중복 확인할 아이디", example = "breaduser123") @RequestParam String loginId) {
+            @Parameter(description = "중복 확인할 아이디", example = "breaduser123") @RequestParam
+                    String loginId) {
         return ApiResponse.ok(authService.checkId(loginId));
     }
 
@@ -95,7 +97,8 @@ public class AuthController {
     @SecurityRequirements
     @Operation(summary = "휴대전화 인증 확인")
     @PostMapping("/phone/verify")
-    public ApiResponse<VerifyPhoneResponse> verifyPhone(@Valid @RequestBody VerifyPhoneRequest request) {
+    public ApiResponse<VerifyPhoneResponse> verifyPhone(
+            @Valid @RequestBody VerifyPhoneRequest request) {
         return ApiResponse.ok(authService.verifyCode(request));
     }
 
@@ -103,15 +106,16 @@ public class AuthController {
     @Operation(summary = "소셜 로그인")
     @PostMapping("/social/{provider}")
     public ApiResponse<TokenResponse> socialLogin(
-            @Parameter(description = "소셜 로그인 제공자 (KAKAO, NAVER, GOOGLE)") @PathVariable SsoProvider provider,
+            @Parameter(description = "소셜 로그인 제공자 (KAKAO, NAVER, GOOGLE)") @PathVariable
+                    SsoProvider provider,
             @Valid @RequestBody SocialLoginRequest request) {
         return ApiResponse.ok(authService.socialLogin(provider, request));
     }
 
-	@SecurityRequirements
-	@Operation(summary = "네이버 로그인용 state 발급")
-	@PostMapping("/naver/state")
-	public ApiResponse<String> issueNaverState() {
-		return ApiResponse.ok(authService.issueNaverState());
-	}
+    @SecurityRequirements
+    @Operation(summary = "네이버 로그인용 state 발급")
+    @PostMapping("/naver/state")
+    public ApiResponse<String> issueNaverState() {
+        return ApiResponse.ok(authService.issueNaverState());
+    }
 }

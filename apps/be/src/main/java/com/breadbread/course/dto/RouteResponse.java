@@ -2,11 +2,10 @@ package com.breadbread.course.dto;
 
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseBakery;
-import lombok.Builder;
-import lombok.Getter;
-
 import java.util.Comparator;
 import java.util.List;
+import lombok.Builder;
+import lombok.Getter;
 
 @Getter
 @Builder
@@ -18,10 +17,11 @@ public class RouteResponse {
     private List<String> bakeryNames;
 
     public static RouteResponse from(Course course) {
-        List<String> bakeryNames = course.getCourseBakeries().stream()
-                .sorted(Comparator.comparingInt(CourseBakery::getVisitOrder))
-                .map(cb -> cb.getBakery().getName())
-                .toList();
+        List<String> bakeryNames =
+                course.getCourseBakeries().stream()
+                        .sorted(Comparator.comparingInt(CourseBakery::getVisitOrder))
+                        .map(cb -> cb.getBakery().getName())
+                        .toList();
 
         return RouteResponse.builder()
                 .courseId(course.getId())

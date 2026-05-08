@@ -21,8 +21,11 @@ public class SmsUtil {
 
     @PostConstruct
     private void init() {
-        this.messageService = NurigoApp.INSTANCE.initialize(
-                coolSmsProperties.getKey(), coolSmsProperties.getSecret(), "https://api.coolsms.co.kr");
+        this.messageService =
+                NurigoApp.INSTANCE.initialize(
+                        coolSmsProperties.getKey(),
+                        coolSmsProperties.getSecret(),
+                        "https://api.coolsms.co.kr");
     }
 
     // 인증번호 전송 : 단일 메세지
@@ -33,7 +36,8 @@ public class SmsUtil {
         message.setText("[빵빵] 본인 확인 인증번호 : [" + code + "]");
 
         try {
-            SingleMessageSentResponse response = messageService.sendOne(new SingleMessageSendingRequest(message));
+            SingleMessageSentResponse response =
+                    messageService.sendOne(new SingleMessageSendingRequest(message));
             log.info("SMS 발송 성공 phone={}", maskPhone(receiver));
             return response;
         } catch (Exception e) {

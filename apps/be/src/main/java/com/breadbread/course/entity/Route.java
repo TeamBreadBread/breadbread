@@ -8,7 +8,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "route", uniqueConstraints = {@UniqueConstraint(columnNames = {"course_id", "user_id"})})
+@Table(
+        name = "route",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"course_id", "user_id"})})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Route {

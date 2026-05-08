@@ -4,11 +4,9 @@ import com.breadbread.bakery.entity.BakeryPersonality;
 import com.breadbread.bakery.entity.BakeryType;
 import com.breadbread.bakery.entity.BakeryUseType;
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import lombok.*;
 
 @Entity
 @Table(name = "user_preference")
@@ -44,9 +42,12 @@ public class UserPreference {
     private User user;
 
     @Builder
-    public UserPreference(List<BakeryType> bakeryTypes, List<BakeryPersonality> bakeryPersonalities,
-                          List<BakeryUseType> bakeryUseTypes, WaitingTolerance waitingTolerance,
-                          User user) {
+    public UserPreference(
+            List<BakeryType> bakeryTypes,
+            List<BakeryPersonality> bakeryPersonalities,
+            List<BakeryUseType> bakeryUseTypes,
+            WaitingTolerance waitingTolerance,
+            User user) {
         this.bakeryTypes = bakeryTypes != null ? bakeryTypes : new ArrayList<>();
         this.bakeryMoods = bakeryPersonalities != null ? bakeryPersonalities : new ArrayList<>();
         this.bakeryUseTypes = bakeryUseTypes != null ? bakeryUseTypes : new ArrayList<>();
@@ -54,8 +55,11 @@ public class UserPreference {
         this.user = user;
     }
 
-    public void update(List<BakeryType> bakeryTypes, List<BakeryPersonality> bakeryPersonalities,
-                       List<BakeryUseType> bakeryUseTypes, WaitingTolerance waitingTolerance) {
+    public void update(
+            List<BakeryType> bakeryTypes,
+            List<BakeryPersonality> bakeryPersonalities,
+            List<BakeryUseType> bakeryUseTypes,
+            WaitingTolerance waitingTolerance) {
         if (bakeryTypes != null) this.bakeryTypes = bakeryTypes;
         if (bakeryPersonalities != null) this.bakeryMoods = bakeryPersonalities;
         if (bakeryUseTypes != null) this.bakeryUseTypes = bakeryUseTypes;

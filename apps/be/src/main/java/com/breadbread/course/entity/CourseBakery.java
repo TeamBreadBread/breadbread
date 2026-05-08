@@ -25,18 +25,18 @@ public class CourseBakery {
     @JoinColumn(name = "bakery_id")
     private Bakery bakery;
 
-    private String reason;  // AI가 이 빵집을 추천한 이유 (AI코스만 사용)
+    private String reason; // AI가 이 빵집을 추천한 이유 (AI코스만 사용)
 
-	private String recommendedBread;	// AI 추천 메뉴 (AI코스만 사용)
+    private String recommendedBread; // AI 추천 메뉴 (AI코스만 사용)
 
     @Builder
-    public CourseBakery(int visitOrder, Course course,
-						Bakery bakery, String reason, String recommendedBread) {
+    public CourseBakery(
+            int visitOrder, Course course, Bakery bakery, String reason, String recommendedBread) {
         this.visitOrder = visitOrder;
         this.course = course;
         this.bakery = bakery;
         this.reason = reason;
-		this.recommendedBread = recommendedBread;
+        this.recommendedBread = recommendedBread;
     }
 
     void setCourse(Course course) {

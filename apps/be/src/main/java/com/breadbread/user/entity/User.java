@@ -15,16 +15,22 @@ public class User extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @Column(unique = true)
     private String loginId;
+
     private String password;
+
     @Column(nullable = false)
     private String name;
-	@Column(unique = true)
+
+    @Column(unique = true)
     private String nickname;
+
     private String email;
     private String telecom;
-	@Column(unique = true)
+
+    @Column(unique = true)
     private String phone;
 
     @Column(nullable = false)
@@ -33,6 +39,7 @@ public class User extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     private UserGrade grade = UserGrade.MORNING_BREAD;
+
     private int usageCount = 0;
 
     @Column(nullable = false)
@@ -43,12 +50,20 @@ public class User extends BaseEntity {
 
     private boolean active = true;
 
-	private String profileImageUrl;
+    private String profileImageUrl;
 
     @Builder
-    public User(String loginId, String password, String name, String nickname,
-                String email, String telecom, String phone, UserRole role,
-                boolean termsAgreed, boolean privacyAgreed) {
+    public User(
+            String loginId,
+            String password,
+            String name,
+            String nickname,
+            String email,
+            String telecom,
+            String phone,
+            UserRole role,
+            boolean termsAgreed,
+            boolean privacyAgreed) {
         this.loginId = loginId;
         this.password = password;
         this.name = name;
@@ -69,5 +84,7 @@ public class User extends BaseEntity {
         this.password = password;
     }
 
-	public void updateProfileImageUrl(String url){ this.profileImageUrl = url;}
+    public void updateProfileImageUrl(String url) {
+        this.profileImageUrl = url;
+    }
 }

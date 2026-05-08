@@ -5,10 +5,9 @@ import com.breadbread.bakery.entity.BakeryType;
 import com.breadbread.bakery.entity.BakeryUseType;
 import com.breadbread.user.entity.UserPreference;
 import com.breadbread.user.entity.WaitingTolerance;
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
-
-import java.util.List;
 
 @Getter
 @Builder
