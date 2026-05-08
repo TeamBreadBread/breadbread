@@ -1,10 +1,9 @@
 package com.breadbread.course.dto;
 
 import com.breadbread.course.entity.Course;
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
-
-import java.util.List;
 
 @Getter
 @Builder
@@ -19,7 +18,8 @@ public class CourseSummaryResponse {
     private boolean liked;
     private List<CourseBakerySummary> bakeries;
 
-    public static CourseSummaryResponse from(Course course, int likeCount, boolean liked, List<CourseBakerySummary> bakeries) {
+    public static CourseSummaryResponse from(
+            Course course, int likeCount, boolean liked, List<CourseBakerySummary> bakeries) {
         return CourseSummaryResponse.builder()
                 .id(course.getId())
                 .name(course.getName())

@@ -12,12 +12,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Tag(name = "예약")
 @RestController
@@ -30,16 +29,18 @@ public class ReservationController {
     @GetMapping
     public ApiResponse<List<ReservationSummaryResponse>> getMyReservations(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Parameter(description = "예약 상태 필터 (PENDING: 대기, CONFIRMED: 확정, COMPLETED: 완료, CANCELLED: 취소). 생략 시 전체 조회")
-            @RequestParam(required = false) ReservationStatus status) {
+            @Parameter(
+                            description =
+                                    "예약 상태 필터 (PENDING: 대기, CONFIRMED: 확정, COMPLETED: 완료, CANCELLED: 취소). 생략 시 전체 조회")
+                    @RequestParam(required = false)
+                    ReservationStatus status) {
         return ApiResponse.ok(reservationService.getMyReservations(userDetails.getId(), status));
     }
 
     @Operation(summary = "예약 상세 조회")
     @GetMapping("/{id}")
     public ApiResponse<ReservationDetailResponse> getReservation(
-            @PathVariable Long id,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ApiResponse.ok(reservationService.getReservation(userDetails.getId(), id));
     }
 
@@ -65,8 +66,7 @@ public class ReservationController {
     @Operation(summary = "예약 취소")
     @PatchMapping("/{id}/cancel")
     public ApiResponse<Void> cancelReservation(
-            @PathVariable Long id,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails) {
         reservationService.cancelReservation(userDetails.getId(), id);
         return ApiResponse.ok();
     }

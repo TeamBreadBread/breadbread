@@ -3,10 +3,9 @@ package com.breadbread.course.dto;
 import com.breadbread.bakery.entity.BreadType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 @Getter
 @NoArgsConstructor
@@ -14,6 +13,7 @@ public class UpdateCourseRequest {
 
     @Size(min = 1)
     private String name;
+
     private String thumbnailUrl;
     private String estimatedTime;
 

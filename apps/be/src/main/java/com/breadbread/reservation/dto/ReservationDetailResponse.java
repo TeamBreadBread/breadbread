@@ -3,12 +3,11 @@ package com.breadbread.reservation.dto;
 import com.breadbread.course.dto.CourseSummaryResponse;
 import com.breadbread.reservation.entity.Reservation;
 import com.breadbread.reservation.entity.ReservationStatus;
-import lombok.Builder;
-import lombok.Getter;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import lombok.Builder;
+import lombok.Getter;
 
 @Getter
 @Builder
@@ -23,12 +22,10 @@ public class ReservationDetailResponse {
     private int headCount;
     private Long quotedAmount;
     private LocalDateTime cancelledAt;
-	private ReservationPaymentInfo payment;
+    private ReservationPaymentInfo payment;
 
     public static ReservationDetailResponse from(
-		Reservation reservation,
-		CourseSummaryResponse course,
-		ReservationPaymentInfo payment) {
+            Reservation reservation, CourseSummaryResponse course, ReservationPaymentInfo payment) {
         return ReservationDetailResponse.builder()
                 .id(reservation.getId())
                 .departureDate(reservation.getDepartureDate())
@@ -40,7 +37,7 @@ public class ReservationDetailResponse {
                 .headCount(reservation.getHeadCount())
                 .quotedAmount(reservation.getQuotedAmount())
                 .cancelledAt(reservation.getCancelledAt())
-				.payment(payment)
+                .payment(payment)
                 .build();
     }
 }

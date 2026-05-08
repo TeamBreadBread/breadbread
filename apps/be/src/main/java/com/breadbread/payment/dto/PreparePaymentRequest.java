@@ -16,13 +16,17 @@ public class PreparePaymentRequest {
     @NotNull
     private Long reservationId;
 
-    @Schema(description = "포트원 결제 요청에 사용하는 결제 수단 분류값 (CARD, TRANSFER, VIRTUAL_ACCOUNT, MOBILE, EASY_PAY, GIFT_CERTIFICATE)", example = "CARD")
+    @Schema(
+            description =
+                    "포트원 결제 요청에 사용하는 결제 수단 분류값 (CARD, TRANSFER, VIRTUAL_ACCOUNT, MOBILE, EASY_PAY, GIFT_CERTIFICATE)",
+            example = "CARD")
     @NotNull
     private PaymentMethod paymentMethod;
 
-	@Schema(description = "예약 상세/결제 화면에 표시할 실제 결제 수단 값 (NAVER_PAY, KAKAO_PAY, TOSS_PAY, CARD, BANK_TRANSFER, MOBILE)", example = "NAVER_PAY")
-	@NotNull
-	private PaymentMethodDetail paymentMethodDetail;
-
-
+    @Schema(
+            description =
+                    "예약 상세/결제 화면에 표시할 실제 결제 수단 값 (NAVER_PAY, KAKAO_PAY, TOSS_PAY, CARD, BANK_TRANSFER, MOBILE)",
+            example = "NAVER_PAY")
+    @NotNull
+    private PaymentMethodDetail paymentMethodDetail;
 }

@@ -4,17 +4,15 @@ import com.breadbread.bakery.entity.BreadType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 @Getter
 @NoArgsConstructor
 public class ManualCourseRequest {
 
-    @NotBlank
-    private String name;
+    @NotBlank private String name;
     private String thumbnailUrl;
     private String estimatedTime;
 
@@ -28,7 +26,5 @@ public class ManualCourseRequest {
     private BreadType breadType;
 
     // CourseBakeries
-    @NotEmpty
-    private List<Long> bakeryIds;
-
+    @NotEmpty private List<Long> bakeryIds;
 }

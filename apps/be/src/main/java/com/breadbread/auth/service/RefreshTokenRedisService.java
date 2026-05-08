@@ -1,12 +1,11 @@
 package com.breadbread.auth.service;
 
+import java.time.Duration;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-
-import java.time.Duration;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -26,7 +25,8 @@ public class RefreshTokenRedisService {
     }
 
     public Optional<String> findUserIdByToken(String hashedToken) {
-        return Optional.ofNullable(stringRedisTemplate.opsForValue().get(TOKEN_PREFIX + hashedToken));
+        return Optional.ofNullable(
+                stringRedisTemplate.opsForValue().get(TOKEN_PREFIX + hashedToken));
     }
 
     public void deleteByUserId(String userId) {

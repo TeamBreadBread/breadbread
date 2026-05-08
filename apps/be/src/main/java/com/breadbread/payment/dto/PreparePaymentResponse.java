@@ -33,15 +33,15 @@ public class PreparePaymentResponse {
     @Schema(description = "고객 전화번호 (포트원 SDK 초기화용)", example = "010-1234-5678")
     private String customerPhone;
 
-	public static PreparePaymentResponse from(Payment payment){
-		return PreparePaymentResponse.builder()
-			.paymentId(payment.getPaymentId())
-			.orderName(payment.getReservation().getCourseNameSnapshot() + " 빵빵 택시 예약 결제")
-			.amount(payment.getFinalAmount())
-			.paymentMethod(payment.getPaymentMethod())
-			.pgProvider(payment.getPgProvider())
-			.customerName(payment.getUser().getName())
-			.customerPhone(payment.getUser().getPhone())
-			.build();
-	}
+    public static PreparePaymentResponse from(Payment payment) {
+        return PreparePaymentResponse.builder()
+                .paymentId(payment.getPaymentId())
+                .orderName(payment.getReservation().getCourseNameSnapshot() + " 빵빵 택시 예약 결제")
+                .amount(payment.getFinalAmount())
+                .paymentMethod(payment.getPaymentMethod())
+                .pgProvider(payment.getPgProvider())
+                .customerName(payment.getUser().getName())
+                .customerPhone(payment.getUser().getPhone())
+                .build();
+    }
 }

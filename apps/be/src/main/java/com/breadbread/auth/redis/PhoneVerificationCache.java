@@ -11,9 +11,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class PhoneVerificationCache {
-	private String phone;
-	private String code;
-	private VerificationPurpose purpose;
-	private boolean verified;
-	private String verificationToken;
+    private String phone;
+    private String code;
+    private VerificationPurpose purpose;
+    private boolean verified;
+    private String verificationToken;
 }

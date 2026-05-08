@@ -3,13 +3,12 @@ package com.breadbread.bakery.dto;
 import com.breadbread.bakery.entity.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
@@ -27,10 +26,12 @@ public class CreateBakeryRequest {
     @Schema(description = "지역구 (예: 대전 중구)")
     private String region;
 
-    @DecimalMin("-90.0") @DecimalMax("90.0")
+    @DecimalMin("-90.0")
+    @DecimalMax("90.0")
     private Double lat;
 
-    @DecimalMin("-180.0") @DecimalMax("180.0")
+    @DecimalMin("-180.0")
+    @DecimalMax("180.0")
     private Double lng;
 
     private String phone;
@@ -46,7 +47,10 @@ public class CreateBakeryRequest {
     private String lastOrderTime;
     private boolean holidayClosed;
 
-    @Schema(description = "빵 스타일 (CLASSIC: 전통 베이커리, DESSERT: 디저트/케이크, K_DESSERT: 한식 디저트, GOURMET: 고메/프리미엄, TRENDY: 트렌디, PLAIN: 플레인/심플)", example = "CLASSIC")
+    @Schema(
+            description =
+                    "빵 스타일 (CLASSIC: 전통 베이커리, DESSERT: 디저트/케이크, K_DESSERT: 한식 디저트, GOURMET: 고메/프리미엄, TRENDY: 트렌디, PLAIN: 플레인/심플)",
+            example = "CLASSIC")
     private BakeryType bakeryType;
 
     @Schema(description = "선호 빵집 취향 (TAKEOUT, CAFE, SNS_MOOD, PRACTICAL)")

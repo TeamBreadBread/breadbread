@@ -7,14 +7,13 @@ import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserPreference;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "course")
@@ -33,11 +32,11 @@ public class Course extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private CourseType courseType;
 
-	private String region;
+    private String region;
 
-	private String theme;
+    private String theme;
 
-	private String summary;
+    private String summary;
 
     private String thumbnailUrl;
 
@@ -45,15 +44,17 @@ public class Course extends BaseEntity {
 
     private String estimatedTime;
 
-    private boolean shared;  // AI코스 공유 여부 (MANUAL은 항상 true)
+    private boolean shared; // AI코스 공유 여부 (MANUAL은 항상 true)
 
-    @Embedded
-    private AiCourseInfo aiCourseInfo;
+    @Embedded private AiCourseInfo aiCourseInfo;
 
-    @Embedded
-    private ManualCourseInfo manualCourseInfo;
+    @Embedded private ManualCourseInfo manualCourseInfo;
 
-    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(
+            mappedBy = "course",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
     private List<CourseBakery> courseBakeries = new ArrayList<>();
 
     @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
@@ -61,7 +62,9 @@ public class Course extends BaseEntity {
 
     // AI코스 칼럼
     @ElementCollection
-    @CollectionTable(name = "course_preferred_bread_types", joinColumns = @JoinColumn(name = "course_id"))
+    @CollectionTable(
+            name = "course_preferred_bread_types",
+            joinColumns = @JoinColumn(name = "course_id"))
     @Enumerated(EnumType.STRING)
     private Set<BreadType> preferredBreadTypes = new HashSet<>();
 
@@ -74,25 +77,33 @@ public class Course extends BaseEntity {
     private UserPreference userPreference;
 
     // 정적 팩토리
-    public static Course createManual(String name, String thumbnailUrl,
-                                      String estimatedTime, Long estimatedCost,
-									  String theme, String region,
-                                      ManualCourseInfo manualCourseInfo) {
+    public static Course createManual(
+            String name,
+            String thumbnailUrl,
+            String estimatedTime,
+            Long estimatedCost,
+            String theme,
+            String region,
+            ManualCourseInfo manualCourseInfo) {
         Course course = new Course();
         course.name = name;
         course.courseType = CourseType.MANUAL;
         course.thumbnailUrl = thumbnailUrl;
         course.estimatedTime = estimatedTime;
         course.estimatedCost = estimatedCost;
-		course.theme = theme;
-		course.region = region;
+        course.theme = theme;
+        course.region = region;
         course.manualCourseInfo = manualCourseInfo;
         course.shared = true;
         return course;
     }
 
-    public static Course createAi(String name, User user, UserPreference userPreference,
-                                   AiCourseInfo aiCourseInfo, Set<BreadType> preferredBreadTypes) {
+    public static Course createAi(
+            String name,
+            User user,
+            UserPreference userPreference,
+            AiCourseInfo aiCourseInfo,
+            Set<BreadType> preferredBreadTypes) {
         Course course = new Course();
         course.name = name;
         course.courseType = CourseType.AI;
@@ -109,17 +120,21 @@ public class Course extends BaseEntity {
         courseBakery.setCourse(this);
     }
 
-    public void updateManual(String name, String thumbnailUrl,
-                             String estimatedTime, Long estimatedCost,
-							 String theme, String region,
-                             ManualCourseInfo manualCourseInfo) {
+    public void updateManual(
+            String name,
+            String thumbnailUrl,
+            String estimatedTime,
+            Long estimatedCost,
+            String theme,
+            String region,
+            ManualCourseInfo manualCourseInfo) {
         validateManual();
         if (name != null) this.name = name;
         if (thumbnailUrl != null) this.thumbnailUrl = thumbnailUrl;
         if (estimatedTime != null) this.estimatedTime = estimatedTime;
         if (estimatedCost != null) this.estimatedCost = estimatedCost;
-		if (theme != null) this.theme = theme;
-		if (region != null) this.region = region;
+        if (theme != null) this.theme = theme;
+        if (region != null) this.region = region;
         if (manualCourseInfo != null) this.manualCourseInfo = manualCourseInfo;
     }
 
@@ -127,12 +142,12 @@ public class Course extends BaseEntity {
         this.courseBakeries.clear();
     }
 
-    public void updateAiResult(Long estimatedCost,String estimatedTime,
-							   String theme, String summary) {
+    public void updateAiResult(
+            Long estimatedCost, String estimatedTime, String theme, String summary) {
         this.estimatedCost = estimatedCost;
         this.estimatedTime = estimatedTime;
-		this.theme = theme;
-		this.summary = summary;
+        this.theme = theme;
+        this.summary = summary;
     }
 
     public void share() {

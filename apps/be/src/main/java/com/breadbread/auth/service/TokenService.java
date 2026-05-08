@@ -6,14 +6,13 @@ import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.jwt.JwtProvider;
 import com.breadbread.user.entity.User;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -32,8 +31,10 @@ public class TokenService {
     public TokenResponse refresh(String refreshToken) {
         jwtProvider.validateRefreshTokenOrThrow(refreshToken);
         String hashedToken = hashToken(refreshToken);
-        String userId = refreshTokenRedisService.findUserIdByToken(hashedToken)
-                .orElseThrow(() -> new CustomException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
+        String userId =
+                refreshTokenRedisService
+                        .findUserIdByToken(hashedToken)
+                        .orElseThrow(() -> new CustomException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
 
         refreshTokenRedisService.deleteByToken(hashedToken);
         log.info("토큰 재발급 userId={}", userId);
@@ -49,12 +50,10 @@ public class TokenService {
     private TokenResponse generateTokens(String userId) {
         String accessToken = jwtProvider.createAccessToken(userId);
         String refreshToken = jwtProvider.createRefreshToken(userId);
-        refreshTokenRedisService.save(hashToken(refreshToken), userId, jwtProperties.getRefreshExpiresIn());
+        refreshTokenRedisService.save(
+                hashToken(refreshToken), userId, jwtProperties.getRefreshExpiresIn());
 
-        return TokenResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .build();
+        return TokenResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build();
     }
 
     private String hashToken(String token) {

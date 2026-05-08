@@ -10,8 +10,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 public class BreadbreadApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(BreadbreadApplication.class, args);
-	}
-
+    public static void main(String[] args) {
+        SpringApplication.run(BreadbreadApplication.class, args);
+    }
 }

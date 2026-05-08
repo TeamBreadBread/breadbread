@@ -2,20 +2,19 @@ package com.breadbread.course.controller;
 
 import com.breadbread.auth.dto.CustomUserDetails;
 import com.breadbread.bakery.entity.BreadType;
+import com.breadbread.course.dto.*;
 import com.breadbread.course.dto.ai.AiCourseRequest;
 import com.breadbread.course.dto.ai.AiJobStatusResponse;
-import com.breadbread.user.entity.UserRole;
-import com.breadbread.course.dto.*;
 import com.breadbread.course.service.CourseService;
 import com.breadbread.global.dto.ApiResponse;
+import com.breadbread.user.entity.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
-
-import java.util.List;
 import jakarta.validation.Valid;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,12 +31,12 @@ public class CourseController {
 
     @Operation(summary = "코스 목록 조회", description = "지역별/종류별/테마별/에디터픽 필터 지원")
     @Parameters({
-            @Parameter(name = "region", description = "지역 필터", example = "대전 중구"),
-            @Parameter(name = "breadType", description = "빵 종류 필터"),
-            @Parameter(name = "theme", description = "테마 필터"),
-            @Parameter(name = "editorPick", description = "에디터픽 여부"),
-            @Parameter(name = "page", description = "페이지 번호 (0부터 시작, 기본값: 0)"),
-            @Parameter(name = "size", description = "페이지 크기 (기본값: 10)")
+        @Parameter(name = "region", description = "지역 필터", example = "대전 중구"),
+        @Parameter(name = "breadType", description = "빵 종류 필터"),
+        @Parameter(name = "theme", description = "테마 필터"),
+        @Parameter(name = "editorPick", description = "에디터픽 여부"),
+        @Parameter(name = "page", description = "페이지 번호 (0부터 시작, 기본값: 0)"),
+        @Parameter(name = "size", description = "페이지 크기 (기본값: 10)")
     })
     @GetMapping
     public ApiResponse<CourseListResponse> search(
@@ -49,12 +48,13 @@ public class CourseController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        CourseSearch search = CourseSearch.builder()
-                .region(region)
-                .breadType(breadType)
-                .theme(theme)
-                .editorPick(editorPick)
-                .build();
+        CourseSearch search =
+                CourseSearch.builder()
+                        .region(region)
+                        .breadType(breadType)
+                        .theme(theme)
+                        .editorPick(editorPick)
+                        .build();
 
         Long userId = userDetails != null ? userDetails.getId() : null;
         return ApiResponse.ok(courseService.search(search, PageRequest.of(page, size), userId));
@@ -63,8 +63,7 @@ public class CourseController {
     @Operation(summary = "코스 상세 조회")
     @GetMapping("/{id}")
     public ApiResponse<CourseDetailResponse> findOne(
-            @PathVariable Long id,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = userDetails != null ? userDetails.getId() : null;
         boolean isAdmin = userDetails != null && userDetails.getRole() == UserRole.ROLE_ADMIN;
         return ApiResponse.ok(courseService.findOne(id, userId, isAdmin));
@@ -85,8 +84,7 @@ public class CourseController {
     @PatchMapping("/{id}/manual")
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<Void> updateManual(
-            @PathVariable Long id,
-            @Valid @RequestBody UpdateCourseRequest request) {
+            @PathVariable Long id, @Valid @RequestBody UpdateCourseRequest request) {
         courseService.updateManual(id, request);
         return ApiResponse.ok(null);
     }
@@ -99,7 +97,9 @@ public class CourseController {
         return ApiResponse.ok(null);
     }
 
-    @Operation(summary = "AI 코스 추천 요청", description = "비동기로 처리되며 jobId를 즉시 반환합니다. GET /courses/ai/status/{jobId}로 결과를 폴링하세요.")
+    @Operation(
+            summary = "AI 코스 추천 요청",
+            description = "비동기로 처리되며 jobId를 즉시 반환합니다. GET /courses/ai/status/{jobId}로 결과를 폴링하세요.")
     @PostMapping("/ai")
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PreAuthorize("isAuthenticated()")
@@ -110,12 +110,13 @@ public class CourseController {
         return ApiResponse.ok(jobId);
     }
 
-    @Operation(summary = "AI 코스 추천 상태 조회", description = "status: PENDING | COMPLETED | FAILED. COMPLETED 시 courseId로 코스를 조회하세요.")
+    @Operation(
+            summary = "AI 코스 추천 상태 조회",
+            description = "status: PENDING | COMPLETED | FAILED. COMPLETED 시 courseId로 코스를 조회하세요.")
     @GetMapping("/ai/status/{jobId}")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<AiJobStatusResponse> getAiJobStatus(
-            @PathVariable String jobId,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @PathVariable String jobId, @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ApiResponse.ok(courseService.getAiJobStatus(jobId, userDetails.getId()));
     }
 
@@ -123,8 +124,7 @@ public class CourseController {
     @DeleteMapping("/{id}/ai")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<Void> deleteAi(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Long id) {
+            @AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable Long id) {
         courseService.deleteAi(id, userDetails.getId());
         return ApiResponse.ok(null);
     }
@@ -132,8 +132,7 @@ public class CourseController {
     @Operation(summary = "코스 좋아요", description = "이미 좋아요한 경우 409 반환")
     @PostMapping("/{id}/likes")
     public ApiResponse<Void> like(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Long id) {
+            @AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable Long id) {
         courseService.like(id, userDetails.getId());
         return ApiResponse.ok(null);
     }
@@ -141,13 +140,12 @@ public class CourseController {
     @Operation(summary = "코스 좋아요 취소", description = "좋아요하지 않은 경우 400 반환")
     @DeleteMapping("/{id}/likes")
     public ApiResponse<Void> unlike(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Long id) {
+            @AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable Long id) {
         courseService.unlike(id, userDetails.getId());
         return ApiResponse.ok(null);
     }
 
-	@PreAuthorize("isAuthenticated()")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "내 루트 목록 조회")
     @GetMapping("/me/routes")
     public ApiResponse<List<RouteResponse>> findMyRoutes(
@@ -158,8 +156,7 @@ public class CourseController {
     @Operation(summary = "코스 루트로 저장", description = "이미 저장한 경우 409 반환")
     @PostMapping("/{id}/routes")
     public ApiResponse<Void> saveRoute(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Long id) {
+            @AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable Long id) {
         courseService.saveRoute(id, userDetails.getId());
         return ApiResponse.ok(null);
     }
@@ -167,8 +164,7 @@ public class CourseController {
     @Operation(summary = "루트 저장 해제", description = "저장하지 않은 경우 400 반환")
     @DeleteMapping("/{id}/routes")
     public ApiResponse<Void> removeRoute(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Long id) {
+            @AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable Long id) {
         courseService.removeRoute(id, userDetails.getId());
         return ApiResponse.ok(null);
     }

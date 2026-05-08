@@ -11,7 +11,6 @@ import com.breadbread.payment.service.PaymentService;
 import io.portone.sdk.server.errors.WebhookVerificationException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -59,16 +58,19 @@ public class PaymentController {
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<PaymentDetailResponse> getPayment(
             @Parameter(description = "포트원 결제 ID", example = "63acc42e-a866-4f3e-b88e-2d269386226f")
-            @PathVariable String paymentId) {
+                    @PathVariable
+                    String paymentId) {
         return ApiResponse.ok(paymentService.getPayment(paymentId));
     }
 
     @SecurityRequirements
-    @Operation(summary = "PortOne 결제 웹훅", description = "포트원 Standard Webhooks 서명 검증 후 결제 상태를 동기화합니다. 포트원 서버에서만 호출됩니다.")
+    @Operation(
+            summary = "PortOne 결제 웹훅",
+            description = "포트원 Standard Webhooks 서명 검증 후 결제 상태를 동기화합니다. 포트원 서버에서만 호출됩니다.")
     @PostMapping("/webhook")
     public ResponseEntity<Void> handleWebhook(
-            @RequestBody String rawBody,
-            HttpServletRequest request) throws WebhookVerificationException {
+            @RequestBody String rawBody, HttpServletRequest request)
+            throws WebhookVerificationException {
         paymentService.handleWebhook(rawBody, request);
         return ResponseEntity.ok().build();
     }

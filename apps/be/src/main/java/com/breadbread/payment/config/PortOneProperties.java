@@ -10,9 +10,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "portone")
 public class PortOneProperties {
-	private String apiBaseUrl;
-	private String apiSecret;
-	private String storeId;
-	private String channelKey;
-	private String webhookSecret;
+    private String apiBaseUrl;
+    private String apiSecret;
+    private String storeId;
+    private String channelKey;
+    private String webhookSecret;
 }

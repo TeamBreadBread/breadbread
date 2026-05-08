@@ -6,14 +6,13 @@ import com.breadbread.global.exception.ErrorCode;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-
-import javax.crypto.SecretKey;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import javax.crypto.SecretKey;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
@@ -59,7 +58,9 @@ public class JwtProvider {
     }
 
     public LocalDateTime getRefreshTokenExpiration(String token) {
-        return parseClaims(token, refreshKey).getExpiration().toInstant()
+        return parseClaims(token, refreshKey)
+                .getExpiration()
+                .toInstant()
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime();
     }
@@ -97,10 +98,6 @@ public class JwtProvider {
     }
 
     private Claims parseClaims(String token, SecretKey key) {
-        return Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
     }
 }

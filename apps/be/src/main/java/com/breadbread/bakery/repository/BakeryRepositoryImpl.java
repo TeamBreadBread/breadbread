@@ -10,16 +10,15 @@ import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
-
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
 
 @RequiredArgsConstructor
 public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
@@ -36,57 +35,77 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
         BooleanExpression region = eqRegion(bakery, search.getRegion());
         OrderSpecifier<Integer> openFirst = openFirstOrder(bakery, search.isOpen());
 
-        List<Bakery> content = fetchContent(search.getSort(), bakery, review, like, keyword, region, openFirst, pageable);
+        List<Bakery> content =
+                fetchContent(
+                        search.getSort(),
+                        bakery,
+                        review,
+                        like,
+                        keyword,
+                        region,
+                        openFirst,
+                        pageable);
 
-        Long total = queryFactory
-                .select(bakery.count())
-                .from(bakery)
-                .where(keyword, region)
-                .fetchOne();
+        Long total =
+                queryFactory.select(bakery.count()).from(bakery).where(keyword, region).fetchOne();
 
         return new PageImpl<>(content, pageable, total != null ? total : 0L);
     }
 
     // 정렬별 쿼리 분기 + 페이징 한 곳에서 처리
-    private List<Bakery> fetchContent(BakerySortType sort, QBakery bakery,
-                                      QReview review, QBakeryLike like,
-                                      BooleanExpression keyword, BooleanExpression region,
-                                      OrderSpecifier<Integer> openFirst, Pageable pageable) {
+    private List<Bakery> fetchContent(
+            BakerySortType sort,
+            QBakery bakery,
+            QReview review,
+            QBakeryLike like,
+            BooleanExpression keyword,
+            BooleanExpression region,
+            OrderSpecifier<Integer> openFirst,
+            Pageable pageable) {
 
         if (sort == BakerySortType.REVIEW_COUNT) {
-            return applyPaging(queryFactory.selectFrom(bakery)
-                    .leftJoin(review).on(review.bakery.eq(bakery))
-                    .where(keyword, region)
-                    .groupBy(bakery.id)
-                    .orderBy(openFirst, review.count().desc(), bakery.id.desc()), pageable);
+            return applyPaging(
+                    queryFactory
+                            .selectFrom(bakery)
+                            .leftJoin(review)
+                            .on(review.bakery.eq(bakery))
+                            .where(keyword, region)
+                            .groupBy(bakery.id)
+                            .orderBy(openFirst, review.count().desc(), bakery.id.desc()),
+                    pageable);
         }
         if (sort == BakerySortType.LIKE_COUNT) {
-            return applyPaging(queryFactory.selectFrom(bakery)
-                    .leftJoin(like).on(like.bakery.eq(bakery))
-                    .where(keyword, region)
-                    .groupBy(bakery.id)
-                    .orderBy(openFirst, like.count().desc(), bakery.id.desc()), pageable);
+            return applyPaging(
+                    queryFactory
+                            .selectFrom(bakery)
+                            .leftJoin(like)
+                            .on(like.bakery.eq(bakery))
+                            .where(keyword, region)
+                            .groupBy(bakery.id)
+                            .orderBy(openFirst, like.count().desc(), bakery.id.desc()),
+                    pageable);
         }
-        return applyPaging(queryFactory.selectFrom(bakery)
-                .where(keyword, region)
-                .orderBy(openFirst, defaultOrder(sort, bakery)[0], bakery.id.desc()), pageable);
+        return applyPaging(
+                queryFactory
+                        .selectFrom(bakery)
+                        .where(keyword, region)
+                        .orderBy(openFirst, defaultOrder(sort, bakery)[0], bakery.id.desc()),
+                pageable);
     }
 
     private List<Bakery> applyPaging(JPAQuery<Bakery> query, Pageable pageable) {
-        return query
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .fetch();
+        return query.offset(pageable.getOffset()).limit(pageable.getPageSize()).fetch();
     }
 
     private OrderSpecifier<?>[] defaultOrder(BakerySortType sort, QBakery bakery) {
         if (sort == BakerySortType.RATING) {
-            return new OrderSpecifier<?>[]{
-                    new OrderSpecifier<>(Order.DESC, bakery.rating, OrderSpecifier.NullHandling.NullsLast),
-                    bakery.id.desc()
+            return new OrderSpecifier<?>[] {
+                new OrderSpecifier<>(
+                        Order.DESC, bakery.rating, OrderSpecifier.NullHandling.NullsLast),
+                bakery.id.desc()
             };
         }
-        return new OrderSpecifier<?>[]{bakery.id.desc()};
+        return new OrderSpecifier<?>[] {bakery.id.desc()};
     }
 
     private BooleanExpression containKeyword(QBakery bakery, String keyword) {
@@ -98,15 +117,27 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
         LocalTime now = LocalTime.now();
         boolean isWeekend = (today == DayOfWeek.SATURDAY || today == DayOfWeek.SUNDAY);
 
-        BooleanExpression hoursNotNull = isWeekend
-                ? bakery.businessHours.weekendOpen.isNotNull().and(bakery.businessHours.weekendClose.isNotNull())
-                : bakery.businessHours.weekdayOpen.isNotNull().and(bakery.businessHours.weekdayClose.isNotNull());
+        BooleanExpression hoursNotNull =
+                isWeekend
+                        ? bakery.businessHours
+                                .weekendOpen
+                                .isNotNull()
+                                .and(bakery.businessHours.weekendClose.isNotNull())
+                        : bakery.businessHours
+                                .weekdayOpen
+                                .isNotNull()
+                                .and(bakery.businessHours.weekdayClose.isNotNull());
 
-        BooleanExpression timeCondition = isWeekend
-                ? bakery.businessHours.weekendOpen.loe(now)
-                .and(bakery.businessHours.weekendClose.goe(now))
-                : bakery.businessHours.weekdayOpen.loe(now)
-                .and(bakery.businessHours.weekdayClose.goe(now));
+        BooleanExpression timeCondition =
+                isWeekend
+                        ? bakery.businessHours
+                                .weekendOpen
+                                .loe(now)
+                                .and(bakery.businessHours.weekendClose.goe(now))
+                        : bakery.businessHours
+                                .weekdayOpen
+                                .loe(now)
+                                .and(bakery.businessHours.weekdayClose.goe(now));
 
         return hoursNotNull.and(bakery.closedDays.contains(today).not()).and(timeCondition);
     }
@@ -115,9 +146,8 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
     private OrderSpecifier<Integer> openFirstOrder(QBakery bakery, boolean open) {
         if (!open) return new OrderSpecifier<>(Order.ASC, Expressions.constant(0));
 
-        NumberExpression<Integer> openScore = new CaseBuilder()
-                .when(isOpenNow(bakery)).then(0)
-                .otherwise(1);
+        NumberExpression<Integer> openScore =
+                new CaseBuilder().when(isOpenNow(bakery)).then(0).otherwise(1);
 
         return openScore.asc();
     }

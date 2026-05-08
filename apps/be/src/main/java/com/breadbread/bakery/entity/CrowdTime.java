@@ -2,9 +2,8 @@ package com.breadbread.bakery.entity;
 
 import com.breadbread.global.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.LocalTime;
+import lombok.*;
 
 @Entity
 @Table(name = "crowd_time")
@@ -24,7 +23,7 @@ public class CrowdTime extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private DayType dayType;
 
-    //private int hour;
+    // private int hour;
     private LocalTime peakStart;
     private LocalTime peakEnd;
 
@@ -36,11 +35,16 @@ public class CrowdTime extends BaseEntity {
     private String sourceType;
 
     @Builder
-    private CrowdTime(DayType dayType, CrowdLevel crowdLevel,
-                      LocalTime peakStart, LocalTime peakEnd,
-                      Integer expectedWaitMin, String sourceType, Bakery bakery) {
+    private CrowdTime(
+            DayType dayType,
+            CrowdLevel crowdLevel,
+            LocalTime peakStart,
+            LocalTime peakEnd,
+            Integer expectedWaitMin,
+            String sourceType,
+            Bakery bakery) {
         this.dayType = dayType;
-        //this.hour = hour;
+        // this.hour = hour;
         this.crowdLevel = crowdLevel;
         this.peakStart = peakStart;
         this.peakEnd = peakEnd;

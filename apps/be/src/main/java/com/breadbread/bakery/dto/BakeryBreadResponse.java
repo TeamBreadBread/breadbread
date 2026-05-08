@@ -1,7 +1,7 @@
 package com.breadbread.bakery.dto;
 
-import com.breadbread.bakery.entity.BreadType;
 import com.breadbread.bakery.entity.Bread;
+import com.breadbread.bakery.entity.BreadType;
 import lombok.Builder;
 import lombok.Getter;
 
