@@ -1,6 +1,7 @@
-import { useDeferredValue, useEffect, useState } from "react";
+import type { FormEvent } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import type { BakeryListItem } from "@/api/types/bakery";
+import type { BakeryListItem, GetBakeriesParams } from "@/api/types/bakery";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { OverlayFooter } from "@/components/common";
 import { PreferenceOptionCard } from "@/components/common/cards";
@@ -87,20 +88,15 @@ export default function BreadPreference() {
 
   const trimmedSearch = debouncedSearch.trim();
   const searchQuery = trimmedSearch.length >= 2 ? trimmedSearch : "";
+  const bakeryListParams = useMemo((): GetBakeriesParams => {
+    const base: GetBakeriesParams = { page: 0, size: 20, sort: "RATING", open: false };
+    return searchQuery.length > 0 ? { ...base, keyword: searchQuery } : base;
+  }, [searchQuery]);
   const {
     data: bakerySearchData,
     loading: bakerySearchLoading,
     error: bakerySearchError,
-  } = useBakeries(
-    {
-      page: 0,
-      size: 20,
-      sort: "RATING",
-      open: false,
-      keyword: searchQuery || undefined,
-    },
-    { enabled: isDepartureBottomSheetOpen && searchQuery.length > 0 },
-  );
+  } = useBakeries(bakeryListParams, { enabled: isDepartureBottomSheetOpen });
 
   const bakeryResults: BakeryListItem[] = bakerySearchData?.bakeries ?? [];
 
@@ -148,14 +144,7 @@ export default function BreadPreference() {
   };
 
   const hasDepartureResult = departureKeyword.trim().length > 0;
-  const listTitle = searchQuery.length > 0 ? "검색 결과" : "빵집 검색";
-
-  const handleSearchSubmit = () => {
-    const trimmed = searchKeyword.trim();
-    setDepartureKeyword(trimmed);
-    setDepartureLatLng(null);
-    closeDepartureBottomSheet();
-  };
+  const listTitle = searchQuery.length > 0 ? "검색 결과" : "인기 빵집";
 
   const handleBakeryPick = (bakery: BakeryListItem) => {
     const label = bakery.name.trim();
@@ -167,6 +156,35 @@ export default function BreadPreference() {
       setDepartureLatLng(null);
     }
     closeDepartureBottomSheet();
+  };
+
+  const bakeryResultRow = (bakery: BakeryListItem) => {
+    const addr = bakery.address?.trim() ? formatCurationAddress(bakery.address.trim()) : "";
+    return (
+      <button
+        key={bakery.id}
+        type="button"
+        className="flex min-h-x14 flex-col justify-center gap-x0-5 border-b border-gray-100 px-x2_5 py-x3 text-left last:border-b-0"
+        onClick={() => handleBakeryPick(bakery)}
+      >
+        <div className="flex items-start gap-x1">
+          <span className="mt-x0_5 text-size-4 text-gray-600">⌕</span>
+          <span className="flex-1 font-pretendard text-size-6 font-medium leading-t6 text-gray-1000">
+            {bakery.name}
+          </span>
+        </div>
+        {addr ? (
+          <span className="pl-x5 font-pretendard text-size-3 leading-t4 text-gray-700">{addr}</span>
+        ) : null}
+      </button>
+    );
+  };
+
+  const handleSearchSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    if (bakeryResults.length === 1) {
+      handleBakeryPick(bakeryResults[0]);
+    }
   };
 
   const allQuestionSectionsAnswered = QUESTION_SECTIONS.every(
@@ -307,23 +325,20 @@ export default function BreadPreference() {
                     출발지 검색
                   </h3>
                   <p className="font-pretendard text-size-3 leading-t4 text-gray-700">
-                    선택하신 장소 주변으로 코스를 짜드려요.
+                    등록된 빵집을 출발점으로 선택하면 해당 위치로 코스를 짜요.
                   </p>
                 </div>
               </div>
 
               <form
                 className="mt-x4 flex h-x14 items-center gap-x2 rounded-r3 border border-gray-300 bg-gray-00 px-x5"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  handleSearchSubmit();
-                }}
+                onSubmit={handleSearchSubmit}
               >
                 <input
                   autoFocus
                   value={searchKeyword}
                   onChange={(event) => setSearchKeyword(event.target.value)}
-                  placeholder="빵집 이름이나 동네를 입력해보세요"
+                  placeholder="빵집 이름·주소·지역구로 검색"
                   className="flex-1 bg-transparent font-pretendard text-size-5 leading-t6 text-gray-1000 outline-none placeholder:text-gray-400"
                 />
                 <button
@@ -336,16 +351,10 @@ export default function BreadPreference() {
               </form>
 
               <div className="mt-x3">
-                <div className="flex items-center justify-between border-b border-gray-200 px-x2_5 pb-x3 pt-x5">
+                <div className="border-b border-gray-200 px-x2_5 pb-x3 pt-x5">
                   <span className="font-pretendard text-[13px] font-bold leading-[18px] text-gray-700">
                     {listTitle}
                   </span>
-                  <button
-                    type="button"
-                    className="font-pretendard text-size-3 leading-t4 text-blue-600"
-                  >
-                    현재 위치
-                  </button>
                 </div>
 
                 <div className="flex flex-col">
@@ -354,9 +363,17 @@ export default function BreadPreference() {
                       두 글자 이상 입력해 주세요.
                     </p>
                   ) : searchQuery.length === 0 ? (
-                    <p className="px-x2_5 py-x4 font-pretendard text-size-4 leading-t5 text-gray-600">
-                      이름이나 동네를 입력하면 빵집을 찾아드려요.
-                    </p>
+                    bakeryResults.length === 0 && !bakerySearchLoading ? (
+                      <p className="px-x2_5 py-x4 font-pretendard text-size-4 leading-t5 text-gray-600">
+                        표시할 빵집이 없어요.
+                      </p>
+                    ) : bakerySearchLoading ? (
+                      <p className="px-x2_5 py-x4 font-pretendard text-size-4 leading-t5 text-gray-600">
+                        불러오는 중…
+                      </p>
+                    ) : (
+                      bakeryResults.map(bakeryResultRow)
+                    )
                   ) : bakerySearchLoading ? (
                     <p className="px-x2_5 py-x4 font-pretendard text-size-4 leading-t5 text-gray-600">
                       검색 중…
@@ -370,31 +387,7 @@ export default function BreadPreference() {
                       검색 결과가 없습니다.
                     </p>
                   ) : (
-                    bakeryResults.map((bakery) => {
-                      const addr = bakery.address?.trim()
-                        ? formatCurationAddress(bakery.address.trim())
-                        : "";
-                      return (
-                        <button
-                          key={bakery.id}
-                          type="button"
-                          className="flex min-h-x14 flex-col justify-center gap-x0-5 border-b border-gray-100 px-x2_5 py-x3 text-left last:border-b-0"
-                          onClick={() => handleBakeryPick(bakery)}
-                        >
-                          <div className="flex items-start gap-x1">
-                            <span className="mt-x0_5 text-size-4 text-gray-600">⌕</span>
-                            <span className="flex-1 font-pretendard text-size-6 font-medium leading-t6 text-gray-1000">
-                              {bakery.name}
-                            </span>
-                          </div>
-                          {addr ? (
-                            <span className="pl-x5 font-pretendard text-size-3 leading-t4 text-gray-700">
-                              {addr}
-                            </span>
-                          ) : null}
-                        </button>
-                      );
-                    })
+                    bakeryResults.map(bakeryResultRow)
                   )}
                 </div>
               </div>

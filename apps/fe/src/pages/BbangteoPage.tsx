@@ -4,6 +4,8 @@ import BbangteoSearchSection from "@/components/domain/bbangteo/BbangteoSearchSe
 import BottomNav from "@/components/layout/BottomNav";
 import type { CommunitySectionItem } from "@/components/domain/bbangteo/types";
 import MobileFrame from "@/components/layout/MobileFrame";
+import { MOCK_HOME_BBANGTICLE_PREVIEWS, MOCK_HOME_FREE_PREVIEWS } from "@/data/bbangteoBoardMock";
+import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 const sections: CommunitySectionItem[] = [
@@ -17,36 +19,31 @@ const sections: CommunitySectionItem[] = [
     title: "자유 게시판",
     contentType: "postList",
     sectionHeight: 214,
-    postItems: [
-      { content: "방금 갓 나온 베이글 먹었는데 진짜 대박", date: "26.04.27" },
-      { content: "빵순이가 알려주는 주말 성심당 웨이팅 꿀팁.txt", date: "26.04.27" },
-      { content: "빵 보관 어떻게들 하세요? 냉동 vs 냉장", date: "26.04.27" },
-      { content: "다이어트 중인데 빵 못 참겠어요.. 정상이겠죠?", date: "26.04.27" },
-      { content: "연남동 근처에 카공하기 좋은 베이커리 카페 추천 좀!", date: "26.04.27" },
-    ],
+    postItems: MOCK_HOME_FREE_PREVIEWS,
   },
   {
     title: "빵빵 소식",
     contentType: "postList",
     sectionHeight: 214,
-    postItems: [
-      { content: "[공지] 이번 주 정기 점검 안내", date: "26.04.27" },
-      { content: "[빵티클] 대전 성심당 정복 가이드", date: "26.04.27" },
-      { content: "[공지] 이번 주 정기 점검 안내", date: "26.04.27" },
-      { content: "[빵티클] 대전 성심당 정복 가이드", date: "26.04.27" },
-      { content: "[공지] 이번 주 정기 점검 안내", date: "26.04.27" },
-    ],
+    postItems: MOCK_HOME_BBANGTICLE_PREVIEWS,
   },
 ];
 
 const BbangteoPage = () => {
   const navigate = useNavigate();
+  const [curationDisplayedPinIds, setCurationDisplayedPinIds] = useState<number[]>([]);
 
   const goToBakeryList = () => {
-    navigate({ to: "/bbangteo-bakery-list", search: { from: "bbangteo" } });
+    navigate({
+      to: "/bbangteo-bakery-list",
+      search: {
+        from: "bbangteo" as const,
+        curationPins: curationDisplayedPinIds.length > 0 ? curationDisplayedPinIds : undefined,
+      },
+    });
   };
   const goToBoardList = () => {
-    navigate({ to: "/bbangteo-board" });
+    navigate({ to: "/bbangteo-board", search: { listRefresh: undefined } });
   };
   const goToArticleBoardList = () => {
     navigate({ to: "/bbangteo-article-board" });
@@ -72,6 +69,9 @@ const BbangteoPage = () => {
             <BbangteoCommunitySection
               key={section.title}
               section={section}
+              onCurationDisplayedBakeryIdsChange={
+                section.contentType === "curationApi" ? setCurationDisplayedPinIds : undefined
+              }
               onSectionTitleAreaClick={
                 section.title === "빵빵 소식" ? goToArticleBoardList : undefined
               }

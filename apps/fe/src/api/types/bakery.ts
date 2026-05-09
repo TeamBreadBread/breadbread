@@ -96,6 +96,8 @@ export type BakeryReviewSortType = "LATEST" | "RATING_HIGH" | "RATING_LOW";
 /** 단일 리뷰 (GET 목록 항목) */
 export type BakeryReview = {
   id: number;
+  /** 작성자 회원 PK — 로그인 사용자와 같으면 MY 표시명으로 교체 */
+  authorUserId?: number | null;
   authorNickname: string;
   rating: number;
   content: string;

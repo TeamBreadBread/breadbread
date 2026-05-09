@@ -9,6 +9,9 @@ import lombok.Getter;
 @Builder
 public class UserProfileResponse {
 
+    @Schema(description = "회원 고유 ID (JWT subject와 동일)", example = "42")
+    private Long userId;
+
     @Schema(description = "로그인 아이디", example = "breadlover123")
     private String loginId;
 

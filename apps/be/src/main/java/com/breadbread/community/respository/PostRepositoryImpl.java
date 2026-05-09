@@ -28,7 +28,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 queryFactory
                         .selectFrom(post)
                         .where(typeCondition, keywordCondition)
-                        .orderBy(post.id.desc())
+                        .orderBy(post.createdAt.desc())
                         .offset(pageable.getOffset())
                         .limit(pageable.getPageSize())
                         .fetch();

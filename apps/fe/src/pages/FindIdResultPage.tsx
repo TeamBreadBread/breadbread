@@ -17,7 +17,7 @@ export default function FindIdResultPage() {
   };
 
   const handleLoginClick = () => {
-    void navigate({ to: "/login" });
+    void navigate({ to: "/login", search: { redirect: undefined } });
   };
 
   return (

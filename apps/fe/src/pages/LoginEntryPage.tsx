@@ -46,7 +46,7 @@ export default function LoginEntryPage() {
 
   const handleSocialLogin = (provider: SocialProvider) => {
     if (provider === "email") {
-      navigate({ to: "/login" });
+      navigate({ to: "/login", search: { redirect: undefined } });
       return;
     }
     if (provider === "kakao") {

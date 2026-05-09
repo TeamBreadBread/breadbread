@@ -11,7 +11,7 @@ export default function SignupResultPage() {
   const userName = nameFromSearch?.trim() || "회원";
 
   const handleLoginClick = () => {
-    navigate({ to: "/login" });
+    navigate({ to: "/login", search: { redirect: undefined } });
   };
 
   return (

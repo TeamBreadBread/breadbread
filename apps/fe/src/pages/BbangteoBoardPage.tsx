@@ -1,7 +1,24 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
+import { getPosts, type PostSummary, type PostType } from "@/api/posts";
+import {
+  type BbangteoBoardListRow,
+  getMockBoardSource,
+  shouldUseBoardMock,
+} from "@/data/bbangteoBoardMock";
+import { getErrorMessage } from "@/api/types/common";
+import {
+  clearBoardPostLikeOverridesForPostIds,
+  getBoardPostLikeOverridesSnapshot,
+  subscribeBoardPostLikeOverrides,
+} from "@/state/boardPostLikeOverrides";
+import {
+  getUserCreatedFreePostsRevision,
+  getUserCreatedFreePostsSnapshot,
+  subscribeUserCreatedFreePosts,
+} from "@/state/boardUserCreatedFreePosts";
 import BottomNav from "@/components/layout/BottomNav";
 import {
   BBANGTEO_FIXED_HEADER_OUTER_CLASS,
@@ -13,157 +30,49 @@ const tabs = ["자유 게시판", "빵티클"] as const;
 
 type TabType = (typeof tabs)[number];
 
-type Post = {
-  id: number;
-  title: string;
-  image?: string;
-  likeCount: number;
-  commentCount: number;
-  date: string;
-  type: TabType;
-};
+type BoardListItem = BbangteoBoardListRow;
 
-const posts: Post[] = [
-  {
-    id: 1,
-    type: "자유 게시판",
-    title: "방금 갓 나온 베이글 먹었는데 진짜 대박",
-    image: "Frame 473587_3811.png",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 2,
-    type: "자유 게시판",
-    title: "방금 갓 나온 베이글 먹었는데 진짜 대박 지금까지 이런 맛은 없었다",
-    image: "Frame 473587_3825.png",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 3,
-    type: "자유 게시판",
-    title: "방금 갓 나온 베이글 먹었는데 진짜 대박",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 4,
-    type: "자유 게시판",
-    title:
-      "연남동 근처에 카공하기 좋은 베이커리 카페 추천 좀! 적당히 조용한 곳 어디 없나 ㅠㅠ 친구랑 적당히 소근소근 얘기할 정도?",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 5,
-    type: "자유 게시판",
-    title: "방금 갓 나온 베이글 먹었는데 진짜 대박",
-    image: "Frame 473587_3863.png",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 6,
-    type: "자유 게시판",
-    title: "방금 갓 나온 베이글 먹었는데 진짜 대박 지금까지 이런 맛은 없었다",
-    image: "Frame 473587_3877.png",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 7,
-    type: "자유 게시판",
-    title: "방금 갓 나온 베이글 먹었는데 진짜 대박",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 8,
-    type: "자유 게시판",
-    title:
-      "연남동 근처에 카공하기 좋은 베이커리 카페 추천 좀! 적당히 조용한 곳 어디 없나 ㅠㅠ 친구랑 적당히 소근소근 얘기할 정도?",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 9,
-    type: "빵티클",
-    title: "[공지] 이번 주 정기 점검 안내",
-    image: "Frame 473587_3811.png",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 10,
-    type: "빵티클",
-    title: "[빵티클] 대전 성심당 정복 가이드",
-    image: "Frame 473587_3825.png",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 11,
-    type: "빵티클",
-    title: "빵터 업데이트: 이제 내 주변 빵집을 지도로 확인하세요!",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 12,
-    type: "빵티클",
-    title: '[빵티클] "죽기 전에 꼭 먹어야 할" 전국 5대 크루아상 성지',
-    image: "Frame 473587_3863.png",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 13,
-    type: "빵티클",
-    title: "[빵티클] 소금빵 열풍의 원조를 찾아서: 시오빵의 탄생 비화",
-    image: "Frame 473587_3877.png",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 14,
-    type: "빵티클",
-    title: "[공지] 5월 가정의 달 기념 '빵 선물 세트' 이벤트 당첨자 발표",
-    image: "Frame 473587_3811.png",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 15,
-    type: "빵티클",
-    title: "[공지] 빵순빵돌 1기 서포터즈 모집 시작! (혜택 확인)",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 16,
-    type: "빵티클",
-    title: "[빵티클] 빵순이 에디터가 선정한 '실패 없는' 도쿄 빵지순례 코스",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-];
+function postTypesForTab(tab: TabType): PostType[] {
+  return tab === "자유 게시판" ? ["FREE"] : ["NOTICE", "ARTICLE"];
+}
+
+function mapSummaryToItem(post: PostSummary): BoardListItem {
+  const d = new Date(post.createdAt);
+  const dateLabel = Number.isNaN(d.getTime())
+    ? ""
+    : `${String(d.getFullYear()).slice(-2)}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+
+  return {
+    id: post.id,
+    title: post.title,
+    thumbnailImageUrl: post.thumbnailImageUrl,
+    likeCount: post.likeCount,
+    commentCount: post.commentCount,
+    dateLabel,
+    postType: post.postType,
+    createdAt: post.createdAt,
+  };
+}
+
+function compareBoardPostsNewestFirst(a: BoardListItem, b: BoardListItem): number {
+  const ta = a.createdAt ? Date.parse(a.createdAt) : NaN;
+  const tb = b.createdAt ? Date.parse(b.createdAt) : NaN;
+  if (Number.isFinite(ta) && Number.isFinite(tb) && tb !== ta) {
+    return tb - ta;
+  }
+  return b.id - a.id;
+}
+
+/** mock 자유 게시판: 작성한 실제 글을 목록 최상단에 두고 나머지는 기존 mock */
+function getMergedMockFreeBoardSource(): BoardListItem[] {
+  const userPosts = [...getUserCreatedFreePostsSnapshot()];
+  const ids = new Set(userPosts.map((u) => u.id));
+  return [...userPosts, ...getMockBoardSource("자유 게시판").filter((m) => !ids.has(m.id))];
+}
+
+function getMockListSource(tab: TabType): BoardListItem[] {
+  return tab === "자유 게시판" ? getMergedMockFreeBoardSource() : getMockBoardSource(tab);
+}
 
 const BackHeader = () => {
   const navigate = useNavigate();
@@ -215,17 +124,146 @@ const BoardTabs = ({
   );
 };
 
-const PostMetaItem = ({ count }: { count: number }) => (
-  <div className="flex items-center gap-[4px]">
-    <div className="h-[14px] w-[14px] rounded-full bg-[#dcdee3]" />
-    <span className="text-[12px] leading-[16px] text-[#868b94]">{count}</span>
+/** 자유 게시판: 좋아요(하트) → 댓글(말풍선) */
+const IconHeartOutline = () => (
+  <svg
+    className="shrink-0"
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden
+  >
+    <path
+      d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const IconSpeechBubbleOutline = () => (
+  <svg
+    className="shrink-0"
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden
+  >
+    <path
+      d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const BoardFreeMetaRow = ({
+  likeCount,
+  commentCount,
+}: {
+  likeCount: number;
+  commentCount: number;
+}) => (
+  <div className="flex items-center gap-[10px] text-[#868b94]">
+    <span className="flex items-center gap-[4px]" title={`좋아요 ${likeCount}`}>
+      <IconHeartOutline />
+      <span className="text-[12px] leading-[16px]">{likeCount}</span>
+    </span>
+    <span className="flex items-center gap-[4px]" title={`댓글 ${commentCount}`}>
+      <IconSpeechBubbleOutline />
+      <span className="text-[12px] leading-[16px]">{commentCount}</span>
+    </span>
   </div>
 );
 
-const PostItem = ({ post, onClick }: { post: Post; onClick?: () => void }) => {
+/** 빵티클(공지): 좋아요만 — 댓글 없음 */
+const BoardBbangticleMetaRow = ({ likeCount }: { likeCount: number }) => (
+  <div className="flex items-center gap-[10px] text-[#868b94]">
+    <span className="flex items-center gap-[4px]" title={`좋아요 ${likeCount}`}>
+      <IconHeartOutline />
+      <span className="text-[12px] leading-[16px]">{likeCount}</span>
+    </span>
+  </div>
+);
+
+const ThumbnailFallback = () => (
+  <div
+    className="flex items-center justify-center overflow-hidden"
+    style={{ width: 24, height: 23 }}
+  >
+    <img src={currationBreadImg} alt="" className="h-full w-full object-contain opacity-70" />
+  </div>
+);
+
+const PostThumbnail = ({
+  thumbnailImageUrl,
+  title,
+}: {
+  thumbnailImageUrl: string | null;
+  title: string;
+}) => {
+  const [broken, setBroken] = useState(false);
+
+  if (!thumbnailImageUrl || broken) {
+    return (
+      <div
+        className="flex basis-[84px] flex-none items-center justify-center rounded-[6px]"
+        style={{
+          width: 84,
+          height: 84,
+          backgroundColor: "#f7f8f9",
+          boxShadow: "inset 0 0 0 1px #f3f4f5",
+        }}
+      >
+        <ThumbnailFallback />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="relative flex basis-[84px] flex-none shrink-0 overflow-hidden rounded-[6px]"
+      style={{
+        width: 84,
+        height: 84,
+        boxShadow: "inset 0 0 0 1px #f3f4f5",
+      }}
+    >
+      <img
+        src={thumbnailImageUrl}
+        alt={`${title} 썸네일`}
+        className="h-full w-full object-cover"
+        loading="lazy"
+        onError={() => setBroken(true)}
+      />
+    </div>
+  );
+};
+
+type BoardListVariant = "free" | "bbangticle";
+
+const PostItem = ({
+  post,
+  onClick,
+  variant,
+}: {
+  post: BoardListItem;
+  onClick?: () => void;
+  variant: BoardListVariant;
+}) => {
+  const hasThumb = Boolean(post.thumbnailImageUrl);
+
   return (
     <article
-      className={`flex items-start border-b border-[#f3f4f5] py-[16px] ${post.image ? "gap-[12px]" : "gap-0"}`}
+      className={`flex items-start border-b border-[#f3f4f5] py-[16px] ${hasThumb ? "gap-[12px]" : "gap-0"}`}
       onClick={onClick}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
@@ -236,39 +274,21 @@ const PostItem = ({ post, onClick }: { post: Post; onClick?: () => void }) => {
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
     >
-      {post.image ? (
-        <div
-          className="flex basis-[84px] flex-none items-center justify-center rounded-[6px]"
-          style={{
-            width: 84,
-            height: 84,
-            backgroundColor: "#f7f8f9",
-            boxShadow: "inset 0 0 0 1px #f3f4f5",
-          }}
-        >
-          <div
-            className="flex items-center justify-center overflow-hidden"
-            style={{ width: 24, height: 23 }}
-          >
-            <img
-              src={currationBreadImg}
-              alt="게시글 이미지 미리보기"
-              className="h-full w-full object-contain opacity-70"
-            />
-          </div>
-        </div>
+      {hasThumb ? (
+        <PostThumbnail thumbnailImageUrl={post.thumbnailImageUrl} title={post.title} />
       ) : null}
 
       <div
-        className={`flex flex-1 flex-col justify-between ${post.image ? "min-h-[84px]" : "gap-[10px]"}`}
+        className={`flex flex-1 flex-col justify-between ${hasThumb ? "min-h-[84px]" : "gap-[10px]"}`}
       >
         <h2 className="line-clamp-2 text-[16px] leading-[22px] text-[#1a1c20]">{post.title}</h2>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-[8px]">
-            <PostMetaItem count={post.likeCount} />
-            <PostMetaItem count={post.commentCount} />
-          </div>
-          <time className="text-[12px] leading-[16px] text-[#868b94]">{post.date}</time>
+          {variant === "free" ? (
+            <BoardFreeMetaRow likeCount={post.likeCount} commentCount={post.commentCount} />
+          ) : (
+            <BoardBbangticleMetaRow likeCount={post.likeCount} />
+          )}
+          <time className="text-[12px] leading-[16px] text-[#868b94]">{post.dateLabel}</time>
         </div>
       </div>
     </article>
@@ -278,9 +298,11 @@ const PostItem = ({ post, onClick }: { post: Post; onClick?: () => void }) => {
 const PostList = ({
   items,
   onPostClick,
+  variant,
 }: {
-  items: Post[];
-  onPostClick?: (post: Post) => void;
+  items: BoardListItem[];
+  onPostClick?: (post: BoardListItem) => void;
+  variant: BoardListVariant;
 }) => {
   return (
     <section className="flex flex-col bg-white px-[20px]">
@@ -288,6 +310,7 @@ const PostList = ({
         <PostItem
           key={post.id}
           post={post}
+          variant={variant}
           onClick={onPostClick ? () => onPostClick(post) : undefined}
         />
       ))}
@@ -316,23 +339,146 @@ const FloatingWriteButton = ({ onClick }: { onClick: () => void }) => {
 
 type BbangteoBoardPageProps = {
   initialTab?: TabType;
+  /** `/bbangteo-board?listRefresh=` — 글 작성 후 목록 강제 재조회 */
+  listRefresh?: number;
 };
 
-const BbangteoBoardPage = ({ initialTab = "자유 게시판" }: BbangteoBoardPageProps) => {
+const PAGE_SIZE = 10;
+
+const BbangteoBoardPage = ({ initialTab = "자유 게시판", listRefresh }: BbangteoBoardPageProps) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+  const [items, setItems] = useState<BoardListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [listError, setListError] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
 
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab]);
 
-  const filteredPosts = posts.filter((post) => post.type === activeTab);
-  const handlePostClick = (post: Post) => {
-    if (post.type === "자유 게시판") {
-      navigate({ to: "/bbangteo-board-post-detail" });
+  const refreshFirstPage = useCallback(async () => {
+    setLoading(true);
+    setListError(null);
+    setItems([]);
+
+    if (shouldUseBoardMock()) {
+      const source = getMockListSource(activeTab);
+      setItems(source.slice(0, PAGE_SIZE));
+      setPage(0);
+      setHasNext(source.length > PAGE_SIZE);
+      setLoading(false);
       return;
     }
-    navigate({ to: "/bbangteo-bbangticle-post-detail" });
+
+    try {
+      const res = await getPosts({
+        postTypes: postTypesForTab(activeTab),
+        page: 0,
+        size: PAGE_SIZE,
+      });
+      clearBoardPostLikeOverridesForPostIds(res.posts.map((p) => p.id));
+      setItems(res.posts.map(mapSummaryToItem));
+      setPage(res.page);
+      setHasNext(res.hasNext);
+    } catch (e) {
+      setListError(getErrorMessage(e));
+      setItems([]);
+      setHasNext(false);
+      setPage(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeTab]);
+
+  const userCreatedFreeRevision = useSyncExternalStore(
+    subscribeUserCreatedFreePosts,
+    getUserCreatedFreePostsRevision,
+    () => 0,
+  );
+
+  useEffect(() => {
+    void refreshFirstPage();
+  }, [refreshFirstPage, listRefresh, userCreatedFreeRevision]);
+
+  const likeOverrides = useSyncExternalStore(
+    subscribeBoardPostLikeOverrides,
+    getBoardPostLikeOverridesSnapshot,
+    () => new Map<number, { liked: boolean; likeCount: number }>(),
+  );
+
+  const displayItems = useMemo(() => {
+    const merged = items.map((p) => ({
+      ...p,
+      likeCount: likeOverrides.get(p.id)?.likeCount ?? p.likeCount,
+    }));
+    if (shouldUseBoardMock()) {
+      const userIds = new Set(getUserCreatedFreePostsSnapshot().map((r) => r.id));
+      merged.sort((a, b) => {
+        const aUser = userIds.has(a.id);
+        const bUser = userIds.has(b.id);
+        if (aUser !== bUser) {
+          return aUser ? -1 : 1;
+        }
+        return compareBoardPostsNewestFirst(a, b);
+      });
+    } else {
+      merged.sort(compareBoardPostsNewestFirst);
+    }
+    return merged;
+  }, [items, likeOverrides]);
+
+  const handlePostClick = (post: BoardListItem) => {
+    if (activeTab === "자유 게시판") {
+      navigate({
+        to: "/bbangteo-board-post-detail",
+        search: { postId: post.id, detailRefresh: undefined },
+      });
+      return;
+    }
+    navigate({ to: "/bbangteo-bbangticle-post-detail", search: { postId: post.id } });
+  };
+
+  const handleLoadMore = async () => {
+    if (!hasNext || loadingMore || loading) {
+      return;
+    }
+
+    if (shouldUseBoardMock()) {
+      setLoadingMore(true);
+      try {
+        const source = getMockListSource(activeTab);
+        const next = page + 1;
+        const start = next * PAGE_SIZE;
+        const slice = source.slice(start, start + PAGE_SIZE);
+        setItems((prev) => [...prev, ...slice]);
+        setPage(next);
+        setHasNext(start + slice.length < source.length);
+      } finally {
+        setLoadingMore(false);
+      }
+      return;
+    }
+
+    setLoadingMore(true);
+    try {
+      const next = page + 1;
+      const res = await getPosts({
+        postTypes: postTypesForTab(activeTab),
+        page: next,
+        size: PAGE_SIZE,
+      });
+      clearBoardPostLikeOverridesForPostIds(res.posts.map((p) => p.id));
+      setItems((prev) => [...prev, ...res.posts.map(mapSummaryToItem)]);
+      setPage(res.page);
+      setHasNext(res.hasNext);
+    } catch (e) {
+      alert(getErrorMessage(e));
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
   return (
@@ -341,13 +487,50 @@ const BbangteoBoardPage = ({ initialTab = "자유 게시판" }: BbangteoBoardPag
         <BackHeader />
         <main className="flex flex-1 flex-col pb-[56px] sm:pb-[60px]">
           <BoardTabs activeTab={activeTab} onChange={setActiveTab} />
-          <PostList items={filteredPosts} onPostClick={handlePostClick} />
+          {listError ? (
+            <p className="px-[20px] py-[24px] text-center text-[14px] leading-[20px] text-[#868b94]">
+              {listError}
+            </p>
+          ) : null}
+          {!loading && !listError && items.length === 0 ? (
+            <p className="px-[20px] py-[24px] text-center text-[14px] leading-[20px] text-[#868b94]">
+              게시글이 없습니다.
+            </p>
+          ) : null}
+          {loading ? (
+            <p className="px-[20px] py-[24px] text-center text-[14px] text-[#868b94]">
+              불러오는 중…
+            </p>
+          ) : null}
+          {!loading ? (
+            <PostList
+              items={displayItems}
+              onPostClick={handlePostClick}
+              variant={activeTab === "자유 게시판" ? "free" : "bbangticle"}
+            />
+          ) : null}
+          {hasNext && !loading ? (
+            <div className="flex justify-center bg-white px-[20px] py-[16px]">
+              <button
+                type="button"
+                className="rounded-[8px] border border-[#dcdee3] px-[16px] py-[10px] text-[14px] font-medium text-[#4d5159] disabled:opacity-50"
+                disabled={loadingMore}
+                onClick={() => void handleLoadMore()}
+              >
+                {loadingMore ? "불러오는 중…" : "더 보기"}
+              </button>
+            </div>
+          ) : null}
           <div className="h-[90px] shrink-0 bg-gray-200" />
         </main>
       </div>
 
       {activeTab === "자유 게시판" ? (
-        <FloatingWriteButton onClick={() => navigate({ to: "/bbangteo-board-write" })} />
+        <FloatingWriteButton
+          onClick={() =>
+            navigate({ to: "/bbangteo-board-write", search: { editPostId: undefined } })
+          }
+        />
       ) : null}
       <BottomNav />
     </MobileFrame>

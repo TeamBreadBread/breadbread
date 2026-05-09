@@ -1,5 +1,6 @@
 import SectionHeader from "@/components/common/section-header/SectionHeader";
 import { CurationBakeryContent } from "@/components/domain/home/CurationBakeryContent";
+import { CURATION_BBANGTEO_DISPLAY_COUNT } from "@/components/domain/home/curationBakeryContentParams";
 import type { CommunitySectionItem } from "./types";
 
 const CircleIcon = ({ size, color }: { size: number; color: string }) => {
@@ -16,6 +17,8 @@ const CircleIcon = ({ size, color }: { size: number; color: string }) => {
 type BbangteoCommunitySectionProps = {
   section: CommunitySectionItem;
   onMoreClick?: () => void;
+  /** 큐레이션 카드 노출 순서 고정용 */
+  onCurationDisplayedBakeryIdsChange?: (ids: number[]) => void;
   /** 제목 행 탭 시 (더보기 제외) — 예: 빵빵 소식에서 빵티클 탭 게시판으로 */
   onSectionTitleAreaClick?: () => void;
   onPostItemClick?: (item: NonNullable<CommunitySectionItem["postItems"]>[number]) => void;
@@ -24,6 +27,7 @@ type BbangteoCommunitySectionProps = {
 const BbangteoCommunitySection = ({
   section,
   onMoreClick,
+  onCurationDisplayedBakeryIdsChange,
   onSectionTitleAreaClick,
   onPostItemClick,
 }: BbangteoCommunitySectionProps) => {
@@ -45,7 +49,12 @@ const BbangteoCommunitySection = ({
 
         {section.contentType === "curationApi" ? (
           <div className="w-full shrink-0 overflow-y-hidden">
-            <CurationBakeryContent compact bakeryListEntryFrom="bbangteo" />
+            <CurationBakeryContent
+              compact
+              displayCount={CURATION_BBANGTEO_DISPLAY_COUNT}
+              bakeryListEntryFrom="bbangteo"
+              onDisplayedBakeryIdsChange={onCurationDisplayedBakeryIdsChange}
+            />
           </div>
         ) : section.contentType === "postList" ? (
           <div className="w-full min-h-0 flex-1 overflow-y-auto">

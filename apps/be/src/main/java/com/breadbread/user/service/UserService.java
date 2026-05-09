@@ -28,6 +28,7 @@ public class UserService {
                         .findById(userId)
                         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         return UserProfileResponse.builder()
+                .userId(user.getId())
                 .loginId(user.getLoginId())
                 .name(user.getName())
                 .nickname(user.getNickname())

@@ -1,7 +1,35 @@
-import { type PointerEvent, useRef } from "react";
+import { type PointerEvent, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
+import { getStoredAccessToken } from "@/api/auth";
+import {
+  createComment,
+  deleteComment,
+  deletePost,
+  getPost,
+  likePost,
+  type PostDetail,
+  unlikePost,
+  updateComment,
+} from "@/api/posts";
+import type { CommentItem as CommentRow } from "@/api/posts";
+import {
+  getMockFreeBoardPostDetail,
+  isMockFreeBoardPostId,
+  shouldUseBoardMock,
+} from "@/data/bbangteoBoardMock";
+import {
+  clearBoardPostLikeOverridesForPostIds,
+  mergeBoardPostEngagementIntoDetail,
+  setBoardPostEngagement,
+} from "@/state/boardPostLikeOverrides";
+import { removeUserCreatedFreePost } from "@/state/boardUserCreatedFreePosts";
+import { getErrorMessage } from "@/api/types/common";
+import {
+  ToolbarHeartLikeIcon,
+  ToolbarHamburgerIcon,
+} from "@/components/icons/PostDetailToolbarIcons";
 import BottomNav from "@/components/layout/BottomNav";
 import {
   BBANGTEO_FIXED_HEADER_OUTER_CLASS,
@@ -9,62 +37,61 @@ import {
 } from "@/components/layout/layout.constants";
 import MobileFrame from "@/components/layout/MobileFrame";
 
-type Post = {
-  author: string;
-  date: string;
-  time: string;
-  title: string;
-  content: string;
-  likeCount: number;
-  images: string[];
+export type FreeBoardPostDetailPageProps = {
+  postId?: number;
+  listPath: "/bbangteo-board";
+  /** 수정·등록 후 상세 재조회 */
+  detailRefresh?: number;
 };
 
-type Comment = {
-  id: number;
-  author: string;
-  content: string;
-  date: string;
-  time: string;
+function formatDetailDateParts(iso: string): { date: string; time: string } {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    return { date: "", time: "" };
+  }
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return {
+    date: `${y}.${m}.${day}`,
+    time: `${hh}:${mm}`,
+  };
+}
+
+const Avatar = ({
+  nickname,
+  profileImageUrl,
+  sizeClass = "h-[40px] w-[40px]",
+}: {
+  nickname: string;
+  profileImageUrl: string | null;
+  sizeClass?: string;
+}) => {
+  const [broken, setBroken] = useState(false);
+
+  if (profileImageUrl && !broken) {
+    return (
+      <img
+        src={profileImageUrl}
+        alt=""
+        className={`${sizeClass} shrink-0 rounded-full border border-[#eeeff1] object-cover`}
+        loading="lazy"
+        onError={() => setBroken(true)}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`${sizeClass} shrink-0 rounded-full border border-[#eeeff1] bg-[#f7f8f9]`}
+      aria-label={nickname}
+    />
+  );
 };
 
-const post: Post = {
-  author: "노릇노릇한 소금빵",
-  date: "2026.04.29",
-  time: "15:24",
-  title: "방금 갓 나온 베이글 먹었는데 진짜 대박",
-  content:
-    "대전 빵지순례 2일차인데 드디어 성공했어요! ㅠㅠ 사실 아까 성심당 갔다가 튀소 품절이라 멘붕 왔었거든요...\n근데 마침 추천 리스트에 여기 베이글 지금 갓 나왔다고 떠서 바로 달려왔더니 진짜 운 좋게 세이프!\n\n지금 베이글 결이 장난 아니에요. 따끈따끈해서 입안에서 녹네요. 혹시 지금 근처 계신 분들 있으면 여기부터 들르세요! 한 10분 뒤면 품절될 것 같은 분위기예요.",
-  likeCount: 11,
-  images: [
-    "Frame 473651_2811.png",
-    "Frame 17074825803651_2813.png",
-    "Frame 17074825813651_2815.png",
-    "Frame 17074825823651_2817.png",
-  ],
-};
-
-const comments: Comment[] = [
-  {
-    id: 1,
-    author: "바삭바삭한 휘낭시에",
-    content: "헐.. 너무 부러워... 저도 담에 꼭 가야겠어요 공유 감사합니다!!!",
-    date: "2026.04.29",
-    time: "15:24",
-  },
-  {
-    id: 2,
-    author: "바삭바삭한 휘낭시에",
-    content: "헐.. 너무 부러워... 저도 담에 꼭 가야겠어요 공유 감사합니다!!!",
-    date: "2026.04.29",
-    time: "15:24",
-  },
-];
-
-const CircleIcon = ({ size = 24, color = "#dcdee3" }: { size?: number; color?: string }) => (
-  <div className="rounded-full" style={{ width: size, height: size, backgroundColor: color }} />
-);
-
-const BackHeader = () => {
+const BackHeader = ({ listPath }: { listPath: "/bbangteo-board" }) => {
   const navigate = useNavigate();
   return (
     <>
@@ -73,7 +100,7 @@ const BackHeader = () => {
           <button
             type="button"
             className="flex h-[36px] w-[36px] items-center justify-center"
-            onClick={() => navigate({ to: "/bbangteo-board" })}
+            onClick={() => navigate({ to: listPath, search: { listRefresh: undefined } })}
           >
             <img src={ArrowLeft} alt="뒤로가기" className="h-[24px] w-[24px]" />
           </button>
@@ -85,10 +112,6 @@ const BackHeader = () => {
   );
 };
 
-const ProfileAvatar = () => (
-  <div className="h-[40px] w-[40px] shrink-0 rounded-full border border-[#eeeff1] bg-[#f7f8f9]" />
-);
-
 const DateTimeText = ({ date, time }: { date: string; time: string }) => (
   <div className="flex items-start gap-[6px]">
     <span className="whitespace-nowrap text-[12px] leading-[16px] text-[#868b94]">{date}</span>
@@ -96,110 +119,350 @@ const DateTimeText = ({ date, time }: { date: string; time: string }) => (
   </div>
 );
 
-const AuthorInfo = ({ author, date, time }: { author: string; date: string; time: string }) => (
-  <div className="flex h-[40px] items-center gap-[10px]">
-    <ProfileAvatar />
-    <div className="flex flex-1 flex-col gap-[2px]">
-      <div className="text-[13px] leading-[18px] font-bold text-[#1a1c20]">{author}</div>
+const AuthorHeader = ({
+  nickname,
+  profileImageUrl,
+  date,
+  time,
+  canManagePost,
+  deleting,
+  onEditPost,
+  onDeletePost,
+}: {
+  nickname: string;
+  profileImageUrl: string | null;
+  date: string;
+  time: string;
+  canManagePost: boolean;
+  deleting: boolean;
+  onEditPost: () => void;
+  onDeletePost: () => void;
+}) => (
+  <div className="flex gap-[10px]">
+    <Avatar nickname={nickname} profileImageUrl={profileImageUrl} />
+    <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
+      <div className="flex min-h-[40px] items-center justify-between gap-[12px]">
+        <div className="min-w-0 text-[13px] leading-[18px] font-bold text-[#1a1c20] break-words">
+          {nickname}
+        </div>
+        {canManagePost ? (
+          <div className="flex shrink-0 items-center gap-[10px]">
+            <button
+              type="button"
+              className="text-[13px] leading-[18px] font-medium text-[#868b94] disabled:opacity-50"
+              disabled={deleting}
+              onClick={onEditPost}
+            >
+              수정
+            </button>
+            <button
+              type="button"
+              className="text-[13px] leading-[18px] font-medium text-[#868b94] disabled:opacity-50"
+              disabled={deleting}
+              onClick={() => void onDeletePost()}
+            >
+              {deleting ? "삭제 중…" : "삭제"}
+            </button>
+          </div>
+        ) : null}
+      </div>
       <DateTimeText date={date} time={time} />
     </div>
   </div>
 );
 
-const ImageRow = ({ images }: { images: string[] }) => {
-  if (images.length === 0) {
+const DetailImageThumb = ({ url, index }: { url: string; index: number }) => {
+  const [broken, setBroken] = useState(false);
+
+  return (
+    <div className="flex h-[110px] w-[110px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-[#f3f4f5]">
+      {broken ? (
+        <img
+          src={currationBreadImg}
+          alt={`게시글 이미지 ${index + 1}`}
+          className="h-[31px] w-[32px] object-contain"
+        />
+      ) : (
+        <img
+          src={url}
+          alt={`게시글 이미지 ${index + 1}`}
+          className="h-full w-full object-cover"
+          loading="lazy"
+          onError={() => setBroken(true)}
+        />
+      )}
+    </div>
+  );
+};
+
+const ImageRow = ({ imageUrls }: { imageUrls: string[] }) => {
+  if (!imageUrls.length) {
     return null;
   }
 
   return (
     <div className="flex h-[110px] items-center gap-[6px] overflow-x-auto">
-      {images.map((image, index) => (
-        <div
-          key={`${image}-${index}`}
-          className="flex h-[110px] w-[110px] shrink-0 items-center justify-center rounded-[8px] bg-[#f3f4f5]"
-        >
-          <img
-            src={currationBreadImg}
-            alt={`게시글 이미지 ${index + 1}`}
-            className="h-[31px] w-[32px] object-contain"
-          />
-        </div>
+      {imageUrls.map((url, index) => (
+        <DetailImageThumb key={`${url}-${index}`} url={url} index={index} />
       ))}
     </div>
   );
 };
 
-const PostActionBar = ({ likeCount }: { likeCount: number }) => {
+const PostActionBar = ({
+  listPath,
+  liked,
+  likeCount,
+  liking,
+  onToggleLike,
+}: {
+  listPath: "/bbangteo-board";
+  liked: boolean;
+  likeCount: number;
+  liking: boolean;
+  onToggleLike: () => void;
+}) => {
   const navigate = useNavigate();
 
   return (
     <div className="flex items-center justify-between">
       <button
         type="button"
-        className="flex items-center gap-[2px]"
-        onClick={() => navigate({ to: "/bbangteo-board" })}
+        className="flex items-center gap-[6px] text-[#1a1c20]"
+        onClick={() => navigate({ to: listPath, search: { listRefresh: undefined } })}
       >
-        <CircleIcon />
-        <span className="text-[14px] leading-[19px] text-[#1a1c20]">목록으로</span>
+        <ToolbarHamburgerIcon />
+        <span className="text-[14px] leading-[19px]">목록으로</span>
       </button>
 
-      <button type="button" className="flex items-center gap-[2px]">
-        <CircleIcon />
-        <span className="text-[14px] leading-[19px] text-[#1a1c20]">{likeCount}</span>
+      <button
+        type="button"
+        disabled={liking}
+        aria-pressed={liked}
+        aria-label={`좋아요 ${likeCount.toLocaleString("ko-KR")}`}
+        className="flex items-center gap-[6px] text-[#1a1c20] disabled:opacity-50"
+        onClick={() => void onToggleLike()}
+      >
+        <ToolbarHeartLikeIcon liked={liked} />
+        <span className="text-[14px] leading-[19px]">{likeCount.toLocaleString("ko-KR")}</span>
       </button>
     </div>
   );
 };
 
-const PostDetail = ({ post }: { post: Post }) => (
-  <section className="flex flex-col gap-[24px] bg-white p-[20px]">
-    <AuthorInfo author={post.author} date={post.date} time={post.time} />
-    <div className="flex flex-col gap-[16px]">
-      <div className="flex flex-col gap-[10px]">
-        <h1 className="text-[18px] leading-[24px] font-bold text-[#1a1c20]">{post.title}</h1>
-        <p className="whitespace-pre-line text-[16px] leading-[22px] text-[#1a1c20]">
-          {post.content}
-        </p>
+const PostDetailSection = ({
+  detail,
+  listPath,
+  liking,
+  onToggleLike,
+  canManagePost,
+  deleting,
+  onEditPost,
+  onDeletePost,
+}: {
+  detail: PostDetail;
+  listPath: "/bbangteo-board";
+  liking: boolean;
+  onToggleLike: () => void;
+  canManagePost: boolean;
+  deleting: boolean;
+  onEditPost: () => void;
+  onDeletePost: () => void;
+}) => {
+  const { date, time } = formatDetailDateParts(detail.createdAt);
+  const urls = detail.imageUrls ?? [];
+
+  return (
+    <section className="flex flex-col gap-[24px] bg-white p-[20px]">
+      <AuthorHeader
+        nickname={detail.nickname}
+        profileImageUrl={detail.profileImageUrl}
+        date={date}
+        time={time}
+        canManagePost={canManagePost}
+        deleting={deleting}
+        onEditPost={onEditPost}
+        onDeletePost={onDeletePost}
+      />
+      <div className="flex flex-col gap-[16px]">
+        <div className="flex flex-col gap-[10px]">
+          <h1 className="text-[18px] leading-[24px] font-bold text-[#1a1c20]">{detail.title}</h1>
+          <p className="whitespace-pre-line text-[16px] leading-[22px] text-[#1a1c20]">
+            {detail.content}
+          </p>
+        </div>
+        <ImageRow imageUrls={urls} />
       </div>
-      <ImageRow images={post.images} />
-    </div>
-    <PostActionBar likeCount={post.likeCount} />
-  </section>
-);
+      <PostActionBar
+        listPath={listPath}
+        liked={detail.liked}
+        likeCount={detail.likeCount}
+        liking={liking}
+        onToggleLike={onToggleLike}
+      />
+    </section>
+  );
+};
 
-const CommentItem = ({ comment }: { comment: Comment }) => (
-  <article className="flex min-h-[80px] items-start gap-[10px]">
-    <ProfileAvatar />
-    <div className="flex flex-1 flex-col gap-[4px]">
-      <div className="text-[13px] leading-[18px] font-bold text-[#1a1c20]">{comment.author}</div>
-      <p className="text-[14px] leading-[19px] text-[#1a1c20]">{comment.content}</p>
-      <DateTimeText date={comment.date} time={comment.time} />
-    </div>
-  </article>
-);
+const FreeBoardCommentRow = ({
+  comment,
+  busy,
+  onUpdate,
+  onDelete,
+}: {
+  comment: CommentRow;
+  busy: boolean;
+  onUpdate: (commentId: number, content: string) => Promise<void>;
+  onDelete: (commentId: number) => Promise<void>;
+}) => {
+  const { date, time } = formatDetailDateParts(comment.createdAt);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(comment.content);
 
-const CommentList = ({ comments }: { comments: Comment[] }) => (
+  const actionButtonClass =
+    "shrink-0 text-[13px] leading-[18px] font-medium text-[#868b94] disabled:opacity-50";
+
+  return (
+    <article className="flex min-h-[80px] items-start gap-[10px]">
+      <Avatar nickname={comment.nickname} profileImageUrl={comment.profileImageUrl} />
+      <div className="flex min-w-0 flex-1 flex-col gap-[4px]">
+        <div className="flex items-start justify-between gap-[10px]">
+          <div className="text-[13px] leading-[18px] font-bold text-[#1a1c20]">
+            {comment.nickname}
+          </div>
+          {comment.author && !editing ? (
+            <div className="flex shrink-0 items-center gap-[10px]">
+              <button
+                type="button"
+                className={actionButtonClass}
+                disabled={busy}
+                onClick={() => {
+                  setDraft(comment.content);
+                  setEditing(true);
+                }}
+              >
+                수정
+              </button>
+              <button
+                type="button"
+                className={actionButtonClass}
+                disabled={busy}
+                onClick={() => void onDelete(comment.id)}
+              >
+                삭제
+              </button>
+            </div>
+          ) : null}
+        </div>
+        {editing ? (
+          <div className="flex flex-col gap-[8px]">
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              rows={3}
+              disabled={busy}
+              className="w-full resize-y rounded-[8px] border border-[#eeeff1] bg-[#f7f8f9] px-[12px] py-[8px] text-[14px] leading-[19px] text-[#1a1c20] outline-none focus:border-[#dcdee3] disabled:opacity-50"
+            />
+            <div className="flex justify-end gap-[10px]">
+              <button
+                type="button"
+                className={actionButtonClass}
+                disabled={busy}
+                onClick={() => {
+                  setEditing(false);
+                  setDraft(comment.content);
+                }}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                className="text-[13px] leading-[18px] font-medium text-[#555d6d] disabled:opacity-50"
+                disabled={busy || !draft.trim()}
+                onClick={async () => {
+                  const next = draft.trim();
+                  if (!next) {
+                    return;
+                  }
+                  await onUpdate(comment.id, next);
+                  setEditing(false);
+                }}
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="whitespace-pre-line text-[14px] leading-[19px] text-[#1a1c20]">
+            {comment.content}
+          </p>
+        )}
+        <DateTimeText date={date} time={time} />
+      </div>
+    </article>
+  );
+};
+
+const CommentList = ({
+  comments,
+  busyCommentId,
+  onUpdateComment,
+  onDeleteComment,
+}: {
+  comments: CommentRow[];
+  busyCommentId: number | null;
+  onUpdateComment: (commentId: number, content: string) => Promise<void>;
+  onDeleteComment: (commentId: number) => Promise<void>;
+}) => (
   <div className="flex flex-col gap-[20px]">
     {comments.map((comment) => (
-      <CommentItem key={comment.id} comment={comment} />
+      <FreeBoardCommentRow
+        key={comment.id}
+        comment={comment}
+        busy={busyCommentId === comment.id}
+        onUpdate={onUpdateComment}
+        onDelete={onDeleteComment}
+      />
     ))}
   </div>
 );
 
-const CommentSection = ({ comments }: { comments: Comment[] }) => (
+const CommentSection = ({
+  comments,
+  total,
+  busyCommentId,
+  onUpdateComment,
+  onDeleteComment,
+}: {
+  comments: CommentRow[];
+  total: number;
+  busyCommentId: number | null;
+  onUpdateComment: (commentId: number, content: string) => Promise<void>;
+  onDeleteComment: (commentId: number) => Promise<void>;
+}) => (
   <section className="flex flex-col gap-[24px] bg-white p-[20px]">
     <div className="flex items-center gap-[4px]">
       <span className="text-[13px] leading-[18px] font-bold text-[#555d6d]">댓글</span>
-      <span className="text-[13px] leading-[18px] font-medium text-[#555d6d]">
-        {comments.length}
-      </span>
+      <span className="text-[13px] leading-[18px] font-medium text-[#555d6d]">{total}</span>
     </div>
-    <CommentList comments={comments} />
+    <CommentList
+      comments={comments}
+      busyCommentId={busyCommentId}
+      onUpdateComment={onUpdateComment}
+      onDeleteComment={onDeleteComment}
+    />
   </section>
 );
 
-const CommentInputBar = () => {
+const CommentInputBar = ({
+  submitting,
+  onSubmit,
+}: {
+  submitting: boolean;
+  onSubmit: (content: string) => Promise<void>;
+}) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [draft, setDraft] = useState("");
 
   const focusCommentInput = () => {
     const el = inputRef.current;
@@ -210,6 +473,15 @@ const CommentInputBar = () => {
   const handleBarPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if ((event.target as HTMLElement).closest("button[data-comment-submit]")) return;
     focusCommentInput();
+  };
+
+  const handleSubmit = async () => {
+    const trimmed = draft.trim();
+    if (!trimmed || submitting) {
+      return;
+    }
+    await onSubmit(trimmed);
+    setDraft("");
   };
 
   return (
@@ -232,7 +504,16 @@ const CommentInputBar = () => {
           autoCorrect="on"
           autoCapitalize="sentences"
           placeholder="댓글을 입력해주세요"
+          value={draft}
+          disabled={submitting}
+          onChange={(e) => setDraft(e.target.value)}
           className="min-h-[44px] min-w-0 flex-1 touch-manipulation bg-transparent text-[16px] leading-[22px] text-[#1a1c20] placeholder:text-[#868b94] outline-none"
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              void handleSubmit();
+            }
+          }}
           onFocus={(event) => {
             requestAnimationFrame(() => {
               event.target.scrollIntoView({ block: "center", behavior: "smooth" });
@@ -242,7 +523,9 @@ const CommentInputBar = () => {
         <button
           type="button"
           data-comment-submit
-          className="shrink-0 text-[13px] leading-[18px] font-medium text-[#555d6d]"
+          disabled={submitting || !draft.trim()}
+          className="shrink-0 text-[13px] leading-[18px] font-medium text-[#555d6d] disabled:opacity-40"
+          onClick={() => void handleSubmit()}
         >
           등록
         </button>
@@ -251,17 +534,365 @@ const CommentInputBar = () => {
   );
 };
 
-const FreeBoardPostDetailPage = () => {
+const FreeBoardPostDetailPage = ({
+  postId,
+  listPath,
+  detailRefresh,
+}: FreeBoardPostDetailPageProps) => {
+  const navigate = useNavigate();
+  const [detail, setDetail] = useState<PostDetail | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [liking, setLiking] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [commentBusyId, setCommentBusyId] = useState<number | null>(null);
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (postId == null) {
+      setLoading(false);
+      setLoadError("존재하지 않는 게시글입니다.");
+      setDetail(null);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setLoadError(null);
+      try {
+        if (shouldUseBoardMock()) {
+          const local = getMockFreeBoardPostDetail(postId);
+          if (local) {
+            if (!cancelled) {
+              setDetail(mergeBoardPostEngagementIntoDetail(postId, local));
+            }
+            return;
+          }
+        }
+        const data = await getPost(postId);
+        if (cancelled) return;
+        setDetail(mergeBoardPostEngagementIntoDetail(postId, data));
+      } catch (e) {
+        if (cancelled) return;
+        const fallback = getMockFreeBoardPostDetail(postId);
+        if (fallback) {
+          setDetail(mergeBoardPostEngagementIntoDetail(postId, fallback));
+          setLoadError(null);
+          return;
+        }
+        setLoadError(getErrorMessage(e));
+        setDetail(null);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [postId, detailRefresh]);
+
+  const handleToggleLike = async () => {
+    if (postId == null || !detail || liking) {
+      return;
+    }
+    if (isMockFreeBoardPostId(postId)) {
+      const nextLiked = !detail.liked;
+      const nextLikeCount = nextLiked ? detail.likeCount + 1 : Math.max(0, detail.likeCount - 1);
+      setBoardPostEngagement(postId, { liked: nextLiked, likeCount: nextLikeCount });
+      setLiking(true);
+      try {
+        setDetail((prev) => {
+          if (!prev) {
+            return null;
+          }
+          if (prev.liked) {
+            return { ...prev, liked: false, likeCount: Math.max(0, prev.likeCount - 1) };
+          }
+          return { ...prev, liked: true, likeCount: prev.likeCount + 1 };
+        });
+      } finally {
+        setLiking(false);
+      }
+      return;
+    }
+    setLiking(true);
+    try {
+      const nextUnlikeCount = Math.max(0, detail.likeCount - 1);
+      const nextLikeCountAfterLike = detail.likeCount + 1;
+      if (detail.liked) {
+        await unlikePost(postId);
+        setBoardPostEngagement(postId, { liked: false, likeCount: nextUnlikeCount });
+        setDetail((prev) =>
+          prev
+            ? {
+                ...prev,
+                liked: false,
+                likeCount: Math.max(0, prev.likeCount - 1),
+              }
+            : null,
+        );
+      } else {
+        await likePost(postId);
+        setBoardPostEngagement(postId, { liked: true, likeCount: nextLikeCountAfterLike });
+        setDetail((prev) =>
+          prev
+            ? {
+                ...prev,
+                liked: true,
+                likeCount: prev.likeCount + 1,
+              }
+            : null,
+        );
+      }
+    } catch (e) {
+      alert(getErrorMessage(e));
+    } finally {
+      setLiking(false);
+    }
+  };
+
+  const handleCommentUpdate = async (commentId: number, content: string) => {
+    if (postId == null || !detail) {
+      return;
+    }
+    if (!getStoredAccessToken() && !isMockFreeBoardPostId(postId)) {
+      navigate({ to: "/login", search: { redirect: "/bbangteo-board" } });
+      return;
+    }
+    setCommentBusyId(commentId);
+    try {
+      if (isMockFreeBoardPostId(postId)) {
+        setDetail((prev) => {
+          if (!prev) {
+            return prev;
+          }
+          return {
+            ...prev,
+            commentListResponse: {
+              ...prev.commentListResponse,
+              comments: prev.commentListResponse.comments.map((c) =>
+                c.id === commentId ? { ...c, content } : c,
+              ),
+            },
+          };
+        });
+        return;
+      }
+      await updateComment(postId, commentId, content);
+      setDetail((prev) => {
+        if (!prev) {
+          return prev;
+        }
+        return {
+          ...prev,
+          commentListResponse: {
+            ...prev.commentListResponse,
+            comments: prev.commentListResponse.comments.map((c) =>
+              c.id === commentId ? { ...c, content } : c,
+            ),
+          },
+        };
+      });
+    } catch (e) {
+      alert(getErrorMessage(e));
+    } finally {
+      setCommentBusyId(null);
+    }
+  };
+
+  const handleCommentDelete = async (commentId: number) => {
+    if (postId == null || !detail) {
+      return;
+    }
+    if (!window.confirm("댓글을 삭제할까요?")) {
+      return;
+    }
+    if (!getStoredAccessToken() && !isMockFreeBoardPostId(postId)) {
+      navigate({ to: "/login", search: { redirect: "/bbangteo-board" } });
+      return;
+    }
+    setCommentBusyId(commentId);
+    try {
+      if (isMockFreeBoardPostId(postId)) {
+        setDetail((prev) => {
+          if (!prev) {
+            return prev;
+          }
+          const comments = prev.commentListResponse.comments.filter((c) => c.id !== commentId);
+          return {
+            ...prev,
+            commentListResponse: {
+              comments,
+              total: Math.max(0, prev.commentListResponse.total - 1),
+            },
+          };
+        });
+        return;
+      }
+      await deleteComment(postId, commentId);
+      setDetail((prev) => {
+        if (!prev) {
+          return prev;
+        }
+        const comments = prev.commentListResponse.comments.filter((c) => c.id !== commentId);
+        return {
+          ...prev,
+          commentListResponse: {
+            comments,
+            total: Math.max(0, prev.commentListResponse.total - 1),
+          },
+        };
+      });
+    } catch (e) {
+      alert(getErrorMessage(e));
+    } finally {
+      setCommentBusyId(null);
+    }
+  };
+
+  const handleCommentSubmit = async (content: string) => {
+    if (postId == null || !detail) {
+      return;
+    }
+    setCommentSubmitting(true);
+    try {
+      if (isMockFreeBoardPostId(postId)) {
+        const now = new Date().toISOString();
+        const created: CommentRow = {
+          id: Date.now(),
+          nickname: "나",
+          profileImageUrl: null,
+          content,
+          createdAt: now,
+          author: true,
+        };
+        setDetail((prev) => {
+          if (!prev) {
+            return prev;
+          }
+          return {
+            ...prev,
+            commentListResponse: {
+              comments: [...prev.commentListResponse.comments, created],
+              total: prev.commentListResponse.total + 1,
+            },
+          };
+        });
+        return;
+      }
+      const created = await createComment(postId, content);
+      setDetail((prev) => {
+        if (!prev) {
+          return prev;
+        }
+        const prevComments = prev.commentListResponse.comments;
+        const nextComments = [...prevComments, created];
+        return {
+          ...prev,
+          commentListResponse: {
+            comments: nextComments,
+            total: prev.commentListResponse.total + 1,
+          },
+        };
+      });
+    } catch (e) {
+      alert(getErrorMessage(e));
+    } finally {
+      setCommentSubmitting(false);
+    }
+  };
+
+  const handleEditPost = () => {
+    if (postId == null || isMockFreeBoardPostId(postId)) {
+      return;
+    }
+    if (!getStoredAccessToken()) {
+      navigate({ to: "/login", search: { redirect: "/bbangteo-board-write" } });
+      return;
+    }
+    navigate({ to: "/bbangteo-board-write", search: { editPostId: postId } });
+  };
+
+  const handleDeletePost = async () => {
+    if (postId == null || deleting || !detail?.author || isMockFreeBoardPostId(postId)) {
+      return;
+    }
+    if (!window.confirm("이 게시글을 삭제할까요?")) {
+      return;
+    }
+    if (!getStoredAccessToken()) {
+      navigate({ to: "/login", search: { redirect: "/bbangteo-board" } });
+      return;
+    }
+    setDeleting(true);
+    try {
+      await deletePost(postId);
+      removeUserCreatedFreePost(postId);
+      clearBoardPostLikeOverridesForPostIds([postId]);
+      navigate({ to: listPath, search: { listRefresh: Date.now() } });
+    } catch (e) {
+      alert(getErrorMessage(e));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const canManagePost = postId != null && Boolean(detail?.author) && !isMockFreeBoardPostId(postId);
+
+  const invalidRequest = postId == null;
+
   return (
     <MobileFrame className="bg-[#f3f4f5]">
       <div className="flex min-h-screen flex-1 flex-col bg-[#f3f4f5]">
-        <BackHeader />
+        <BackHeader listPath={listPath} />
         <main className="flex flex-1 flex-col gap-[10px] pb-[calc(56px+64px)] sm:pb-[calc(60px+64px)]">
-          <PostDetail post={post} />
-          <CommentSection comments={comments} />
+          {loading ? (
+            <p className="px-[20px] py-[24px] text-center text-[14px] text-[#868b94]">
+              불러오는 중…
+            </p>
+          ) : null}
+          {loadError ? (
+            <div className="flex flex-col items-center gap-[16px] px-[20px] py-[32px]">
+              <p className="text-center text-[14px] leading-[20px] text-[#868b94]">{loadError}</p>
+              <button
+                type="button"
+                className="rounded-[8px] border border-[#dcdee3] px-[14px] py-[8px] text-[13px] font-medium text-[#4d5159]"
+                onClick={() => navigate({ to: listPath, search: { listRefresh: undefined } })}
+              >
+                목록으로
+              </button>
+            </div>
+          ) : null}
+          {!loading && detail ? (
+            <>
+              <PostDetailSection
+                detail={detail}
+                listPath={listPath}
+                liking={liking}
+                onToggleLike={handleToggleLike}
+                canManagePost={canManagePost}
+                deleting={deleting}
+                onEditPost={handleEditPost}
+                onDeletePost={handleDeletePost}
+              />
+              <CommentSection
+                comments={detail.commentListResponse.comments}
+                total={detail.commentListResponse.total}
+                busyCommentId={commentBusyId}
+                onUpdateComment={handleCommentUpdate}
+                onDeleteComment={handleCommentDelete}
+              />
+            </>
+          ) : null}
         </main>
       </div>
-      <CommentInputBar />
+      {!loading && detail && !invalidRequest ? (
+        <CommentInputBar submitting={commentSubmitting} onSubmit={handleCommentSubmit} />
+      ) : null}
       <BottomNav />
     </MobileFrame>
   );

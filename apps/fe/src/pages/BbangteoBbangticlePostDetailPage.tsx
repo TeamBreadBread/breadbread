@@ -1,6 +1,22 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
+import { getPost, likePost, type PostDetail, unlikePost } from "@/api/posts";
+import {
+  getMockBbangticleBoardPostDetail,
+  isMockBbangticleBoardPostId,
+  shouldUseBoardMock,
+} from "@/data/bbangteoBoardMock";
+import {
+  mergeBoardPostEngagementIntoDetail,
+  setBoardPostEngagement,
+} from "@/state/boardPostLikeOverrides";
+import { getErrorMessage } from "@/api/types/common";
+import {
+  ToolbarHeartLikeIcon,
+  ToolbarHamburgerIcon,
+} from "@/components/icons/PostDetailToolbarIcons";
 import BottomNav from "@/components/layout/BottomNav";
 import {
   BBANGTEO_FIXED_HEADER_OUTER_CLASS,
@@ -8,37 +24,67 @@ import {
 } from "@/components/layout/layout.constants";
 import MobileFrame from "@/components/layout/MobileFrame";
 
-type Post = {
-  author: string;
-  date: string;
-  time: string;
-  title: string;
-  content: string;
-  likeCount: number;
-  images: string[];
+export type BbangticlePostDetailPageProps = {
+  postId?: number;
+  listPath: "/bbangteo-article-board";
 };
 
-const bbangticlePost: Post = {
-  author: "빵빵 관리자",
-  date: "2026.04.29",
-  time: "15:24",
-  title: "빵터 업데이트: 이제 내 주변 빵집을 지도로 확인하세요!",
-  content:
-    "안녕하세요, 빵지순례의 든든한 동반자 빵빵입니다! 🥐\n많은 분이 기다려주셨던 '빵터 지도 뷰' 기능이 드디어 업데이트되었습니다! 이제 리스트로만 보던 빵집 정보를 내 주변 지도를 통해 한눈에 확인해 보세요.\n\n✨ 이번 업데이트의 핵심 포인트!\n내 주변 빵집 스캔: 내 현재 위치를 중심으로 가장 가까운 빵집들을 지도에서 바로 찾을 수 있어요.\n실시간 품절 현황 반영: 지도의 핀(Pin) 색상만 봐도 지금 빵이 남아있는지, 품절인지 직관적으로 알 수 있습니다.\n에이전트 동선 연동: 지도를 보다가 맘에 드는 곳을 발견하면? 내 기존 투어 루트에 '즉시 추가'하고 AI에게 최적의 동선을 다시 계산해달라고 요청해 보세요!\n\n지금 바로 '빵터' 탭에서 새로운 지도를 경험해 보세요! 📍✨",
-  likeCount: 11,
-  images: [
-    "Frame 473651_2874.png",
-    "Frame 17074825803651_2876.png",
-    "Frame 17074825813651_2878.png",
-    "Frame 17074825823651_2880.png",
-  ],
+/** 빵티클(공지)은 댓글 미노출 — API가 내려줘도 무시 */
+function detailWithoutComments(d: PostDetail): PostDetail {
+  return {
+    ...d,
+    commentListResponse: { comments: [], total: 0 },
+  };
+}
+
+function formatDetailDateParts(iso: string): { date: string; time: string } {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    return { date: "", time: "" };
+  }
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return {
+    date: `${y}.${m}.${day}`,
+    time: `${hh}:${mm}`,
+  };
+}
+
+const Avatar = ({
+  nickname,
+  profileImageUrl,
+  sizeClass = "h-[40px] w-[40px]",
+}: {
+  nickname: string;
+  profileImageUrl: string | null;
+  sizeClass?: string;
+}) => {
+  const [broken, setBroken] = useState(false);
+
+  if (profileImageUrl && !broken) {
+    return (
+      <img
+        src={profileImageUrl}
+        alt=""
+        className={`${sizeClass} shrink-0 rounded-full border border-[#eeeff1] object-cover`}
+        loading="lazy"
+        onError={() => setBroken(true)}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`${sizeClass} shrink-0 rounded-full border border-[#eeeff1] bg-[#f7f8f9]`}
+      aria-label={nickname}
+    />
+  );
 };
 
-const CircleIcon = ({ size = 24, color = "#dcdee3" }: { size?: number; color?: string }) => (
-  <div className="rounded-full" style={{ width: size, height: size, backgroundColor: color }} />
-);
-
-const BackHeader = () => {
+const BackHeader = ({ listPath }: { listPath: "/bbangteo-article-board" }) => {
   const navigate = useNavigate();
   return (
     <>
@@ -47,7 +93,7 @@ const BackHeader = () => {
           <button
             type="button"
             className="flex h-[36px] w-[36px] items-center justify-center"
-            onClick={() => navigate({ to: "/bbangteo-article-board" })}
+            onClick={() => navigate({ to: listPath })}
           >
             <img src={ArrowLeft} alt="뒤로가기" className="h-[24px] w-[24px]" />
           </button>
@@ -59,10 +105,6 @@ const BackHeader = () => {
   );
 };
 
-const ProfileAvatar = () => (
-  <div className="h-[40px] w-[40px] shrink-0 rounded-full border border-[#eeeff1] bg-[#f7f8f9]" />
-);
-
 const DateTimeText = ({ date, time }: { date: string; time: string }) => (
   <div className="flex items-start gap-[6px]">
     <span className="whitespace-nowrap text-[12px] leading-[16px] text-[#868b94]">{date}</span>
@@ -70,86 +112,293 @@ const DateTimeText = ({ date, time }: { date: string; time: string }) => (
   </div>
 );
 
-const AuthorInfo = ({ author, date, time }: { author: string; date: string; time: string }) => (
+const AuthorInfo = ({
+  nickname,
+  profileImageUrl,
+  date,
+  time,
+}: {
+  nickname: string;
+  profileImageUrl: string | null;
+  date: string;
+  time: string;
+}) => (
   <div className="flex h-[40px] items-center gap-[10px]">
-    <ProfileAvatar />
+    <Avatar nickname={nickname} profileImageUrl={profileImageUrl} />
     <div className="flex flex-1 flex-col gap-[2px]">
       <div className="whitespace-nowrap text-[13px] leading-[18px] font-bold text-[#1a1c20]">
-        {author}
+        {nickname}
       </div>
       <DateTimeText date={date} time={time} />
     </div>
   </div>
 );
 
-const ImageRow = ({ images }: { images: string[] }) => {
-  if (images.length === 0) {
+const DetailImageThumb = ({ url, index }: { url: string; index: number }) => {
+  const [broken, setBroken] = useState(false);
+
+  return (
+    <div className="flex h-[110px] w-[110px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-[#f3f4f5]">
+      {broken ? (
+        <img
+          src={currationBreadImg}
+          alt={`게시글 이미지 ${index + 1}`}
+          className="h-[31px] w-[32px] object-contain"
+        />
+      ) : (
+        <img
+          src={url}
+          alt={`게시글 이미지 ${index + 1}`}
+          className="h-full w-full object-cover"
+          loading="lazy"
+          onError={() => setBroken(true)}
+        />
+      )}
+    </div>
+  );
+};
+
+const ImageRow = ({ imageUrls }: { imageUrls: string[] }) => {
+  if (!imageUrls.length) {
     return null;
   }
 
   return (
     <div className="flex h-[110px] items-center gap-[6px] overflow-x-auto">
-      {images.map((image, index) => (
-        <div
-          key={`${image}-${index}`}
-          className="flex h-[110px] w-[110px] shrink-0 items-center justify-center rounded-[8px] bg-[#f3f4f5]"
-        >
-          <img
-            src={currationBreadImg}
-            alt={`게시글 이미지 ${index + 1}`}
-            className="h-[31px] w-[32px] object-contain"
-          />
-        </div>
+      {imageUrls.map((url, index) => (
+        <DetailImageThumb key={`${url}-${index}`} url={url} index={index} />
       ))}
     </div>
   );
 };
 
-const PostActionBar = ({ likeCount }: { likeCount: number }) => {
+const PostActionBar = ({
+  listPath,
+  liked,
+  likeCount,
+  liking,
+  onToggleLike,
+}: {
+  listPath: "/bbangteo-article-board";
+  liked: boolean;
+  likeCount: number;
+  liking: boolean;
+  onToggleLike: () => void;
+}) => {
   const navigate = useNavigate();
 
   return (
     <div className="flex items-center justify-between">
       <button
         type="button"
-        className="flex items-center gap-[2px]"
-        onClick={() => navigate({ to: "/bbangteo-article-board" })}
+        className="flex items-center gap-[6px] text-[#1a1c20]"
+        onClick={() => navigate({ to: listPath })}
       >
-        <CircleIcon />
-        <span className="text-[14px] leading-[19px] text-[#1a1c20]">목록으로</span>
+        <ToolbarHamburgerIcon />
+        <span className="text-[14px] leading-[19px]">목록으로</span>
       </button>
 
-      <button type="button" className="flex items-center gap-[2px]">
-        <CircleIcon />
-        <span className="text-[14px] leading-[19px] text-[#1a1c20]">{likeCount}</span>
+      <button
+        type="button"
+        disabled={liking}
+        aria-pressed={liked}
+        aria-label={`좋아요 ${likeCount.toLocaleString("ko-KR")}`}
+        className="flex items-center gap-[6px] text-[#1a1c20] disabled:opacity-50"
+        onClick={() => void onToggleLike()}
+      >
+        <ToolbarHeartLikeIcon liked={liked} />
+        <span className="text-[14px] leading-[19px]">{likeCount.toLocaleString("ko-KR")}</span>
       </button>
     </div>
   );
 };
 
-const PostDetail = ({ post }: { post: Post }) => (
-  <section className="flex flex-col gap-[24px] bg-white p-[20px]">
-    <AuthorInfo author={post.author} date={post.date} time={post.time} />
-    <div className="flex flex-col gap-[16px]">
-      <div className="flex flex-col gap-[10px]">
-        <h1 className="text-[18px] leading-[24px] font-bold text-[#1a1c20]">{post.title}</h1>
-        <p className="whitespace-pre-line text-[16px] leading-[22px] text-[#1a1c20]">
-          {post.content}
-        </p>
-      </div>
-      <ImageRow images={post.images} />
-    </div>
-    <PostActionBar likeCount={post.likeCount} />
-  </section>
-);
+const PostDetailSection = ({
+  detail,
+  listPath,
+  liking,
+  onToggleLike,
+}: {
+  detail: PostDetail;
+  listPath: "/bbangteo-article-board";
+  liking: boolean;
+  onToggleLike: () => void;
+}) => {
+  const { date, time } = formatDetailDateParts(detail.createdAt);
+  const urls = detail.imageUrls ?? [];
 
-const BbangticlePostDetailPage = () => {
+  return (
+    <section className="flex flex-col gap-[24px] bg-white p-[20px]">
+      <AuthorInfo
+        nickname={detail.nickname}
+        profileImageUrl={detail.profileImageUrl}
+        date={date}
+        time={time}
+      />
+      <div className="flex flex-col gap-[16px]">
+        <div className="flex flex-col gap-[10px]">
+          <h1 className="text-[18px] leading-[24px] font-bold text-[#1a1c20]">{detail.title}</h1>
+          <p className="whitespace-pre-line text-[16px] leading-[22px] text-[#1a1c20]">
+            {detail.content}
+          </p>
+        </div>
+        <ImageRow imageUrls={urls} />
+      </div>
+      <PostActionBar
+        listPath={listPath}
+        liked={detail.liked}
+        likeCount={detail.likeCount}
+        liking={liking}
+        onToggleLike={onToggleLike}
+      />
+    </section>
+  );
+};
+
+const BbangticlePostDetailPage = ({ postId, listPath }: BbangticlePostDetailPageProps) => {
+  const navigate = useNavigate();
+  const [detail, setDetail] = useState<PostDetail | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [liking, setLiking] = useState(false);
+
+  useEffect(() => {
+    if (postId == null) {
+      setLoading(false);
+      setLoadError("존재하지 않는 게시글입니다.");
+      setDetail(null);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setLoadError(null);
+      try {
+        if (shouldUseBoardMock()) {
+          const local = getMockBbangticleBoardPostDetail(postId);
+          if (local) {
+            if (!cancelled) {
+              setDetail(mergeBoardPostEngagementIntoDetail(postId, local));
+            }
+            return;
+          }
+        }
+        const data = await getPost(postId);
+        if (cancelled) return;
+        setDetail(mergeBoardPostEngagementIntoDetail(postId, detailWithoutComments(data)));
+      } catch (e) {
+        if (cancelled) return;
+        const fallback = getMockBbangticleBoardPostDetail(postId);
+        if (fallback) {
+          setDetail(mergeBoardPostEngagementIntoDetail(postId, fallback));
+          setLoadError(null);
+          return;
+        }
+        setLoadError(getErrorMessage(e));
+        setDetail(null);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [postId]);
+
+  const handleToggleLike = async () => {
+    if (postId == null || !detail || liking) {
+      return;
+    }
+    if (isMockBbangticleBoardPostId(postId)) {
+      const nextLiked = !detail.liked;
+      const nextLikeCount = nextLiked ? detail.likeCount + 1 : Math.max(0, detail.likeCount - 1);
+      setBoardPostEngagement(postId, { liked: nextLiked, likeCount: nextLikeCount });
+      setLiking(true);
+      try {
+        setDetail((prev) => {
+          if (!prev) {
+            return null;
+          }
+          if (prev.liked) {
+            return { ...prev, liked: false, likeCount: Math.max(0, prev.likeCount - 1) };
+          }
+          return { ...prev, liked: true, likeCount: prev.likeCount + 1 };
+        });
+      } finally {
+        setLiking(false);
+      }
+      return;
+    }
+    setLiking(true);
+    try {
+      const nextUnlikeCount = Math.max(0, detail.likeCount - 1);
+      const nextLikeCountAfterLike = detail.likeCount + 1;
+      if (detail.liked) {
+        await unlikePost(postId);
+        setBoardPostEngagement(postId, { liked: false, likeCount: nextUnlikeCount });
+        setDetail((prev) =>
+          prev
+            ? {
+                ...prev,
+                liked: false,
+                likeCount: Math.max(0, prev.likeCount - 1),
+              }
+            : null,
+        );
+      } else {
+        await likePost(postId);
+        setBoardPostEngagement(postId, { liked: true, likeCount: nextLikeCountAfterLike });
+        setDetail((prev) =>
+          prev
+            ? {
+                ...prev,
+                liked: true,
+                likeCount: prev.likeCount + 1,
+              }
+            : null,
+        );
+      }
+    } catch (e) {
+      alert(getErrorMessage(e));
+    } finally {
+      setLiking(false);
+    }
+  };
+
   return (
     <MobileFrame className="bg-[#f3f4f5]">
       <div className="flex min-h-screen flex-1 flex-col bg-[#f3f4f5]">
-        <BackHeader />
-        <main className="flex flex-1 flex-col pb-[56px] sm:pb-[60px]">
-          <PostDetail post={bbangticlePost} />
+        <BackHeader listPath={listPath} />
+        <main className="flex flex-1 flex-col gap-[10px] pb-[56px] sm:pb-[60px]">
+          {loading ? (
+            <p className="px-[20px] py-[24px] text-center text-[14px] text-[#868b94]">
+              불러오는 중…
+            </p>
+          ) : null}
+          {loadError ? (
+            <div className="flex flex-col items-center gap-[16px] px-[20px] py-[32px]">
+              <p className="text-center text-[14px] leading-[20px] text-[#868b94]">{loadError}</p>
+              <button
+                type="button"
+                className="rounded-[8px] border border-[#dcdee3] px-[14px] py-[8px] text-[13px] font-medium text-[#4d5159]"
+                onClick={() => navigate({ to: listPath })}
+              >
+                목록으로
+              </button>
+            </div>
+          ) : null}
+          {!loading && detail ? (
+            <PostDetailSection
+              detail={detail}
+              listPath={listPath}
+              liking={liking}
+              onToggleLike={handleToggleLike}
+            />
+          ) : null}
         </main>
       </div>
       <BottomNav />

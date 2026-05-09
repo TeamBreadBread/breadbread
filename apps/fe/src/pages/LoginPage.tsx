@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { clearSessionTokens, login, setSessionTokens } from "@/api/auth";
 import { getErrorMessage } from "@/api/types/common";
 import { hasUserPreferenceSaved } from "@/api/user";
@@ -23,8 +23,21 @@ const credentialInputClassName = cn(
 const DEMO_LOGIN_ID = "asdf123";
 const DEMO_PASSWORD = "asdf123*";
 
+const loginRouteApi = getRouteApi("/login");
+
+/** `?redirect=` 화이트리스트 — 오픈 리다이렉트 방지 */
+function tryPostLoginRedirectPath(
+  redirect: string | undefined,
+): "/bbangteo-board-write" | undefined {
+  if (redirect === "/bbangteo-board-write") {
+    return "/bbangteo-board-write";
+  }
+  return undefined;
+}
+
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { redirect } = loginRouteApi.useSearch();
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
@@ -48,13 +61,31 @@ const LoginPage = () => {
       setSessionTokens(tokens);
       seedProfileCacheThenRefreshFromServer(id);
       try {
+        const nextBoard = tryPostLoginRedirectPath(redirect);
+        if (nextBoard) {
+          if (nextBoard === "/bbangteo-board-write") {
+            navigate({ to: nextBoard, search: { editPostId: undefined } });
+          } else {
+            navigate({ to: nextBoard });
+          }
+          return;
+        }
         if (await hasUserPreferenceSaved()) {
           navigate({ to: "/home" });
         } else {
           navigate({ to: "/user-preference", search: { mode: "create" } });
         }
       } catch {
-        navigate({ to: "/user-preference", search: { mode: "create" } });
+        const nextBoard = tryPostLoginRedirectPath(redirect);
+        if (nextBoard) {
+          if (nextBoard === "/bbangteo-board-write") {
+            navigate({ to: nextBoard, search: { editPostId: undefined } });
+          } else {
+            navigate({ to: nextBoard });
+          }
+        } else {
+          navigate({ to: "/user-preference", search: { mode: "create" } });
+        }
       }
     } catch (error) {
       setLoginError(getErrorMessage(error));
