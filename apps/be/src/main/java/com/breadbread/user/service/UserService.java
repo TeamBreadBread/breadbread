@@ -59,6 +59,7 @@ public class UserService {
                         .build());
     }
 
+    @Transactional(readOnly = true)
     public PreferenceResponse getPreference(Long userId) {
         UserPreference preference =
                 userPreferenceRepository
