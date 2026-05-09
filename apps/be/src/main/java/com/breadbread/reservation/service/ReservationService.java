@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +45,9 @@ public class ReservationService {
 
     private static final Set<ReservationStatus> ACTIVE_STATUSES =
             Set.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED);
+
+    private static final Set<ReservationStatus> CONFIRMED_ONLY =
+            Set.of(ReservationStatus.CONFIRMED);
 
     @Transactional(readOnly = true)
     public List<ReservationSummaryResponse> getMyReservations(
@@ -82,10 +86,31 @@ public class ReservationService {
         validateDepartureDateTime(request.getDepartureDate(), request.getDepartureTime());
         validateDepartureLocation(request.getDeparture(), request.getLat(), request.getLng());
 
-        // 같은 날짜·시간에 활성 예약이 이미 있으면 방지 (코스 무관)
+        // 확정된 예약은 같은 출발 일시에 중복 불가 (코스 무관)
         if (reservationRepository.existsByUserIdAndDepartureDateAndDepartureTimeAndStatusIn(
-                userId, request.getDepartureDate(), request.getDepartureTime(), ACTIVE_STATUSES)) {
+                userId, request.getDepartureDate(), request.getDepartureTime(), CONFIRMED_ONLY)) {
             throw new CustomException(ErrorCode.ALREADY_RESERVED);
+        }
+
+        // 결제 전 PENDING만 있는 경우: 결제 창을 닫고 다시 누르면 동일 요청이 반복되므로 기존 예약 ID 재사용
+        Optional<Reservation> pendingSameSlot =
+                reservationRepository
+                        .findFirstByUserIdAndDepartureDateAndDepartureTimeAndStatusOrderByIdDesc(
+                                userId,
+                                request.getDepartureDate(),
+                                request.getDepartureTime(),
+                                ReservationStatus.PENDING);
+        if (pendingSameSlot.isPresent()) {
+            Reservation pending = pendingSameSlot.get();
+            if (!pending.getCourse().getId().equals(request.getCourseId())) {
+                throw new CustomException(ErrorCode.ALREADY_RESERVED);
+            }
+            if (paymentRepository.existsByReservationIdAndStatus(
+                    pending.getId(), PaymentStatus.PAID)) {
+                throw new CustomException(ErrorCode.ALREADY_RESERVED);
+            }
+            log.info("예약 재사용(동일 일시·코스, 미결제): reservationId={}, userId={}", pending.getId(), userId);
+            return pending.getId();
         }
 
         Course course =

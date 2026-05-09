@@ -1,5 +1,6 @@
 package com.breadbread.payment.dto;
 
+import com.breadbread.payment.config.PortOneProperties;
 import com.breadbread.payment.entity.Payment;
 import com.breadbread.payment.entity.PaymentMethod;
 import com.breadbread.payment.entity.PgProvider;
@@ -33,7 +34,19 @@ public class PreparePaymentResponse {
     @Schema(description = "고객 전화번호 (포트원 SDK 초기화용)", example = "010-1234-5678")
     private String customerPhone;
 
-    public static PreparePaymentResponse from(Payment payment) {
+    @Schema(
+            description = "포트원 Store ID (브라우저 SDK `storeId` — 미설정 시 null)",
+            example = "store-4ff4af41-85e3-4559-8eb8-0d08a2c6ceec")
+    private String storeId;
+
+    @Schema(
+            description = "포트원 채널 키 (브라우저 SDK `channelKey` — 미설정 시 null)",
+            example = "channel-key-893597d6-e62d-410f-83f9-119f530b4b11")
+    private String channelKey;
+
+    public static PreparePaymentResponse from(Payment payment, PortOneProperties portOne) {
+        String sid = portOne.getStoreId();
+        String ck = portOne.getChannelKey();
         return PreparePaymentResponse.builder()
                 .paymentId(payment.getPaymentId())
                 .orderName(payment.getReservation().getCourseNameSnapshot() + " 빵빵 택시 예약 결제")
@@ -42,6 +55,8 @@ public class PreparePaymentResponse {
                 .pgProvider(payment.getPgProvider())
                 .customerName(payment.getUser().getName())
                 .customerPhone(payment.getUser().getPhone())
+                .storeId(sid != null && !sid.isBlank() ? sid : null)
+                .channelKey(ck != null && !ck.isBlank() ? ck : null)
                 .build();
     }
 }

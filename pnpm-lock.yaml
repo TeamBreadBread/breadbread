@@ -23,6 +23,9 @@ importers:
 
   apps/fe:
     dependencies:
+      '@portone/browser-sdk':
+        specifier: ^0.1.6
+        version: 0.1.6
       '@tanstack/react-query':
         specifier: ^5.95.2
         version: 5.95.2(react@19.2.4)
@@ -897,6 +900,9 @@ packages:
 
   '@oxc-project/types@0.122.0':
     resolution: {integrity: sha512-oLAl5kBpV4w69UtFZ9xqcmTi+GENWOcPF7FCrczTiBbmC0ibXxCwyvZGbO39rCVEuLGAZM84DH0pUIyyv/YJzA==}
+
+  '@portone/browser-sdk@0.1.6':
+    resolution: {integrity: sha512-sTkIGP9ezYebXdA0eDvwL7lUsDpBoEydDeMBj1Kg+0PY52ZhgpRz55rykNcgw55luXAyUgRNEicZkNy/0F877A==}
 
   '@rolldown/binding-android-arm64@1.0.0-rc.12':
     resolution: {integrity: sha512-pv1y2Fv0JybcykuiiD3qBOBdz6RteYojRFY1d+b95WVuzx211CRh+ytI/+9iVyWQ6koTh5dawe4S/yRfOFjgaA==}
@@ -4104,6 +4110,8 @@ snapshots:
     optional: true
 
   '@oxc-project/types@0.122.0': {}
+
+  '@portone/browser-sdk@0.1.6': {}
 
   '@rolldown/binding-android-arm64@1.0.0-rc.12':
     optional: true

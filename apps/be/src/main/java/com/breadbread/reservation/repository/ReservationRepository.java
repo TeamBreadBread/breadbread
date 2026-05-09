@@ -30,6 +30,12 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             Collection<ReservationStatus> statuses,
             Long id);
 
+    Optional<Reservation> findFirstByUserIdAndDepartureDateAndDepartureTimeAndStatusOrderByIdDesc(
+            Long userId,
+            LocalDate departureDate,
+            LocalTime departureTime,
+            ReservationStatus status);
+
     @Query(
             "SELECT DISTINCT r FROM Reservation r "
                     + "JOIN FETCH r.course c "
