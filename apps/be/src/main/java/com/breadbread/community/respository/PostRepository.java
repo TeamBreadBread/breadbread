@@ -1,0 +1,6 @@
+package com.breadbread.community.respository;
+
+import com.breadbread.community.entity.Post;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface PostRepository extends JpaRepository<Post, Long>, PostRepositoryCustom {}

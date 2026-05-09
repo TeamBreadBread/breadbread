@@ -57,7 +57,19 @@ public class Post extends BaseEntity {
         this.title = title;
         this.content = content;
         this.postType = postType;
-        this.imageUrls = imageUrls;
+        this.imageUrls = imageUrls != null ? new ArrayList<>(imageUrls) : new ArrayList<>();
         this.user = user;
+    }
+
+    public void update(String title, String content, List<String> imageUrls) {
+        if (title != null) {
+            this.title = title;
+        }
+        if (content != null) {
+            this.content = content;
+        }
+        if (imageUrls != null) {
+            this.imageUrls = new ArrayList<>(imageUrls);
+        }
     }
 }

@@ -6,12 +6,12 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Schema(description = "댓글 작성 요청")
+@Schema(description = "댓글 수정 요청")
 @Getter
 @NoArgsConstructor
-public class CreateCommentRequest {
+public class UpdateCommentRequest {
 
-    @Schema(description = "댓글 내용", example = "저도 거기 가봤는데 진짜 맛있더라고요!")
+    @Schema(description = "수정할 댓글 내용", example = "수정된 댓글입니다.")
     @NotBlank
     @Size(max = 1000)
     private String content;
