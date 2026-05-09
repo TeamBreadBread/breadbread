@@ -72,7 +72,7 @@ public class PaymentService {
         paymentRepository.save(payment);
         log.info("결제 준비: paymentId={}, reservationId={}", paymentId, request.getReservationId());
 
-        return PreparePaymentResponse.from(payment);
+        return PreparePaymentResponse.from(payment, properties);
     }
 
     @Transactional

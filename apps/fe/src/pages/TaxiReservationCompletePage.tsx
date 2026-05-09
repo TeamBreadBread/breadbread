@@ -1,4 +1,6 @@
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { getCourseDetail } from "@/api/courses";
 import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
 import { cn } from "@/utils/cn";
 
@@ -7,6 +9,9 @@ export interface TaxiReservationCompletePageProps {
   departureTime: string;
   departurePlace: string;
   passengers: number;
+  courseId: number;
+  paidAmount: number;
+  courseName: string;
 }
 
 const WEEKDAY_KO = ["일", "월", "화", "수", "목", "금", "토"] as const;
@@ -31,18 +36,78 @@ function SuccessIllustration() {
   return <div className="h-[100px] w-[100px] shrink-0 bg-[#eeeff1]" aria-hidden />;
 }
 
+const FALLBACK_AMOUNT = 30_000;
+
 export default function TaxiReservationCompletePage({
   departureDate,
   departureTime,
   departurePlace,
   passengers,
+  courseId,
+  paidAmount,
+  courseName,
 }: TaxiReservationCompletePageProps) {
   const navigate = useNavigate();
+
+  const amountFromRoute = useMemo(
+    () => (paidAmount > 0 && Number.isFinite(paidAmount) ? paidAmount : null),
+    [paidAmount],
+  );
+  const nameFromRoute = useMemo(() => courseName.trim(), [courseName]);
+
+  const [courseFetchResult, setCourseFetchResult] = useState<{
+    courseId: number;
+    amount: number;
+    name: string;
+  } | null>(null);
+
+  const needsCourseFetch = courseId > 0 && (amountFromRoute == null || nameFromRoute === "");
+
+  useEffect(() => {
+    if (!needsCourseFetch) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    const requestedCourseId = courseId;
+    void getCourseDetail(requestedCourseId)
+      .then((detail) => {
+        if (cancelled) return;
+        const cost = detail.estimatedCost;
+        const fromCourseAmount = Number.isFinite(cost) && cost > 0 ? cost : FALLBACK_AMOUNT;
+        const resolvedAmount = amountFromRoute ?? fromCourseAmount;
+        const resolvedName = nameFromRoute || detail.name?.trim() || "";
+        setCourseFetchResult({
+          courseId: requestedCourseId,
+          amount: resolvedAmount,
+          name: resolvedName,
+        });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCourseFetchResult({
+          courseId: requestedCourseId,
+          amount: amountFromRoute ?? FALLBACK_AMOUNT,
+          name: nameFromRoute,
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [needsCourseFetch, courseId, amountFromRoute, nameFromRoute]);
+
+  const fetchForCurrentCourse = courseFetchResult?.courseId === courseId ? courseFetchResult : null;
+
+  const displayAmount = amountFromRoute ?? fetchForCurrentCourse?.amount ?? FALLBACK_AMOUNT;
+  const displayCourseLabel =
+    nameFromRoute || fetchForCurrentCourse?.name?.trim() || "빵빵 택시 예약 코스";
 
   const displayDate = formatDisplayDate(departureDate) || formatDisplayDate("2026-04-29");
   const displayTime = formatKoreanTime(departureTime) || "15:00";
   const displayPlace = departurePlace.trim() || "대전광역시 서구 장군봉 4길 32";
   const displayPassengers = `${passengers}명`;
+  const displayPaidLabel = `${displayAmount.toLocaleString("ko-KR")}원`;
 
   return (
     <div
@@ -75,7 +140,7 @@ export default function TaxiReservationCompletePage({
                   코스명
                 </div>
                 <div className="min-w-0 text-right font-['Pretendard',sans-serif] text-[14px] font-medium leading-[19px] tracking-normal text-[#1a1c20]">
-                  커플을 위한 달콤한 빵투어
+                  {displayCourseLabel}
                 </div>
               </div>
               <div className="flex w-full flex-row items-start justify-between">
@@ -117,7 +182,7 @@ export default function TaxiReservationCompletePage({
                 총 결제 금액
               </div>
               <div className="whitespace-nowrap font-['Pretendard',sans-serif] text-[18px] font-bold leading-[24px] tracking-normal text-[#1a1c20]">
-                30,000원
+                {displayPaidLabel}
               </div>
             </div>
           </div>
