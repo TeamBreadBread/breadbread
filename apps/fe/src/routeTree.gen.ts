@@ -46,6 +46,7 @@ import { Route as AiCourseGeneratingRouteImport } from "./routes/ai-course-gener
 import { Route as AccountSettingsRouteImport } from "./routes/account-settings";
 import { Route as IndexRouteImport } from "./routes/index";
 import { Route as RouteIndexRouteImport } from "./routes/route.index";
+import { Route as PaymentPortoneRedirectRouteImport } from "./routes/payment.portone-redirect";
 import { Route as AuthKakaoCallbackRouteImport } from "./routes/auth.kakao.callback";
 
 const UserPreferenceRoute = UserPreferenceRouteImport.update({
@@ -233,6 +234,11 @@ const RouteIndexRoute = RouteIndexRouteImport.update({
   path: "/route/",
   getParentRoute: () => rootRouteImport,
 } as any);
+const PaymentPortoneRedirectRoute = PaymentPortoneRedirectRouteImport.update({
+  id: "/payment/portone-redirect",
+  path: "/payment/portone-redirect",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const AuthKakaoCallbackRoute = AuthKakaoCallbackRouteImport.update({
   id: "/auth/kakao/callback",
   path: "/auth/kakao/callback",
@@ -276,6 +282,7 @@ export interface FileRoutesByFullPath {
   "/taxi-reservation-complete": typeof TaxiReservationCompleteRoute;
   "/taxi-reserve": typeof TaxiReserveRoute;
   "/user-preference": typeof UserPreferenceRoute;
+  "/payment/portone-redirect": typeof PaymentPortoneRedirectRoute;
   "/route/": typeof RouteIndexRoute;
   "/auth/kakao/callback": typeof AuthKakaoCallbackRoute;
 }
@@ -316,6 +323,7 @@ export interface FileRoutesByTo {
   "/taxi-reservation-complete": typeof TaxiReservationCompleteRoute;
   "/taxi-reserve": typeof TaxiReserveRoute;
   "/user-preference": typeof UserPreferenceRoute;
+  "/payment/portone-redirect": typeof PaymentPortoneRedirectRoute;
   "/route": typeof RouteIndexRoute;
   "/auth/kakao/callback": typeof AuthKakaoCallbackRoute;
 }
@@ -357,6 +365,7 @@ export interface FileRoutesById {
   "/taxi-reservation-complete": typeof TaxiReservationCompleteRoute;
   "/taxi-reserve": typeof TaxiReserveRoute;
   "/user-preference": typeof UserPreferenceRoute;
+  "/payment/portone-redirect": typeof PaymentPortoneRedirectRoute;
   "/route/": typeof RouteIndexRoute;
   "/auth/kakao/callback": typeof AuthKakaoCallbackRoute;
 }
@@ -399,6 +408,7 @@ export interface FileRouteTypes {
     | "/taxi-reservation-complete"
     | "/taxi-reserve"
     | "/user-preference"
+    | "/payment/portone-redirect"
     | "/route/"
     | "/auth/kakao/callback";
   fileRoutesByTo: FileRoutesByTo;
@@ -439,6 +449,7 @@ export interface FileRouteTypes {
     | "/taxi-reservation-complete"
     | "/taxi-reserve"
     | "/user-preference"
+    | "/payment/portone-redirect"
     | "/route"
     | "/auth/kakao/callback";
   id:
@@ -479,6 +490,7 @@ export interface FileRouteTypes {
     | "/taxi-reservation-complete"
     | "/taxi-reserve"
     | "/user-preference"
+    | "/payment/portone-redirect"
     | "/route/"
     | "/auth/kakao/callback";
   fileRoutesById: FileRoutesById;
@@ -520,6 +532,7 @@ export interface RootRouteChildren {
   TaxiReservationCompleteRoute: typeof TaxiReservationCompleteRoute;
   TaxiReserveRoute: typeof TaxiReserveRoute;
   UserPreferenceRoute: typeof UserPreferenceRoute;
+  PaymentPortoneRedirectRoute: typeof PaymentPortoneRedirectRoute;
   RouteIndexRoute: typeof RouteIndexRoute;
   AuthKakaoCallbackRoute: typeof AuthKakaoCallbackRoute;
 }
@@ -785,6 +798,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof RouteIndexRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/payment/portone-redirect": {
+      id: "/payment/portone-redirect";
+      path: "/payment/portone-redirect";
+      fullPath: "/payment/portone-redirect";
+      preLoaderRoute: typeof PaymentPortoneRedirectRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/auth/kakao/callback": {
       id: "/auth/kakao/callback";
       path: "/auth/kakao/callback";
@@ -832,6 +852,7 @@ const rootRouteChildren: RootRouteChildren = {
   TaxiReservationCompleteRoute: TaxiReservationCompleteRoute,
   TaxiReserveRoute: TaxiReserveRoute,
   UserPreferenceRoute: UserPreferenceRoute,
+  PaymentPortoneRedirectRoute: PaymentPortoneRedirectRoute,
   RouteIndexRoute: RouteIndexRoute,
   AuthKakaoCallbackRoute: AuthKakaoCallbackRoute,
 };
