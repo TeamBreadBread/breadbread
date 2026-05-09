@@ -85,7 +85,15 @@ public enum ErrorCode {
     INVALID_FILE_NAME(HttpStatus.BAD_REQUEST, "E0703", "유효하지 않은 파일 이름입니다."),
     INVALID_GCS_URL(HttpStatus.BAD_REQUEST, "E0704", "유효하지 않은 파일 URL입니다."),
     INVALID_FILE_TYPE(
-            HttpStatus.BAD_REQUEST, "E0705", "허용되지 않는 파일 형식입니다. (jpeg, jpg, png, webp만 가능)");
+            HttpStatus.BAD_REQUEST, "E0705", "허용되지 않는 파일 형식입니다. (jpeg, jpg, png, webp만 가능)"),
+
+    // 빵터 E08xx
+    POST_NOT_FOUND(HttpStatus.NOT_FOUND, "E0801", "존재하지 않는 게시글입니다."),
+    COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "E0802", "존재하지 않는 댓글입니다."),
+    ALREADY_POST_LIKED(HttpStatus.CONFLICT, "E0803", "이미 좋아요한 게시글입니다."),
+    NOT_POST_LIKED(HttpStatus.BAD_REQUEST, "E0804", "좋아요하지 않은 게시글입니다."),
+    POST_AUTHOR_ONLY(HttpStatus.FORBIDDEN, "E0805", "게시글 작성자만 수행할 수 있습니다."),
+    COMMENT_AUTHOR_ONLY(HttpStatus.FORBIDDEN, "E0806", "댓글 작성자만 수행할 수 있습니다.");
 
     private final HttpStatus status;
     private final String code;

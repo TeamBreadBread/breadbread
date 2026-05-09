@@ -105,6 +105,8 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers(HttpMethod.POST, "/payments/webhook")
                                         .permitAll()
+                                        .requestMatchers(HttpMethod.GET, "/posts/**")
+                                        .permitAll()
                                         .anyRequest()
                                         .authenticated())
                 .addFilterBefore(
