@@ -65,12 +65,7 @@ public class CommunityService {
 
         List<PostSummaryResponse> posts =
                 result.getContent().stream()
-                        .map(
-                                post ->
-                                        PostSummaryResponse.from(
-                                                post,
-                                                likeCountMap.getOrDefault(post.getId(), 0L).intValue(),
-                                                commentCountMap.getOrDefault(post.getId(), 0L).intValue()))
+                        .map(post -> toSummaryResponse(post, likeCountMap, commentCountMap))
                         .toList();
 
         log.debug(
@@ -238,10 +233,17 @@ public class CommunityService {
         log.info("게시글 좋아요 취소: postId={}, userId={}", postId, userId);
     }
 
+    private PostSummaryResponse toSummaryResponse(
+            Post post, Map<Long, Long> likeCountMap, Map<Long, Long> commentCountMap) {
+        return PostSummaryResponse.from(
+                post,
+                likeCountMap.getOrDefault(post.getId(), 0L).intValue(),
+                commentCountMap.getOrDefault(post.getId(), 0L).intValue());
+    }
+
     private Map<Long, Long> toCountMap(List<Long> ids, List<Object[]> rows) {
         if (ids.isEmpty()) return Map.of();
-        return rows.stream()
-                .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+        return rows.stream().collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
     }
 
     private void validatePostAuthority(Post post, Long userId, UserRole role) {
