@@ -1,6 +1,7 @@
-# MVP Architecture
 
-<img width="2023" height="1370" alt="breadbread_architecture_v5" src="https://github.com/user-attachments/assets/d567b8e2-041c-4f2d-ae6e-dc99c9ece121" />
+# MVP Architecture
+<img width="1271" height="1030" alt="아키텍쳐" src="https://github.com/user-attachments/assets/4c4560d3-ca26-4793-8e8a-0d95c2876a96" />
+
 
 ```
 apps/fe/src/
