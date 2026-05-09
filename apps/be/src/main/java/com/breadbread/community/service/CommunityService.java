@@ -24,6 +24,8 @@ import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -54,16 +56,21 @@ public class CommunityService {
                         .build();
 
         Page<Post> result = postRepository.searchPosts(search, PageRequest.of(page, size));
+        List<Long> postIds = result.getContent().stream().map(Post::getId).toList();
+
+        Map<Long, Long> likeCountMap =
+                toCountMap(postIds, postLikeRepository.countByPostIdIn(postIds));
+        Map<Long, Long> commentCountMap =
+                toCountMap(postIds, commentRepository.countByPostIdIn(postIds));
+
         List<PostSummaryResponse> posts =
                 result.getContent().stream()
                         .map(
-                                post -> {
-                                    int likeCount =
-                                            (int) postLikeRepository.countByPostId(post.getId());
-                                    int commentCount =
-                                            (int) commentRepository.countByPostId(post.getId());
-                                    return PostSummaryResponse.from(post, likeCount, commentCount);
-                                })
+                                post ->
+                                        PostSummaryResponse.from(
+                                                post,
+                                                likeCountMap.getOrDefault(post.getId(), 0L).intValue(),
+                                                commentCountMap.getOrDefault(post.getId(), 0L).intValue()))
                         .toList();
 
         log.debug(
@@ -108,14 +115,15 @@ public class CommunityService {
         log.debug("게시글 상세 조회: postId={}, userId={}", postId, userId);
         Post post =
                 postRepository
-                        .findById(postId)
+                        .findByIdWithUser(postId)
                         .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
         boolean liked =
                 userId != null && postLikeRepository.existsByUserIdAndPostId(userId, post.getId());
         int likeCount = (int) postLikeRepository.countByPostId(post.getId());
         CommentListResponse comments =
                 CommentListResponse.from(
-                        commentRepository.findAllByPostIdOrderByCreatedAtAsc(post.getId()), userId);
+                        commentRepository.findAllByPostIdWithUserOrderByCreatedAtAsc(post.getId()),
+                        userId);
         return PostDetailResponse.from(post, userId, liked, likeCount, comments);
     }
 
@@ -123,7 +131,7 @@ public class CommunityService {
     public void updatePost(Long postId, Long userId, UserRole role, UpdatePostRequest request) {
         Post post =
                 postRepository
-                        .findById(postId)
+                        .findByIdWithUser(postId)
                         .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
         validatePostAuthority(post, userId, role);
         post.update(request.getTitle(), request.getContent(), request.getImageUrls());
@@ -135,7 +143,7 @@ public class CommunityService {
     public void removePost(Long postId, Long userId, UserRole role) {
         Post post =
                 postRepository
-                        .findById(postId)
+                        .findByIdWithUser(postId)
                         .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
         validatePostAuthority(post, userId, role);
         postRepository.delete(post);
@@ -228,6 +236,12 @@ public class CommunityService {
                         .orElseThrow(() -> new CustomException(ErrorCode.NOT_POST_LIKED));
         postLikeRepository.delete(like);
         log.info("게시글 좋아요 취소: postId={}, userId={}", postId, userId);
+    }
+
+    private Map<Long, Long> toCountMap(List<Long> ids, List<Object[]> rows) {
+        if (ids.isEmpty()) return Map.of();
+        return rows.stream()
+                .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
     }
 
     private void validatePostAuthority(Post post, Long userId, UserRole role) {
