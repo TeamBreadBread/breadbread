@@ -4,6 +4,7 @@ import com.breadbread.bakery.entity.BakeryPersonality;
 import com.breadbread.bakery.entity.BakeryType;
 import com.breadbread.bakery.entity.BakeryUseType;
 import com.breadbread.bakery.entity.Frequency;
+import com.breadbread.global.validation.NotBlankIfPresent;
 import jakarta.validation.constraints.*;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
@@ -16,14 +17,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UpdateBakeryRequest {
 
-    @Size(min = 1)
-    private String name;
+    @NotBlankIfPresent private String name;
 
-    @Size(min = 1)
-    private String address;
+    @NotBlankIfPresent private String address;
 
-    @Size(min = 1)
-    private String region;
+    @NotBlankIfPresent private String region;
 
     @DecimalMin("-90.0")
     @DecimalMax("90.0")
@@ -33,9 +31,11 @@ public class UpdateBakeryRequest {
     @DecimalMax("180.0")
     private Double lng;
 
-    private String phone;
-    private String mapLink;
+    @NotBlankIfPresent private String phone;
 
+    @NotBlankIfPresent private String mapLink;
+
+    @NotBlankIfPresent
     @Size(max = 500)
     private String note;
 
@@ -43,7 +43,7 @@ public class UpdateBakeryRequest {
     private LocalTime weekdayClose;
     private LocalTime weekendOpen;
     private LocalTime weekendClose;
-    private String lastOrderTime;
+    @NotBlankIfPresent private String lastOrderTime;
     private Boolean holidayClosed;
 
     private BakeryType bakeryType;

@@ -53,10 +53,13 @@ public class CreateBakeryRequest {
             example = "CLASSIC")
     private BakeryType bakeryType;
 
-    @Schema(description = "선호 빵집 취향 (TAKEOUT, CAFE, SNS_MOOD, PRACTICAL)")
+    @Schema(description = "선호 빵집 취향 (TAKEOUT, CAFE_STYLE, SNS_MOOD, PRACTICAL)")
     private List<BakeryUseType> bakeryUseTypes;
 
-    @Schema(description = "빵집 성향 (LANDMARK, HERITAGE, HOT_PLACE, HIDDEN_GEM, SNS_HOT)")
+    @Schema(
+            description =
+                    "빵집 성향 (LANDMARK: 유명 맛집, HIDDEN_GEM: 동네 숨은 맛집, HOT_PLACE: SNS 핫플, HERITAGE: 전통 빵집, HIP_AND_INDUSTRIAL: 힙한 인더스트리얼 무드)",
+            example = "[\"HIDDEN_GEM\", \"HERITAGE\"]")
     private List<BakeryPersonality> bakeryPersonalities;
 
     private Set<DayOfWeek> closedDays;
