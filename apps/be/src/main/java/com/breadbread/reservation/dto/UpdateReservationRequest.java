@@ -1,5 +1,6 @@
 package com.breadbread.reservation.dto;
 
+import com.breadbread.global.validation.NotBlankIfPresent;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Min;
@@ -20,6 +21,7 @@ public class UpdateReservationRequest {
     private LocalTime departureTime;
 
     @Schema(description = "출발 위치 주소", example = "서울특별시 마포구 합정동 123-45")
+    @NotBlankIfPresent
     private String departure;
 
     @Schema(description = "출발 위치 위도", example = "37.5497")

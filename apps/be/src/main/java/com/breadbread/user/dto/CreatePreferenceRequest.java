@@ -24,7 +24,7 @@ public class CreatePreferenceRequest {
     @NotEmpty
     @Schema(
             description =
-                    "빵집 성향 (FAMOUS: 유명 맛집, HIDDEN_GEM: 동네 숨은 맛집, SNS_HOT: SNS 핫플, HERITAGE: 전통 빵집)",
+                    "빵집 성향 (LANDMARK: 유명 맛집, HIDDEN_GEM: 동네 숨은 맛집, HOT_PLACE: SNS 핫플, HERITAGE: 전통 빵집, HIP_AND_INDUSTRIAL: 힙한 인더스트리얼 무드)",
             example = "[\"HIDDEN_GEM\", \"HERITAGE\"]")
     private List<BakeryPersonality> bakeryPersonalities;
 
@@ -32,7 +32,7 @@ public class CreatePreferenceRequest {
     @Schema(
             description =
                     "선호 빵집 취향 (TAKEOUT: 포장 위주, CAFE_STYLE: 카페형, MOOD_SPACE: SNS 감성, PRACTICAL: 실속형)",
-            example = "[\"TAKEOUT\", \"CAFE\"]")
+            example = "[\"TAKEOUT\", \"CAFE_STYLE\"]")
     private List<BakeryUseType> bakeryUseTypes;
 
     @NotNull

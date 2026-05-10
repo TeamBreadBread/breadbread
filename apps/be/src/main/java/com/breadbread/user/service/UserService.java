@@ -59,6 +59,7 @@ public class UserService {
                         .build());
     }
 
+    @Transactional(readOnly = true)
     public PreferenceResponse getPreference(Long userId) {
         UserPreference preference =
                 userPreferenceRepository
@@ -80,6 +81,7 @@ public class UserService {
                 request.getWaitingTolerance());
     }
 
+    @Transactional(readOnly = true)
     public MyProfileResponse getMyProfile(Long userId) {
         User user =
                 userRepository
