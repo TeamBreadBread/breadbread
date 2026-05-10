@@ -1,7 +1,15 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { createReservation } from "@/api/reservation";
+import PortOne from "@portone/browser-sdk/v2";
+import { getCourseDetail, type CourseDetail } from "@/api/courses";
+import { completePayment, preparePayment, type PreparePaymentMethodDetail } from "@/api/payments";
+import { createReservation, getReservationById, type ReservationDetail } from "@/api/reservation";
 import { getErrorMessage } from "@/api/types/common";
+import { PortOneCredentialsModal } from "@/components/payment/PortOneCredentialsModal";
+import { buildTaxiPortOnePaymentRequest } from "@/lib/buildPortonePaymentRequest";
+import { resolvePortOneBrowserKeys } from "@/lib/portoneSettings";
+import { writeTaxiReturnPayload } from "@/lib/portoneTaxiReturn";
+import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
 import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
 import { cn } from "@/utils/cn";
@@ -27,6 +35,18 @@ const PAYMENT_METHODS = [
   "휴대폰 결제",
 ] as const;
 
+const PAYMENT_PREPARE_MAP: Record<
+  (typeof PAYMENT_METHODS)[number],
+  { method: "CARD" | "EASY_PAY" | "VIRTUAL_ACCOUNT" | "MOBILE"; detail: PreparePaymentMethodDetail }
+> = {
+  네이버페이: { method: "EASY_PAY", detail: "NAVER_PAY" },
+  카카오페이: { method: "EASY_PAY", detail: "KAKAO_PAY" },
+  토스페이: { method: "EASY_PAY", detail: "TOSS_PAY" },
+  "신용/체크 카드": { method: "CARD", detail: "CARD" },
+  "무통장 입금": { method: "VIRTUAL_ACCOUNT", detail: "BANK_TRANSFER" },
+  "휴대폰 결제": { method: "MOBILE", detail: "MOBILE" },
+};
+
 function formatKoreanTime(value: string) {
   if (!value) return "";
   const [h, min] = value.split(":").map(Number);
@@ -41,6 +61,19 @@ function formatPaymentDate(iso: string) {
   const dt = new Date(y, m - 1, d);
   const w = WEEKDAY_KO[dt.getDay()] ?? "";
   return `${y}.${String(m).padStart(2, "0")}.${String(d).padStart(2, "0")}(${w})`;
+}
+
+function readSessionCourseDetail(courseId: number): CourseDetail | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(AI_COURSE_RESULT_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CourseDetail;
+    if (!parsed || typeof parsed.id !== "number" || parsed.id !== courseId) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
 }
 
 function CheckGlyph({ className }: { className?: string }) {
@@ -75,6 +108,27 @@ export default function TaxiPaymentPage({
   const [agreeRefund, setAgreeRefund] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [reservationDetail, setReservationDetail] = useState<ReservationDetail | null>(null);
+  const [courseFromApi, setCourseFromApi] = useState<CourseDetail | null>(null);
+  const [portoneModalOpen, setPortoneModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (courseId <= 0) return;
+    let cancelled = false;
+    void getCourseDetail(courseId)
+      .then((detail) => {
+        if (!cancelled) setCourseFromApi(detail);
+      })
+      .catch(() => {
+        /* 세션/예약 금액으로 표시 */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [courseId]);
+
+  const sessionCourse = useMemo(() => readSessionCourseDetail(courseId), [courseId]);
+  const coursePreview = courseFromApi ?? sessionCourse;
 
   const allTermsAgreed = agreeTerms && agreePrivacy && agreeRefund;
   const isPayEnabled = selectedMethod !== null && allTermsAgreed && !isSubmitting;
@@ -83,6 +137,18 @@ export default function TaxiPaymentPage({
   const displayTime = formatKoreanTime(departureTime) || "15:00";
   const displayPlace = departurePlace.trim() || "대전광역시 서구 장군봉 4길 32";
   const displayPassengers = `${passengers}명`;
+  const displayCourseName =
+    reservationDetail?.course.name ?? coursePreview?.name ?? "빵빵 택시 예약 코스";
+
+  const quotedAmount =
+    reservationDetail != null
+      ? reservationDetail.quotedAmount
+      : coursePreview != null &&
+          Number.isFinite(coursePreview.estimatedCost) &&
+          coursePreview.estimatedCost > 0
+        ? coursePreview.estimatedCost
+        : 30_000;
+  const displayAmountLabel = `${quotedAmount.toLocaleString("ko-KR")}원`;
 
   const toggleAllTerms = () => {
     const next = !allTermsAgreed;
@@ -111,6 +177,13 @@ export default function TaxiPaymentPage({
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-center font-['Pretendard',sans-serif] text-[18px] font-bold leading-[24px] tracking-normal text-[#1a1c20]">
           결제하기
         </div>
+        <button
+          type="button"
+          className="absolute right-[16px] top-1/2 max-w-[100px] -translate-y-1/2 truncate text-left text-[12px] font-medium text-[#868b94] underline-offset-2 hover:underline"
+          onClick={() => setPortoneModalOpen(true)}
+        >
+          포트원 설정
+        </button>
       </div>
 
       <div className="flex min-h-0 w-full flex-1 flex-col items-start justify-start gap-[10px] overflow-y-auto pb-[calc(113px+env(safe-area-inset-bottom,0px))]">
@@ -125,7 +198,7 @@ export default function TaxiPaymentPage({
                   코스명
                 </div>
                 <div className="min-w-0 text-right font-['Pretendard',sans-serif] text-[14px] font-medium leading-[19px] tracking-normal text-[#1a1c20]">
-                  커플을 위한 달콤한 빵투어
+                  {displayCourseName}
                 </div>
               </div>
               <div className="flex w-full flex-row items-start justify-between">
@@ -167,7 +240,7 @@ export default function TaxiPaymentPage({
                 총 결제 금액
               </div>
               <div className="whitespace-nowrap font-['Pretendard',sans-serif] text-[18px] font-bold leading-[24px] tracking-normal text-[#1a1c20]">
-                30,000원
+                {displayAmountLabel}
               </div>
             </div>
           </div>
@@ -288,8 +361,12 @@ export default function TaxiPaymentPage({
                     );
                     return;
                   }
+                  if (!selectedMethod) {
+                    return;
+                  }
                   setIsSubmitting(true);
-                  await createReservation({
+
+                  const reservationId = await createReservation({
                     courseId,
                     departureDate,
                     departureTime,
@@ -298,6 +375,63 @@ export default function TaxiPaymentPage({
                     lat,
                     lng,
                   });
+
+                  const detail = await getReservationById(reservationId);
+                  setReservationDetail(detail);
+
+                  writeTaxiReturnPayload({
+                    departureDate,
+                    departureTime,
+                    departurePlace,
+                    passengers,
+                    courseId,
+                    paidAmount: detail.quotedAmount,
+                    courseName: detail.course.name?.trim() ?? "",
+                  });
+
+                  const prepMap = PAYMENT_PREPARE_MAP[selectedMethod];
+                  const prep = await preparePayment({
+                    reservationId,
+                    paymentMethod: prepMap.method,
+                    paymentMethodDetail: prepMap.detail,
+                  });
+
+                  const keys = resolvePortOneBrowserKeys({
+                    storeId: prep.storeId,
+                    channelKey: prep.channelKey,
+                  });
+                  if (!keys.storeId || !keys.channelKey) {
+                    setSubmitError(
+                      "포트원 Store ID와 채널 키가 필요합니다. 우측 상단 「포트원 설정」에서 입력하거나, 서버·프론트 환경 변수를 설정해 주세요.",
+                    );
+                    setPortoneModalOpen(true);
+                    return;
+                  }
+
+                  const redirectUrl = `${window.location.origin}/payment/portone-redirect`;
+                  const payReq = buildTaxiPortOnePaymentRequest({
+                    storeId: keys.storeId,
+                    channelKey: keys.channelKey,
+                    paymentId: prep.paymentId,
+                    orderName: prep.orderName,
+                    totalAmount: Number(prep.amount),
+                    paymentMethod: prep.paymentMethod,
+                    paymentMethodDetail: prepMap.detail,
+                    customerName: prep.customerName,
+                    customerPhone: prep.customerPhone,
+                    redirectUrl,
+                  });
+
+                  const sdkRes = await PortOne.requestPayment(payReq);
+                  if (sdkRes === undefined) {
+                    return;
+                  }
+                  if (sdkRes.code != null && sdkRes.code !== "") {
+                    setSubmitError(sdkRes.message ?? sdkRes.code);
+                    return;
+                  }
+
+                  await completePayment({ paymentId: sdkRes.paymentId });
                   navigate({
                     to: "/taxi-reservation-complete",
                     search: {
@@ -305,6 +439,9 @@ export default function TaxiPaymentPage({
                       departureTime,
                       departurePlace,
                       passengers,
+                      courseId,
+                      paidAmount: detail.quotedAmount,
+                      courseName: detail.course.name?.trim() ?? "",
                     },
                   });
                 } catch (error) {
@@ -321,7 +458,7 @@ export default function TaxiPaymentPage({
                 : "cursor-not-allowed bg-[#f3f4f5] text-[#d1d3d8]",
             )}
           >
-            <span className="font-bold">30,000원</span>
+            <span className="font-bold">{displayAmountLabel}</span>
             <span className="font-medium">{isSubmitting ? "처리 중..." : "결제하기"}</span>
           </button>
         </div>
@@ -329,6 +466,8 @@ export default function TaxiPaymentPage({
           <div className="absolute bottom-[8px] left-1/2 h-[5px] w-[144px] -translate-x-1/2 rounded-[100px] bg-black" />
         </div>
       </div>
+
+      <PortOneCredentialsModal open={portoneModalOpen} onClose={() => setPortoneModalOpen(false)} />
     </div>
   );
 }
