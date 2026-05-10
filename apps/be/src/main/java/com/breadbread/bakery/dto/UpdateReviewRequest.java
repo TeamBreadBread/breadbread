@@ -1,5 +1,6 @@
 package com.breadbread.bakery.dto;
 
+import com.breadbread.global.validation.NotBlankIfPresent;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
@@ -15,6 +16,7 @@ public class UpdateReviewRequest {
     @Max(5)
     private Integer rating;
 
+    @NotBlankIfPresent
     @Size(min = 1, max = 300)
     private String content;
 
