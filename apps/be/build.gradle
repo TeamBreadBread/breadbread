@@ -74,6 +74,10 @@ dependencies {
 
     // portone
     implementation 'io.portone:server-sdk:0.24.0'
+
+    // Flyway
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-database-postgresql'
 }
 
 tasks.named('test') {
