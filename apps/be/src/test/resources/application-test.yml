@@ -2,6 +2,10 @@ spring:
   application:
     name: breadbread
 
+  flyway:
+    # H2 + PostgreSQL 덤프(V1__init.sql)는 호환되지 않음 — 통합 테스트는 JPA ddl-auto로 스키마 생성
+    enabled: false
+
   datasource:
     url: jdbc:h2:mem:testdb;MODE=PostgreSQL
     driver-class-name: org.h2.Driver
