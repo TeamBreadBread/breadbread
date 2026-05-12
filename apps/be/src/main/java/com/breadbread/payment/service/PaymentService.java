@@ -189,7 +189,7 @@ public class PaymentService {
         }
     }
 
-    private void syncPaidFromPortOneByWebhook(String paymentId) {
+    void syncPaidFromPortOneByWebhook(String paymentId) {
         Payment payment = paymentRepository.findByPaymentId(paymentId).orElse(null);
         if (payment == null) {
             log.warn("[포트원 웹훅] 알 수 없는 paymentId: paymentId={}", paymentId);
@@ -221,7 +221,7 @@ public class PaymentService {
         }
     }
 
-    private void syncFailedFromPortOneByWebhook(String paymentId) {
+    void syncFailedFromPortOneByWebhook(String paymentId) {
         Payment payment = paymentRepository.findByPaymentId(paymentId).orElse(null);
         if (payment == null) {
             log.warn("[포트원 웹훅] 알 수 없는 paymentId: paymentId={}", paymentId);
@@ -239,7 +239,7 @@ public class PaymentService {
         }
     }
 
-    private void syncCancelledFromPortOneByWebhook(String paymentId) {
+    void syncCancelledFromPortOneByWebhook(String paymentId) {
         Payment payment = paymentRepository.findByPaymentId(paymentId).orElse(null);
         if (payment == null) {
             log.warn("[포트원 웹훅] 알 수 없는 paymentId: paymentId={}", paymentId);
@@ -264,7 +264,7 @@ public class PaymentService {
         }
     }
 
-    private void syncVirtualAccountIssuedFromPortOneByWebhook(String paymentId) {
+    void syncVirtualAccountIssuedFromPortOneByWebhook(String paymentId) {
         Payment payment = paymentRepository.findByPaymentId(paymentId).orElse(null);
         if (payment == null) {
             log.warn("[포트원 웹훅] 알 수 없는 paymentId: paymentId={}", paymentId);
@@ -281,7 +281,7 @@ public class PaymentService {
         }
     }
 
-    private void syncPayPendingFromPortOneByWebhook(String paymentId) {
+    void syncPayPendingFromPortOneByWebhook(String paymentId) {
         Payment payment = paymentRepository.findByPaymentId(paymentId).orElse(null);
         if (payment == null) {
             log.warn("[포트원 웹훅] 알 수 없는 paymentId: paymentId={}", paymentId);
