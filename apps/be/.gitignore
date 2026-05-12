@@ -36,4 +36,8 @@ out/
 ### VS Code ###
 .vscode/
 
+### QueryDSL ###
+src/main/generated/
+
 .env
+src/main/resources/key.json
