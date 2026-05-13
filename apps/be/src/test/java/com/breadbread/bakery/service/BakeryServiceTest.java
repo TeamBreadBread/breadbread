@@ -559,7 +559,7 @@ class BakeryServiceTest {
     void getReviews_throws_whenBakeryMissing() {
         when(bakeryRepository.existsById(1L)).thenReturn(false);
 
-        assertThatThrownBy(() -> bakeryService.getReviews(1L, ReviewSortType.LATEST, 0, 10))
+        assertThatThrownBy(() -> bakeryService.getReviews(1L, ReviewSortType.LATEST, 0, 10, null))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.BAKERY_NOT_FOUND);
@@ -582,10 +582,11 @@ class BakeryServiceTest {
         when(reviewRepository.findAllByBakeryId(eq(20L), pageableCaptor.capture()))
                 .thenReturn(new PageImpl<>(List.of(review), PageRequest.of(0, 10), 1));
 
-        var result = bakeryService.getReviews(20L, ReviewSortType.LATEST, 0, 10);
+        var result = bakeryService.getReviews(20L, ReviewSortType.LATEST, 0, 10, 30L);
 
         assertThat(result.getReviews()).hasSize(1);
         assertThat(result.getReviews().get(0).getId()).isEqualTo(101L);
+        assertThat(result.getReviews().get(0).isAuthor()).isTrue();
         assertThat(result.getTotal()).isEqualTo(1);
         assertThat(result.isHasNext()).isFalse();
         assertThat(pageableCaptor.getValue().getSort())
@@ -599,7 +600,7 @@ class BakeryServiceTest {
         when(reviewRepository.findAllByBakeryId(eq(20L), pageableCaptor.capture()))
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
 
-        bakeryService.getReviews(20L, ReviewSortType.RATING_HIGH, 0, 10);
+        bakeryService.getReviews(20L, ReviewSortType.RATING_HIGH, 0, 10, null);
 
         assertThat(pageableCaptor.getValue().getSort()).isEqualTo(Sort.by("rating").descending());
     }
@@ -611,7 +612,7 @@ class BakeryServiceTest {
         when(reviewRepository.findAllByBakeryId(eq(20L), pageableCaptor.capture()))
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
 
-        bakeryService.getReviews(20L, ReviewSortType.RATING_LOW, 0, 10);
+        bakeryService.getReviews(20L, ReviewSortType.RATING_LOW, 0, 10, null);
 
         assertThat(pageableCaptor.getValue().getSort()).isEqualTo(Sort.by("rating").ascending());
     }

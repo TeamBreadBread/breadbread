@@ -367,7 +367,8 @@ public class BakeryService {
     }
 
     @Transactional(readOnly = true)
-    public ReviewListResponse getReviews(Long bakeryId, ReviewSortType sort, int page, int size) {
+    public ReviewListResponse getReviews(
+            Long bakeryId, ReviewSortType sort, int page, int size, Long userId) {
         if (!bakeryRepository.existsById(bakeryId)) {
             throw new CustomException(ErrorCode.BAKERY_NOT_FOUND);
         }
@@ -380,7 +381,10 @@ public class BakeryService {
         Page<Review> result =
                 reviewRepository.findAllByBakeryId(bakeryId, PageRequest.of(page, size, sorting));
         return ReviewListResponse.builder()
-                .reviews(result.getContent().stream().map(ReviewResponse::from).toList())
+                .reviews(
+                        result.getContent().stream()
+                                .map(r -> ReviewResponse.from(r, userId))
+                                .toList())
                 .total((int) result.getTotalElements())
                 .page(page)
                 .size(size)

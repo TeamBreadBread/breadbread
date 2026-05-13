@@ -13,8 +13,8 @@ import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import java.security.SecureRandom;
 import java.util.Locale;
-import java.util.Random;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +37,7 @@ public class AuthService {
     private final NicknameGenerator nicknameGenerator;
     private final PhoneVerificationProperties phoneVerificationProperties;
 
-    private static final Random RANDOM = new Random();
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     @Transactional
     public void signup(SignupRequest signupRequest) {

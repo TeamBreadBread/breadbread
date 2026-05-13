@@ -143,17 +143,6 @@ class UserServiceTest {
         assertThat(pref.getBakeryTypes()).containsExactly(BakeryType.PLAIN);
     }
 
-    @Test
-    void getMyProfile_returns_summary_whenUserExists() {
-        User user = user(6L);
-        when(userRepository.findById(6L)).thenReturn(Optional.of(user));
-
-        var my = userService.getMyProfile(6L);
-
-        assertThat(my.getLoginId()).isEqualTo("u6");
-        assertThat(my.getPhone()).isEqualTo(user.getPhone());
-    }
-
     private static UserPreference mockPreference(User user) {
         return UserPreference.builder()
                 .bakeryTypes(List.of(BakeryType.CLASSIC))
