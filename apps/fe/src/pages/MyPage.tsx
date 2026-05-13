@@ -30,7 +30,8 @@ export default function MyPage() {
         const me = await getMyProfile();
         if (!mounted) return;
         const nextProfile = {
-          loginId: me.loginId,
+          userId: me.userId != null ? Number(me.userId) : undefined,
+          loginId: me.loginId?.trim() || "",
           name: me.name,
           email: me.email ?? "",
           phone: me.phone ?? "",

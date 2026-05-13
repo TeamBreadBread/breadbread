@@ -133,6 +133,15 @@ export function clearSessionTokens(): void {
   localStorage.removeItem(SESSION_REFRESH_KEY);
 }
 
+/** API `Authorization` 헤더에 쓰는 액세스 토큰 (없으면 보호 API는 401) */
+export function getStoredAccessToken(): string | undefined {
+  if (typeof localStorage === "undefined") {
+    return undefined;
+  }
+  const t = localStorage.getItem(SESSION_ACCESS_KEY)?.trim();
+  return t && t.length > 0 ? t : undefined;
+}
+
 export async function signup(body: SignupRequest): Promise<void> {
   const payload: SignupRequest = {
     ...body,

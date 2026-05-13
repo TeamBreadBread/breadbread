@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.breadbread.community.dto.CreateCommentRequest;
 import com.breadbread.community.dto.CreatePostRequest;
+import com.breadbread.community.dto.PostListSort;
 import com.breadbread.community.dto.PostSearch;
 import com.breadbread.community.dto.UpdateCommentRequest;
 import com.breadbread.community.dto.UpdatePostRequest;
@@ -62,7 +63,7 @@ class CommunityServiceTest {
         when(commentRepository.countByPostIdIn(List.of(10L)))
                 .thenReturn(List.<Object[]>of(new Object[] {10L, 2L}));
 
-        var response = communityService.findAll(null, null, 0, 10);
+        var response = communityService.findAll(null, null, 0, 10, PostListSort.LATEST);
 
         assertThat(response.getTotal()).isEqualTo(1);
         assertThat(response.getPosts()).hasSize(1);
@@ -78,11 +79,12 @@ class CommunityServiceTest {
         when(postRepository.searchPosts(searchCaptor.capture(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 5), 0));
 
-        communityService.findAll(null, "키워드", 0, 5);
+        communityService.findAll(null, "키워드", 0, 5, PostListSort.LATEST);
 
         assertThat(searchCaptor.getValue().getPostTypes())
                 .containsExactlyInAnyOrder(PostType.values());
         assertThat(searchCaptor.getValue().getKeyword()).isEqualTo("키워드");
+        assertThat(searchCaptor.getValue().getSort()).isEqualTo(PostListSort.LATEST);
     }
 
     @Test
@@ -91,7 +93,7 @@ class CommunityServiceTest {
         when(postRepository.searchPosts(searchCaptor.capture(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 5), 0));
 
-        communityService.findAll(List.of(PostType.NOTICE), null, 0, 5);
+        communityService.findAll(List.of(PostType.NOTICE), null, 0, 5, PostListSort.LATEST);
 
         assertThat(searchCaptor.getValue().getPostTypes()).containsExactly(PostType.NOTICE);
     }

@@ -1,6 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
-import FreeBoardPostDetailPage from "@/pages/BbangteoFreeBoardPostDetailPage";
+import BbangteoPostDetailView from "@/pages/BbangteoPostDetailView";
+
+function parsePostId(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value) && value !== 0) {
+    return Math.trunc(value);
+  }
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number.parseInt(value.trim(), 10);
+    if (Number.isFinite(parsed) && parsed !== 0) return parsed;
+  }
+  return 0;
+}
 
 export const Route = createFileRoute("/bbangteo-board-post-detail")({
-  component: FreeBoardPostDetailPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    id: parsePostId(search.id),
+  }),
+  component: BbangteoBoardPostDetailRoute,
 });
+
+function BbangteoBoardPostDetailRoute() {
+  const { id } = Route.useSearch();
+  return <BbangteoPostDetailView postId={id} listPath="/bbangteo-board" />;
+}

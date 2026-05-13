@@ -1,10 +1,12 @@
 import { getMyProfile } from "@/api/user";
 
 /**
- * 서버에 `GET /users/me` 같은 프로필 API가 없을 때, 회원가입·로그인 시점에 저장해
- * 마이페이지 등에 표시할 이름/이메일을 유지합니다. (같은 기기·브라우저)
+ * `GET /users/me` 결과를 저장해 마이 페이지·내 후기 표시 등에 같은 이름 규칙을 씁니다.
+ * (네트워크 실패 시 동일 브라우저에 남은 캐시를 사용합니다.)
  */
 export type CachedUserProfile = {
+  /** `GET /users/me`의 `userId` — 없으면 JWT subject로 보완 */
+  userId?: number;
   loginId: string;
   name: string;
   email: string;
@@ -94,6 +96,7 @@ export function seedProfileCacheThenRefreshFromServer(loginId: string): void {
     .then((me) => {
       const id = me.loginId?.trim() || trimmed;
       saveUserProfile({
+        userId: me.userId != null ? Number(me.userId) : undefined,
         loginId: id,
         name: me.name?.trim() || getDisplayNameForLoginId(id),
         email: me.email ?? "",
@@ -109,9 +112,10 @@ export function seedProfileCacheThenRefreshFromServer(loginId: string): void {
 export function refreshProfileCacheFromServer(): void {
   void getMyProfile()
     .then((me) => {
-      const id = me.loginId.trim();
+      const id = me.loginId?.trim() ?? "";
       saveUserProfile({
-        loginId: me.loginId || id,
+        userId: me.userId != null ? Number(me.userId) : undefined,
+        loginId: me.loginId?.trim() || id,
         name: me.name?.trim() || getDisplayNameForLoginId(id),
         email: me.email ?? "",
         phone: me.phone ?? "",

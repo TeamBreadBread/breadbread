@@ -1,7 +1,7 @@
 import { apiClient, extractData } from "@/api/client";
 import type { ApiEnvelope } from "@/api/types/common";
 
-const PATH = "/api/images";
+const PATH = "/images";
 
 export type ImageFolder = "reviews";
 

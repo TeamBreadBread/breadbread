@@ -1,5 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { getPosts, type PostListSort, type PostSummary, type PostType } from "@/api/posts";
+import { getErrorMessage } from "@/api/types/common";
+import {
+  getMockArticleBoardSummaries,
+  getMockFreeBoardSummaries,
+} from "@/data/bbangteoCommunityMocks";
 import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
 import BottomNav from "@/components/layout/BottomNav";
@@ -8,162 +14,34 @@ import {
   FIXED_TOP_BAR_SPACER_CLASS,
 } from "@/components/layout/layout.constants";
 import MobileFrame from "@/components/layout/MobileFrame";
+import {
+  mergePostSummaryWithLikeOverlay,
+  reconcileOverlaysWithSummaries,
+  subscribePostLikeOverlayChange,
+  type PostSummaryWithLikeOverlay,
+} from "@/lib/postLikeLocalCache";
+import { formatShortListDate } from "@/utils/formatSeoulDateTime";
 
 const tabs = ["자유 게시판", "빵티클"] as const;
 
+const BOARD_SORT_OPTIONS: { value: PostListSort; label: string }[] = [
+  { value: "LATEST", label: "최신순" },
+  { value: "LIKE_COUNT", label: "좋아요순" },
+];
+
 type TabType = (typeof tabs)[number];
 
-type Post = {
-  id: number;
-  title: string;
-  image?: string;
-  likeCount: number;
-  commentCount: number;
-  date: string;
-  type: TabType;
-};
+function tabToPostTypes(tab: TabType): PostType[] {
+  return tab === "자유 게시판" ? ["FREE"] : ["NOTICE", "ARTICLE"];
+}
 
-const posts: Post[] = [
-  {
-    id: 1,
-    type: "자유 게시판",
-    title: "방금 갓 나온 베이글 먹었는데 진짜 대박",
-    image: "Frame 473587_3811.png",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 2,
-    type: "자유 게시판",
-    title: "방금 갓 나온 베이글 먹었는데 진짜 대박 지금까지 이런 맛은 없었다",
-    image: "Frame 473587_3825.png",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 3,
-    type: "자유 게시판",
-    title: "방금 갓 나온 베이글 먹었는데 진짜 대박",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 4,
-    type: "자유 게시판",
-    title:
-      "연남동 근처에 카공하기 좋은 베이커리 카페 추천 좀! 적당히 조용한 곳 어디 없나 ㅠㅠ 친구랑 적당히 소근소근 얘기할 정도?",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 5,
-    type: "자유 게시판",
-    title: "방금 갓 나온 베이글 먹었는데 진짜 대박",
-    image: "Frame 473587_3863.png",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 6,
-    type: "자유 게시판",
-    title: "방금 갓 나온 베이글 먹었는데 진짜 대박 지금까지 이런 맛은 없었다",
-    image: "Frame 473587_3877.png",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 7,
-    type: "자유 게시판",
-    title: "방금 갓 나온 베이글 먹었는데 진짜 대박",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 8,
-    type: "자유 게시판",
-    title:
-      "연남동 근처에 카공하기 좋은 베이커리 카페 추천 좀! 적당히 조용한 곳 어디 없나 ㅠㅠ 친구랑 적당히 소근소근 얘기할 정도?",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 9,
-    type: "빵티클",
-    title: "[공지] 이번 주 정기 점검 안내",
-    image: "Frame 473587_3811.png",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 10,
-    type: "빵티클",
-    title: "[빵티클] 대전 성심당 정복 가이드",
-    image: "Frame 473587_3825.png",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 11,
-    type: "빵티클",
-    title: "빵터 업데이트: 이제 내 주변 빵집을 지도로 확인하세요!",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 12,
-    type: "빵티클",
-    title: '[빵티클] "죽기 전에 꼭 먹어야 할" 전국 5대 크루아상 성지',
-    image: "Frame 473587_3863.png",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 13,
-    type: "빵티클",
-    title: "[빵티클] 소금빵 열풍의 원조를 찾아서: 시오빵의 탄생 비화",
-    image: "Frame 473587_3877.png",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 14,
-    type: "빵티클",
-    title: "[공지] 5월 가정의 달 기념 '빵 선물 세트' 이벤트 당첨자 발표",
-    image: "Frame 473587_3811.png",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 15,
-    type: "빵티클",
-    title: "[공지] 빵순빵돌 1기 서포터즈 모집 시작! (혜택 확인)",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-  {
-    id: 16,
-    type: "빵티클",
-    title: "[빵티클] 빵순이 에디터가 선정한 '실패 없는' 도쿄 빵지순례 코스",
-    likeCount: 11,
-    commentCount: 11,
-    date: "26.04.27",
-  },
-];
+function postDetailPath(
+  post: PostSummary,
+): "/bbangteo-board-post-detail" | "/bbangteo-bbangticle-post-detail" {
+  return post.postType === "FREE"
+    ? "/bbangteo-board-post-detail"
+    : "/bbangteo-bbangticle-post-detail";
+}
 
 const BackHeader = () => {
   const navigate = useNavigate();
@@ -185,6 +63,31 @@ const BackHeader = () => {
     </>
   );
 };
+
+const BoardSortFilters = ({
+  value,
+  onChange,
+}: {
+  value: PostListSort;
+  onChange: (sort: PostListSort) => void;
+}) => (
+  <div className="flex flex-wrap gap-[8px] border-b border-[#eeeff1] bg-white px-[20px] py-[12px]">
+    {BOARD_SORT_OPTIONS.map((opt) => (
+      <button
+        key={opt.value}
+        type="button"
+        onClick={() => onChange(opt.value)}
+        className={`rounded-full px-[14px] py-[8px] text-[13px] transition-colors ${
+          value === opt.value
+            ? "bg-[#1a1c20] font-semibold text-white"
+            : "bg-[#f3f4f5] font-medium text-[#555d6d]"
+        }`}
+      >
+        {opt.label}
+      </button>
+    ))}
+  </div>
+);
 
 const BoardTabs = ({
   activeTab,
@@ -215,17 +118,74 @@ const BoardTabs = ({
   );
 };
 
-const PostMetaItem = ({ count }: { count: number }) => (
+const ListHeartIcon = ({ filled }: { filled?: boolean }) => (
+  <svg
+    width={14}
+    height={14}
+    viewBox="0 0 24 24"
+    aria-hidden
+    className={filled ? "shrink-0 red_700" : "shrink-0 text-[#868b94]"}
+    fill={filled ? "currentColor" : "none"}
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  </svg>
+);
+
+const ListCommentIcon = () => (
+  <svg
+    width={14}
+    height={14}
+    viewBox="0 0 24 24"
+    aria-hidden
+    className="shrink-0 text-[#868b94]"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+  </svg>
+);
+
+const PostMetaItem = ({
+  count,
+  variant,
+  likeFilled,
+}: {
+  count: number;
+  variant: "like" | "comment";
+  likeFilled?: boolean;
+}) => (
   <div className="flex items-center gap-[4px]">
-    <div className="h-[14px] w-[14px] rounded-full bg-[#dcdee3]" />
-    <span className="text-[12px] leading-[16px] text-[#868b94]">{count}</span>
+    {variant === "like" ? <ListHeartIcon filled={likeFilled} /> : <ListCommentIcon />}
+    <span
+      className={`text-[12px] leading-[16px] ${
+        variant === "like" && likeFilled ? "red_700" : "text-[#868b94]"
+      }`}
+    >
+      {count}
+    </span>
   </div>
 );
 
-const PostItem = ({ post, onClick }: { post: Post; onClick?: () => void }) => {
+const PostItem = ({
+  post,
+  showCommentMeta,
+  onClick,
+}: {
+  post: PostSummaryWithLikeOverlay;
+  showCommentMeta: boolean;
+  onClick?: () => void;
+}) => {
+  const hasThumb = Boolean(post.thumbnailImageUrl);
   return (
     <article
-      className={`flex items-start border-b border-[#f3f4f5] py-[16px] ${post.image ? "gap-[12px]" : "gap-0"}`}
+      className={`flex cursor-pointer items-start border-b border-[#f3f4f5] py-[16px] ${hasThumb ? "gap-[12px]" : "gap-0"}`}
       onClick={onClick}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
@@ -233,12 +193,12 @@ const PostItem = ({ post, onClick }: { post: Post; onClick?: () => void }) => {
           onClick?.();
         }
       }}
-      role={onClick ? "button" : undefined}
-      tabIndex={onClick ? 0 : undefined}
+      role="button"
+      tabIndex={0}
     >
-      {post.image ? (
+      {hasThumb ? (
         <div
-          className="flex basis-[84px] flex-none items-center justify-center rounded-[6px]"
+          className="flex basis-[84px] flex-none items-center justify-center overflow-hidden rounded-[6px]"
           style={{
             width: 84,
             height: 84,
@@ -246,29 +206,31 @@ const PostItem = ({ post, onClick }: { post: Post; onClick?: () => void }) => {
             boxShadow: "inset 0 0 0 1px #f3f4f5",
           }}
         >
-          <div
-            className="flex items-center justify-center overflow-hidden"
-            style={{ width: 24, height: 23 }}
-          >
-            <img
-              src={currationBreadImg}
-              alt="게시글 이미지 미리보기"
-              className="h-full w-full object-contain opacity-70"
-            />
-          </div>
+          <img
+            src={post.thumbnailImageUrl ?? ""}
+            alt=""
+            className="h-full w-full object-cover"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = currationBreadImg;
+              (e.target as HTMLImageElement).className =
+                "h-[23px] w-[24px] object-contain opacity-70";
+            }}
+          />
         </div>
       ) : null}
 
       <div
-        className={`flex flex-1 flex-col justify-between ${post.image ? "min-h-[84px]" : "gap-[10px]"}`}
+        className={`flex flex-1 flex-col justify-between ${hasThumb ? "min-h-[84px]" : "gap-[10px]"}`}
       >
         <h2 className="line-clamp-2 text-[16px] leading-[22px] text-[#1a1c20]">{post.title}</h2>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-[8px]">
-            <PostMetaItem count={post.likeCount} />
-            <PostMetaItem count={post.commentCount} />
+            <PostMetaItem count={post.likeCount} variant="like" likeFilled={post.liked} />
+            {showCommentMeta ? <PostMetaItem count={post.commentCount} variant="comment" /> : null}
           </div>
-          <time className="text-[12px] leading-[16px] text-[#868b94]">{post.date}</time>
+          <time className="text-[12px] leading-[16px] text-[#868b94]">
+            {formatShortListDate(post.createdAt)}
+          </time>
         </div>
       </div>
     </article>
@@ -277,10 +239,12 @@ const PostItem = ({ post, onClick }: { post: Post; onClick?: () => void }) => {
 
 const PostList = ({
   items,
+  showCommentMeta,
   onPostClick,
 }: {
-  items: Post[];
-  onPostClick?: (post: Post) => void;
+  items: PostSummaryWithLikeOverlay[];
+  showCommentMeta: boolean;
+  onPostClick: (post: PostSummaryWithLikeOverlay) => void;
 }) => {
   return (
     <section className="flex flex-col bg-white px-[20px]">
@@ -288,7 +252,8 @@ const PostList = ({
         <PostItem
           key={post.id}
           post={post}
-          onClick={onPostClick ? () => onPostClick(post) : undefined}
+          showCommentMeta={showCommentMeta}
+          onClick={() => onPostClick(post)}
         />
       ))}
     </section>
@@ -321,18 +286,90 @@ type BbangteoBoardPageProps = {
 const BbangteoBoardPage = ({ initialTab = "자유 게시판" }: BbangteoBoardPageProps) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+  const [page, setPage] = useState(0);
+  const [items, setItems] = useState<PostSummaryWithLikeOverlay[]>([]);
+  const [hasNext, setHasNext] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState("");
+  const [sortBy, setSortBy] = useState<PostListSort>("LATEST");
 
   useEffect(() => {
     setActiveTab(initialTab);
+    setPage(0);
   }, [initialTab]);
 
-  const filteredPosts = posts.filter((post) => post.type === activeTab);
-  const handlePostClick = (post: Post) => {
-    if (post.type === "자유 게시판") {
-      navigate({ to: "/bbangteo-board-post-detail" });
-      return;
-    }
-    navigate({ to: "/bbangteo-bbangticle-post-detail" });
+  useEffect(() => {
+    return subscribePostLikeOverlayChange(() => {
+      setItems((prev) => prev.map(mergePostSummaryWithLikeOverlay));
+    });
+  }, []);
+
+  useEffect(() => {
+    setPage(0);
+  }, [sortBy]);
+
+  const onTabChange = useCallback((tab: TabType) => {
+    setActiveTab(tab);
+    setPage(0);
+    setSortBy("LATEST");
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const postTypes = tabToPostTypes(activeTab);
+    const isFirstPage = page === 0;
+
+    void (async () => {
+      const mockLead =
+        activeTab === "자유 게시판" ? getMockFreeBoardSummaries() : getMockArticleBoardSummaries();
+      const sortedMockLead =
+        sortBy === "LIKE_COUNT"
+          ? [...mockLead].sort((a, b) => b.likeCount - a.likeCount || b.id - a.id)
+          : mockLead;
+      try {
+        if (isFirstPage) {
+          setLoading(true);
+        } else {
+          setLoadingMore(true);
+        }
+        setError("");
+        const res = await getPosts({ postTypes, page, size: 10, sort: sortBy });
+        if (cancelled) return;
+        if (isFirstPage) {
+          reconcileOverlaysWithSummaries([...sortedMockLead, ...res.posts], false);
+          setItems([...sortedMockLead, ...res.posts].map(mergePostSummaryWithLikeOverlay));
+        } else {
+          reconcileOverlaysWithSummaries(res.posts, false);
+          setItems((prev) => [...prev, ...res.posts.map(mergePostSummaryWithLikeOverlay)]);
+        }
+        setHasNext(res.hasNext);
+      } catch (e) {
+        if (!cancelled) {
+          if (isFirstPage) {
+            setItems(sortedMockLead.map(mergePostSummaryWithLikeOverlay));
+            setHasNext(false);
+            setError("");
+          } else {
+            setError(getErrorMessage(e));
+          }
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+          setLoadingMore(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, page, sortBy]);
+
+  const handlePostClick = (post: PostSummaryWithLikeOverlay) => {
+    const to = postDetailPath(post);
+    navigate({ to, search: { id: post.id } });
   };
 
   return (
@@ -340,14 +377,40 @@ const BbangteoBoardPage = ({ initialTab = "자유 게시판" }: BbangteoBoardPag
       <div className="flex min-h-screen flex-1 flex-col overflow-x-hidden bg-white">
         <BackHeader />
         <main className="flex flex-1 flex-col pb-[56px] sm:pb-[60px]">
-          <BoardTabs activeTab={activeTab} onChange={setActiveTab} />
-          <PostList items={filteredPosts} onPostClick={handlePostClick} />
+          <BoardTabs activeTab={activeTab} onChange={onTabChange} />
+          <BoardSortFilters value={sortBy} onChange={setSortBy} />
+          {loading ? <p className="px-[20px] py-[24px] text-[#868b94]">불러오는 중...</p> : null}
+          {!loading && error ? <p className="px-[20px] py-[24px] text-[#d32f2f]">{error}</p> : null}
+          {!loading && !error && items.length === 0 ? (
+            <p className="px-[20px] py-[24px] text-[#868b94]">게시글이 없습니다.</p>
+          ) : null}
+          {!loading && !error && items.length > 0 ? (
+            <PostList
+              items={items}
+              showCommentMeta={activeTab === "자유 게시판"}
+              onPostClick={handlePostClick}
+            />
+          ) : null}
+          {!loading && hasNext ? (
+            <div className="flex justify-center bg-white px-[20px] py-[16px]">
+              <button
+                type="button"
+                disabled={loadingMore}
+                className="rounded-full border border-[#dcdee3] px-[20px] py-[10px] text-[14px] text-[#1a1c20] disabled:opacity-50"
+                onClick={() => setPage((p) => p + 1)}
+              >
+                {loadingMore ? "불러오는 중..." : "더 보기"}
+              </button>
+            </div>
+          ) : null}
           <div className="h-[90px] shrink-0 bg-gray-200" />
         </main>
       </div>
 
       {activeTab === "자유 게시판" ? (
-        <FloatingWriteButton onClick={() => navigate({ to: "/bbangteo-board-write" })} />
+        <FloatingWriteButton
+          onClick={() => navigate({ to: "/bbangteo-board-write", search: { editId: 0 } })}
+        />
       ) : null}
       <BottomNav />
     </MobileFrame>

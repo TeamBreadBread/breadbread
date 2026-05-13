@@ -109,7 +109,14 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
     }
 
     private BooleanExpression containKeyword(QBakery bakery, String keyword) {
-        return StringUtils.hasText(keyword) ? bakery.name.contains(keyword) : null;
+        if (!StringUtils.hasText(keyword)) {
+            return null;
+        }
+        BooleanExpression byName = bakery.name.contains(keyword);
+        BooleanExpression byAddress =
+                bakery.address.isNotNull().and(bakery.address.contains(keyword));
+        BooleanExpression byRegion = bakery.region.isNotNull().and(bakery.region.contains(keyword));
+        return byName.or(byAddress).or(byRegion);
     }
 
     private BooleanExpression isOpenNow(QBakery bakery) {

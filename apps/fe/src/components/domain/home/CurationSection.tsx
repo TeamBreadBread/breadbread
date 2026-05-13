@@ -1,5 +1,6 @@
 // 큐레이션 문구 + 더보기 + 큰 하단 콘텐츠 영역
 // SectionHeader(제목+더보기) + CurationBakeryContent(홈·빵터와 동일 API)
+import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import SectionHeader from "@/components/common/section-header/SectionHeader";
 import Skeleton from "@/components/common/skeleton/Skeleton";
@@ -9,9 +10,16 @@ import { CurationBakeryContent } from "./CurationBakeryContent";
 
 const CurationSection = () => {
   const navigate = useNavigate();
+  const [displayedPinIds, setDisplayedPinIds] = useState<number[]>([]);
 
   const handleMoreClick = () => {
-    void navigate({ to: "/bbangteo-bakery-list", search: { from: "home" } });
+    void navigate({
+      to: "/bbangteo-bakery-list",
+      search: {
+        from: "home" as const,
+        curationPins: displayedPinIds.length > 0 ? displayedPinIds : [],
+      },
+    });
   };
 
   return (
@@ -36,7 +44,10 @@ const CurationSection = () => {
         />
 
         <div className="w-full">
-          <CurationBakeryContent bakeryListEntryFrom="home" />
+          <CurationBakeryContent
+            bakeryListEntryFrom="home"
+            onDisplayedBakeryIdsChange={setDisplayedPinIds}
+          />
         </div>
       </div>
     </section>

@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { createBakeryReview, getBakeryReviews, updateBakeryReview } from "@/api/bakery";
 import { uploadImages } from "@/api/image";
 import { getErrorMessage } from "@/api/types/common";
+import { refreshProfileCacheFromServer } from "@/lib/userProfileCache";
 import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import MobileFrame from "@/components/layout/MobileFrame";
 import {
@@ -131,6 +132,7 @@ export default function BbangteoBakeryReviewWritePage({
         } else {
           await createBakeryReview(bakeryId, payload);
         }
+        refreshProfileCacheFromServer();
         goToBakeryDetail(true);
       } catch (error) {
         alert(getErrorMessage(error));

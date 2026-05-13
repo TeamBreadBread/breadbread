@@ -25,6 +25,7 @@ import { ToastBanner } from "@/components/common";
 import { useBakeryDetail } from "@/hooks/useBakeryDetail";
 import type { BakeryDetail, BakeryDetailBread } from "@/api/types/bakery";
 import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
+import { formatInstantInSeoul } from "@/utils/formatSeoulDateTime";
 
 type MenuRow = {
   id: number;
@@ -36,20 +37,6 @@ type MenuRow = {
 
 const MAX_PREVIEW_IMAGES = 4;
 const MAX_REVIEW_PREVIEWS = 4;
-
-function formatReviewDateTime(iso: string): { date: string; time: string } {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return { date: "-", time: "" };
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  return {
-    date: `${y}.${m}.${day}`,
-    time: `${hh}:${mm}`,
-  };
-}
 
 function formatClock(value: string | null | undefined): string | null {
   if (value == null || value === "") return null;
@@ -113,7 +100,7 @@ const BackHeader = ({
     }
     void navigate({
       to: "/bbangteo-bakery-list",
-      search: { from: listEntryFrom },
+      search: { from: listEntryFrom, curationPins: [] },
     });
   };
 
@@ -396,7 +383,7 @@ const ReviewCard = ({
   onEdit: () => void;
   onDelete: () => void;
 }) => {
-  const { date, time } = formatReviewDateTime(review.createdAt);
+  const { date, time } = formatInstantInSeoul(review.createdAt);
   const imgs = (review.imageUrls ?? []).slice(0, MAX_REVIEW_PREVIEWS);
 
   return (
@@ -704,7 +691,7 @@ const MissingBakeryId = ({
           }
           void navigate({
             to: "/bbangteo-bakery-list",
-            search: { from: listEntryFrom },
+            search: { from: listEntryFrom, curationPins: [] },
           });
         }}
       >
@@ -815,7 +802,7 @@ const BbangteoBakeryDetailPage = ({
                   }
                   void navigate({
                     to: "/bbangteo-bakery-list",
-                    search: { from: listEntryFrom },
+                    search: { from: listEntryFrom, curationPins: [] },
                   });
                 }}
               >

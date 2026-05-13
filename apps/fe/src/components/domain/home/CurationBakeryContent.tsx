@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import type { GetBakeriesParams } from "@/api/types/bakery";
 import { useNavigate } from "@tanstack/react-router";
 import Skeleton from "@/components/common/skeleton/Skeleton";
 import { useBakeries } from "@/hooks/useBakeries";
@@ -18,26 +19,48 @@ type CurationBakeryContentProps = {
   bakeryListEntryFrom: BakeryListEntryFrom;
   /** 미지정 시 `bakeryId`로 빵집 상세로 이동 */
   onCardClick?: (item: CurationItem, index: number) => void;
+  /** 현재 카드에 노출된 빵집 id(카드 순서) — 더보기 시 목록 상단 고정에 사용 */
+  onDisplayedBakeryIdsChange?: (ids: number[]) => void;
+  /** 기본값: 홈과 동일 4장 — 빵터는 6장 등 */
+  displayCount?: number;
 };
 
 export function CurationBakeryContent({
   compact,
   bakeryListEntryFrom,
   onCardClick,
+  onDisplayedBakeryIdsChange,
+  displayCount: displayCountProp,
 }: CurationBakeryContentProps) {
   const navigate = useNavigate();
-  const { data, loading, error } = useBakeries(CURATION_BAKERY_LIST_PARAMS);
+  const displayCount = displayCountProp ?? CURATION_DISPLAY_COUNT;
+  const listParams: GetBakeriesParams = useMemo(
+    () => ({
+      ...CURATION_BAKERY_LIST_PARAMS,
+      size: Math.max(CURATION_BAKERY_LIST_PARAMS.size, displayCount),
+    }),
+    [displayCount],
+  );
+  const { data, loading, error } = useBakeries(listParams);
 
   const items: CurationItem[] = useMemo(() => {
     if (!data?.bakeries?.length) return [];
-    const picked = shuffleArray(data.bakeries).slice(0, CURATION_DISPLAY_COUNT);
+    const picked = shuffleArray(data.bakeries).slice(0, displayCount);
     return picked.map((b) => ({
       bakeryId: b.id,
       title: b.name,
       address: b.address?.trim() ? formatCurationAddress(b.address.trim()) : "주소 정보 없음",
       rate: b.rating != null ? Number(b.rating) : 0,
     }));
-  }, [data]);
+  }, [data, displayCount]);
+
+  useEffect(() => {
+    if (!onDisplayedBakeryIdsChange) return;
+    const ids = items
+      .map((i) => i.bakeryId)
+      .filter((id): id is number => typeof id === "number" && id > 0);
+    onDisplayedBakeryIdsChange(ids);
+  }, [items, onDisplayedBakeryIdsChange]);
 
   const handleItemClick = (item: CurationItem, index: number) => {
     if (onCardClick) {
@@ -65,7 +88,7 @@ export function CurationBakeryContent({
   if (loading) {
     return (
       <div className="flex w-full gap-[var(--spacing-x4)] overflow-x-auto overflow-y-hidden pb-1">
-        {Array.from({ length: 4 }).map((_, i) => (
+        {Array.from({ length: displayCount }).map((_, i) => (
           <Skeleton key={i} className={skeletonClass} />
         ))}
       </div>

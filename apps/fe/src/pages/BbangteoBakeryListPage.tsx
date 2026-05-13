@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { getBakeryById } from "@/api/bakery";
+import type { BakeryDetail, BakeryListItem } from "@/api/types/bakery";
 import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import ratingStar from "@/assets/icons/ratingStar.svg";
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
@@ -27,6 +29,47 @@ type BakeryRow = {
   /** 4장 초과분 — 4번째 타일에 더보기 오버레이 */
   remainingPreviewImageCount: number;
 };
+
+const PREVIEW_SLOTS = 4 as const;
+
+function mapListItemToBakeryRow(b: BakeryListItem): BakeryRow {
+  const previews =
+    b.previewImageUrls != null && b.previewImageUrls.length > 0
+      ? b.previewImageUrls.slice(0, PREVIEW_SLOTS)
+      : b.thumbnailUrl
+        ? [b.thumbnailUrl]
+        : [];
+  const remaining =
+    b.remainingPreviewImageCount != null && Number.isFinite(b.remainingPreviewImageCount)
+      ? Math.max(0, Math.floor(b.remainingPreviewImageCount))
+      : 0;
+  return {
+    id: b.id,
+    name: b.name,
+    address: b.address,
+    rating: b.rating != null ? Number(b.rating) : 0,
+    reviewCount: 0,
+    bookmarkCount: b.likeCount ?? 0,
+    images: previews,
+    remainingPreviewImageCount: remaining,
+  };
+}
+
+function mapDetailToBakeryRow(detail: BakeryDetail): BakeryRow {
+  const urls = detail.imageUrls ?? [];
+  const previews = urls.slice(0, PREVIEW_SLOTS);
+  const remaining = Math.max(0, urls.length - PREVIEW_SLOTS);
+  return {
+    id: detail.id,
+    name: detail.name,
+    address: detail.address,
+    rating: detail.rating != null ? Number(detail.rating) : 0,
+    reviewCount: 0,
+    bookmarkCount: detail.likeCount ?? 0,
+    images: previews,
+    remainingPreviewImageCount: remaining,
+  };
+}
 
 const CircleIcon = ({ size = 18, color = "#dcdee3" }: { size?: number; color?: string }) => (
   <div className="rounded-full" style={{ width: size, height: size, backgroundColor: color }} />
@@ -135,8 +178,6 @@ const BakeryMeta = ({
     </div>
   </div>
 );
-
-const PREVIEW_SLOTS = 4 as const;
 
 const BakeryImageRow = ({
   images,
@@ -286,12 +327,26 @@ function PageNumberNav({
 
 type BbangteoBakeryListPageProps = {
   listEntryFrom?: BakeryListEntryFrom;
+  /** 큐레이션 카드에 노출된 빵집 id 순서(첫 페이지 상단 고정) */
+  curationPinIds?: number[];
 };
 
-const BbangteoBakeryListPage = ({ listEntryFrom }: BbangteoBakeryListPageProps) => {
+const BbangteoBakeryListPage = ({ listEntryFrom, curationPinIds }: BbangteoBakeryListPageProps) => {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState("");
   const [page, setPage] = useState(0);
+  const [fetchedPinRowsById, setFetchedPinRowsById] = useState<Map<number, BakeryRow>>(
+    () => new Map(),
+  );
+
+  const pinIdsKey = (curationPinIds ?? []).join(",");
+  const pins = useMemo(() => {
+    if (!pinIdsKey) return [];
+    return pinIdsKey
+      .split(",")
+      .map((segment) => Number.parseInt(segment.trim(), 10))
+      .filter((n) => Number.isFinite(n) && n > 0);
+  }, [pinIdsKey]);
 
   const handleKeywordChange = (value: string) => {
     setKeyword(value);
@@ -311,31 +366,105 @@ const BbangteoBakeryListPage = ({ listEntryFrom }: BbangteoBakeryListPageProps) 
     keyword: queryKeyword,
   });
 
-  const rows: BakeryRow[] = useMemo(() => {
+  const pinResolutionActive =
+    page === 0 && queryKeyword == null && pins.length > 0 && Boolean(data?.bakeries?.length);
+
+  const listIds = useMemo(() => new Set(data?.bakeries?.map((b) => b.id) ?? []), [data?.bakeries]);
+
+  const pinIdsToFetch = useMemo(() => {
+    if (!pinResolutionActive) {
+      return [];
+    }
+    return pins.filter((id) => !listIds.has(id));
+  }, [pinResolutionActive, pins, listIds]);
+
+  const pinIdsToFetchKey = pinIdsToFetch.join(",");
+
+  const resolvedPinRowsById = useMemo(() => {
+    if (!pinResolutionActive || pinIdsToFetch.length === 0) {
+      return new Map<number, BakeryRow>();
+    }
+    const next = new Map<number, BakeryRow>();
+    for (const id of pinIdsToFetch) {
+      const row = fetchedPinRowsById.get(id);
+      if (row) {
+        next.set(id, row);
+      }
+    }
+    return next;
+  }, [pinResolutionActive, pinIdsToFetch, fetchedPinRowsById]);
+
+  useEffect(() => {
+    if (!pinResolutionActive || !pinIdsToFetchKey) {
+      return;
+    }
+
+    const idsToResolve = pinIdsToFetchKey
+      .split(",")
+      .map((s) => Number.parseInt(s.trim(), 10))
+      .filter((n) => Number.isFinite(n) && n > 0);
+    if (idsToResolve.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      const results = await Promise.all(
+        idsToResolve.map(async (id) => {
+          try {
+            const d = await getBakeryById(id);
+            return [id, mapDetailToBakeryRow(d)] as const;
+          } catch {
+            return null;
+          }
+        }),
+      );
+      if (cancelled) {
+        return;
+      }
+      const next = new Map<number, BakeryRow>();
+      for (const r of results) {
+        if (r) {
+          next.set(r[0], r[1]);
+        }
+      }
+      setFetchedPinRowsById((prev) => {
+        const merged = new Map(prev);
+        for (const [id, row] of next) {
+          merged.set(id, row);
+        }
+        return merged;
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pinResolutionActive, pinIdsToFetchKey]);
+
+  const apiRows: BakeryRow[] = useMemo(() => {
     if (!data?.bakeries?.length) return [];
-    return data.bakeries.map((b) => {
-      const previews =
-        b.previewImageUrls != null && b.previewImageUrls.length > 0
-          ? b.previewImageUrls.slice(0, PREVIEW_SLOTS)
-          : b.thumbnailUrl
-            ? [b.thumbnailUrl]
-            : [];
-      const remaining =
-        b.remainingPreviewImageCount != null && Number.isFinite(b.remainingPreviewImageCount)
-          ? Math.max(0, Math.floor(b.remainingPreviewImageCount))
-          : 0;
-      return {
-        id: b.id,
-        name: b.name,
-        address: b.address,
-        rating: b.rating != null ? Number(b.rating) : 0,
-        reviewCount: 0,
-        bookmarkCount: b.likeCount ?? 0,
-        images: previews,
-        remainingPreviewImageCount: remaining,
-      };
-    });
+    return data.bakeries.map(mapListItemToBakeryRow);
   }, [data]);
+
+  const rows: BakeryRow[] = useMemo(() => {
+    if (!apiRows.length) return [];
+    const applyPins = page === 0 && !queryKeyword && pins.length > 0;
+    if (!applyPins) {
+      return apiRows;
+    }
+
+    const pinSet = new Set(pins);
+    const pinnedOrdered: BakeryRow[] = [];
+    for (const id of pins) {
+      const fromList = apiRows.find((r) => r.id === id);
+      const fetched = resolvedPinRowsById.get(id);
+      const row = fromList ?? fetched;
+      if (row) pinnedOrdered.push(row);
+    }
+    const tail = apiRows.filter((r) => !pinSet.has(r.id));
+    return [...pinnedOrdered, ...tail].slice(0, PAGE_SIZE);
+  }, [apiRows, page, queryKeyword, pins, resolvedPinRowsById]);
 
   const total = data?.total ?? 0;
   const totalPages = total === 0 ? 0 : Math.ceil(total / PAGE_SIZE);

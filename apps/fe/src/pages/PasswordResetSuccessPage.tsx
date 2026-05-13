@@ -7,7 +7,7 @@ import { useNavigate } from "@tanstack/react-router";
 export default function PasswordResetSuccessPage() {
   const navigate = useNavigate();
   const handleGoLogin = () => {
-    navigate({ to: "/login" });
+    navigate({ to: "/login", search: { redirect: undefined } });
   };
 
   return (

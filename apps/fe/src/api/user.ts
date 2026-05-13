@@ -4,10 +4,15 @@ import { ApiBusinessError, type ApiEnvelope } from "@/api/types/common";
 const PATH = "/users";
 
 export type MyProfileResponse = {
-  loginId: string;
+  /** 백엔드 `UserProfileResponse.userId` */
+  userId?: number | null;
+  loginId?: string | null;
   name: string;
   email: string | null;
   phone: string | null;
+  nickname?: string | null;
+  grade?: string | null;
+  profileImageUrl?: string | null;
 };
 
 /** `BakeryType` 나열값 — Swagger 참고 */

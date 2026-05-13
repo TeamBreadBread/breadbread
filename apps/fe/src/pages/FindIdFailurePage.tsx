@@ -8,7 +8,7 @@ export default function FindIdFailurePage() {
   const navigate = useNavigate();
 
   const handleGoLogin = () => {
-    navigate({ to: "/login" });
+    navigate({ to: "/login", search: { redirect: undefined } });
   };
 
   const handleSignup = () => {

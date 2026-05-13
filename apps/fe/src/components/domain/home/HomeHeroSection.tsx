@@ -25,12 +25,13 @@ const HomeHeroSection = () => {
         const me = await getMyProfile();
         if (!mounted) return;
         saveUserProfile({
-          loginId: me.loginId,
+          userId: me.userId != null ? Number(me.userId) : undefined,
+          loginId: me.loginId?.trim() || "",
           name: me.name,
           email: me.email ?? "",
           phone: me.phone ?? "",
         });
-        setDisplayName(me.name?.trim() || me.loginId || "회원");
+        setDisplayName(me.name?.trim() || me.loginId?.trim() || "회원");
       } catch {
         // keep cached value
       }
