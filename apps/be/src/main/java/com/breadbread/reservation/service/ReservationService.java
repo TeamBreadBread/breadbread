@@ -211,7 +211,7 @@ public class ReservationService {
                         .toList();
         int likeCount = (int) courseLikeRepository.countByCourse(course);
         boolean liked = courseLikeRepository.existsByCourseIdAndUserId(course.getId(), userId);
-        return CourseSummaryResponse.from(course, likeCount, liked, bakeries);
+        return CourseSummaryResponse.from(course, likeCount, liked, false, bakeries);
     }
 
     private void validateDepartureDateTime(LocalDate departureDate, LocalTime departureTime) {

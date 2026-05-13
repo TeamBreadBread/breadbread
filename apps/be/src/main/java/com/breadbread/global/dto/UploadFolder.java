@@ -4,6 +4,7 @@ public enum UploadFolder {
     bakeries,
     breads,
     reviews,
+    posts,
     profiles;
 
     public String path() {
