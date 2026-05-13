@@ -99,11 +99,27 @@ export type BakeryReview = {
   /** 작성자 회원 PK — 로그인 사용자와 같으면 MY 표시명으로 교체 */
   authorUserId?: number | null;
   authorNickname: string;
+  /** 현재 로그인 사용자가 이 리뷰 작성자면 true (Jackson 등에 따라 `isAuthor`로 올 수 있음) */
+  author?: boolean;
+  isAuthor?: boolean;
   rating: number;
   content: string;
   imageUrls?: string[] | null;
   createdAt: string;
 };
+
+/** 리뷰 목록 응답의 작성자 여부 — `author` / `isAuthor` 우선, 없으면 `authorUserId`와 로그인 사용자 id 비교 */
+export function isBakeryReviewAuthor(review: BakeryReview, viewerUserId?: number | null): boolean {
+  if (review.author === true || review.isAuthor === true) return true;
+  if (
+    viewerUserId != null &&
+    review.authorUserId != null &&
+    Number(review.authorUserId) === Number(viewerUserId)
+  ) {
+    return true;
+  }
+  return false;
+}
 
 /** GET /bakeries/{bakeryId}/reviews */
 export type BakeryReviewListResponse = {

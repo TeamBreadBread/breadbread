@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { createBakeryReview, getBakeryReviews, updateBakeryReview } from "@/api/bakery";
 import { uploadImages } from "@/api/image";
+import { isBakeryReviewAuthor } from "@/api/types/bakery";
 import { getErrorMessage } from "@/api/types/common";
-import { refreshProfileCacheFromServer } from "@/lib/userProfileCache";
+import { getUserProfile, refreshProfileCacheFromServer } from "@/lib/userProfileCache";
 import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import MobileFrame from "@/components/layout/MobileFrame";
 import {
@@ -87,6 +88,10 @@ export default function BbangteoBakeryReviewWritePage({
           setLoadError("리뷰를 찾을 수 없습니다.");
           return;
         }
+        if (!isBakeryReviewAuthor(found, getUserProfile()?.userId)) {
+          setLoadError("본인이 작성한 후기만 수정할 수 있습니다.");
+          return;
+        }
         setRating(found.rating);
         setContent(found.content);
         setUploadedImageUrls(found.imageUrls ? [...found.imageUrls] : []);
@@ -155,7 +160,7 @@ export default function BbangteoBakeryReviewWritePage({
         alert(`이미지는 최대 ${MAX_REVIEW_IMAGES}장까지 첨부할 수 있습니다.`);
         return;
       }
-      const uploadedUrls = await uploadImages(files.slice(0, room));
+      const uploadedUrls = await uploadImages(files.slice(0, room), "reviews");
       setUploadedImageUrls((prev) => [...prev, ...uploadedUrls].slice(0, MAX_REVIEW_IMAGES));
     } catch (error) {
       alert(getErrorMessage(error) || "이미지 업로드 중 오류가 발생했습니다.");
