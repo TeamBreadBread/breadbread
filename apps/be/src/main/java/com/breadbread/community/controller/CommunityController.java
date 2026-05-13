@@ -6,6 +6,7 @@ import com.breadbread.community.dto.CreateCommentRequest;
 import com.breadbread.community.dto.CreatePostRequest;
 import com.breadbread.community.dto.PostDetailResponse;
 import com.breadbread.community.dto.PostListResponse;
+import com.breadbread.community.dto.PostListSort;
 import com.breadbread.community.dto.UpdateCommentRequest;
 import com.breadbread.community.dto.UpdatePostRequest;
 import com.breadbread.community.entity.PostType;
@@ -47,15 +48,22 @@ public class CommunityController {
                 example = "FREE"),
         @Parameter(name = "keyword", description = "제목 또는 내용 검색어", example = "성심당"),
         @Parameter(name = "page", description = "페이지 번호 (0부터 시작, 기본값: 0)"),
-        @Parameter(name = "size", description = "페이지 크기 (기본값: 10)")
+        @Parameter(name = "size", description = "페이지 크기 (기본값: 10)"),
+        @Parameter(
+                name = "sort",
+                description = "정렬: LATEST(작성일 최신순, 기본값), LIKE_COUNT(좋아요 많은 순)",
+                example = "LATEST")
     })
     @GetMapping
     public ApiResponse<PostListResponse> findAll(
             @RequestParam(required = false) List<PostType> postTypes,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return ApiResponse.ok(communityService.findAll(postTypes, keyword, page, size));
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false, defaultValue = "LATEST") String sort) {
+        return ApiResponse.ok(
+                communityService.findAll(
+                        postTypes, keyword, page, size, PostListSort.fromParam(sort)));
     }
 
     @Operation(summary = "게시글 작성", description = "NOTICE·ARTICLE 유형은 관리자만 작성 가능")

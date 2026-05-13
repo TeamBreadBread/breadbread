@@ -59,6 +59,18 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   }
   if (config.data instanceof FormData) {
     delete config.headers["Content-Type"];
+  } else {
+    const method = (config.method ?? "").toLowerCase();
+    const noPayload = config.data === undefined || config.data === null || config.data === "";
+    /** DELETE 등 본문 없이 application/json 만 가면 게이트웨이/Spring에서 파싱 오류가 나는 경우가 있음 */
+    if (method === "delete" && noPayload) {
+      const h = config.headers;
+      if (h && typeof (h as { delete?: (name: string) => void }).delete === "function") {
+        (h as { delete: (name: string) => void }).delete("Content-Type");
+      } else if (h) {
+        delete (h as Record<string, unknown>)["Content-Type"];
+      }
+    }
   }
   return config;
 });

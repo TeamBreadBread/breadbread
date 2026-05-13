@@ -68,6 +68,10 @@ export default defineConfig({
         target: 'https://api.breadbread.io',
         changeOrigin: true,
       },
+      '/images': {
+        target: 'https://api.breadbread.io',
+        changeOrigin: true,
+      },
     },
   },
 })

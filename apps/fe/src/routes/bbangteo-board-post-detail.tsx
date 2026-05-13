@@ -1,47 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
-import FreeBoardPostDetailPage from "@/pages/BbangteoFreeBoardPostDetailPage";
+import BbangteoPostDetailView from "@/pages/BbangteoPostDetailView";
 
-function parsePostId(value: unknown): number | undefined {
-  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
-    return Math.floor(value);
+function parsePostId(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value) && value !== 0) {
+    return Math.trunc(value);
   }
-  if (typeof value === "string") {
-    const n = Number.parseInt(value, 10);
-    if (Number.isFinite(n) && n > 0) {
-      return n;
-    }
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number.parseInt(value.trim(), 10);
+    if (Number.isFinite(parsed) && parsed !== 0) return parsed;
   }
-  return undefined;
-}
-
-function parseDetailRefresh(value: unknown): number | undefined {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return Math.floor(value);
-  }
-  if (typeof value === "string") {
-    const n = Number.parseInt(value, 10);
-    if (Number.isFinite(n)) {
-      return n;
-    }
-  }
-  return undefined;
+  return 0;
 }
 
 export const Route = createFileRoute("/bbangteo-board-post-detail")({
   validateSearch: (search: Record<string, unknown>) => ({
-    postId: parsePostId(search.postId),
-    detailRefresh: parseDetailRefresh(search.detailRefresh),
+    id: parsePostId(search.id),
   }),
   component: BbangteoBoardPostDetailRoute,
 });
 
 function BbangteoBoardPostDetailRoute() {
-  const { postId, detailRefresh } = Route.useSearch();
-  return (
-    <FreeBoardPostDetailPage
-      postId={postId}
-      listPath="/bbangteo-board"
-      detailRefresh={detailRefresh}
-    />
-  );
+  const { id } = Route.useSearch();
+  return <BbangteoPostDetailView postId={id} listPath="/bbangteo-board" />;
 }

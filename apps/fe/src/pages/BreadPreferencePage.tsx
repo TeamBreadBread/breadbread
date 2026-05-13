@@ -155,18 +155,14 @@ export default function BreadPreferencePage({ isEditMode = false }: BreadPrefere
         window.alert("수정을 완료했습니다.");
       } else {
         try {
-          await updateMyPreference(payload);
+          await savePreference(payload);
         } catch (error) {
-          const preferenceMissing =
+          const alreadySaved =
             error instanceof ApiBusinessError &&
-            (error.code === "E0403" ||
-              error.status === 404 ||
-              /선호도 조사 결과가 없습니다/.test(error.message));
-          if (preferenceMissing) {
-            await savePreference(payload);
-          } else {
-            throw error;
-          }
+            (error.code === "E0410" ||
+              error.status === 409 ||
+              /이미 선호도 조사를 완료/.test(error.message ?? ""));
+          if (!alreadySaved) throw error;
         }
       }
       navigate({ to: "/home" });

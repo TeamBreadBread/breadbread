@@ -25,7 +25,7 @@ import { ToastBanner } from "@/components/common";
 import { useBakeryDetail } from "@/hooks/useBakeryDetail";
 import type { BakeryDetail, BakeryDetailBread } from "@/api/types/bakery";
 import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
-import { getViewerUserId, resolveMyPageDisplayName } from "@/lib/profileDisplay";
+import { formatInstantInSeoul } from "@/utils/formatSeoulDateTime";
 
 type MenuRow = {
   id: number;
@@ -37,20 +37,6 @@ type MenuRow = {
 
 const MAX_PREVIEW_IMAGES = 4;
 const MAX_REVIEW_PREVIEWS = 4;
-
-function formatReviewDateTime(iso: string): { date: string; time: string } {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return { date: "-", time: "" };
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  return {
-    date: `${y}.${m}.${day}`,
-    time: `${hh}:${mm}`,
-  };
-}
 
 function formatClock(value: string | null | undefined): string | null {
   if (value == null || value === "") return null;
@@ -114,7 +100,7 @@ const BackHeader = ({
     }
     void navigate({
       to: "/bbangteo-bakery-list",
-      search: { from: listEntryFrom, curationPins: undefined },
+      search: { from: listEntryFrom },
     });
   };
 
@@ -390,25 +376,15 @@ const MenuList = ({ menus }: { menus: MenuRow[] }) => (
 
 const ReviewCard = ({
   review,
-  viewerUserId,
-  viewerDisplayName,
   onEdit,
   onDelete,
 }: {
   review: BakeryReview;
-  viewerUserId?: number;
-  viewerDisplayName: string;
   onEdit: () => void;
   onDelete: () => void;
 }) => {
-  const { date, time } = formatReviewDateTime(review.createdAt);
+  const { date, time } = formatInstantInSeoul(review.createdAt);
   const imgs = (review.imageUrls ?? []).slice(0, MAX_REVIEW_PREVIEWS);
-  const authorLabel =
-    viewerUserId != null &&
-    review.authorUserId != null &&
-    Number(review.authorUserId) === viewerUserId
-      ? viewerDisplayName
-      : review.authorNickname;
 
   return (
     <article className="flex flex-col gap-[14px]">
@@ -417,19 +393,24 @@ const ReviewCard = ({
         <div className="flex flex-1 flex-col gap-[10px]">
           <div className="flex items-start justify-between gap-[10px]">
             <div className="flex flex-col gap-[4px]">
-              <p className="text-[13px] leading-[18px] font-bold text-[#1a1c20]">{authorLabel}</p>
+              <p className="text-[13px] leading-[18px] font-bold text-[#1a1c20]">
+                {review.authorNickname}
+              </p>
               <div className="flex items-center gap-[6px] text-[12px] leading-[16px] text-[#868b94]">
-                <div className="flex items-center gap-[2px]" aria-label={`별점 ${review.rating}점`}>
-                  {Array.from({ length: 5 }).map((_, idx) => (
-                    <img
-                      key={idx}
-                      src={ratingStar}
-                      alt=""
-                      className={`h-[12px] w-[12px] ${
-                        idx < review.rating ? "opacity-100" : "opacity-25"
-                      }`}
-                    />
-                  ))}
+                <div className="flex items-center gap-[2px]">
+                  <span>{review.rating}</span>
+                  <div className="flex items-center gap-[2px]">
+                    {Array.from({ length: 5 }).map((_, idx) => (
+                      <img
+                        key={idx}
+                        src={ratingStar}
+                        alt=""
+                        className={`h-[12px] w-[12px] ${
+                          idx < review.rating ? "opacity-100" : "opacity-25"
+                        }`}
+                      />
+                    ))}
+                  </div>
                 </div>
                 <span>{date}</span>
                 <span>{time}</span>
@@ -482,8 +463,6 @@ const ReviewList = ({
   hasNext,
   loadingMore,
   onLoadMore,
-  viewerUserId,
-  viewerDisplayName,
 }: {
   reviews: BakeryReview[];
   /** Swagger `ReviewListResponse.total` */
@@ -496,8 +475,6 @@ const ReviewList = ({
   hasNext: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
-  viewerUserId?: number;
-  viewerDisplayName: string;
 }) => (
   <section className="flex flex-col gap-[24px] bg-white px-[20px] py-[24px]">
     <div className="flex items-center gap-[10px]">
@@ -527,8 +504,6 @@ const ReviewList = ({
         <div key={review.id} className="flex flex-col gap-[20px]">
           <ReviewCard
             review={review}
-            viewerUserId={viewerUserId}
-            viewerDisplayName={viewerDisplayName}
             onEdit={() => onEditReview(review)}
             onDelete={() => onDeleteReview(review)}
           />
@@ -645,9 +620,6 @@ const BakeryTabSection = ({
     [bakeryId, listEntryFrom, navigate],
   );
 
-  const viewerUserId = getViewerUserId();
-  const viewerDisplayName = resolveMyPageDisplayName();
-
   return (
     <section className="flex flex-col">
       <BakeryTabs activeTab={activeTab} onTabChange={setActiveTab} />
@@ -684,8 +656,6 @@ const BakeryTabSection = ({
             hasNext={hasNextReviews}
             loadingMore={reviewsLoadingMore}
             onLoadMore={loadReviewsNextPage}
-            viewerUserId={viewerUserId}
-            viewerDisplayName={viewerDisplayName}
           />
         </>
       )}
@@ -721,7 +691,7 @@ const MissingBakeryId = ({
           }
           void navigate({
             to: "/bbangteo-bakery-list",
-            search: { from: listEntryFrom, curationPins: undefined },
+            search: { from: listEntryFrom },
           });
         }}
       >
@@ -832,7 +802,7 @@ const BbangteoBakeryDetailPage = ({
                   }
                   void navigate({
                     to: "/bbangteo-bakery-list",
-                    search: { from: listEntryFrom, curationPins: undefined },
+                    search: { from: listEntryFrom },
                   });
                 }}
               >

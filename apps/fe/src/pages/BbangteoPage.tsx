@@ -4,8 +4,10 @@ import BbangteoSearchSection from "@/components/domain/bbangteo/BbangteoSearchSe
 import BottomNav from "@/components/layout/BottomNav";
 import type { CommunitySectionItem } from "@/components/domain/bbangteo/types";
 import MobileFrame from "@/components/layout/MobileFrame";
-import { MOCK_HOME_BBANGTICLE_PREVIEWS, MOCK_HOME_FREE_PREVIEWS } from "@/data/bbangteoBoardMock";
-import { useState } from "react";
+import {
+  BBANGTEO_HOME_FREE_POST_ITEMS,
+  BBANGTEO_HOME_NEWS_POST_ITEMS,
+} from "@/data/bbangteoCommunityMocks";
 import { useNavigate } from "@tanstack/react-router";
 
 const sections: CommunitySectionItem[] = [
@@ -19,31 +21,24 @@ const sections: CommunitySectionItem[] = [
     title: "자유 게시판",
     contentType: "postList",
     sectionHeight: 214,
-    postItems: MOCK_HOME_FREE_PREVIEWS,
+    postItems: [...BBANGTEO_HOME_FREE_POST_ITEMS],
   },
   {
     title: "빵빵 소식",
     contentType: "postList",
     sectionHeight: 214,
-    postItems: MOCK_HOME_BBANGTICLE_PREVIEWS,
+    postItems: [...BBANGTEO_HOME_NEWS_POST_ITEMS],
   },
 ];
 
 const BbangteoPage = () => {
   const navigate = useNavigate();
-  const [curationDisplayedPinIds, setCurationDisplayedPinIds] = useState<number[]>([]);
 
   const goToBakeryList = () => {
-    navigate({
-      to: "/bbangteo-bakery-list",
-      search: {
-        from: "bbangteo" as const,
-        curationPins: curationDisplayedPinIds.length > 0 ? curationDisplayedPinIds : undefined,
-      },
-    });
+    navigate({ to: "/bbangteo-bakery-list", search: { from: "bbangteo" } });
   };
   const goToBoardList = () => {
-    navigate({ to: "/bbangteo-board", search: { listRefresh: undefined } });
+    navigate({ to: "/bbangteo-board" });
   };
   const goToArticleBoardList = () => {
     navigate({ to: "/bbangteo-article-board" });
@@ -69,9 +64,6 @@ const BbangteoPage = () => {
             <BbangteoCommunitySection
               key={section.title}
               section={section}
-              onCurationDisplayedBakeryIdsChange={
-                section.contentType === "curationApi" ? setCurationDisplayedPinIds : undefined
-              }
               onSectionTitleAreaClick={
                 section.title === "빵빵 소식" ? goToArticleBoardList : undefined
               }

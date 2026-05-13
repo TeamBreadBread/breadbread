@@ -6,6 +6,7 @@ import com.breadbread.community.dto.CreateCommentRequest;
 import com.breadbread.community.dto.CreatePostRequest;
 import com.breadbread.community.dto.PostDetailResponse;
 import com.breadbread.community.dto.PostListResponse;
+import com.breadbread.community.dto.PostListSort;
 import com.breadbread.community.dto.PostSearch;
 import com.breadbread.community.dto.PostSummaryResponse;
 import com.breadbread.community.dto.UpdateCommentRequest;
@@ -45,7 +46,9 @@ public class CommunityService {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public PostListResponse findAll(List<PostType> postTypes, String keyword, int page, int size) {
+    public PostListResponse findAll(
+            List<PostType> postTypes, String keyword, int page, int size, PostListSort sort) {
+        PostListSort effectiveSort = sort != null ? sort : PostListSort.LATEST;
         PostSearch search =
                 PostSearch.builder()
                         .postTypes(
@@ -53,6 +56,7 @@ public class CommunityService {
                                         ? Arrays.asList(PostType.values())
                                         : postTypes)
                         .keyword(keyword)
+                        .sort(effectiveSort)
                         .build();
 
         Page<Post> result = postRepository.searchPosts(search, PageRequest.of(page, size));
@@ -69,9 +73,10 @@ public class CommunityService {
                         .toList();
 
         log.debug(
-                "게시글 목록 조회: postTypes={}, keyword={}, total={}",
+                "게시글 목록 조회: postTypes={}, keyword={}, sort={}, total={}",
                 postTypes,
                 keyword,
+                effectiveSort,
                 result.getTotalElements());
         return PostListResponse.from(result, posts);
     }

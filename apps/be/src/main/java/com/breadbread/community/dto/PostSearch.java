@@ -10,4 +10,7 @@ import lombok.Getter;
 public class PostSearch {
     List<PostType> postTypes;
     String keyword;
+
+    @Builder.Default
+    private PostListSort sort = PostListSort.LATEST;
 }

@@ -1,9 +1,16 @@
 package com.breadbread.community.respository;
 
+import com.breadbread.community.dto.PostListSort;
 import com.breadbread.community.dto.PostSearch;
 import com.breadbread.community.entity.Post;
 import com.breadbread.community.entity.QPost;
+import com.breadbread.community.entity.QPostLike;
+import com.querydsl.core.types.Order;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.NumberExpression;
+import com.querydsl.jpa.JPAExpressions;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -24,14 +31,23 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         BooleanExpression typeCondition = post.postType.in(search.getPostTypes());
         BooleanExpression keywordCondition = containsKeyword(post, search.getKeyword());
 
+        JPAQuery<Post> query =
+                queryFactory.selectFrom(post).where(typeCondition, keywordCondition);
+
+        if (search.getSort() == PostListSort.LIKE_COUNT) {
+            QPostLike pl = QPostLike.postLike;
+            NumberExpression<Long> likeCountSub =
+                    JPAExpressions.select(pl.id.count()).from(pl).where(pl.post.eq(post));
+            query.orderBy(
+                    new OrderSpecifier<>(Order.DESC, likeCountSub),
+                    post.createdAt.desc(),
+                    post.id.desc());
+        } else {
+            query.orderBy(post.createdAt.desc(), post.id.desc());
+        }
+
         List<Post> content =
-                queryFactory
-                        .selectFrom(post)
-                        .where(typeCondition, keywordCondition)
-                        .orderBy(post.createdAt.desc())
-                        .offset(pageable.getOffset())
-                        .limit(pageable.getPageSize())
-                        .fetch();
+                query.offset(pageable.getOffset()).limit(pageable.getPageSize()).fetch();
 
         Long total =
                 queryFactory

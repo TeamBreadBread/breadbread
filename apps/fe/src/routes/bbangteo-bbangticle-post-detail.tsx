@@ -1,27 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
-import BbangticlePostDetailPage from "@/pages/BbangteoBbangticlePostDetailPage";
+import BbangteoPostDetailView from "@/pages/BbangteoPostDetailView";
 
-function parsePostId(value: unknown): number | undefined {
-  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
-    return Math.floor(value);
+function parsePostId(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value) && value !== 0) {
+    return Math.trunc(value);
   }
-  if (typeof value === "string") {
-    const n = Number.parseInt(value, 10);
-    if (Number.isFinite(n) && n > 0) {
-      return n;
-    }
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number.parseInt(value.trim(), 10);
+    if (Number.isFinite(parsed) && parsed !== 0) return parsed;
   }
-  return undefined;
+  return 0;
 }
 
 export const Route = createFileRoute("/bbangteo-bbangticle-post-detail")({
   validateSearch: (search: Record<string, unknown>) => ({
-    postId: parsePostId(search.postId),
+    id: parsePostId(search.id),
   }),
   component: BbangteoBbangticlePostDetailRoute,
 });
 
 function BbangteoBbangticlePostDetailRoute() {
-  const { postId } = Route.useSearch();
-  return <BbangticlePostDetailPage postId={postId} listPath="/bbangteo-article-board" />;
+  const { id } = Route.useSearch();
+  return <BbangteoPostDetailView postId={id} listPath="/bbangteo-article-board" />;
 }

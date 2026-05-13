@@ -12,6 +12,7 @@ import com.breadbread.user.entity.UserPreference;
 import com.breadbread.user.repository.UserPreferenceRepository;
 import com.breadbread.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,14 +51,19 @@ public class UserService {
             throw new CustomException(ErrorCode.PREFERENCE_ALREADY_EXISTS);
         }
 
-        userPreferenceRepository.save(
-                UserPreference.builder()
-                        .user(user)
-                        .bakeryTypes(request.getBakeryTypes())
-                        .bakeryPersonalities(request.getBakeryPersonalities())
-                        .bakeryUseTypes(request.getBakeryUseTypes())
-                        .waitingTolerance(request.getWaitingTolerance())
-                        .build());
+        try {
+            userPreferenceRepository.save(
+                    UserPreference.builder()
+                            .user(user)
+                            .bakeryTypes(request.getBakeryTypes())
+                            .bakeryPersonalities(request.getBakeryPersonalities())
+                            .bakeryUseTypes(request.getBakeryUseTypes())
+                            .waitingTolerance(request.getWaitingTolerance())
+                            .build());
+        } catch (DataIntegrityViolationException e) {
+            // 동시에 두 번 저장하면 user_id 유니크 충돌 → 처리되지 않으면 500
+            throw new CustomException(ErrorCode.PREFERENCE_ALREADY_EXISTS);
+        }
     }
 
     @Transactional(readOnly = true)
