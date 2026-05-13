@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
+import { clearSessionTokens, logout } from "@/api/auth";
 import { getMyProfile } from "@/api/user";
-import { getDisplayNameForLoginId, getUserProfile, saveUserProfile } from "@/lib/userProfileCache";
+import { getErrorMessage } from "@/api/types/common";
+import {
+  clearUserProfile,
+  getDisplayNameForLoginId,
+  getUserProfile,
+  saveUserProfile,
+} from "@/lib/userProfileCache";
 import { AppTopBar } from "@/components/common";
 import MyLevelCard from "@/components/domain/my/MyLevelCard";
 import MyMenuSection from "@/components/domain/my/MyMenuSection";
@@ -13,6 +20,7 @@ import { useNavigate } from "@tanstack/react-router";
 export default function MyPage() {
   const navigate = useNavigate();
   const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [profile, setProfile] = useState(() => getUserProfile());
   const displayName = useMemo(() => {
     if (profile?.name?.trim()) return profile.name.trim();
@@ -21,6 +29,22 @@ export default function MyPage() {
   }, [profile]);
   const displayEmail = profile?.email?.trim() || "";
   const goToAccountSettings = () => navigate({ to: "/account-settings" });
+
+  const handleLogout = () => {
+    if (isLoggingOut) return;
+    if (!window.confirm("로그아웃할까요?")) return;
+    void (async () => {
+      setIsLoggingOut(true);
+      try {
+        await logout();
+      } catch (e) {
+        window.alert(getErrorMessage(e));
+      }
+      clearSessionTokens();
+      clearUserProfile();
+      void navigate({ to: "/" });
+    })();
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -98,9 +122,11 @@ export default function MyPage() {
 
           <button
             type="button"
-            className="mt-[20px] self-center font-pretendard typo-t4medium text-[#868b94] underline decoration-[#868b94] underline-offset-4"
+            disabled={isLoggingOut}
+            className="mt-[20px] self-center font-pretendard typo-t4medium text-[#868b94] underline decoration-[#868b94] underline-offset-4 disabled:opacity-50"
+            onClick={handleLogout}
           >
-            로그아웃
+            {isLoggingOut ? "로그아웃 중…" : "로그아웃"}
           </button>
         </div>
       </div>
