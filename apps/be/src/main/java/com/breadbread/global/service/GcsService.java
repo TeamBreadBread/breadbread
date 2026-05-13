@@ -29,12 +29,12 @@ public class GcsService {
 
     /** {@link com.breadbread.global.dto.UploadFolder} 과 동일한 업로드 루트만 허용 */
     private static final Set<String> ALLOWED_OBJECT_PREFIXES =
-            Set.of("bakeries", "breads", "reviews", "profiles");
+            Set.of("bakeries", "breads", "reviews", "posts", "profiles");
 
     /** 업로드 시 생성하는 객체 키 형식만 삭제에 허용합니다. (CodeQL 경로/URL taint 완화) */
     private static final Pattern ALLOWED_OBJECT_KEY =
             Pattern.compile(
-                    "^(bakeries|breads|reviews|profiles)/[0-9a-fA-F-]{36}\\.(jpg|png|webp)$");
+                    "^(bakeries|breads|reviews|posts|profiles)/[0-9a-fA-F-]{36}\\.(jpg|png|webp)$");
 
     private final Storage storage;
 
