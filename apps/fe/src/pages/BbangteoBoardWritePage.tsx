@@ -251,7 +251,7 @@ const BbangteoBoardWritePage = ({ editPostId }: BbangteoBoardWritePageProps) => 
     setIsSubmitting(true);
     try {
       const files = selectedImages.map((item) => item.file);
-      const uploaded = files.length > 0 ? await uploadImages(files) : [];
+      const uploaded = files.length > 0 ? await uploadImages(files, "posts") : [];
       const imageUrls = [...remoteImageUrls, ...uploaded].slice(0, MAX_IMAGES);
 
       if (isEdit && editPostId) {

@@ -8,7 +8,7 @@ import {
   likeBakery,
   unlikeBakery,
 } from "@/api/bakery";
-import type { BakeryReview } from "@/api/types/bakery";
+import { isBakeryReviewAuthor, type BakeryReview } from "@/api/types/bakery";
 import { getErrorMessage } from "@/api/types/common";
 import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import mapIcon from "@/assets/icons/mapIcon.svg";
@@ -23,6 +23,7 @@ import {
 import MobileFrame from "@/components/layout/MobileFrame";
 import { ToastBanner } from "@/components/common";
 import { useBakeryDetail } from "@/hooks/useBakeryDetail";
+import { getUserProfile } from "@/lib/userProfileCache";
 import type { BakeryDetail, BakeryDetailBread } from "@/api/types/bakery";
 import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import { formatInstantInSeoul } from "@/utils/formatSeoulDateTime";
@@ -376,10 +377,12 @@ const MenuList = ({ menus }: { menus: MenuRow[] }) => (
 
 const ReviewCard = ({
   review,
+  viewerUserId,
   onEdit,
   onDelete,
 }: {
   review: BakeryReview;
+  viewerUserId?: number | null;
   onEdit: () => void;
   onDelete: () => void;
 }) => {
@@ -416,22 +419,24 @@ const ReviewCard = ({
                 <span>{time}</span>
               </div>
             </div>
-            <div className="flex shrink-0 gap-[10px]">
-              <button
-                type="button"
-                className="text-[12px] font-medium text-[#555d6d] underline underline-offset-2"
-                onClick={onEdit}
-              >
-                수정
-              </button>
-              <button
-                type="button"
-                className="text-[12px] font-medium text-red-600 underline underline-offset-2"
-                onClick={onDelete}
-              >
-                삭제
-              </button>
-            </div>
+            {isBakeryReviewAuthor(review, viewerUserId) ? (
+              <div className="flex shrink-0 gap-[10px]">
+                <button
+                  type="button"
+                  className="text-[12px] font-medium text-[#555d6d] underline underline-offset-2"
+                  onClick={onEdit}
+                >
+                  수정
+                </button>
+                <button
+                  type="button"
+                  className="text-[12px] font-medium text-red-600 underline underline-offset-2"
+                  onClick={onDelete}
+                >
+                  삭제
+                </button>
+              </div>
+            ) : null}
           </div>
           <p className="text-[14px] leading-[19px] text-[#1a1c20]">{review.content}</p>
         </div>
@@ -460,6 +465,7 @@ const ReviewList = ({
   onRetry,
   onEditReview,
   onDeleteReview,
+  viewerUserId,
   hasNext,
   loadingMore,
   onLoadMore,
@@ -472,6 +478,7 @@ const ReviewList = ({
   onRetry: () => void;
   onEditReview: (review: BakeryReview) => void;
   onDeleteReview: (review: BakeryReview) => void;
+  viewerUserId?: number | null;
   hasNext: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
@@ -504,6 +511,7 @@ const ReviewList = ({
         <div key={review.id} className="flex flex-col gap-[20px]">
           <ReviewCard
             review={review}
+            viewerUserId={viewerUserId}
             onEdit={() => onEditReview(review)}
             onDelete={() => onDeleteReview(review)}
           />
@@ -544,6 +552,7 @@ const BakeryTabSection = ({
   const [reviewsLoadingMore, setReviewsLoadingMore] = useState(false);
   const [reviewsError, setReviewsError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const viewerUserId = getUserProfile()?.userId;
 
   const loadReviewsFirstPage = useCallback(async () => {
     if (bakeryId === undefined) return;
@@ -653,6 +662,7 @@ const BakeryTabSection = ({
             onRetry={loadReviewsFirstPage}
             onEditReview={handleEditReview}
             onDeleteReview={handleDeleteReview}
+            viewerUserId={viewerUserId}
             hasNext={hasNextReviews}
             loadingMore={reviewsLoadingMore}
             onLoadMore={loadReviewsNextPage}
