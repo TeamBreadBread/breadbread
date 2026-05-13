@@ -76,6 +76,12 @@ public class CourseService {
                                 courseLikeRepository.findLikedCourseIdsByUserId(courseIds, userId))
                         : new HashSet<>();
 
+        HashSet<Long> savedCourseIds =
+                userId != null
+                        ? new HashSet<>(
+                                routeRepository.findLikedCourseIdsByUserId(courseIds, userId))
+                        : new HashSet<>();
+
         List<CourseSummaryResponse> summaries =
                 content.stream()
                         .map(
@@ -97,6 +103,7 @@ public class CourseService {
                                             course,
                                             likeCountMap.getOrDefault(course.getId(), 0),
                                             likedCourseIds.contains(course.getId()),
+                                            savedCourseIds.contains(course.getId()),
                                             bakeries);
                                 })
                         .toList();
@@ -151,7 +158,8 @@ public class CourseService {
         int likeCount = (int) courseLikeRepository.countByCourse(course);
         boolean liked =
                 userId != null && courseLikeRepository.existsByCourseIdAndUserId(id, userId);
-        return CourseDetailResponse.from(course, likeCount, liked, bakeries);
+        boolean isSaved = userId != null && routeRepository.existsByCourseIdAndUserId(id, userId);
+        return CourseDetailResponse.from(course, likeCount, liked, isSaved, bakeries);
     }
 
     @Transactional

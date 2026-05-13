@@ -162,11 +162,13 @@ public class BakeryController {
     })
     @GetMapping("/{bakeryId}/reviews")
     public ApiResponse<ReviewListResponse> getReviews(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long bakeryId,
             @RequestParam(defaultValue = "LATEST") ReviewSortType sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ApiResponse.ok(bakeryService.getReviews(bakeryId, sort, page, size));
+        Long userId = userDetails != null ? userDetails.getId() : null;
+        return ApiResponse.ok(bakeryService.getReviews(bakeryId, sort, page, size, userId));
     }
 
     @Operation(summary = "빵집 리뷰 등록")

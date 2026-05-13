@@ -15,8 +15,13 @@ public class ReviewResponse {
     private String content;
     private List<String> imageUrls;
     private LocalDateTime createdAt;
+    private boolean isAuthor;
 
-    public static ReviewResponse from(Review review) {
+    public static ReviewResponse from(Review review, Long currentUserId) {
+        boolean isAuthor =
+                currentUserId != null
+                        && review.getUser() != null
+                        && review.getUser().getId().equals(currentUserId);
         return ReviewResponse.builder()
                 .id(review.getId())
                 .authorNickname(review.getUser() != null ? review.getUser().getNickname() : null)
@@ -24,6 +29,7 @@ public class ReviewResponse {
                 .content(review.getContent())
                 .imageUrls(review.getImageUrls())
                 .createdAt(review.getCreatedAt())
+                .isAuthor(isAuthor)
                 .build();
     }
 }

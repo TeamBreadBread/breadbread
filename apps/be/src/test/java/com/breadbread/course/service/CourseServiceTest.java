@@ -99,6 +99,7 @@ class CourseServiceTest {
                 .thenReturn(Collections.singletonList(new Object[] {1L, 3L}));
         when(courseLikeRepository.findLikedCourseIdsByUserId(List.of(1L), 99L))
                 .thenReturn(List.of(1L));
+        when(routeRepository.findLikedCourseIdsByUserId(List.of(1L), 99L)).thenReturn(List.of(1L));
 
         CourseListResponse result =
                 courseService.search(CourseSearch.builder().build(), pageable, 99L);
@@ -107,6 +108,7 @@ class CourseServiceTest {
         assertThat(result.getCourses()).hasSize(1);
         assertThat(result.getCourses().get(0).getLikeCount()).isEqualTo(3);
         assertThat(result.getCourses().get(0).isLiked()).isTrue();
+        assertThat(result.getCourses().get(0).isSaved()).isTrue();
         assertThat(result.getCourses().get(0).getBakeries().get(0).getThumbnailUrl())
                 .isEqualTo("thumb.jpg");
     }
@@ -125,7 +127,9 @@ class CourseServiceTest {
                 courseService.search(CourseSearch.builder().build(), pageable, null);
 
         assertThat(result.getCourses().get(0).isLiked()).isFalse();
+        assertThat(result.getCourses().get(0).isSaved()).isFalse();
         verify(courseLikeRepository, never()).findLikedCourseIdsByUserId(anyList(), any());
+        verify(routeRepository, never()).findLikedCourseIdsByUserId(anyList(), any());
     }
 
     @Test
@@ -173,11 +177,13 @@ class CourseServiceTest {
                 .thenReturn(List.of());
         when(courseLikeRepository.countByCourse(course)).thenReturn(0L);
         when(courseLikeRepository.existsByCourseIdAndUserId(7L, 1L)).thenReturn(false);
+        when(routeRepository.existsByCourseIdAndUserId(7L, 1L)).thenReturn(true);
 
         var detail = courseService.findOne(7L, 1L, false);
 
         assertThat(detail.getId()).isEqualTo(7L);
         assertThat(detail.getBakeries()).hasSize(1);
+        assertThat(detail.isSaved()).isTrue();
     }
 
     @Test
@@ -192,10 +198,12 @@ class CourseServiceTest {
                 .thenReturn(List.of());
         when(courseLikeRepository.countByCourse(course)).thenReturn(1L);
         when(courseLikeRepository.existsByCourseIdAndUserId(8L, 999L)).thenReturn(false);
+        when(routeRepository.existsByCourseIdAndUserId(8L, 999L)).thenReturn(false);
 
         var detail = courseService.findOne(8L, 999L, true);
 
         assertThat(detail.getLikeCount()).isEqualTo(1);
+        assertThat(detail.isSaved()).isFalse();
     }
 
     @Test

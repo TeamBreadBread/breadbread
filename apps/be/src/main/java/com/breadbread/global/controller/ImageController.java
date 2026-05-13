@@ -26,7 +26,7 @@ public class ImageController {
     @Operation(
             summary = "이미지 선업로드",
             description =
-                    "폼 제출 전 이미지를 미리 업로드하고 URL 목록을 반환. folder: bakeries, breads, reviews, profiles")
+                    "폼 제출 전 이미지를 미리 업로드하고 URL 목록을 반환. folder: bakeries, breads, reviews, posts, profiles")
     @RequestBody(content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<List<String>> upload(
