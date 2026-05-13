@@ -5,7 +5,7 @@ import { parseBakeryListEntryFrom, parseCurationPinsParam } from "@/utils/bakery
 export const Route = createFileRoute("/bbangteo-bakery-list")({
   validateSearch: (search: Record<string, unknown>) => ({
     from: parseBakeryListEntryFrom(search.from),
-    curationPins: parseCurationPinsParam(search.curationPins),
+    curationPins: parseCurationPinsParam(search.curationPins) ?? [],
   }),
   component: BbangteoBakeryListRoute,
 });

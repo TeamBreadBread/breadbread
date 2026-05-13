@@ -35,7 +35,7 @@ const BbangteoPage = () => {
   const navigate = useNavigate();
 
   const goToBakeryList = () => {
-    navigate({ to: "/bbangteo-bakery-list", search: { from: "bbangteo" } });
+    navigate({ to: "/bbangteo-bakery-list", search: { from: "bbangteo", curationPins: [] } });
   };
   const goToBoardList = () => {
     navigate({ to: "/bbangteo-board" });

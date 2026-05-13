@@ -64,7 +64,7 @@ const LoginPage = () => {
         const nextBoard = tryPostLoginRedirectPath(redirect);
         if (nextBoard) {
           if (nextBoard === "/bbangteo-board-write") {
-            navigate({ to: nextBoard, search: { editPostId: undefined } });
+            navigate({ to: nextBoard, search: { editId: 0 } });
           } else {
             navigate({ to: nextBoard });
           }
@@ -79,7 +79,7 @@ const LoginPage = () => {
         const nextBoard = tryPostLoginRedirectPath(redirect);
         if (nextBoard) {
           if (nextBoard === "/bbangteo-board-write") {
-            navigate({ to: nextBoard, search: { editPostId: undefined } });
+            navigate({ to: nextBoard, search: { editId: 0 } });
           } else {
             navigate({ to: nextBoard });
           }

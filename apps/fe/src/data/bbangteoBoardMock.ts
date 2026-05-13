@@ -1,4 +1,4 @@
-import type { CommentItem, PostDetail, PostType } from "@/api/posts";
+import type { CommentResponse, PostDetail, PostType } from "@/api/posts";
 
 export type BbangteoBoardListRow = {
   id: number;
@@ -303,10 +303,10 @@ function buildMockCommentsForPost(
   postId: number,
   commentCount: number,
   postIso: string,
-): CommentItem[] {
+): CommentResponse[] {
   const n = clampMockCommentCount(commentCount);
   const postMs = new Date(postIso).getTime();
-  const rows: CommentItem[] = [];
+  const rows: CommentResponse[] = [];
   for (let i = 0; i < n; i++) {
     const createdAt = new Date(postMs + (i + 1) * 600_000).toISOString();
     rows.push({

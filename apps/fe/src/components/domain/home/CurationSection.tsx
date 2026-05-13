@@ -17,7 +17,7 @@ const CurationSection = () => {
       to: "/bbangteo-bakery-list",
       search: {
         from: "home" as const,
-        curationPins: displayedPinIds.length > 0 ? displayedPinIds : undefined,
+        curationPins: displayedPinIds.length > 0 ? displayedPinIds : [],
       },
     });
   };

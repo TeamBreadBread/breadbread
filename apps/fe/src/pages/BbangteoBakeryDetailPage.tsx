@@ -100,7 +100,7 @@ const BackHeader = ({
     }
     void navigate({
       to: "/bbangteo-bakery-list",
-      search: { from: listEntryFrom },
+      search: { from: listEntryFrom, curationPins: [] },
     });
   };
 
@@ -691,7 +691,7 @@ const MissingBakeryId = ({
           }
           void navigate({
             to: "/bbangteo-bakery-list",
-            search: { from: listEntryFrom },
+            search: { from: listEntryFrom, curationPins: [] },
           });
         }}
       >
@@ -802,7 +802,7 @@ const BbangteoBakeryDetailPage = ({
                   }
                   void navigate({
                     to: "/bbangteo-bakery-list",
-                    search: { from: listEntryFrom },
+                    search: { from: listEntryFrom, curationPins: [] },
                   });
                 }}
               >
