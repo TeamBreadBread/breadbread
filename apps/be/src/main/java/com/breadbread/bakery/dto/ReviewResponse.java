@@ -40,8 +40,8 @@ public class ReviewResponse {
     }
 
     /**
-     * 마이페이지와 동일한 식별감부: 회원 이름 → 로그인 아이디 → 내부 자동 생성 닉네임(바삭한스콘7810 형태).
-     * 가입 시 {@code nickname}만 자동 부여되는 경우 로그인 아이디보다 우선 노출하면 안 됨.
+     * 마이페이지와 동일한 식별감부: 회원 이름 → 로그인 아이디 → 내부 자동 생성 닉네임(바삭한스콘7810 형태). 가입 시 {@code nickname}만 자동 부여되는
+     * 경우 로그인 아이디보다 우선 노출하면 안 됨.
      */
     private static String authorDisplayName(User user) {
         if (user == null) {

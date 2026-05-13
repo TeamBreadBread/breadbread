@@ -11,6 +11,5 @@ public class PostSearch {
     List<PostType> postTypes;
     String keyword;
 
-    @Builder.Default
-    private PostListSort sort = PostListSort.LATEST;
+    @Builder.Default private PostListSort sort = PostListSort.LATEST;
 }

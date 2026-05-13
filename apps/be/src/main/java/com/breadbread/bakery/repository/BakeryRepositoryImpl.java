@@ -115,8 +115,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
         BooleanExpression byName = bakery.name.contains(keyword);
         BooleanExpression byAddress =
                 bakery.address.isNotNull().and(bakery.address.contains(keyword));
-        BooleanExpression byRegion =
-                bakery.region.isNotNull().and(bakery.region.contains(keyword));
+        BooleanExpression byRegion = bakery.region.isNotNull().and(bakery.region.contains(keyword));
         return byName.or(byAddress).or(byRegion);
     }
 
