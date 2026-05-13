@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
-import { clearSessionTokens, login, setSessionTokens } from "@/api/auth";
+import { login, setSessionTokens } from "@/api/auth";
 import { getErrorMessage } from "@/api/types/common";
 import { hasUserPreferenceSaved } from "@/api/user";
 import { seedProfileCacheThenRefreshFromServer } from "@/lib/userProfileCache";
@@ -18,10 +18,6 @@ const credentialInputClassName = cn(
   "hover:border-gray-300 focus:border-gray-300 focus:outline-none",
   "text-size-4 leading-t5 tracking-1 text-gray-1000 placeholder:text-gray-500",
 );
-
-/** 데모·QA용 — 서버 로그인 없이 다음 화면으로만 이동 (보호 API는 토큰 없으면 401) */
-const DEMO_LOGIN_ID = "asdf123";
-const DEMO_PASSWORD = "asdf123*";
 
 const loginRouteApi = getRouteApi("/login");
 
@@ -47,12 +43,6 @@ const LoginPage = () => {
   const handleLogin = async () => {
     if (!isLoginEnabled || isSubmitting) return;
     setLoginError("");
-
-    if (userId.trim() === DEMO_LOGIN_ID && password === DEMO_PASSWORD) {
-      clearSessionTokens();
-      navigate({ to: "/user-preference", search: { mode: "create" } });
-      return;
-    }
 
     try {
       setIsSubmitting(true);
