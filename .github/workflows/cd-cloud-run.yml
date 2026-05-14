@@ -25,6 +25,7 @@ jobs:
         with:
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          token_format: "access_token"
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -56,31 +57,32 @@ jobs:
             --cpu-boost
           env_vars: |
             SPRING_PROFILES_ACTIVE=prod
-            GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
+            GCP_PROJECT_ID=${{ env.PROJECT_ID }}
             GCP_REGION=${{ env.REGION }}
             CLOUD_SQL_INSTANCE=${{ secrets.CLOUD_SQL_INSTANCE }}
             GCS_BUCKET=${{ secrets.GCS_BUCKET }}
-            DB_NAME=${{ secrets.DB_NAME }}
-            DB_USERNAME=${{ secrets.DB_USERNAME }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            REDIS_HOST=${{ secrets.REDIS_HOST }}
             REDIS_PORT=${{ secrets.REDIS_PORT }}
-            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
             JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}
             JWT_REFRESH_EXPIRES_IN=${{ secrets.JWT_REFRESH_EXPIRES_IN }}
-            COOLSMS_API_KEY=${{ secrets.COOLSMS_API_KEY }}
-            COOLSMS_API_SECRET=${{ secrets.COOLSMS_API_SECRET }}
-            COOLSMS_SENDER=${{ secrets.COOLSMS_SENDER }}
-            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-            NAVER_CLIENT_ID=${{ secrets.NAVER_CLIENT_ID }}
-            NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}
-            KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
-            KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
-            AI_COURSE_WEBHOOK_URL=${{ secrets.AI_COURSE_WEBHOOK_URL }}
-            PORTONE_API_SECRET=${{ secrets.PORTONE_API_SECRET }}
-            PORTONE_STORE_ID=${{ secrets.PORTONE_STORE_ID }}
-            PORTONE_CHANNEL_KEY=${{ secrets.PORTONE_CHANNEL_KEY }}
-            PORTONE_WEBHOOK_SECRET=${{ secrets.PORTONE_WEBHOOK_SECRET }}
+          secrets: |
+            DB_NAME=DB_NAME:latest
+            DB_USERNAME=DB_USERNAME:latest
+            DB_PASSWORD=DB_PASSWORD:latest
+            REDIS_HOST=REDIS_HOST:latest
+            REDIS_PASSWORD=REDIS_PASSWORD:latest
+            JWT_SECRET=JWT_SECRET:latest
+            JWT_REFRESH_SECRET=JWT_REFRESH_SECRET:latest
+            COOLSMS_API_KEY=COOLSMS_API_KEY:latest
+            COOLSMS_API_SECRET=COOLSMS_API_SECRET:latest
+            COOLSMS_SENDER=COOLSMS_SENDER:latest
+            GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest
+            GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest
+            NAVER_CLIENT_ID=NAVER_CLIENT_ID:latest
+            NAVER_CLIENT_SECRET=NAVER_CLIENT_SECRET:latest
+            KAKAO_CLIENT_ID=KAKAO_CLIENT_ID:latest
+            KAKAO_CLIENT_SECRET=KAKAO_CLIENT_SECRET:latest
+            AI_COURSE_WEBHOOK_URL=AI_COURSE_WEBHOOK_URL:latest
+            PORTONE_API_SECRET=PORTONE_API_SECRET:latest
+            PORTONE_STORE_ID=PORTONE_STORE_ID:latest
+            PORTONE_CHANNEL_KEY=PORTONE_CHANNEL_KEY:latest
+            PORTONE_WEBHOOK_SECRET=PORTONE_WEBHOOK_SECRET:latest
