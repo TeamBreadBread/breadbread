@@ -3,17 +3,25 @@ package com.breadbread.user.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.breadbread.auth.entity.VerificationPurpose;
+import com.breadbread.auth.redis.PhoneVerificationCache;
+import com.breadbread.auth.service.PhoneVerificationRedisService;
+import com.breadbread.auth.service.TokenService;
 import com.breadbread.bakery.entity.BakeryPersonality;
 import com.breadbread.bakery.entity.BakeryType;
 import com.breadbread.bakery.entity.BakeryUseType;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.user.dto.ChangePasswordRequest;
+import com.breadbread.user.dto.ChangePhoneRequest;
 import com.breadbread.user.dto.CreatePreferenceRequest;
 import com.breadbread.user.dto.UpdatePreferenceRequest;
+import com.breadbread.user.dto.UpdateProfileRequest;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserPreference;
 import com.breadbread.user.entity.UserRole;
@@ -28,6 +36,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,8 +45,13 @@ class UserServiceTest {
 
     @Mock private UserRepository userRepository;
     @Mock private UserPreferenceRepository userPreferenceRepository;
+    @Mock private PasswordEncoder passwordEncoder;
+    @Mock private PhoneVerificationRedisService phoneVerificationRedisService;
+    @Mock private TokenService tokenService;
 
     @InjectMocks private UserService userService;
+
+    // ───────────────────────────── getUserProfile ─────────────────────────────
 
     @Test
     void getUserProfile_throws_whenUserMissing() {
@@ -57,7 +72,349 @@ class UserServiceTest {
 
         assertThat(profile.getLoginId()).isEqualTo("u5");
         assertThat(profile.getNickname()).isEqualTo("nick5");
+        assertThat(profile.getGrade()).isNotNull();
+        assertThat(profile.getGradeDescription()).isNotNull();
     }
+
+    @Test
+    void getUserProfile_returns_remainingCountToNextGrade_whenUsageCountZero() {
+        User user = user(5L);
+        when(userRepository.findById(5L)).thenReturn(Optional.of(user));
+
+        var profile = userService.getUserProfile(5L);
+
+        // MORNING_BREAD(0) → CREAM_BREAD(3), usageCount=0 이므로 3 남음
+        assertThat(profile.getRemainingCountToNextGrade()).isEqualTo(3);
+    }
+
+    @Test
+    void getUserProfile_socialUser_true_whenPasswordNull() {
+        User user = socialUser(10L);
+        when(userRepository.findById(10L)).thenReturn(Optional.of(user));
+
+        var profile = userService.getUserProfile(10L);
+
+        assertThat(profile.isSocialUser()).isTrue();
+    }
+
+    // ───────────────────────────── checkNicknameAvailable ─────────────────────────────
+
+    @Test
+    void checkNicknameAvailable_returnsTrue_whenNicknameNotTaken() {
+        when(userRepository.existsByNicknameAndIdNot("newNick", 1L)).thenReturn(false);
+
+        assertThat(userService.checkNicknameAvailable("newNick", 1L)).isTrue();
+    }
+
+    @Test
+    void checkNicknameAvailable_returnsFalse_whenNicknameTaken() {
+        when(userRepository.existsByNicknameAndIdNot("takenNick", 1L)).thenReturn(true);
+
+        assertThat(userService.checkNicknameAvailable("takenNick", 1L)).isFalse();
+    }
+
+    // ───────────────────────────── updateProfile ─────────────────────────────
+
+    @Test
+    void updateProfile_throws_whenUserMissing() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.updateProfile(1L, new UpdateProfileRequest()))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+    }
+
+    @Test
+    void updateProfile_throws_whenNicknameDuplicated() {
+        User user = user(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        UpdateProfileRequest request = new UpdateProfileRequest();
+        ReflectionTestUtils.setField(request, "nickname", "takenNick");
+        when(userRepository.existsByNicknameAndIdNot("takenNick", 1L)).thenReturn(true);
+
+        assertThatThrownBy(() -> userService.updateProfile(1L, request))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.DUPLICATE_NICKNAME);
+    }
+
+    @Test
+    void updateProfile_updates_nickname_whenAvailable() {
+        User user = user(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        UpdateProfileRequest request = new UpdateProfileRequest();
+        ReflectionTestUtils.setField(request, "nickname", "newNick");
+        when(userRepository.existsByNicknameAndIdNot("newNick", 1L)).thenReturn(false);
+
+        userService.updateProfile(1L, request);
+
+        assertThat(user.getNickname()).isEqualTo("newNick");
+        verify(userRepository).saveAndFlush(user);
+    }
+
+    @Test
+    void updateProfile_throws_DUPLICATE_NICKNAME_whenSaveAndFlushFails() {
+        User user = user(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        UpdateProfileRequest request = new UpdateProfileRequest();
+        ReflectionTestUtils.setField(request, "nickname", "newNick");
+        when(userRepository.existsByNicknameAndIdNot("newNick", 1L)).thenReturn(false);
+        doThrow(new DataIntegrityViolationException("unique constraint"))
+                .when(userRepository)
+                .saveAndFlush(user);
+
+        assertThatThrownBy(() -> userService.updateProfile(1L, request))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.DUPLICATE_NICKNAME);
+    }
+
+    @Test
+    void updateProfile_skipsNicknameCheck_whenNicknameSameAsCurrent() {
+        User user = user(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        UpdateProfileRequest request = new UpdateProfileRequest();
+        ReflectionTestUtils.setField(request, "nickname", user.getNickname());
+
+        userService.updateProfile(1L, request);
+
+        verify(userRepository, never()).existsByNicknameAndIdNot(any(), any());
+    }
+
+    @Test
+    void updateProfile_skipsNicknameCheck_whenNicknameNull() {
+        User user = user(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        UpdateProfileRequest request = new UpdateProfileRequest();
+        ReflectionTestUtils.setField(request, "email", "new@test.com");
+
+        userService.updateProfile(1L, request);
+
+        verify(userRepository, never()).existsByNicknameAndIdNot(any(), any());
+        assertThat(user.getEmail()).isEqualTo("new@test.com");
+    }
+
+    // ───────────────────────────── changePhone ─────────────────────────────
+
+    @Test
+    void changePhone_throws_whenUserMissing() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(
+                        () ->
+                                userService.changePhone(
+                                        1L, changePhoneRequest("01011112222", "token")))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+    }
+
+    @Test
+    void changePhone_throws_whenVerificationNotVerified() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
+        PhoneVerificationCache unverified =
+                PhoneVerificationCache.builder()
+                        .phone("01011112222")
+                        .purpose(VerificationPurpose.CHANGE_PHONE)
+                        .verified(false)
+                        .verificationToken("token")
+                        .code("123456")
+                        .build();
+        when(phoneVerificationRedisService.findByVerificationToken("token"))
+                .thenReturn(Optional.of(unverified));
+
+        assertThatThrownBy(
+                        () ->
+                                userService.changePhone(
+                                        1L, changePhoneRequest("01011112222", "token")))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.VERIFICATION_NOT_FOUND);
+    }
+
+    @Test
+    void changePhone_throws_whenVerificationNotFound() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
+        when(phoneVerificationRedisService.findByVerificationToken("token"))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(
+                        () ->
+                                userService.changePhone(
+                                        1L, changePhoneRequest("01011112222", "token")))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.VERIFICATION_NOT_FOUND);
+    }
+
+    @Test
+    void changePhone_throws_whenPurposeMismatch() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
+        when(phoneVerificationRedisService.findByVerificationToken("token"))
+                .thenReturn(
+                        Optional.of(
+                                verifiedCache("01011112222", VerificationPurpose.SIGNUP, "token")));
+
+        assertThatThrownBy(
+                        () ->
+                                userService.changePhone(
+                                        1L, changePhoneRequest("01011112222", "token")))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.VERIFICATION_PURPOSE_MISMATCH);
+    }
+
+    @Test
+    void changePhone_throws_whenPhoneMismatch() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
+        when(phoneVerificationRedisService.findByVerificationToken("token"))
+                .thenReturn(
+                        Optional.of(
+                                verifiedCache(
+                                        "01099999999", VerificationPurpose.CHANGE_PHONE, "token")));
+
+        assertThatThrownBy(
+                        () ->
+                                userService.changePhone(
+                                        1L, changePhoneRequest("01011112222", "token")))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.PHONE_VERIFICATION_MISMATCH);
+    }
+
+    @Test
+    void changePhone_throws_whenPhoneDuplicated() {
+        User user = user(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(phoneVerificationRedisService.findByVerificationToken("token"))
+                .thenReturn(
+                        Optional.of(
+                                verifiedCache(
+                                        "01011112222", VerificationPurpose.CHANGE_PHONE, "token")));
+        when(userRepository.existsByPhone("01011112222")).thenReturn(true);
+
+        assertThatThrownBy(
+                        () ->
+                                userService.changePhone(
+                                        1L, changePhoneRequest("01011112222", "token")))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.DUPLICATE_PHONE);
+    }
+
+    @Test
+    void changePhone_updates_whenValid() {
+        User user = user(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(phoneVerificationRedisService.findByVerificationToken("token"))
+                .thenReturn(
+                        Optional.of(
+                                verifiedCache(
+                                        "01011112222", VerificationPurpose.CHANGE_PHONE, "token")));
+        when(userRepository.existsByPhone("01011112222")).thenReturn(false);
+
+        userService.changePhone(1L, changePhoneRequest("01011112222", "token"));
+
+        assertThat(user.getPhone()).isEqualTo("01011112222");
+        verify(phoneVerificationRedisService).deleteByVerificationToken("token");
+    }
+
+    @Test
+    void changePhone_updates_whenSamePhoneReRegistered() {
+        User user = user(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(phoneVerificationRedisService.findByVerificationToken("token"))
+                .thenReturn(
+                        Optional.of(
+                                verifiedCache(
+                                        user.getPhone(),
+                                        VerificationPurpose.CHANGE_PHONE,
+                                        "token")));
+        when(userRepository.existsByPhone(user.getPhone())).thenReturn(true);
+
+        userService.changePhone(1L, changePhoneRequest(user.getPhone(), "token"));
+
+        assertThat(user.getPhone()).isEqualTo("01000000001");
+        verify(phoneVerificationRedisService).deleteByVerificationToken("token");
+    }
+
+    // ───────────────────────────── changePassword ─────────────────────────────
+
+    @Test
+    void changePassword_throws_whenUserMissing() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(
+                        () ->
+                                userService.changePassword(
+                                        1L, changePasswordRequest("old", "new", "new")))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+    }
+
+    @Test
+    void changePassword_throws_whenSocialUser() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(socialUser(1L)));
+
+        assertThatThrownBy(
+                        () ->
+                                userService.changePassword(
+                                        1L, changePasswordRequest("old", "new", "new")))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.SOCIAL_ACCOUNT_NO_PASSWORD);
+    }
+
+    @Test
+    void changePassword_throws_whenCurrentPasswordInvalid() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
+        when(passwordEncoder.matches("wrongPw", "p")).thenReturn(false);
+
+        assertThatThrownBy(
+                        () ->
+                                userService.changePassword(
+                                        1L, changePasswordRequest("wrongPw", "newPw1!", "newPw1!")))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.INVALID_PASSWORD);
+    }
+
+    @Test
+    void changePassword_throws_whenConfirmMismatch() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
+        when(passwordEncoder.matches("oldPw", "p")).thenReturn(true);
+
+        assertThatThrownBy(
+                        () ->
+                                userService.changePassword(
+                                        1L,
+                                        changePasswordRequest("oldPw", "newPw1!", "different!")))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.PASSWORD_MISMATCH);
+    }
+
+    @Test
+    void changePassword_updates_andInvalidatesToken_whenValid() {
+        User user = user(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("oldPw", "p")).thenReturn(true);
+        when(passwordEncoder.encode("newPw1!")).thenReturn("encodedNew");
+
+        userService.changePassword(1L, changePasswordRequest("oldPw", "newPw1!", "newPw1!"));
+
+        assertThat(user.getPassword()).isEqualTo("encodedNew");
+        verify(tokenService).invalidateByUserId(1L);
+    }
+
+    // ───────────────────────────── savePreference ─────────────────────────────
 
     @Test
     void savePreference_throws_whenUserMissing() {
@@ -100,6 +457,8 @@ class UserServiceTest {
         assertThat(captor.getValue().getWaitingTolerance()).isEqualTo(WaitingTolerance.UNDER_20);
     }
 
+    // ───────────────────────────── getPreference / updatePreference ─────────────────────────────
+
     @Test
     void getPreference_throws_whenMissing() {
         when(userPreferenceRepository.findByUserId(3L)).thenReturn(Optional.empty());
@@ -118,6 +477,31 @@ class UserServiceTest {
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.PREFERENCE_NOT_FOUND);
+    }
+
+    @Test
+    void updatePreference_keepsExistingFields_whenRequestFieldsNull() {
+        User user = user(4L);
+        UserPreference pref =
+                UserPreference.builder()
+                        .bakeryTypes(List.of(BakeryType.CLASSIC))
+                        .bakeryPersonalities(List.of(BakeryPersonality.HIDDEN_GEM))
+                        .bakeryUseTypes(List.of(BakeryUseType.TAKEOUT))
+                        .waitingTolerance(WaitingTolerance.NO_WAIT)
+                        .user(user)
+                        .build();
+        when(userPreferenceRepository.findByUserId(4L)).thenReturn(Optional.of(pref));
+
+        UpdatePreferenceRequest request = new UpdatePreferenceRequest();
+        ReflectionTestUtils.setField(request, "waitingTolerance", WaitingTolerance.ANYTIME);
+        // bakeryTypes, bakeryPersonalities, bakeryUseTypes는 null → 기존 값 유지
+
+        userService.updatePreference(4L, request);
+
+        assertThat(pref.getWaitingTolerance()).isEqualTo(WaitingTolerance.ANYTIME);
+        assertThat(pref.getBakeryTypes()).containsExactly(BakeryType.CLASSIC);
+        assertThat(pref.getBakeryMoods()).containsExactly(BakeryPersonality.HIDDEN_GEM);
+        assertThat(pref.getBakeryUseTypes()).containsExactly(BakeryUseType.TAKEOUT);
     }
 
     @Test
@@ -143,6 +527,42 @@ class UserServiceTest {
         assertThat(pref.getBakeryTypes()).containsExactly(BakeryType.PLAIN);
     }
 
+    // ───────────────────────────── helpers ─────────────────────────────
+
+    private static User user(long id) {
+        User user =
+                User.builder()
+                        .loginId("u" + id)
+                        .password("p")
+                        .name("n" + id)
+                        .nickname("nick" + id)
+                        .email(id + "@t.com")
+                        .phone("0100000" + String.format("%04d", id))
+                        .role(UserRole.ROLE_USER)
+                        .termsAgreed(true)
+                        .privacyAgreed(true)
+                        .build();
+        ReflectionTestUtils.setField(user, "id", id);
+        return user;
+    }
+
+    private static User socialUser(long id) {
+        User user =
+                User.builder()
+                        .loginId(null)
+                        .password(null)
+                        .name("n" + id)
+                        .nickname("nick" + id)
+                        .email(id + "@t.com")
+                        .phone(null)
+                        .role(UserRole.ROLE_USER)
+                        .termsAgreed(true)
+                        .privacyAgreed(true)
+                        .build();
+        ReflectionTestUtils.setField(user, "id", id);
+        return user;
+    }
+
     private static UserPreference mockPreference(User user) {
         return UserPreference.builder()
                 .bakeryTypes(List.of(BakeryType.CLASSIC))
@@ -163,20 +583,30 @@ class UserServiceTest {
         return request;
     }
 
-    private static User user(long id) {
-        User user =
-                User.builder()
-                        .loginId("u" + id)
-                        .password("p")
-                        .name("n" + id)
-                        .nickname("nick" + id)
-                        .email(id + "@t.com")
-                        .phone("0100000" + String.format("%04d", id))
-                        .role(UserRole.ROLE_USER)
-                        .termsAgreed(true)
-                        .privacyAgreed(true)
-                        .build();
-        ReflectionTestUtils.setField(user, "id", id);
-        return user;
+    private static ChangePhoneRequest changePhoneRequest(String phone, String token) {
+        ChangePhoneRequest request = new ChangePhoneRequest();
+        ReflectionTestUtils.setField(request, "phone", phone);
+        ReflectionTestUtils.setField(request, "verificationToken", token);
+        return request;
+    }
+
+    private static ChangePasswordRequest changePasswordRequest(
+            String current, String newPw, String confirm) {
+        ChangePasswordRequest request = new ChangePasswordRequest();
+        ReflectionTestUtils.setField(request, "currentPassword", current);
+        ReflectionTestUtils.setField(request, "newPassword", newPw);
+        ReflectionTestUtils.setField(request, "newPasswordConfirm", confirm);
+        return request;
+    }
+
+    private static PhoneVerificationCache verifiedCache(
+            String phone, VerificationPurpose purpose, String token) {
+        return PhoneVerificationCache.builder()
+                .phone(phone)
+                .purpose(purpose)
+                .verified(true)
+                .verificationToken(token)
+                .code("123456")
+                .build();
     }
 }

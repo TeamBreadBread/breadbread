@@ -1,6 +1,7 @@
 package com.breadbread.user.entity;
 
 import com.breadbread.global.entity.BaseEntity;
+import com.breadbread.user.dto.UpdateProfileRequest;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -76,15 +77,17 @@ public class User extends BaseEntity {
         this.privacyAgreed = privacyAgreed;
     }
 
-    public void updateNickname(String nickname) {
-        this.nickname = nickname;
+    public void updateProfile(UpdateProfileRequest req) {
+        if (req.getNickname() != null) this.nickname = req.getNickname();
+        if (req.getEmail() != null) this.email = req.getEmail();
+        if (req.getProfileImageUrl() != null) this.profileImageUrl = req.getProfileImageUrl();
+    }
+
+    public void updatePhone(String phone) {
+        this.phone = phone;
     }
 
     public void updatePassword(String password) {
         this.password = password;
-    }
-
-    public void updateProfileImageUrl(String url) {
-        this.profileImageUrl = url;
     }
 }

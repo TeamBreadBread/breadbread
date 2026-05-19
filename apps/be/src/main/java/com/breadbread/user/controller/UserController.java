@@ -4,23 +4,29 @@ import com.breadbread.auth.dto.CustomUserDetails;
 import com.breadbread.global.dto.ApiResponse;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.user.dto.ChangePasswordRequest;
+import com.breadbread.user.dto.ChangePhoneRequest;
 import com.breadbread.user.dto.CreatePreferenceRequest;
 import com.breadbread.user.dto.PreferenceResponse;
 import com.breadbread.user.dto.UpdatePreferenceRequest;
+import com.breadbread.user.dto.UpdateProfileRequest;
 import com.breadbread.user.dto.UserProfileResponse;
 import com.breadbread.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "유저")
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
+@Validated
 public class UserController {
     private final UserService userService;
 
@@ -29,6 +35,46 @@ public class UserController {
     public ApiResponse<UserProfileResponse> getMyProfile(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ApiResponse.ok(userService.getUserProfile(userDetails.getId()));
+    }
+
+    @Operation(summary = "닉네임 중복 확인")
+    @GetMapping("/check-nickname")
+    public ApiResponse<Boolean> checkNickname(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @NotBlank(message = "닉네임은 필수입니다.") @RequestParam String nickname) {
+        return ApiResponse.ok(userService.checkNicknameAvailable(nickname, userDetails.getId()));
+    }
+
+    @Operation(
+            summary = "내 프로필 수정",
+            description = "수정할 필드만 포함하여 요청하면 됩니다. 포함되지 않은 필드는 기존 값이 유지됩니다.")
+    @PatchMapping("/me")
+    public ApiResponse<Void> updateMyProfile(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody UpdateProfileRequest request) {
+        userService.updateProfile(userDetails.getId(), request);
+        return ApiResponse.ok();
+    }
+
+    @Operation(
+            summary = "전화번호 변경",
+            description =
+                    "전화번호 변경 및 최초 등록(소셜 로그인 유저 등)에도 사용 가능합니다. 사전에 CHANGE_PHONE 목적으로 전화번호 인증을 완료해야 합니다.")
+    @PatchMapping("/me/phone")
+    public ApiResponse<Void> changePhone(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody ChangePhoneRequest request) {
+        userService.changePhone(userDetails.getId(), request);
+        return ApiResponse.ok();
+    }
+
+    @Operation(summary = "비밀번호 수정")
+    @PatchMapping("/me/password")
+    public ApiResponse<Void> changePassword(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        userService.changePassword(userDetails.getId(), request);
+        return ApiResponse.ok();
     }
 
     @Operation(summary = "선호도 조사 등록")
@@ -55,7 +101,7 @@ public class UserController {
     @PatchMapping("/preference")
     public ApiResponse<Void> updatePreference(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody UpdatePreferenceRequest request) {
+            @Valid @RequestBody UpdatePreferenceRequest request) {
         userService.updatePreference(userDetails.getId(), request);
         return ApiResponse.ok();
     }
