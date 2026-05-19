@@ -17,7 +17,6 @@ import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserPreference;
 import com.breadbread.user.repository.UserPreferenceRepository;
 import com.breadbread.user.repository.UserRepository;
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -34,7 +33,6 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final PhoneVerificationRedisService phoneVerificationRedisService;
     private final TokenService tokenService;
-    private final EntityManager entityManager;
 
     @Transactional
     public void savePreference(Long userId, CreatePreferenceRequest request) {
@@ -125,7 +123,7 @@ public class UserService {
         }
         try {
             user.updateProfile(request);
-            entityManager.flush();
+            userRepository.saveAndFlush(user);
         } catch (DataIntegrityViolationException e) {
             throw new CustomException(ErrorCode.DUPLICATE_NICKNAME);
         }
