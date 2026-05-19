@@ -47,6 +47,11 @@ public class TokenService {
         log.info("로그아웃 userId={}", userId);
     }
 
+    public void invalidateByUserId(Long userId) {
+        refreshTokenRedisService.deleteByUserId(userId.toString());
+        log.info("토큰 무효화 userId={}", userId);
+    }
+
     private TokenResponse generateTokens(String userId) {
         String accessToken = jwtProvider.createAccessToken(userId);
         String refreshToken = jwtProvider.createRefreshToken(userId);

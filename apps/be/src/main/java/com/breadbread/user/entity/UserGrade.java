@@ -27,4 +27,16 @@ public enum UserGrade {
     public String getDescription() {
         return description;
     }
+
+    public UserGrade next() {
+        UserGrade[] values = UserGrade.values();
+        int idx = this.ordinal();
+        return idx + 1 < values.length ? values[idx + 1] : null;
+    }
+
+    public int remainingCountToNext(int usageCount) {
+        UserGrade nextGrade = next();
+        if (nextGrade == null) return 0;
+        return Math.max(0, nextGrade.requiredCount - usageCount);
+    }
 }
