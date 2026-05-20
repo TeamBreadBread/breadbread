@@ -1,18 +1,20 @@
-import type { FormEvent } from "react";
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import type { BakeryListItem, GetBakeriesParams } from "@/api/types/bakery";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { OverlayFooter } from "@/components/common";
 import { PreferenceOptionCard } from "@/components/common/cards";
 import PreferenceIntro from "@/components/domain/ai-course/PreferenceIntro";
 import PreferenceQuestionSection from "@/components/domain/ai-course/PreferenceQuestionSection";
 import PreferenceTopBar from "@/components/domain/ai-course/PreferenceTopBar";
-import { useBakeries } from "@/hooks/useBakeries";
-import { formatCurationAddress } from "@/utils/formatCurationAddress";
+import { useKakaoPlaceSearch } from "@/hooks/useKakaoPlaceSearch";
+import { getAccuratePosition } from "@/lib/getAccuratePosition";
+import { isKakaoPlaceSearchConfigured, resolveCurrentLocationPlace } from "@/lib/kakaoPlaceSearch";
 import { sectionAllowsMultipleChoice } from "@/utils/preferenceSelection";
 import { cn } from "@/utils/cn";
 import { saveAiCoursePreferenceDraft } from "@/utils/aiCourseStorage";
+import { formatDeparturePlaceDisplay, normalizeDepartureLabel } from "@/utils/formatDeparturePlace";
+import type { KakaoSearchPlace } from "@/lib/kakaoPlaceSearch";
+import { parseLatLngFromPlace } from "@/utils/parseLatLngFromPlace";
 
 type OptionItem = {
   label: string;
@@ -23,7 +25,6 @@ type QuestionItem = {
   id: string;
   title: string;
   helperText?: string;
-  /** 명시하면 helperText보다 우선 */
   allowMultiple?: boolean;
   columns?: 1 | 2;
   options: OptionItem[];
@@ -61,7 +62,58 @@ const QUESTION_SECTIONS: QuestionItem[] = [
   },
 ];
 
+const DEPARTURE_RECENT_KEY = "aiCourseDepartureRecent";
+
+type DepartureRecentEntry = {
+  label: string;
+  lat?: number;
+  lng?: number;
+};
+
 type SelectedBySection = Record<string, string[]>;
+
+function loadDepartureRecents(): DepartureRecentEntry[] {
+  try {
+    const raw = localStorage.getItem(DEPARTURE_RECENT_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map((item): DepartureRecentEntry | null => {
+        if (typeof item === "string" && item.trim()) {
+          const { lat, lng } = parseLatLngFromPlace(item);
+          const label = normalizeDepartureLabel(item);
+          return {
+            label,
+            ...(Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : {}),
+          };
+        }
+        if (item && typeof item === "object" && "label" in item) {
+          const row = item as DepartureRecentEntry;
+          const label = normalizeDepartureLabel(String(row.label ?? ""));
+          if (!label) return null;
+          return {
+            label,
+            lat: typeof row.lat === "number" ? row.lat : undefined,
+            lng: typeof row.lng === "number" ? row.lng : undefined,
+          };
+        }
+        return null;
+      })
+      .filter((x): x is DepartureRecentEntry => x !== null);
+  } catch {
+    return [];
+  }
+}
+
+function saveDepartureRecents(items: DepartureRecentEntry[]) {
+  try {
+    localStorage.setItem(DEPARTURE_RECENT_KEY, JSON.stringify(items.slice(0, 15)));
+  } catch {
+    /* ignore */
+  }
+}
 
 function CircleIcon() {
   return <div className="h-x14 w-x14 rounded-full bg-gray-400" />;
@@ -69,36 +121,15 @@ function CircleIcon() {
 
 export default function BreadPreference() {
   const [selectedBySection, setSelectedBySection] = useState<SelectedBySection>({});
-  const [isDepartureChecked, setIsDepartureChecked] = useState(false);
-  const [isDepartureBottomSheetOpen, setIsDepartureBottomSheetOpen] = useState(false);
   const [departureKeyword, setDepartureKeyword] = useState("");
-  const [searchKeyword, setSearchKeyword] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [departureLatLng, setDepartureLatLng] = useState<{ lat: number; lng: number } | null>(null);
+  const [departureCoords, setDepartureCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [isDepartureSheetOpen, setIsDepartureSheetOpen] = useState(false);
+  const [sheetQuery, setSheetQuery] = useState("");
+  const [recentPlaces, setRecentPlaces] = useState<DepartureRecentEntry[]>(() =>
+    loadDepartureRecents(),
+  );
+  const [isResolvingLocation, setIsResolvingLocation] = useState(false);
   const navigate = useNavigate();
-  const deferredSearchKeyword = useDeferredValue(searchKeyword);
-
-  useEffect(() => {
-    if (!isDepartureBottomSheetOpen) {
-      return;
-    }
-    const id = window.setTimeout(() => setDebouncedSearch(deferredSearchKeyword.trim()), 300);
-    return () => window.clearTimeout(id);
-  }, [deferredSearchKeyword, isDepartureBottomSheetOpen]);
-
-  const trimmedSearch = debouncedSearch.trim();
-  const searchQuery = trimmedSearch.length >= 2 ? trimmedSearch : "";
-  const bakeryListParams = useMemo((): GetBakeriesParams => {
-    const base: GetBakeriesParams = { page: 0, size: 20, sort: "RATING", open: false };
-    return searchQuery.length > 0 ? { ...base, keyword: searchQuery } : base;
-  }, [searchQuery]);
-  const {
-    data: bakerySearchData,
-    loading: bakerySearchLoading,
-    error: bakerySearchError,
-  } = useBakeries(bakeryListParams, { enabled: isDepartureBottomSheetOpen });
-
-  const bakeryResults: BakeryListItem[] = bakerySearchData?.bakeries ?? [];
 
   const handleSelect = (sectionId: string, optionLabel: string) => {
     setSelectedBySection((prev) => {
@@ -116,89 +147,89 @@ export default function BreadPreference() {
         nextSectionValues = isSelected ? [] : [optionLabel];
       }
 
-      return {
-        ...prev,
-        [sectionId]: nextSectionValues,
-      };
+      return { ...prev, [sectionId]: nextSectionValues };
     });
   };
 
-  const handleDepartureCheckClick = () => {
-    setIsDepartureChecked((prev) => {
-      const next = !prev;
-      setIsDepartureBottomSheetOpen(next);
-      return next;
-    });
+  const openDepartureSheet = () => {
+    setSheetQuery(departureKeyword);
+    setRecentPlaces(loadDepartureRecents());
+    setIsDepartureSheetOpen(true);
   };
 
-  const openDepartureBottomSheet = () => {
-    setIsDepartureChecked(true);
-    const next = departureKeyword;
-    setSearchKeyword(next);
-    setDebouncedSearch(next.trim());
-    setIsDepartureBottomSheetOpen(true);
+  const closeDepartureSheet = () => {
+    setIsDepartureSheetOpen(false);
   };
 
-  const closeDepartureBottomSheet = () => {
-    setIsDepartureBottomSheetOpen(false);
+  const confirmDeparture = (label: string, coords?: { lat: number; lng: number }) => {
+    const t = normalizeDepartureLabel(label);
+    if (!t) return;
+    setDepartureKeyword(t);
+    setDepartureCoords(coords ?? null);
+    const entry: DepartureRecentEntry = coords ? { label: t, ...coords } : { label: t };
+    const next = [entry, ...recentPlaces.filter((x) => x.label !== t)];
+    setRecentPlaces(next);
+    saveDepartureRecents(next);
+    closeDepartureSheet();
+  };
+
+  const confirmDepartureFromPlace = (place: KakaoSearchPlace) => {
+    confirmDeparture(formatDeparturePlaceDisplay(place), { lat: place.lat, lng: place.lng });
+  };
+
+  const useCurrentLocation = () => {
+    setIsResolvingLocation(true);
+    void (async () => {
+      try {
+        const { latitude, longitude, accuracy } = await getAccuratePosition();
+        const place = await resolveCurrentLocationPlace(latitude, longitude);
+        confirmDepartureFromPlace(place);
+
+        if (accuracy !== null && accuracy > 120) {
+          window.alert(
+            `GPS 정확도가 약 ${Math.round(accuracy)}m입니다. PC·실내에서는 오차가 클 수 있어, 정확한 출발지는 검색으로 선택해 주세요.`,
+          );
+        }
+      } catch {
+        window.alert(
+          "현재 위치를 가져오지 못했습니다. 브라우저 위치 권한을 허용했는지 확인하거나, 출발지를 직접 검색해 주세요.",
+        );
+      } finally {
+        setIsResolvingLocation(false);
+      }
+    })();
   };
 
   const hasDepartureResult = departureKeyword.trim().length > 0;
-  const listTitle = searchQuery.length > 0 ? "검색 결과" : "인기 빵집";
 
-  const handleBakeryPick = (bakery: BakeryListItem) => {
-    const label = bakery.name.trim();
-    setDepartureKeyword(label);
-    setSearchKeyword(label);
-    if (typeof bakery.lat === "number" && typeof bakery.lng === "number") {
-      setDepartureLatLng({ lat: bakery.lat, lng: bakery.lng });
-    } else {
-      setDepartureLatLng(null);
-    }
-    closeDepartureBottomSheet();
-  };
+  const filteredRecents = recentPlaces.filter((item) =>
+    item.label.toLowerCase().includes(sheetQuery.trim().toLowerCase()),
+  );
 
-  const bakeryResultRow = (bakery: BakeryListItem) => {
-    const addr = bakery.address?.trim() ? formatCurationAddress(bakery.address.trim()) : "";
-    return (
-      <button
-        key={bakery.id}
-        type="button"
-        className="flex min-h-x14 flex-col justify-center gap-x0-5 border-b border-gray-100 px-x2_5 py-x3 text-left last:border-b-0"
-        onClick={() => handleBakeryPick(bakery)}
-      >
-        <div className="flex items-start gap-x1">
-          <span className="mt-x0_5 text-size-4 text-gray-600">⌕</span>
-          <span className="flex-1 font-pretendard text-size-6 font-medium leading-t6 text-gray-1000">
-            {bakery.name}
-          </span>
-        </div>
-        {addr ? (
-          <span className="pl-x5 font-pretendard text-size-3 leading-t4 text-gray-700">{addr}</span>
-        ) : null}
-      </button>
-    );
-  };
-
-  const handleSearchSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    if (bakeryResults.length === 1) {
-      handleBakeryPick(bakeryResults[0]);
-    }
-  };
+  const sheetQueryTrimmed = sheetQuery.trim();
+  const {
+    results: kakaoPlaces,
+    loading: kakaoSearchLoading,
+    error: kakaoSearchError,
+  } = useKakaoPlaceSearch(sheetQuery, isDepartureSheetOpen);
+  const showKakaoSearch = sheetQueryTrimmed.length > 0 && isKakaoPlaceSearchConfigured();
 
   const allQuestionSectionsAnswered = QUESTION_SECTIONS.every(
     (section) => (selectedBySection[section.id]?.length ?? 0) > 0,
   );
   const canGoNext = allQuestionSectionsAnswered && hasDepartureResult;
+
   const handleGoRecommendation = () => {
     if (!canGoNext) return;
+    const fallback = parseLatLngFromPlace(departureKeyword);
+    const lat = departureCoords?.lat ?? fallback.lat;
+    const lng = departureCoords?.lng ?? fallback.lng;
     saveAiCoursePreferenceDraft({
       companion: selectedBySection.companion?.[0] ?? "",
       budget: selectedBySection.budget?.[0] ?? "",
       minimizeRoute: selectedBySection.route?.[0] === "최소화해주세요",
-      latitude: departureLatLng?.lat ?? 36.3504,
-      longitude: departureLatLng?.lng ?? 127.3845,
+      latitude: lat,
+      longitude: lng,
     });
     navigate({ to: "/recommendation" });
   };
@@ -235,161 +266,161 @@ export default function BreadPreference() {
             </PreferenceQuestionSection>
           ))}
 
-          <PreferenceQuestionSection
-            title={isDepartureChecked ? "출발지 검색" : "출발지를 입력해주세요"}
-            helperText=""
-            columns={1}
-          >
-            <div className="w-full">
-              <div
-                role="button"
-                tabIndex={0}
-                aria-label="출발지 입력창 열기"
+          <PreferenceQuestionSection title="출발지 검색" helperText="" columns={1}>
+            <button
+              type="button"
+              className={cn(
+                "flex h-[64px] w-full items-center justify-between rounded-r2 px-x4 transition-colors",
+                hasDepartureResult
+                  ? "border border-gray-600 bg-gray-300"
+                  : "border border-gray-200 bg-gray-100",
+              )}
+              onClick={openDepartureSheet}
+            >
+              <span
                 className={cn(
-                  "flex h-[64px] w-full items-center justify-between rounded-r2 px-x4 transition-colors",
-                  hasDepartureResult
-                    ? "border border-gray-600 bg-gray-300"
-                    : "border border-gray-200 bg-gray-100",
+                  "flex-1 text-left font-sans text-size-5 leading-t6",
+                  hasDepartureResult ? "text-gray-900" : "text-gray-500",
                 )}
-                onClick={openDepartureBottomSheet}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    openDepartureBottomSheet();
-                  }
-                }}
               >
-                <button
-                  type="button"
-                  aria-label="출발지 입력 확인"
-                  className={cn(
-                    "flex h-x6 w-x6 items-center justify-center rounded-full text-size-4",
-                    hasDepartureResult
-                      ? "border border-gray-600 text-gray-900"
-                      : "border border-gray-200 text-gray-500",
-                  )}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleDepartureCheckClick();
-                  }}
-                >
-                  ✓
-                </button>
-
-                <input
-                  readOnly
-                  value={departureKeyword || "출발지 입력"}
-                  className={cn(
-                    "mx-x3 flex-1 bg-transparent text-left font-sans text-size-5 leading-t6 font-normal tracking-1 outline-none",
-                    hasDepartureResult ? "text-gray-900" : "text-gray-500",
-                  )}
-                />
-
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    "flex h-x6 w-x6 items-center justify-center text-size-4",
-                    hasDepartureResult ? "text-gray-900" : "text-gray-500",
-                  )}
-                >
-                  ⌕
-                </span>
-              </div>
-            </div>
+                {departureKeyword.trim() || "출발지 입력"}
+              </span>
+              <span className="text-size-4 text-gray-500" aria-hidden>
+                ⌕
+              </span>
+            </button>
           </PreferenceQuestionSection>
         </div>
       </div>
 
-      {isDepartureBottomSheetOpen ? (
+      {isDepartureSheetOpen ? (
         <>
           <button
             type="button"
-            aria-label="출발지 검색 바텀시트 닫기"
+            aria-label="출발지 검색 닫기"
             className="fixed inset-y-0 left-1/2 z-30 w-full max-w-x186 -translate-x-1/2 bg-black/40"
-            onClick={closeDepartureBottomSheet}
+            onClick={closeDepartureSheet}
           />
-          <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-x186 -translate-x-1/2 rounded-t-r5 bg-gray-00">
+          <div className="fixed bottom-0 left-1/2 z-40 flex w-full max-w-x186 -translate-x-1/2 flex-col rounded-t-r5 bg-gray-00">
             <div className="flex justify-center py-[14px]">
               <button
                 type="button"
-                aria-label="출발지 검색 바텀시트 닫기"
+                aria-label="닫기"
                 className="h-[4px] w-[36px] rounded-full bg-gray-300"
-                onClick={closeDepartureBottomSheet}
+                onClick={closeDepartureSheet}
               />
             </div>
 
-            <div className="px-x5 pb-x3">
-              <div className="flex items-start justify-between">
-                <div className="flex flex-1 flex-col gap-x1_5">
-                  <h3 className="font-pretendard text-size-7 font-bold leading-t8 text-gray-1000">
-                    출발지 검색
-                  </h3>
-                  <p className="font-pretendard text-size-3 leading-t4 text-gray-700">
-                    등록된 빵집을 출발점으로 선택하면 해당 위치로 코스를 짜요.
-                  </p>
-                </div>
-              </div>
+            <div className="px-x5 pb-x5">
+              <h3 className="font-pretendard text-size-7 font-bold leading-t8 text-gray-1000">
+                출발지 검색
+              </h3>
+              <p className="mt-x1 font-pretendard text-size-3 leading-t4 text-gray-700">
+                장소명을 입력하면 카카오맵에서 관련 장소를 찾아드립니다.
+              </p>
 
-              <form
-                className="mt-x4 flex h-x14 items-center gap-x2 rounded-r3 border border-gray-300 bg-gray-00 px-x5"
-                onSubmit={handleSearchSubmit}
-              >
+              <div className="mt-x4 flex h-x14 items-center gap-x2 rounded-r3 border border-gray-300 px-x5">
                 <input
                   autoFocus
-                  value={searchKeyword}
-                  onChange={(event) => setSearchKeyword(event.target.value)}
-                  placeholder="빵집 이름·주소·지역구로 검색"
-                  className="flex-1 bg-transparent font-pretendard text-size-5 leading-t6 text-gray-1000 outline-none placeholder:text-gray-400"
+                  value={sheetQuery}
+                  onChange={(e) => setSheetQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      confirmDeparture(sheetQuery);
+                    }
+                  }}
+                  placeholder="예: 서울역, 강남역 2번 출구"
+                  className="min-w-0 flex-1 bg-transparent font-pretendard text-size-5 leading-t6 text-gray-1000 outline-none placeholder:text-gray-400"
                 />
                 <button
-                  type="submit"
-                  aria-label="출발지 검색"
-                  className="flex h-x6 w-x6 items-center justify-center text-size-4 text-gray-700"
+                  type="button"
+                  aria-label="확인"
+                  className="text-size-4 text-gray-700"
+                  onClick={() => confirmDeparture(sheetQuery)}
                 >
                   ⌕
                 </button>
-              </form>
+              </div>
 
-              <div className="mt-x3">
-                <div className="border-b border-gray-200 px-x2_5 pb-x3 pt-x5">
-                  <span className="font-pretendard text-[13px] font-bold leading-[18px] text-gray-700">
-                    {listTitle}
-                  </span>
-                </div>
+              <div className="mt-x3 flex items-center justify-between border-b border-gray-200 px-x2_5 pb-x3 pt-x4">
+                <span className="text-[13px] font-bold text-gray-700">최근 검색</span>
+                <button
+                  type="button"
+                  className="text-size-3 font-medium text-[#217cf9] disabled:opacity-50"
+                  disabled={isResolvingLocation}
+                  onClick={useCurrentLocation}
+                >
+                  {isResolvingLocation ? "위치 확인 중…" : "현재 위치"}
+                </button>
+              </div>
 
-                <div className="flex flex-col">
-                  {searchKeyword.trim().length > 0 && searchQuery.length === 0 ? (
-                    <p className="px-x2_5 py-x4 font-pretendard text-size-4 leading-t5 text-gray-600">
-                      두 글자 이상 입력해 주세요.
-                    </p>
-                  ) : searchQuery.length === 0 ? (
-                    bakeryResults.length === 0 && !bakerySearchLoading ? (
-                      <p className="px-x2_5 py-x4 font-pretendard text-size-4 leading-t5 text-gray-600">
-                        표시할 빵집이 없어요.
+              <div className="max-h-[min(50vh,360px)] overflow-y-auto">
+                {filteredRecents.length === 0 && !showKakaoSearch ? (
+                  <p className="px-x2_5 py-x4 text-size-4 text-gray-600">
+                    최근 검색한 출발지가 여기에 표시됩니다.
+                  </p>
+                ) : (
+                  filteredRecents.map((item) => (
+                    <button
+                      key={item.label}
+                      type="button"
+                      className="flex w-full border-b border-gray-100 px-x2_5 py-x3 text-left last:border-b-0 hover:bg-gray-100"
+                      onClick={() =>
+                        confirmDeparture(
+                          item.label,
+                          item.lat !== undefined && item.lng !== undefined
+                            ? { lat: item.lat, lng: item.lng }
+                            : undefined,
+                        )
+                      }
+                    >
+                      <span className="font-pretendard text-size-5 leading-t6 text-gray-1000 line-clamp-2">
+                        {item.label}
+                      </span>
+                    </button>
+                  ))
+                )}
+
+                {showKakaoSearch ? (
+                  <>
+                    <div className="sticky top-0 border-b border-gray-200 bg-gray-00 px-x2_5 pb-x2 pt-x3">
+                      <span className="text-[13px] font-bold text-gray-700">장소 검색</span>
+                    </div>
+                    {kakaoSearchLoading ? (
+                      <p className="px-x2_5 py-x3 text-size-4 text-gray-500">검색 중…</p>
+                    ) : null}
+                    {kakaoSearchError ? (
+                      <p className="px-x2_5 py-x3 text-size-4 text-red-500">{kakaoSearchError}</p>
+                    ) : null}
+                    {!kakaoSearchLoading && !kakaoSearchError && kakaoPlaces.length === 0 ? (
+                      <p className="px-x2_5 py-x3 text-size-4 text-gray-500">
+                        검색 결과가 없습니다.
                       </p>
-                    ) : bakerySearchLoading ? (
-                      <p className="px-x2_5 py-x4 font-pretendard text-size-4 leading-t5 text-gray-600">
-                        불러오는 중…
-                      </p>
-                    ) : (
-                      bakeryResults.map(bakeryResultRow)
-                    )
-                  ) : bakerySearchLoading ? (
-                    <p className="px-x2_5 py-x4 font-pretendard text-size-4 leading-t5 text-gray-600">
-                      검색 중…
-                    </p>
-                  ) : bakerySearchError ? (
-                    <p className="px-x2_5 py-x4 font-pretendard text-size-4 leading-t5 text-red-600">
-                      {bakerySearchError.message}
-                    </p>
-                  ) : bakeryResults.length === 0 ? (
-                    <p className="px-x2_5 py-x4 font-pretendard text-size-4 leading-t5 text-gray-600">
-                      검색 결과가 없습니다.
-                    </p>
-                  ) : (
-                    bakeryResults.map(bakeryResultRow)
-                  )}
-                </div>
+                    ) : null}
+                    {kakaoPlaces.map((place) => (
+                      <button
+                        key={place.id}
+                        type="button"
+                        className="flex w-full flex-col gap-x0-5 border-b border-gray-100 px-x2_5 py-x3 text-left last:border-b-0 hover:bg-gray-100"
+                        onClick={() => confirmDepartureFromPlace(place)}
+                      >
+                        <span className="font-pretendard text-size-5 leading-t6 text-gray-1000">
+                          {place.name}
+                        </span>
+                        {place.address ? (
+                          <span className="font-pretendard text-size-3 leading-t4 text-gray-600">
+                            {place.address}
+                          </span>
+                        ) : null}
+                      </button>
+                    ))}
+                  </>
+                ) : sheetQueryTrimmed.length > 0 ? (
+                  <p className="px-x2_5 py-x3 text-size-4 text-gray-500">
+                    카카오 API 키를 설정하면 장소 검색을 사용할 수 있습니다.
+                  </p>
+                ) : null}
               </div>
             </div>
           </div>

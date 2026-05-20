@@ -157,7 +157,7 @@ export async function login(body: LoginRequest): Promise<TokenResponse> {
 }
 
 export async function logout(): Promise<void> {
-  const { data } = await apiClient.post<ApiEnvelope<void>>(`${PATH}/logout`);
+  const { data } = await apiClient.post<ApiEnvelope<void>>(`${PATH}/logout`, {});
   extractData(data);
 }
 

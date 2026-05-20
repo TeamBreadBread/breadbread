@@ -42,9 +42,13 @@ public class TokenService {
     }
 
     public void logout(String accessToken) {
-        String userId = jwtProvider.getUserIdFromAccessToken(accessToken);
-        refreshTokenRedisService.deleteByUserId(userId);
-        log.info("로그아웃 userId={}", userId);
+        jwtProvider
+                .resolveUserIdFromAccessToken(accessToken)
+                .ifPresent(
+                        userId -> {
+                            refreshTokenRedisService.deleteByUserId(userId);
+                            log.info("로그아웃 userId={}", userId);
+                        });
     }
 
     public void invalidateByUserId(Long userId) {

@@ -8,7 +8,8 @@ import CourseTimeline from "@/components/domain/ai-course/CourseTimeline";
 import ResultSummaryCard from "@/components/domain/ai-course/ResultSummaryCard";
 import type { CoursePlace, CourseSummary } from "@/components/domain/ai-course/types";
 import { getDevFallbackCourseId } from "@/lib/courseIdFallback";
-import mapImage from "@/assets/images/map.png";
+import CourseKakaoMap from "@/components/domain/ai-course/CourseKakaoMap";
+import { courseBakeriesToMapPoints } from "@/components/domain/ai-course/courseMapPoints";
 import handleArrow from "@/assets/icons/handle_arrowup.png";
 import { useAiSearchBottomSheet } from "@/hooks/useAiSearchBottomSheet";
 import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
@@ -68,6 +69,11 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
       duration: storedCourseDetail.estimatedTime || summary.duration,
       price: costLabel,
     };
+  }, [storedCourseDetail]);
+
+  const mapBakeries = useMemo(() => {
+    if (!storedCourseDetail?.bakeries?.length) return [];
+    return courseBakeriesToMapPoints(storedCourseDetail.bakeries);
   }, [storedCourseDetail]);
 
   const dynamicPlaces: CoursePlace[] | null = useMemo(() => {
@@ -146,7 +152,7 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
         />
 
         <div className="h-[200px] w-full overflow-hidden">
-          <img src={mapImage} alt="코스 지도" className="h-full w-full object-cover" />
+          <CourseKakaoMap bakeries={mapBakeries} />
         </div>
       </div>
 

@@ -43,6 +43,16 @@ export default defineConfig({
       '/auth': {
         target: 'https://api.breadbread.io',
         changeOrigin: true,
+        bypass(req) {
+          const path = req.url?.split('?')[0] ?? '';
+          if (
+            path === '/auth/kakao/callback' ||
+            path === '/auth/naver/callback' ||
+            path === '/auth/google/callback'
+          ) {
+            return '/index.html';
+          }
+        },
       },
       '/bakeries': {
         target: 'https://api.breadbread.io',

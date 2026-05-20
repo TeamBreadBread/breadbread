@@ -10,7 +10,8 @@
     "build": "node build-tokens.mjs && tsc -b && vite build",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:hosting": "pnpm run build && firebase deploy --only hosting"
   },
   "dependencies": {
     "@portone/browser-sdk": "^0.1.6",

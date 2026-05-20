@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { getStoredAccessToken } from "@/api/auth";
 import { getMyProfile } from "@/api/user";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
 import RecommendationHeroCard from "./RecommendationHeroCard";
@@ -21,6 +22,7 @@ const HomeHeroSection = () => {
   useEffect(() => {
     let mounted = true;
     const fetchProfile = async () => {
+      if (!getStoredAccessToken()) return;
       try {
         const me = await getMyProfile();
         if (!mounted) return;
@@ -42,7 +44,13 @@ const HomeHeroSection = () => {
     };
   }, []);
 
-  const goAiCoursePreferenceFlow = () => navigate({ to: AI_COURSE_FLOW_START });
+  const goAiCoursePreferenceFlow = () => {
+    if (!getStoredAccessToken()) {
+      void navigate({ to: "/login", search: { redirect: "/preference" } });
+      return;
+    }
+    void navigate({ to: AI_COURSE_FLOW_START });
+  };
 
   return (
     <section className="bg-white px-5 py-[18px]">

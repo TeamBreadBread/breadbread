@@ -80,11 +80,21 @@ class TokenServiceTest {
 
     @Test
     void logout_clears_refresh_whenAccessTokenGiven() {
-        when(jwtProvider.getUserIdFromAccessToken("access")).thenReturn("99");
+        when(jwtProvider.resolveUserIdFromAccessToken("access"))
+                .thenReturn(java.util.Optional.of("99"));
 
         tokenService.logout("access");
 
         verify(refreshTokenRedisService).deleteByUserId("99");
+    }
+
+    @Test
+    void logout_noop_when_user_id_not_resolved() {
+        when(jwtProvider.resolveUserIdFromAccessToken("bad")).thenReturn(java.util.Optional.empty());
+
+        tokenService.logout("bad");
+
+        verify(refreshTokenRedisService, org.mockito.Mockito.never()).deleteByUserId(org.mockito.ArgumentMatchers.anyString());
     }
 
     private static String sha256Base64(String token) {

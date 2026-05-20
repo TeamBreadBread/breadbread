@@ -89,9 +89,10 @@ public class SsoService {
                                                 .flatMap(
                                                         errorBody -> {
                                                             log.error(
-                                                                    "액세스 토큰 교환 실패: provider={}, status={}",
+                                                                    "액세스 토큰 교환 실패: provider={}, status={}, body={}",
                                                                     provider,
-                                                                    response.statusCode());
+                                                                    response.statusCode(),
+                                                                    errorBody);
                                                             return Mono.error(
                                                                     new CustomException(
                                                                             ErrorCode

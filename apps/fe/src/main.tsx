@@ -4,7 +4,14 @@ import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { routeTree } from "./routeTree.gen";
+import { isKakaoMapKeyConfigured, loadKakaoMapSdk } from "@/lib/kakaoMapSdk";
 import "./index.css";
+
+if (isKakaoMapKeyConfigured()) {
+  void loadKakaoMapSdk().catch(() => {
+    /* 지도 미사용 화면에서도 앱은 동작 */
+  });
+}
 
 const router = createRouter({ routeTree });
 const showDevtools = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEVTOOLS === "true";

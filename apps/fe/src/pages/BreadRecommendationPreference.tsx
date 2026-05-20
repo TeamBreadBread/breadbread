@@ -23,7 +23,8 @@ import {
   type TravelType,
 } from "@/api/courses";
 import { readAiCoursePreferenceDraft } from "@/utils/aiCourseStorage";
-import { getErrorMessage } from "@/api/types/common";
+import { ApiBusinessError, getErrorMessage } from "@/api/types/common";
+import { getStoredAccessToken } from "@/api/auth";
 
 type OptionItem = {
   label: string;
@@ -175,8 +176,18 @@ export default function BreadRecommendationPreference() {
     return null;
   };
 
+  const goLoginForAiCourse = () => {
+    void navigate({ to: "/login", search: { redirect: "/recommendation" } });
+  };
+
   const handleAiRecommend = async () => {
     if (!canSubmitRecommendation || isSubmitting) return;
+
+    if (!getStoredAccessToken()) {
+      window.alert("AI 코스 추천은 로그인 후 이용할 수 있습니다.");
+      goLoginForAiCourse();
+      return;
+    }
 
     const step1 = readAiCoursePreferenceDraft();
     if (!step1) {
@@ -205,6 +216,14 @@ export default function BreadRecommendationPreference() {
       const jobId = await requestAiCourse(body);
       navigate({ to: "/ai-course-generating", search: { jobId } });
     } catch (error) {
+      const isUnauthorized =
+        (error instanceof ApiBusinessError && error.status === 401) ||
+        (error instanceof ApiBusinessError && error.status === 403);
+      if (isUnauthorized) {
+        window.alert("로그인이 만료되었거나 필요합니다. 다시 로그인한 뒤 추천 받기를 눌러 주세요.");
+        goLoginForAiCourse();
+        return;
+      }
       window.alert(getErrorMessage(error));
     } finally {
       setIsSubmitting(false);
@@ -234,6 +253,7 @@ export default function BreadRecommendationPreference() {
               title={section.title}
               helperText={section.helperText}
               columns={section.columns}
+              fullWidthChild={section.id === "count"}
               icon={
                 section.id === "count" ? (
                   <div className="flex flex-row items-center justify-start p-[3px]">

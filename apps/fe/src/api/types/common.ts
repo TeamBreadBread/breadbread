@@ -40,6 +40,15 @@ export function unwrapApiBody<T>(body: ApiEnvelope<T>): T {
  */
 export function getErrorMessage(error: unknown): string {
   if (error instanceof ApiBusinessError) {
+    if (error.code === "E0113") {
+      return error.message;
+    }
+    if (error.status === 401 && error.code === "E0002") {
+      return "로그인이 필요합니다. 다시 로그인해 주세요.";
+    }
+    if (error.status === 401) {
+      return error.message;
+    }
     return error.message;
   }
   if (axios.isAxiosError(error)) {
@@ -56,7 +65,16 @@ export function getErrorMessage(error: unknown): string {
     }
     const data = error.response?.data as ApiEnvelope | undefined;
     if (data?.error?.message) {
+      if (data.error.code === "E0113") {
+        return data.error.message;
+      }
+      if (error.response?.status === 401 && data.error.code === "E0002") {
+        return "로그인이 필요합니다. 다시 로그인해 주세요.";
+      }
       return data.error.message;
+    }
+    if (error.response?.status === 401) {
+      return "로그인이 필요합니다. 다시 로그인해 주세요.";
     }
     if (!error.response) {
       return "서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.";

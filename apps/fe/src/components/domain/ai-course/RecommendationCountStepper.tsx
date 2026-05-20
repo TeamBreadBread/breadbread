@@ -7,6 +7,13 @@ interface RecommendationCountStepperProps {
   onChange: (value: number) => void;
 }
 
+const controlButtonClassName = cn(
+  "flex size-10 shrink-0 touch-manipulation items-center justify-center rounded-r1 bg-gray-100",
+  "font-sans text-size-6 leading-none font-medium text-gray-1000",
+  "transition-opacity disabled:cursor-not-allowed disabled:opacity-40",
+  "sm:size-11",
+);
+
 export default function RecommendationCountStepper({
   value,
   min = 1,
@@ -25,41 +32,51 @@ export default function RecommendationCountStepper({
   const isIncreaseDisabled = value >= max;
 
   return (
-    <div className="mx-auto flex h-[56px] w-full max-w-[362px] shrink-0 flex-row items-center justify-between overflow-hidden rounded-[12px] border border-solid border-[#dcdee3] px-[20px] py-[16px]">
-      <div className="font-sans whitespace-nowrap text-[16px] leading-[22px] text-[#555d6d]">
+    <div
+      className={cn(
+        "box-border flex w-full min-w-0 items-center justify-between gap-x3",
+        "min-h-x14 rounded-r2 border border-gray-300 bg-gray-00",
+        "px-x4 py-x3 sm:px-x5 sm:py-x4",
+      )}
+    >
+      <span className="min-w-0 shrink-0 font-sans text-size-4 leading-t5 text-gray-700 sm:text-size-5">
         {value}개
-      </div>
-      <div className="flex w-[100px] shrink-0 flex-row items-center justify-start">
+      </span>
+
+      <div
+        className={cn(
+          "flex min-w-0 flex-1 items-center justify-end gap-x1",
+          "max-w-[min(100%,11.5rem)] sm:max-w-[13rem]",
+        )}
+        role="group"
+        aria-label="추천 빵집 개수 조절"
+      >
         <button
           type="button"
           onClick={handleDecrease}
           disabled={isDecreaseDisabled}
-          className={cn(
-            "flex shrink-0 flex-row items-center justify-start rounded-[4px] bg-[#f7f8f9] p-[4px]",
-            isDecreaseDisabled && "cursor-not-allowed opacity-40",
-          )}
+          className={controlButtonClassName}
           aria-label="추천 개수 줄이기"
         >
-          <span className="flex h-6 w-6 items-center justify-center font-sans text-[18px] leading-none font-medium text-[#1a1c20]">
-            −
-          </span>
+          −
         </button>
-        <div className="flex flex-1 flex-col justify-center self-stretch text-center font-sans text-[18px] leading-[24px] text-[#1a1c20]">
+
+        <span
+          className="min-w-[2.5ch] flex-1 text-center font-sans text-size-5 leading-t6 font-medium text-gray-1000 sm:text-size-6"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           {value}
-        </div>
+        </span>
+
         <button
           type="button"
           onClick={handleIncrease}
           disabled={isIncreaseDisabled}
-          className={cn(
-            "flex shrink-0 flex-row items-center justify-start rounded-[4px] bg-[#f7f8f9] p-[4px]",
-            isIncreaseDisabled && "cursor-not-allowed opacity-40",
-          )}
+          className={controlButtonClassName}
           aria-label="추천 개수 늘리기"
         >
-          <span className="flex h-6 w-6 items-center justify-center font-sans text-[18px] leading-none font-medium text-[#1a1c20]">
-            +
-          </span>
+          +
         </button>
       </div>
     </div>

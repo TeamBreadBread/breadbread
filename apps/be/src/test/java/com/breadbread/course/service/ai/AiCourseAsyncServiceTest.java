@@ -21,7 +21,6 @@ import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.FlexibilityLevel;
 import com.breadbread.course.entity.TravelType;
 import com.breadbread.course.repository.CourseRepository;
-import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserPreference;
 import com.breadbread.user.entity.UserRole;
@@ -125,7 +124,7 @@ class AiCourseAsyncServiceTest {
 
         aiCourseAsyncService.processAiCourse("job-throw", 1L, aiRequest()).join();
 
-        verify(aiCourseRedisService).saveFailed(eq("job-throw"), eq("AI 서버 오류가 발생했습니다."));
+        verify(aiCourseRedisService).saveFailed(eq("job-throw"), eq("portone down"));
     }
 
     @Test
@@ -178,7 +177,9 @@ class AiCourseAsyncServiceTest {
         aiCourseAsyncService.processAiCourse("job-e", 1L, aiRequest()).join();
 
         verify(aiCourseRedisService)
-                .saveFailed(eq("job-e"), eq(ErrorCode.AI_SERVER_ERROR.getMessage()));
+                .saveFailed(
+                        eq("job-e"),
+                        eq("AI가 추천한 빵집 ID가 DB에 없습니다. 응답의 bakeries[].id는 요청에 포함된 빵집 id만 사용해야 합니다."));
     }
 
     private static AiCourseWebhookResponse validWebhookResponse(long bakeryId) {

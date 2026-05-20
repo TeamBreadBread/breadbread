@@ -9,6 +9,7 @@ import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.Optional;
 import javax.crypto.SecretKey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +52,23 @@ public class JwtProvider {
 
     public String getUserIdFromAccessToken(String token) {
         return parseClaims(token, accessKey).getSubject();
+    }
+
+    /**
+     * 로그아웃 등: 만료된 액세스 토큰이어도 subject(userId)를 추출합니다.
+     */
+    public Optional<String> resolveUserIdFromAccessToken(String token) {
+        if (token == null || token.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(getUserIdFromAccessToken(token));
+        } catch (ExpiredJwtException e) {
+            return Optional.ofNullable(e.getClaims().getSubject());
+        } catch (JwtException | IllegalArgumentException e) {
+            log.warn("액세스 토큰 파싱 실패");
+            return Optional.empty();
+        }
     }
 
     public String getUserIdFromRefreshToken(String token) {
