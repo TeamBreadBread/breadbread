@@ -4,6 +4,8 @@ import com.breadbread.auth.entity.VerificationPurpose;
 import com.breadbread.auth.redis.PhoneVerificationCache;
 import com.breadbread.auth.service.PhoneVerificationRedisService;
 import com.breadbread.auth.service.TokenService;
+import com.breadbread.bakery.dto.MyReviewResponse;
+import com.breadbread.bakery.repository.ReviewRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.dto.ChangePasswordRequest;
@@ -17,6 +19,7 @@ import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserPreference;
 import com.breadbread.user.repository.UserPreferenceRepository;
 import com.breadbread.user.repository.UserRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -33,6 +36,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final PhoneVerificationRedisService phoneVerificationRedisService;
     private final TokenService tokenService;
+    private final ReviewRepository reviewRepository;
 
     @Transactional
     public void savePreference(Long userId, CreatePreferenceRequest request) {
@@ -176,5 +180,12 @@ public class UserService {
         user.updatePassword(passwordEncoder.encode(request.getNewPassword()));
         tokenService.invalidateByUserId(userId);
         log.info("비밀번호 변경: userId={}", userId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MyReviewResponse> getMyReviews(Long userId) {
+        return reviewRepository.findAllByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(MyReviewResponse::from)
+                .toList();
     }
 }

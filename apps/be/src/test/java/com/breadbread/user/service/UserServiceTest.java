@@ -12,9 +12,12 @@ import com.breadbread.auth.entity.VerificationPurpose;
 import com.breadbread.auth.redis.PhoneVerificationCache;
 import com.breadbread.auth.service.PhoneVerificationRedisService;
 import com.breadbread.auth.service.TokenService;
+import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.BakeryPersonality;
 import com.breadbread.bakery.entity.BakeryType;
 import com.breadbread.bakery.entity.BakeryUseType;
+import com.breadbread.bakery.entity.Review;
+import com.breadbread.bakery.repository.ReviewRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.dto.ChangePasswordRequest;
@@ -48,6 +51,7 @@ class UserServiceTest {
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private PhoneVerificationRedisService phoneVerificationRedisService;
     @Mock private TokenService tokenService;
+    @Mock private ReviewRepository reviewRepository;
 
     @InjectMocks private UserService userService;
 
@@ -597,6 +601,71 @@ class UserServiceTest {
         ReflectionTestUtils.setField(request, "newPassword", newPw);
         ReflectionTestUtils.setField(request, "newPasswordConfirm", confirm);
         return request;
+    }
+
+    // ───────────────────────────── getMyReviews ─────────────────────────────
+
+    @Test
+    void getMyReviews_returns_emptyList_whenNoReviews() {
+        when(reviewRepository.findAllByUserIdOrderByCreatedAtDesc(1L)).thenReturn(List.of());
+
+        var result = userService.getMyReviews(1L);
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void getMyReviews_returns_reviews_withBakeryInfo() {
+        User user = user(1L);
+        Bakery bakery = bakery(10L, "소금빵집");
+        Review review1 = review(100L, user, bakery, 5, "맛있어요");
+        Review review2 = review(101L, user, bakery, 4, "또 오고싶어요");
+        when(reviewRepository.findAllByUserIdOrderByCreatedAtDesc(1L))
+                .thenReturn(List.of(review1, review2));
+
+        var result = userService.getMyReviews(1L);
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getReviewId()).isEqualTo(100L);
+        assertThat(result.get(0).getBakeryId()).isEqualTo(10L);
+        assertThat(result.get(0).getBakeryName()).isEqualTo("소금빵집");
+        assertThat(result.get(0).getRating()).isEqualTo(5);
+        assertThat(result.get(0).getContent()).isEqualTo("맛있어요");
+    }
+
+    @Test
+    void getMyReviews_returns_reviews_orderedByCreatedAtDesc() {
+        User user = user(1L);
+        Bakery bakery = bakery(10L, "소금빵집");
+        Review review1 = review(100L, user, bakery, 5, "첫 번째 리뷰");
+        Review review2 = review(101L, user, bakery, 3, "두 번째 리뷰");
+        when(reviewRepository.findAllByUserIdOrderByCreatedAtDesc(1L))
+                .thenReturn(List.of(review2, review1));
+
+        var result = userService.getMyReviews(1L);
+
+        assertThat(result.get(0).getReviewId()).isEqualTo(101L);
+        assertThat(result.get(1).getReviewId()).isEqualTo(100L);
+    }
+
+    private static Bakery bakery(long id, String name) {
+        Bakery bakery =
+                Bakery.builder()
+                        .name(name)
+                        .address("대전시 유성구")
+                        .region("유성구")
+                        .phone("042-000-0000")
+                        .bakeryType(BakeryType.CLASSIC)
+                        .build();
+        ReflectionTestUtils.setField(bakery, "id", id);
+        return bakery;
+    }
+
+    private static Review review(long id, User user, Bakery bakery, int rating, String content) {
+        Review review =
+                Review.builder().user(user).bakery(bakery).rating(rating).content(content).build();
+        ReflectionTestUtils.setField(review, "id", id);
+        return review;
     }
 
     private static PhoneVerificationCache verifiedCache(

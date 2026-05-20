@@ -1,6 +1,7 @@
 package com.breadbread.user.controller;
 
 import com.breadbread.auth.dto.CustomUserDetails;
+import com.breadbread.bakery.dto.MyReviewResponse;
 import com.breadbread.global.dto.ApiResponse;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
@@ -16,6 +17,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -95,6 +97,13 @@ public class UserController {
     public ApiResponse<PreferenceResponse> getPreference(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ApiResponse.ok(userService.getPreference(userDetails.getId()));
+    }
+
+    @Operation(summary = "내가 쓴 리뷰 목록 조회")
+    @GetMapping("/me/reviews")
+    public ApiResponse<List<MyReviewResponse>> getMyReviews(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ApiResponse.ok(userService.getMyReviews(userDetails.getId()));
     }
 
     @Operation(summary = "선호도 수정")
