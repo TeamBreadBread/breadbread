@@ -82,6 +82,12 @@ export default defineConfig({
         target: 'https://api.breadbread.io',
         changeOrigin: true,
       },
+      /** 카카오모빌리티 보행 길찾기 (로컬 CORS 우회) */
+      '/kakao-mobility': {
+        target: 'https://apis-navi.kakaomobility.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/kakao-mobility/, ''),
+      },
     },
   },
 })

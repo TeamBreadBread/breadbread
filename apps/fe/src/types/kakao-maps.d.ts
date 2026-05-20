@@ -6,6 +6,7 @@ interface KakaoMaps {
   LatLngBounds: new () => KakaoLatLngBounds;
   Map: new (container: HTMLElement, options: KakaoMapOptions) => KakaoMap;
   Marker: new (options: { position: KakaoLatLng; map?: KakaoMap }) => KakaoMarker;
+  CustomOverlay: new (options: KakaoCustomOverlayOptions) => KakaoCustomOverlay;
   Polyline: new (options: KakaoPolylineOptions) => KakaoPolyline;
   services: KakaoMapServices;
 }
@@ -45,6 +46,7 @@ interface KakaoMapOptions {
 interface KakaoMap {
   setCenter(latlng: KakaoLatLng): void;
   setBounds(bounds: KakaoLatLngBounds): void;
+  relayout(): void;
 }
 
 interface KakaoLatLngBounds {
@@ -65,6 +67,19 @@ interface KakaoPolyline {
 }
 
 interface KakaoMarker {
+  setMap(map: KakaoMap | null): void;
+}
+
+interface KakaoCustomOverlayOptions {
+  map?: KakaoMap;
+  position: KakaoLatLng;
+  content: string | HTMLElement;
+  xAnchor?: number;
+  yAnchor?: number;
+  zIndex?: number;
+}
+
+interface KakaoCustomOverlay {
   setMap(map: KakaoMap | null): void;
 }
 

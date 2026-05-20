@@ -105,6 +105,8 @@ export function useAiSearchBottomSheet() {
   const { midY: initialMid } = getSnapAnchors(vpInit);
 
   const [sheetTopY, setSheetTopY] = useState(initialMid);
+  /** 드래그 중에도 지도 영역이 따라가도록 실시간 top */
+  const [liveSheetTopY, setLiveSheetTopY] = useState(initialMid);
   const [isDragging, setIsDragging] = useState(false);
 
   const touchStartSheetYRef = useRef(0);
@@ -126,7 +128,9 @@ export function useAiSearchBottomSheet() {
     setSheetTopY((prev) => {
       const idx = cycle.findIndex((y) => Math.abs(prev - y) < 16);
       const i = idx === -1 ? 1 : idx;
-      return cycle[(i + 1) % cycle.length];
+      const next = cycle[(i + 1) % cycle.length]!;
+      setLiveSheetTopY(next);
+      return next;
     });
   }, []);
 
@@ -143,7 +147,9 @@ export function useAiSearchBottomSheet() {
       const { rangeMin, rangeMax } = dragBounds(h);
       setSheetTopY((p) => {
         const c = clamp(p, rangeMin, rangeMax);
-        return snapToNearestAnchor(c, h);
+        const snapped = snapToNearestAnchor(c, h);
+        setLiveSheetTopY(snapped);
+        return snapped;
       });
     };
     window.addEventListener("resize", onResize);
@@ -203,6 +209,7 @@ export function useAiSearchBottomSheet() {
       }
 
       sheet.style.top = `${nextSheetY}px`;
+      setLiveSheetTopY(nextSheetY);
     };
 
     const onSheetTouchEnd = () => {
@@ -211,6 +218,7 @@ export function useAiSearchBottomSheet() {
       const snapped = snapToNearestAnchor(top, h);
       draggingRef.current = false;
       setSheetTopY(snapped);
+      setLiveSheetTopY(snapped);
       sheet.style.top = `${snapped}px`;
       setIsDragging(false);
       contentTouchedRef.current = false;
@@ -239,6 +247,7 @@ export function useAiSearchBottomSheet() {
     sheetRef,
     contentRef,
     sheetTopY,
+    liveSheetTopY,
     isDragging,
     isHalfSheet,
     togglePhase,
