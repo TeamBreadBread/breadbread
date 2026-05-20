@@ -93,4 +93,11 @@ declare global {
   }
 }
 
-export type { KakaoMap, KakaoMaps, KakaoNamespace };
+export type {
+  KakaoCustomOverlay,
+  KakaoLatLng,
+  KakaoLatLngBounds,
+  KakaoMap,
+  KakaoMaps,
+  KakaoNamespace,
+};
