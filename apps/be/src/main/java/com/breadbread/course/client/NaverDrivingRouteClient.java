@@ -38,11 +38,9 @@ public class NaverDrivingRouteClient implements DrivingRouteClient {
         String url = buildUrl(startParam, goalParam, waypoints);
 
         log.info(
-                "[Naver 경로] 요청: start={}, goal={}, waypointCount={}, url={}",
-                startParam,
-                goalParam,
-                waypoints.size(),
-                url);
+                "[Naver 경로] 요청: totalPoints={}, waypointCount={}",
+                coordinates.size(),
+                waypoints.size());
 
         long startTime = System.currentTimeMillis();
         NaverDirectionsResponse response = callApi(url);
@@ -106,7 +104,13 @@ public class NaverDrivingRouteClient implements DrivingRouteClient {
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
-            log.error("[Naver 경로] API 호출 실패", e);
+            if (reactor.core.Exceptions.isTimeout(e)) {
+                log.error(
+                        "[Naver 경로] 타임아웃: timeoutSeconds={}",
+                        naverMapsProperties.getTimeoutSeconds());
+            } else {
+                log.error("[Naver 경로] API 호출 실패", e);
+            }
             throw new CustomException(ErrorCode.ROUTE_PROVIDER_ERROR);
         }
     }
