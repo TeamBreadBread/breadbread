@@ -8,9 +8,10 @@ import lombok.*;
 @Entity
 @Table(
         name = "fcm_tokens",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uq_fcm_tokens_user_token",
-                columnNames = {"user_id", "token"}))
+        uniqueConstraints =
+                @UniqueConstraint(
+                        name = "uq_fcm_tokens_user_token",
+                        columnNames = {"user_id", "token"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString(exclude = "user")

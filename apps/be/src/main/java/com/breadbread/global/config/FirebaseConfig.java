@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class FirebaseConfig {
 
-    @Value("${gcp.project-id}")
+    @Value("${spring.cloud.gcp.project-id}")
     private String projectId;
 
     @PostConstruct
