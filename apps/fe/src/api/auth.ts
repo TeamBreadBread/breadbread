@@ -157,7 +157,7 @@ export async function login(body: LoginRequest): Promise<TokenResponse> {
 }
 
 export async function logout(): Promise<void> {
-  const { data } = await apiClient.post<ApiEnvelope<void>>(`${PATH}/logout`);
+  const { data } = await apiClient.post<ApiEnvelope<void>>(`${PATH}/logout`, {});
   extractData(data);
 }
 
@@ -209,5 +209,11 @@ export async function socialLogin(
     `${PATH}/social/${provider}`,
     body,
   );
+  return extractData(data);
+}
+
+/** 네이버 OAuth CSRF 방지용 state (서버 Redis에 저장) */
+export async function issueNaverState(): Promise<string> {
+  const { data } = await apiClient.post<ApiEnvelope<string>>(`${PATH}/naver/state`);
   return extractData(data);
 }

@@ -10,6 +10,18 @@ export function getFrontBaseUrl(): string {
   return "";
 }
 
+export function oauthRedirectUri(provider: "kakao" | "naver" | "google"): string {
+  return `${getFrontBaseUrl()}/auth/${provider}/callback`;
+}
+
 export function kakaoOAuthRedirectUri(): string {
-  return `${getFrontBaseUrl()}/auth/kakao/callback`;
+  return oauthRedirectUri("kakao");
+}
+
+export function naverOAuthRedirectUri(): string {
+  return oauthRedirectUri("naver");
+}
+
+export function googleOAuthRedirectUri(): string {
+  return oauthRedirectUri("google");
 }

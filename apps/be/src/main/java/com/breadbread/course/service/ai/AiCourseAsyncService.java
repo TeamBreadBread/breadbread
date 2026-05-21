@@ -151,7 +151,8 @@ public class AiCourseAsyncService {
 
                                 if (bakeryMap.size() != recommendedIds.size()) {
                                     log.error("[AI 코스 생성] DB에 없는 빵집 ID 포함 jobId={}", jobId);
-                                    throw new CustomException(ErrorCode.AI_SERVER_ERROR);
+                                    throw new IllegalStateException(
+                                            "AI가 추천한 빵집 ID가 DB에 없습니다. 응답의 bakeries[].id는 요청에 포함된 빵집 id만 사용해야 합니다.");
                                 }
 
                                 AiCourseInfo aiCourseInfo =
@@ -221,9 +222,17 @@ public class AiCourseAsyncService {
         } catch (CustomException e) {
             log.error("[AI 코스 생성] 실패 jobId={}", jobId, e);
             aiCourseRedisService.saveFailed(jobId, e.getMessage());
+        } catch (IllegalStateException e) {
+            log.error("[AI 코스 생성] 실패 jobId={}", jobId, e);
+            aiCourseRedisService.saveFailed(jobId, e.getMessage());
         } catch (Exception e) {
             log.error("[AI 코스 생성] 예외 발생 jobId={}", jobId, e);
-            aiCourseRedisService.saveFailed(jobId, "AI 서버 오류가 발생했습니다.");
+            String detail = e.getMessage();
+            aiCourseRedisService.saveFailed(
+                    jobId,
+                    detail != null && !detail.isBlank()
+                            ? detail
+                            : ErrorCode.AI_SERVER_ERROR.getMessage());
         }
         return CompletableFuture.completedFuture(null);
     }

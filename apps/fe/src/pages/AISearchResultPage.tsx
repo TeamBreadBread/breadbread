@@ -8,7 +8,8 @@ import CourseTimeline from "@/components/domain/ai-course/CourseTimeline";
 import ResultSummaryCard from "@/components/domain/ai-course/ResultSummaryCard";
 import type { CoursePlace, CourseSummary } from "@/components/domain/ai-course/types";
 import { getDevFallbackCourseId } from "@/lib/courseIdFallback";
-import mapImage from "@/assets/images/map.png";
+import CourseKakaoMap from "@/components/domain/ai-course/CourseKakaoMap";
+import { courseBakeriesToMapPoints } from "@/components/domain/ai-course/courseMapPoints";
 import handleArrow from "@/assets/icons/handle_arrowup.png";
 import { useAiSearchBottomSheet } from "@/hooks/useAiSearchBottomSheet";
 import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
@@ -70,6 +71,11 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
     };
   }, [storedCourseDetail]);
 
+  const mapBakeries = useMemo(() => {
+    if (!storedCourseDetail?.bakeries?.length) return [];
+    return courseBakeriesToMapPoints(storedCourseDetail.bakeries);
+  }, [storedCourseDetail]);
+
   const dynamicPlaces: CoursePlace[] | null = useMemo(() => {
     if (!storedCourseDetail) return null;
     if (!Array.isArray(storedCourseDetail.bakeries)) return null;
@@ -88,7 +94,10 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
     count: storedCourseDetail?.likeCount ?? 0,
   }));
 
-  const { sheetRef, contentRef, isDragging, isHalfSheet, togglePhase } = useAiSearchBottomSheet();
+  const { sheetRef, contentRef, liveSheetTopY, isDragging, isHalfSheet, togglePhase } =
+    useAiSearchBottomSheet();
+
+  const mapHeightPx = useMemo(() => Math.max(160, Math.round(liveSheetTopY)), [liveSheetTopY]);
 
   const goBreadTaxiReserve = () => {
     if (!effectiveCourseId) {
@@ -136,24 +145,34 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
 
   return (
     <MobileFrame className="relative h-screen overflow-hidden bg-white">
-      <div className="relative h-full flex-1 bg-white">
-        <AppTopBar title="AI 추천 코스" onBack={() => navigate({ to: "/home" })} />
-        <ResultSummaryCard
-          summary={dynamicSummary ?? summary}
-          liked={likeState.liked}
-          likeCount={likeState.count}
-          onToggleLike={() => void handleToggleCourseLike()}
-        />
+      {/* 네이버 지도처럼: 바텀시트 top까지 지도가 꽉 참 */}
+      <div
+        className="absolute inset-x-0 top-0 z-[1] overflow-hidden bg-gray-100"
+        style={{
+          height: mapHeightPx,
+          transition: isDragging ? "none" : "height 300ms ease-out",
+        }}
+        aria-hidden={false}
+      >
+        <CourseKakaoMap bakeries={mapBakeries} className="h-full w-full" />
+      </div>
 
-        <div className="h-[200px] w-full overflow-hidden">
-          <img src={mapImage} alt="코스 지도" className="h-full w-full object-cover" />
+      <div className="pointer-events-none relative z-10">
+        <div className="pointer-events-auto bg-white shadow-[0_1px_0_rgba(0,0,0,0.06)]">
+          <AppTopBar title="AI 추천 코스" onBack={() => navigate({ to: "/home" })} />
+          <ResultSummaryCard
+            summary={dynamicSummary ?? summary}
+            liked={likeState.liked}
+            likeCount={likeState.count}
+            onToggleLike={() => void handleToggleCourseLike()}
+          />
         </div>
       </div>
 
       <aside
         ref={sheetRef}
         className={cn(
-          "absolute inset-x-0 z-20 overflow-hidden rounded-t-r5 bg-white",
+          "absolute inset-x-0 z-20 overflow-hidden rounded-t-r5 bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.08)]",
           !isDragging && "transition-[top] duration-300 ease-out",
         )}
         style={{ bottom: 0 }}

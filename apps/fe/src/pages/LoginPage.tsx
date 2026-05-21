@@ -6,6 +6,7 @@ import { hasUserPreferenceSaved } from "@/api/user";
 import { seedProfileCacheThenRefreshFromServer } from "@/lib/userProfileCache";
 import { AppTopBar, Button } from "@/components/common";
 import MobileFrame from "@/components/layout/MobileFrame";
+import { tryPostLoginRedirectPath } from "@/lib/postLoginRedirect";
 import { cn } from "@/utils/cn";
 
 const footerLinkClassName = cn(
@@ -20,16 +21,6 @@ const credentialInputClassName = cn(
 );
 
 const loginRouteApi = getRouteApi("/login");
-
-/** `?redirect=` 화이트리스트 — 오픈 리다이렉트 방지 */
-function tryPostLoginRedirectPath(
-  redirect: string | undefined,
-): "/bbangteo-board-write" | undefined {
-  if (redirect === "/bbangteo-board-write") {
-    return "/bbangteo-board-write";
-  }
-  return undefined;
-}
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -51,12 +42,12 @@ const LoginPage = () => {
       setSessionTokens(tokens);
       seedProfileCacheThenRefreshFromServer(id);
       try {
-        const nextBoard = tryPostLoginRedirectPath(redirect);
-        if (nextBoard) {
-          if (nextBoard === "/bbangteo-board-write") {
-            navigate({ to: nextBoard, search: { editId: 0 } });
+        const nextPath = tryPostLoginRedirectPath(redirect);
+        if (nextPath) {
+          if (nextPath === "/bbangteo-board-write") {
+            navigate({ to: nextPath, search: { editId: 0 } });
           } else {
-            navigate({ to: nextBoard });
+            navigate({ to: nextPath });
           }
           return;
         }
@@ -66,12 +57,12 @@ const LoginPage = () => {
           navigate({ to: "/user-preference", search: { mode: "create" } });
         }
       } catch {
-        const nextBoard = tryPostLoginRedirectPath(redirect);
-        if (nextBoard) {
-          if (nextBoard === "/bbangteo-board-write") {
-            navigate({ to: nextBoard, search: { editId: 0 } });
+        const nextPath = tryPostLoginRedirectPath(redirect);
+        if (nextPath) {
+          if (nextPath === "/bbangteo-board-write") {
+            navigate({ to: nextPath, search: { editId: 0 } });
           } else {
-            navigate({ to: nextBoard });
+            navigate({ to: nextPath });
           }
         } else {
           navigate({ to: "/user-preference", search: { mode: "create" } });

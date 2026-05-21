@@ -43,6 +43,16 @@ export default defineConfig({
       '/auth': {
         target: 'https://api.breadbread.io',
         changeOrigin: true,
+        bypass(req) {
+          const path = req.url?.split('?')[0] ?? '';
+          if (
+            path === '/auth/kakao/callback' ||
+            path === '/auth/naver/callback' ||
+            path === '/auth/google/callback'
+          ) {
+            return '/index.html';
+          }
+        },
       },
       '/bakeries': {
         target: 'https://api.breadbread.io',
@@ -71,6 +81,12 @@ export default defineConfig({
       '/images': {
         target: 'https://api.breadbread.io',
         changeOrigin: true,
+      },
+      /** 카카오모빌리티 보행 길찾기 (로컬 CORS 우회) */
+      '/kakao-mobility': {
+        target: 'https://apis-navi.kakaomobility.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/kakao-mobility/, ''),
       },
     },
   },

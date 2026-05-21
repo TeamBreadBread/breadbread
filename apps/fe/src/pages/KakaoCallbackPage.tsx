@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { getErrorMessage } from "@/api/types/common";
-import { socialLogin, setSessionTokens } from "@/api/auth";
+import { ApiBusinessError, getErrorMessage } from "@/api/types/common";
+import { setSessionTokens } from "@/api/auth";
+import { exchangeKakaoSocialLogin } from "@/lib/kakaoOAuth";
+import { kakaoOAuthRedirectUri } from "@/utils/frontBase";
 import { hasUserPreferenceSaved } from "@/api/user";
 import { refreshProfileCacheFromServer } from "@/lib/userProfileCache";
-import { kakaoOAuthRedirectUri } from "@/utils/frontBase";
-import { clearKakaoPkceSession, readKakaoPkceSession } from "@/lib/kakaoOAuth";
+import {
+  clearKakaoOAuthSession,
+  clearKakaoPkceSession,
+  consumeKakaoPostLoginRedirect,
+  readKakaoPkceSession,
+} from "@/lib/kakaoOAuth";
 import MobileFrame from "@/components/layout/MobileFrame";
 
 type Props = {
@@ -26,13 +32,13 @@ export default function KakaoCallbackPage(props: Props) {
   useEffect(() => {
     async function exchange() {
       if (props.error) {
-        clearKakaoPkceSession();
+        clearKakaoOAuthSession();
         return;
       }
 
       const code = props.code;
       if (!code?.trim()) {
-        clearKakaoPkceSession();
+        clearKakaoOAuthSession();
         setMessage("인가 코드가 없습니다. 로그인을 다시 시도해 주세요.");
         return;
       }
@@ -46,22 +52,30 @@ export default function KakaoCallbackPage(props: Props) {
       }
 
       if (props.returnedState !== undefined && props.returnedState !== session.state) {
-        clearKakaoPkceSession();
+        clearKakaoOAuthSession();
         setMessage("잘못된 로그인 요청입니다. 처음부터 다시 시도해 주세요.");
         return;
       }
 
       try {
-        const redirectUri = kakaoOAuthRedirectUri();
-        const tokens = await socialLogin("KAKAO", {
+        const tokens = await exchangeKakaoSocialLogin({
           code,
-          redirectUri,
           codeVerifier: session.codeVerifier,
           state: session.state || undefined,
         });
+        const postLogin = consumeKakaoPostLoginRedirect();
         clearKakaoPkceSession();
         setSessionTokens(tokens);
         refreshProfileCacheFromServer();
+        if (postLogin) {
+          if (postLogin === "/bbangteo-board-write") {
+            await navigate({ to: postLogin, search: { editId: 0 } });
+          } else {
+            await navigate({ to: postLogin });
+          }
+          return;
+        }
+
         try {
           if (await hasUserPreferenceSaved()) {
             await navigate({ to: "/home" });
@@ -72,8 +86,14 @@ export default function KakaoCallbackPage(props: Props) {
           await navigate({ to: "/user-preference", search: { mode: "create" } });
         }
       } catch (e) {
-        clearKakaoPkceSession();
-        setMessage(getErrorMessage(e));
+        clearKakaoOAuthSession();
+        const base = getErrorMessage(e);
+        const isSocialFail = e instanceof ApiBusinessError && e.code === "E0113";
+        setMessage(
+          isSocialFail
+            ? `${base} (Redirect URI는 콘솔·백엔드와 맞는 경우) Cloud Run의 KAKAO_CLIENT_ID(REST API 키)와 KAKAO_CLIENT_SECRET(카카오 로그인 Client Secret)을 확인해 주세요.`
+            : base,
+        );
       }
     }
 
@@ -84,6 +104,11 @@ export default function KakaoCallbackPage(props: Props) {
     <MobileFrame>
       <main className="flex flex-1 flex-col items-center justify-center gap-x4 px-x5 py-x16 text-center text-size-4 text-gray-800">
         <p>{message}</p>
+        {import.meta.env.DEV && message !== "카카오 로그인 처리 중…" ? (
+          <p className="max-w-full break-all text-size-3 text-gray-500">
+            Redirect URI: {kakaoOAuthRedirectUri()}
+          </p>
+        ) : null}
         {props.error !== undefined || message !== "카카오 로그인 처리 중…" ? (
           <button
             type="button"

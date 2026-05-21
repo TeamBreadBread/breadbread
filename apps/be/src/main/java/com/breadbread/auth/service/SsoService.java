@@ -86,17 +86,19 @@ public class SsoService {
                                 status -> !status.is2xxSuccessful(),
                                 response ->
                                         response.bodyToMono(String.class)
-                                                .flatMap(
-                                                        errorBody -> {
-                                                            log.error(
-                                                                    "액세스 토큰 교환 실패: provider={}, status={}",
-                                                                    provider,
-                                                                    response.statusCode());
-                                                            return Mono.error(
-                                                                    new CustomException(
-                                                                            ErrorCode
-                                                                                    .SOCIAL_LOGIN_FAILED));
-                                                        }))
+                                                .then(
+                                                        Mono.fromRunnable(
+                                                                () ->
+                                                                        log.error(
+                                                                                "액세스 토큰 교환 실패: provider={}, status={}",
+                                                                                provider,
+                                                                                response
+                                                                                        .statusCode())))
+                                                .then(
+                                                        Mono.error(
+                                                                new CustomException(
+                                                                        ErrorCode
+                                                                                .SOCIAL_LOGIN_FAILED))))
                         .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                         .block();
 

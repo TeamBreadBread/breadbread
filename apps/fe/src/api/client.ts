@@ -1,6 +1,9 @@
 import axios, { type AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from "axios";
 
+import { clearSessionTokens, refresh, SESSION_REFRESH_KEY, setSessionTokens } from "@/api/auth";
 import { ApiBusinessError, type ApiEnvelope, unwrapApiBody } from "@/api/types/common";
+
+type RetryAxiosConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
 /** 빌드 시 `VITE_API_BASE_URL` 가 있으면 최우선 사용 */
 const envBase = import.meta.env.VITE_API_BASE_URL;
@@ -86,6 +89,25 @@ function businessErrorFromEnvelope(
   return new ApiBusinessError(fallbackMessage, undefined, status);
 }
 
+let refreshInFlight: ReturnType<typeof refresh> | null = null;
+
+function shouldAttemptTokenRefresh(
+  config: RetryAxiosConfig | undefined,
+  status: number | undefined,
+) {
+  if (status !== 401 || !config || config._retry) return false;
+  const url = config.url ?? "";
+  if (
+    url.includes("/auth/refresh") ||
+    url.includes("/auth/login") ||
+    url.includes("/auth/social/")
+  ) {
+    return false;
+  }
+  const refreshToken = localStorage.getItem(SESSION_REFRESH_KEY)?.trim();
+  return Boolean(refreshToken);
+}
+
 apiClient.interceptors.response.use(
   (response: AxiosResponse<ApiEnvelope>) => {
     const envelope = response.data as ApiEnvelope | undefined;
@@ -100,8 +122,32 @@ apiClient.interceptors.response.use(
     }
     return response;
   },
-  (error: AxiosError<ApiEnvelope>) => {
+  async (error: AxiosError<ApiEnvelope>) => {
     const status = error.response?.status;
+    const original = error.config as RetryAxiosConfig | undefined;
+
+    if (original && shouldAttemptTokenRefresh(original, status)) {
+      const retryConfig = original;
+      retryConfig._retry = true;
+      const storedRefresh = localStorage.getItem(SESSION_REFRESH_KEY)?.trim();
+      if (storedRefresh) {
+        try {
+          if (!refreshInFlight) {
+            refreshInFlight = refresh({ refreshToken: storedRefresh }).finally(() => {
+              refreshInFlight = null;
+            });
+          }
+          const tokens = await refreshInFlight;
+          setSessionTokens(tokens);
+          retryConfig.headers = retryConfig.headers ?? {};
+          retryConfig.headers.Authorization = `Bearer ${tokens.accessToken}`;
+          return apiClient(retryConfig);
+        } catch {
+          clearSessionTokens();
+        }
+      }
+    }
+
     const envelope = error.response?.data;
     if (envelope && envelope.success === false) {
       return Promise.reject(

@@ -40,10 +40,12 @@ public class AuthController {
     @Operation(summary = "로그아웃")
     @PostMapping("/logout")
     public ApiResponse<Void> logout(
-            @Parameter(description = "Bearer {accessToken}") @RequestHeader("Authorization")
+            @Parameter(description = "Bearer {accessToken}")
+                    @RequestHeader(value = "Authorization", required = false)
                     String bearerToken) {
-        String accessToken = bearerToken.substring(7);
-        authService.logout(accessToken);
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            authService.logout(bearerToken.substring(7).trim());
+        }
         return ApiResponse.ok();
     }
 

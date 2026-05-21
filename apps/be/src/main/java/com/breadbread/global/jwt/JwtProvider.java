@@ -6,6 +6,7 @@ import com.breadbread.global.exception.ErrorCode;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
@@ -25,8 +26,11 @@ public class JwtProvider {
 
     @PostConstruct
     public void init() {
-        this.accessKey = Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes());
-        this.refreshKey = Keys.hmacShaKeyFor(jwtProperties.getRefreshSecret().getBytes());
+        this.accessKey =
+                Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
+        this.refreshKey =
+                Keys.hmacShaKeyFor(
+                        jwtProperties.getRefreshSecret().getBytes(StandardCharsets.UTF_8));
     }
 
     public String createAccessToken(String userId) {

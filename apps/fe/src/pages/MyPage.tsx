@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { clearSessionTokens, logout } from "@/api/auth";
 import { getMyProfile } from "@/api/user";
-import { getErrorMessage } from "@/api/types/common";
 import {
   clearUserProfile,
   getDisplayNameForLoginId,
@@ -37,8 +36,10 @@ export default function MyPage() {
       setIsLoggingOut(true);
       try {
         await logout();
-      } catch (e) {
-        window.alert(getErrorMessage(e));
+      } catch {
+        /* 만료·서버 오류여도 로컬 세션은 정리 */
+      } finally {
+        setIsLoggingOut(false);
       }
       clearSessionTokens();
       clearUserProfile();

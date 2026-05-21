@@ -1,6 +1,7 @@
 {
   "hosting": {
-    "public": "public",
+    "public": "dist",
+    "predeploy": ["pnpm run build"],
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -13,6 +14,18 @@
           "serviceId": "bread-be",
           "region": "asia-northeast3"
         }
+      },
+      {
+        "source": "/auth/kakao/callback",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/auth/naver/callback",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/auth/google/callback",
+        "destination": "/index.html"
       },
       {
         "source": "/auth/**",
