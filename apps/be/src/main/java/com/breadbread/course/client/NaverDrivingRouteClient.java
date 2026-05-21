@@ -104,7 +104,8 @@ public class NaverDrivingRouteClient implements DrivingRouteClient {
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
-            if (reactor.core.Exceptions.isTimeout(e)) {
+            if (reactor.core.Exceptions.unwrap(e)
+                    instanceof java.util.concurrent.TimeoutException) {
                 log.error(
                         "[Naver 경로] 타임아웃: timeoutSeconds={}",
                         naverMapsProperties.getTimeoutSeconds());
