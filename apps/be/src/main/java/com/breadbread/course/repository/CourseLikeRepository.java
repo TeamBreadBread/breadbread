@@ -4,6 +4,8 @@ import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseLike;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -25,4 +27,9 @@ public interface CourseLikeRepository extends JpaRepository<CourseLike, Long> {
             "SELECT bl.course.id FROM CourseLike bl WHERE bl.course.id IN :courseIds AND bl.user.id = :userId")
     List<Long> findLikedCourseIdsByUserId(
             @Param("courseIds") List<Long> courseIds, @Param("userId") Long userId);
+
+    @Query(
+            value = "SELECT cl FROM CourseLike cl JOIN FETCH cl.course WHERE cl.user.id = :userId",
+            countQuery = "SELECT COUNT(cl) FROM CourseLike cl WHERE cl.user.id = :userId")
+    Page<CourseLike> findByUserId(@Param("userId") Long userId, Pageable pageable);
 }

@@ -19,4 +19,17 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     Optional<Double> findAverageRatingByBakeryId(@Param("bakeryId") Long bakeryId);
 
     List<Review> findAllByUserIdOrderByCreatedAtDesc(Long userId);
+
+    @Query(
+            value = "SELECT r.id FROM Review r WHERE r.user.id = :userId ORDER BY r.createdAt DESC",
+            countQuery = "SELECT COUNT(r) FROM Review r WHERE r.user.id = :userId")
+    Page<Long> findPageIdsByUserIdOrderByCreatedAtDesc(
+            @Param("userId") Long userId, Pageable pageable);
+
+    @Query(
+            "SELECT DISTINCT r FROM Review r "
+                    + "JOIN FETCH r.bakery "
+                    + "LEFT JOIN FETCH r.imageUrls "
+                    + "WHERE r.id IN :reviewIds")
+    List<Review> findAllWithBakeryAndImagesByIdIn(@Param("reviewIds") List<Long> reviewIds);
 }

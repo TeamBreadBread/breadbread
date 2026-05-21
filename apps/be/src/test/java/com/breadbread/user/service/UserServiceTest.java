@@ -3,6 +3,8 @@ package com.breadbread.user.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -13,11 +15,22 @@ import com.breadbread.auth.redis.PhoneVerificationCache;
 import com.breadbread.auth.service.PhoneVerificationRedisService;
 import com.breadbread.auth.service.TokenService;
 import com.breadbread.bakery.entity.Bakery;
+import com.breadbread.bakery.entity.BakeryImage;
+import com.breadbread.bakery.entity.BakeryLike;
 import com.breadbread.bakery.entity.BakeryPersonality;
 import com.breadbread.bakery.entity.BakeryType;
 import com.breadbread.bakery.entity.BakeryUseType;
 import com.breadbread.bakery.entity.Review;
+import com.breadbread.bakery.repository.BakeryImageRepository;
+import com.breadbread.bakery.repository.BakeryLikeRepository;
 import com.breadbread.bakery.repository.ReviewRepository;
+import com.breadbread.course.entity.Course;
+import com.breadbread.course.entity.CourseBakery;
+import com.breadbread.course.entity.CourseLike;
+import com.breadbread.course.entity.ManualCourseInfo;
+import com.breadbread.course.repository.CourseLikeRepository;
+import com.breadbread.course.repository.CourseRepository;
+import com.breadbread.course.repository.RouteRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.dto.ChangePasswordRequest;
@@ -31,6 +44,7 @@ import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.entity.WaitingTolerance;
 import com.breadbread.user.repository.UserPreferenceRepository;
 import com.breadbread.user.repository.UserRepository;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -40,6 +54,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -52,6 +69,11 @@ class UserServiceTest {
     @Mock private PhoneVerificationRedisService phoneVerificationRedisService;
     @Mock private TokenService tokenService;
     @Mock private ReviewRepository reviewRepository;
+    @Mock private BakeryLikeRepository bakeryLikeRepository;
+    @Mock private BakeryImageRepository bakeryImageRepository;
+    @Mock private CourseLikeRepository courseLikeRepository;
+    @Mock private CourseRepository courseRepository;
+    @Mock private RouteRepository routeRepository;
 
     @InjectMocks private UserService userService;
 
@@ -606,12 +628,15 @@ class UserServiceTest {
     // ───────────────────────────── getMyReviews ─────────────────────────────
 
     @Test
-    void getMyReviews_returns_emptyList_whenNoReviews() {
-        when(reviewRepository.findAllByUserIdOrderByCreatedAtDesc(1L)).thenReturn(List.of());
+    void getMyReviews_returns_empty_page_whenNoReviews() {
+        when(reviewRepository.findPageIdsByUserIdOrderByCreatedAtDesc(eq(1L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
 
-        var result = userService.getMyReviews(1L);
+        var result = userService.getMyReviews(1L, 0, 10);
 
-        assertThat(result).isEmpty();
+        assertThat(result.getReviews()).isEmpty();
+        assertThat(result.getTotal()).isZero();
+        assertThat(result.isHasNext()).isFalse();
     }
 
     @Test
@@ -620,17 +645,20 @@ class UserServiceTest {
         Bakery bakery = bakery(10L, "소금빵집");
         Review review1 = review(100L, user, bakery, 5, "맛있어요");
         Review review2 = review(101L, user, bakery, 4, "또 오고싶어요");
-        when(reviewRepository.findAllByUserIdOrderByCreatedAtDesc(1L))
+        when(reviewRepository.findPageIdsByUserIdOrderByCreatedAtDesc(eq(1L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(100L, 101L), PageRequest.of(0, 10), 2));
+        when(reviewRepository.findAllWithBakeryAndImagesByIdIn(List.of(100L, 101L)))
                 .thenReturn(List.of(review1, review2));
 
-        var result = userService.getMyReviews(1L);
+        var result = userService.getMyReviews(1L, 0, 10);
 
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0).getReviewId()).isEqualTo(100L);
-        assertThat(result.get(0).getBakeryId()).isEqualTo(10L);
-        assertThat(result.get(0).getBakeryName()).isEqualTo("소금빵집");
-        assertThat(result.get(0).getRating()).isEqualTo(5);
-        assertThat(result.get(0).getContent()).isEqualTo("맛있어요");
+        assertThat(result.getReviews()).hasSize(2);
+        assertThat(result.getReviews().get(0).getReviewId()).isEqualTo(100L);
+        assertThat(result.getReviews().get(0).getBakeryId()).isEqualTo(10L);
+        assertThat(result.getReviews().get(0).getBakeryName()).isEqualTo("소금빵집");
+        assertThat(result.getReviews().get(0).getRating()).isEqualTo(5);
+        assertThat(result.getReviews().get(0).getContent()).isEqualTo("맛있어요");
+        assertThat(result.getTotal()).isEqualTo(2);
     }
 
     @Test
@@ -639,13 +667,15 @@ class UserServiceTest {
         Bakery bakery = bakery(10L, "소금빵집");
         Review review1 = review(100L, user, bakery, 5, "첫 번째 리뷰");
         Review review2 = review(101L, user, bakery, 3, "두 번째 리뷰");
-        when(reviewRepository.findAllByUserIdOrderByCreatedAtDesc(1L))
-                .thenReturn(List.of(review2, review1));
+        when(reviewRepository.findPageIdsByUserIdOrderByCreatedAtDesc(eq(1L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(101L, 100L), PageRequest.of(0, 10), 2));
+        when(reviewRepository.findAllWithBakeryAndImagesByIdIn(List.of(101L, 100L)))
+                .thenReturn(List.of(review1, review2));
 
-        var result = userService.getMyReviews(1L);
+        var result = userService.getMyReviews(1L, 0, 10);
 
-        assertThat(result.get(0).getReviewId()).isEqualTo(101L);
-        assertThat(result.get(1).getReviewId()).isEqualTo(100L);
+        assertThat(result.getReviews().get(0).getReviewId()).isEqualTo(101L);
+        assertThat(result.getReviews().get(1).getReviewId()).isEqualTo(100L);
     }
 
     private static Bakery bakery(long id, String name) {
@@ -677,5 +707,178 @@ class UserServiceTest {
                 .verificationToken(token)
                 .code("123456")
                 .build();
+    }
+
+    // ───────────────────────────── getLikedBakeries ─────────────────────────────
+
+    @Test
+    void getLikedBakeries_returns_empty_page_when_no_likes() {
+        when(bakeryLikeRepository.findByUserId(eq(1L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
+
+        var result = userService.getLikedBakeries(1L, 0, 10);
+
+        assertThat(result.getBakeries()).isEmpty();
+        assertThat(result.getTotal()).isZero();
+        assertThat(result.isHasNext()).isFalse();
+    }
+
+    @Test
+    void getLikedBakeries_maps_thumbnail_and_likeCount() {
+        Bakery bakery = bakery(10L, "소금빵집");
+        User user = user(1L);
+        BakeryLike like = BakeryLike.builder().bakery(bakery).user(user).build();
+        when(bakeryLikeRepository.findByUserId(eq(1L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(like), PageRequest.of(0, 10), 1));
+        BakeryImage thumb =
+                BakeryImage.builder().imageUrl("thumb.jpg").displayOrder(1).bakery(bakery).build();
+        when(bakeryImageRepository.findAllByBakeryIdInAndDisplayOrder(List.of(10L), 1))
+                .thenReturn(List.of(thumb));
+        when(bakeryLikeRepository.countByBakeryIdIn(List.of(10L)))
+                .thenReturn(Collections.singletonList(new Object[] {10L, 5L}));
+
+        var result = userService.getLikedBakeries(1L, 0, 10);
+
+        assertThat(result.getBakeries()).hasSize(1);
+        assertThat(result.getBakeries().get(0).getThumbnailUrl()).isEqualTo("thumb.jpg");
+        assertThat(result.getBakeries().get(0).getLikeCount()).isEqualTo(5L);
+        assertThat(result.getBakeries().get(0).isLiked()).isTrue();
+        assertThat(result.getTotal()).isEqualTo(1);
+        assertThat(result.getPage()).isZero();
+        assertThat(result.getSize()).isEqualTo(10);
+        assertThat(result.isHasNext()).isFalse();
+    }
+
+    @Test
+    void getLikedBakeries_sets_liked_true_for_all_items() {
+        Bakery b1 = bakery(1L, "빵집A");
+        Bakery b2 = bakery(2L, "빵집B");
+        User user = user(5L);
+        List<BakeryLike> likes =
+                List.of(
+                        BakeryLike.builder().bakery(b1).user(user).build(),
+                        BakeryLike.builder().bakery(b2).user(user).build());
+        when(bakeryLikeRepository.findByUserId(eq(5L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(likes, PageRequest.of(0, 10), 2));
+        when(bakeryImageRepository.findAllByBakeryIdInAndDisplayOrder(anyList(), eq(1)))
+                .thenReturn(List.of());
+        when(bakeryLikeRepository.countByBakeryIdIn(anyList())).thenReturn(List.of());
+
+        var result = userService.getLikedBakeries(5L, 0, 10);
+
+        assertThat(result.getBakeries()).hasSize(2);
+        assertThat(result.getBakeries()).allSatisfy(b -> assertThat(b.isLiked()).isTrue());
+    }
+
+    @Test
+    void getLikedBakeries_reflects_hasNext_when_more_pages_exist() {
+        Bakery bakery = bakery(99L, "빵집");
+        User user = user(7L);
+        BakeryLike like = BakeryLike.builder().bakery(bakery).user(user).build();
+        when(bakeryLikeRepository.findByUserId(eq(7L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(like), PageRequest.of(0, 1), 5));
+        when(bakeryImageRepository.findAllByBakeryIdInAndDisplayOrder(anyList(), eq(1)))
+                .thenReturn(List.of());
+        when(bakeryLikeRepository.countByBakeryIdIn(anyList())).thenReturn(List.of());
+
+        var result = userService.getLikedBakeries(7L, 0, 1);
+
+        assertThat(result.isHasNext()).isTrue();
+        assertThat(result.getTotal()).isEqualTo(5);
+    }
+
+    // ───────────────────────────── getLikedCourses ─────────────────────────────
+
+    @Test
+    void getLikedCourses_returns_empty_page_when_no_likes() {
+        when(courseLikeRepository.findByUserId(eq(1L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
+
+        var result = userService.getLikedCourses(1L, 0, 10);
+
+        assertThat(result.getCourses()).isEmpty();
+        assertThat(result.getTotal()).isZero();
+        assertThat(result.isHasNext()).isFalse();
+    }
+
+    @Test
+    void getLikedCourses_maps_thumbnail_likeCount_and_saved_status() {
+        Course course = course(1L, "서울 코스");
+        Bakery bakery = bakery(10L, "A빵집");
+        course.addCourseBakery(CourseBakery.builder().visitOrder(1).bakery(bakery).build());
+        CourseLike like = CourseLike.builder().course(course).user(user(3L)).build();
+
+        when(courseLikeRepository.findByUserId(eq(3L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(like), PageRequest.of(0, 10), 1));
+        when(bakeryImageRepository.findAllByBakeryIdInAndDisplayOrder(List.of(10L), 1))
+                .thenReturn(
+                        List.of(
+                                BakeryImage.builder()
+                                        .imageUrl("t.jpg")
+                                        .displayOrder(1)
+                                        .bakery(bakery)
+                                        .build()));
+        when(courseLikeRepository.countByCourseIdIn(List.of(1L)))
+                .thenReturn(Collections.singletonList(new Object[] {1L, 4L}));
+        when(routeRepository.findLikedCourseIdsByUserId(List.of(1L), 3L)).thenReturn(List.of(1L));
+
+        var result = userService.getLikedCourses(3L, 0, 10);
+
+        assertThat(result.getCourses()).hasSize(1);
+        assertThat(result.getCourses().get(0).isLiked()).isTrue();
+        assertThat(result.getCourses().get(0).isSaved()).isTrue();
+        assertThat(result.getCourses().get(0).getLikeCount()).isEqualTo(4);
+        assertThat(result.getCourses().get(0).getBakeries().get(0).getThumbnailUrl())
+                .isEqualTo("t.jpg");
+        assertThat(result.getTotal()).isEqualTo(1);
+        assertThat(result.getPage()).isZero();
+        assertThat(result.getSize()).isEqualTo(10);
+        assertThat(result.isHasNext()).isFalse();
+    }
+
+    @Test
+    void getLikedCourses_sets_saved_false_when_not_in_routes() {
+        Course course = course(2L, "코스");
+        CourseLike like = CourseLike.builder().course(course).user(user(5L)).build();
+
+        when(courseLikeRepository.findByUserId(eq(5L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(like), PageRequest.of(0, 10), 1));
+        when(courseLikeRepository.countByCourseIdIn(List.of(2L))).thenReturn(List.of());
+        when(routeRepository.findLikedCourseIdsByUserId(List.of(2L), 5L)).thenReturn(List.of());
+
+        var result = userService.getLikedCourses(5L, 0, 10);
+
+        assertThat(result.getCourses().get(0).isLiked()).isTrue();
+        assertThat(result.getCourses().get(0).isSaved()).isFalse();
+    }
+
+    @Test
+    void getLikedCourses_reflects_hasNext_when_more_pages_exist() {
+        Course course = course(3L, "다음 페이지");
+        CourseLike like = CourseLike.builder().course(course).user(user(9L)).build();
+
+        when(courseLikeRepository.findByUserId(eq(9L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(like), PageRequest.of(0, 1), 3));
+        when(courseLikeRepository.countByCourseIdIn(anyList())).thenReturn(List.of());
+        when(routeRepository.findLikedCourseIdsByUserId(anyList(), eq(9L))).thenReturn(List.of());
+
+        var result = userService.getLikedCourses(9L, 0, 1);
+
+        assertThat(result.isHasNext()).isTrue();
+        assertThat(result.getTotal()).isEqualTo(3);
+    }
+
+    private static Course course(long id, String name) {
+        Course c =
+                Course.createManual(
+                        name,
+                        null,
+                        "1h",
+                        1000L,
+                        "테마",
+                        "서울",
+                        ManualCourseInfo.builder().editorPick(false).build());
+        ReflectionTestUtils.setField(c, "id", id);
+        return c;
     }
 }

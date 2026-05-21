@@ -1,7 +1,9 @@
 package com.breadbread.user.controller;
 
 import com.breadbread.auth.dto.CustomUserDetails;
-import com.breadbread.bakery.dto.MyReviewResponse;
+import com.breadbread.bakery.dto.BakeryListResponse;
+import com.breadbread.bakery.dto.MyReviewListResponse;
+import com.breadbread.course.dto.CourseListResponse;
 import com.breadbread.global.dto.ApiResponse;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
@@ -16,8 +18,9 @@ import com.breadbread.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import java.util.List;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -101,9 +104,29 @@ public class UserController {
 
     @Operation(summary = "내가 쓴 리뷰 목록 조회")
     @GetMapping("/me/reviews")
-    public ApiResponse<List<MyReviewResponse>> getMyReviews(
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ApiResponse.ok(userService.getMyReviews(userDetails.getId()));
+    public ApiResponse<MyReviewListResponse> getMyReviews(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Positive int size) {
+        return ApiResponse.ok(userService.getMyReviews(userDetails.getId(), page, size));
+    }
+
+    @Operation(summary = "좋아요한 빵집 목록 조회")
+    @GetMapping("/me/liked/bakeries")
+    public ApiResponse<BakeryListResponse> getLikedBakeries(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Positive int size) {
+        return ApiResponse.ok(userService.getLikedBakeries(userDetails.getId(), page, size));
+    }
+
+    @Operation(summary = "좋아요한 코스 목록 조회")
+    @GetMapping("/me/liked/courses")
+    public ApiResponse<CourseListResponse> getLikedCourses(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Positive int size) {
+        return ApiResponse.ok(userService.getLikedCourses(userDetails.getId(), page, size));
     }
 
     @Operation(summary = "선호도 수정")

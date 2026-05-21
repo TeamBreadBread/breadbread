@@ -4,10 +4,29 @@ import com.breadbread.auth.entity.VerificationPurpose;
 import com.breadbread.auth.redis.PhoneVerificationCache;
 import com.breadbread.auth.service.PhoneVerificationRedisService;
 import com.breadbread.auth.service.TokenService;
+import com.breadbread.bakery.dto.BakeryListResponse;
+import com.breadbread.bakery.dto.BakerySummaryResponse;
+import com.breadbread.bakery.dto.MyReviewListResponse;
 import com.breadbread.bakery.dto.MyReviewResponse;
+import com.breadbread.bakery.entity.Bakery;
+import com.breadbread.bakery.entity.BakeryImage;
+import com.breadbread.bakery.entity.BakeryLike;
+import com.breadbread.bakery.entity.Review;
+import com.breadbread.bakery.repository.BakeryImageRepository;
+import com.breadbread.bakery.repository.BakeryLikeRepository;
 import com.breadbread.bakery.repository.ReviewRepository;
+import com.breadbread.course.dto.CourseBakerySummary;
+import com.breadbread.course.dto.CourseListResponse;
+import com.breadbread.course.dto.CourseSummaryResponse;
+import com.breadbread.course.entity.Course;
+import com.breadbread.course.entity.CourseBakery;
+import com.breadbread.course.entity.CourseLike;
+import com.breadbread.course.repository.CourseLikeRepository;
+import com.breadbread.course.repository.CourseRepository;
+import com.breadbread.course.repository.RouteRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.global.validator.PaginationValidator;
 import com.breadbread.user.dto.ChangePasswordRequest;
 import com.breadbread.user.dto.ChangePhoneRequest;
 import com.breadbread.user.dto.CreatePreferenceRequest;
@@ -19,10 +38,17 @@ import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserPreference;
 import com.breadbread.user.repository.UserPreferenceRepository;
 import com.breadbread.user.repository.UserRepository;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +63,11 @@ public class UserService {
     private final PhoneVerificationRedisService phoneVerificationRedisService;
     private final TokenService tokenService;
     private final ReviewRepository reviewRepository;
+    private final BakeryLikeRepository bakeryLikeRepository;
+    private final BakeryImageRepository bakeryImageRepository;
+    private final CourseLikeRepository courseLikeRepository;
+    private final CourseRepository courseRepository;
+    private final RouteRepository routeRepository;
 
     @Transactional
     public void savePreference(Long userId, CreatePreferenceRequest request) {
@@ -183,9 +214,168 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public List<MyReviewResponse> getMyReviews(Long userId) {
-        return reviewRepository.findAllByUserIdOrderByCreatedAtDesc(userId).stream()
-                .map(MyReviewResponse::from)
-                .toList();
+    public MyReviewListResponse getMyReviews(Long userId, int page, int size) {
+        PaginationValidator.validate(page, size);
+
+        Page<Long> reviewIdsPage =
+                reviewRepository.findPageIdsByUserIdOrderByCreatedAtDesc(
+                        userId, PageRequest.of(page, size));
+        List<Long> reviewIds = reviewIdsPage.getContent();
+
+        Map<Long, Review> reviewsById =
+                reviewIds.isEmpty()
+                        ? Map.of()
+                        : reviewRepository.findAllWithBakeryAndImagesByIdIn(reviewIds).stream()
+                                .collect(Collectors.toMap(Review::getId, review -> review));
+
+        List<MyReviewResponse> reviews =
+                reviewIds.stream().map(reviewsById::get).map(MyReviewResponse::from).toList();
+
+        return MyReviewListResponse.builder()
+                .reviews(reviews)
+                .total((int) reviewIdsPage.getTotalElements())
+                .page(page)
+                .size(size)
+                .hasNext(reviewIdsPage.hasNext())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public BakeryListResponse getLikedBakeries(Long userId, int page, int size) {
+        PaginationValidator.validate(page, size);
+
+        Page<BakeryLike> likes =
+                bakeryLikeRepository.findByUserId(
+                        userId, PageRequest.of(page, size, Sort.by("id").descending()));
+        List<Bakery> bakeries = likes.getContent().stream().map(BakeryLike::getBakery).toList();
+        List<Long> ids = bakeries.stream().map(Bakery::getId).toList();
+
+        Map<Long, String> thumbnailMap =
+                ids.isEmpty()
+                        ? Map.of()
+                        : bakeryImageRepository.findAllByBakeryIdInAndDisplayOrder(ids, 1).stream()
+                                .collect(
+                                        Collectors.toMap(
+                                                img -> img.getBakery().getId(),
+                                                BakeryImage::getImageUrl));
+        Map<Long, Long> likeCountMap =
+                ids.isEmpty()
+                        ? Map.of()
+                        : bakeryLikeRepository.countByBakeryIdIn(ids).stream()
+                                .collect(
+                                        Collectors.toMap(
+                                                row -> (Long) row[0], row -> (Long) row[1]));
+
+        return BakeryListResponse.builder()
+                .bakeries(
+                        bakeries.stream()
+                                .map(
+                                        b ->
+                                                BakerySummaryResponse.from(
+                                                        b,
+                                                        thumbnailMap.get(b.getId()),
+                                                        likeCountMap.getOrDefault(b.getId(), 0L),
+                                                        true))
+                                .toList())
+                .total((int) likes.getTotalElements())
+                .page(page)
+                .size(size)
+                .hasNext(likes.hasNext())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public CourseListResponse getLikedCourses(Long userId, int page, int size) {
+        PaginationValidator.validate(page, size);
+
+        Page<CourseLike> likes =
+                courseLikeRepository.findByUserId(
+                        userId, PageRequest.of(page, size, Sort.by("id").descending()));
+        List<Long> courseIds =
+                likes.getContent().stream().map(CourseLike::getCourse).map(Course::getId).toList();
+        Map<Long, Course> likedCoursesById =
+                likes.getContent().stream()
+                        .map(CourseLike::getCourse)
+                        .collect(Collectors.toMap(Course::getId, course -> course));
+        Map<Long, Course> coursesById =
+                courseIds.isEmpty()
+                        ? Map.of()
+                        : courseRepository.findAllWithBakeriesByIdIn(courseIds).stream()
+                                .collect(Collectors.toMap(Course::getId, course -> course));
+        List<Course> courses =
+                courseIds.stream()
+                        .map(id -> coursesById.getOrDefault(id, likedCoursesById.get(id)))
+                        .toList();
+
+        List<Long> allBakeryIds =
+                courses.stream()
+                        .flatMap(course -> course.getCourseBakeries().stream())
+                        .map(cb -> cb.getBakery().getId())
+                        .distinct()
+                        .toList();
+
+        Map<Long, String> thumbnailMap =
+                allBakeryIds.isEmpty()
+                        ? Map.of()
+                        : bakeryImageRepository
+                                .findAllByBakeryIdInAndDisplayOrder(allBakeryIds, 1)
+                                .stream()
+                                .collect(
+                                        Collectors.toMap(
+                                                img -> img.getBakery().getId(),
+                                                BakeryImage::getImageUrl));
+
+        Map<Long, Integer> likeCountMap =
+                courseIds.isEmpty()
+                        ? Map.of()
+                        : courseLikeRepository.countByCourseIdIn(courseIds).stream()
+                                .collect(
+                                        Collectors.toMap(
+                                                row -> (Long) row[0],
+                                                row -> ((Long) row[1]).intValue()));
+
+        HashSet<Long> savedCourseIds =
+                courseIds.isEmpty()
+                        ? new HashSet<>()
+                        : new HashSet<>(
+                                routeRepository.findLikedCourseIdsByUserId(courseIds, userId));
+
+        List<CourseSummaryResponse> summaries =
+                courses.stream()
+                        .map(
+                                course ->
+                                        toCourseSummary(
+                                                course, thumbnailMap, likeCountMap, savedCourseIds))
+                        .toList();
+
+        return CourseListResponse.builder()
+                .courses(summaries)
+                .total((int) likes.getTotalElements())
+                .page(page)
+                .size(size)
+                .hasNext(likes.hasNext())
+                .build();
+    }
+
+    private CourseSummaryResponse toCourseSummary(
+            Course course,
+            Map<Long, String> thumbnailMap,
+            Map<Long, Integer> likeCountMap,
+            HashSet<Long> savedCourseIds) {
+        List<CourseBakerySummary> bakeries =
+                course.getCourseBakeries().stream()
+                        .sorted(Comparator.comparingInt(CourseBakery::getVisitOrder))
+                        .map(
+                                cb ->
+                                        CourseBakerySummary.from(
+                                                cb.getBakery(),
+                                                thumbnailMap.get(cb.getBakery().getId())))
+                        .toList();
+        return CourseSummaryResponse.from(
+                course,
+                likeCountMap.getOrDefault(course.getId(), 0),
+                true,
+                savedCourseIds.contains(course.getId()),
+                bakeries);
     }
 }
