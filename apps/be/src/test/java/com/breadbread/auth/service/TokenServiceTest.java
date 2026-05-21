@@ -90,11 +90,13 @@ class TokenServiceTest {
 
     @Test
     void logout_noop_when_user_id_not_resolved() {
-        when(jwtProvider.resolveUserIdFromAccessToken("bad")).thenReturn(java.util.Optional.empty());
+        when(jwtProvider.resolveUserIdFromAccessToken("bad"))
+                .thenReturn(java.util.Optional.empty());
 
         tokenService.logout("bad");
 
-        verify(refreshTokenRedisService, org.mockito.Mockito.never()).deleteByUserId(org.mockito.ArgumentMatchers.anyString());
+        verify(refreshTokenRedisService, org.mockito.Mockito.never())
+                .deleteByUserId(org.mockito.ArgumentMatchers.anyString());
     }
 
     private static String sha256Base64(String token) {

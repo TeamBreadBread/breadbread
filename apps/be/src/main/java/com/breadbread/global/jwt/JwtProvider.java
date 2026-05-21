@@ -54,15 +54,19 @@ public class JwtProvider {
         return parseClaims(token, accessKey).getSubject();
     }
 
-    /**
-     * 로그아웃 등: 만료된 액세스 토큰이어도 subject(userId)를 추출합니다.
-     */
+    /** 로그아웃 등: 서명이 검증된 액세스 토큰에서 subject(userId)를 추출합니다. 만료 토큰도 허용합니다. */
     public Optional<String> resolveUserIdFromAccessToken(String token) {
         if (token == null || token.isBlank()) {
             return Optional.empty();
         }
         try {
-            return Optional.of(getUserIdFromAccessToken(token));
+            Claims claims =
+                    Jwts.parser()
+                            .verifyWith(accessKey)
+                            .build()
+                            .parseSignedClaims(token)
+                            .getPayload();
+            return Optional.ofNullable(claims.getSubject());
         } catch (ExpiredJwtException e) {
             return Optional.ofNullable(e.getClaims().getSubject());
         } catch (JwtException | IllegalArgumentException e) {

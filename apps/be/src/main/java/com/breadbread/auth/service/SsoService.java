@@ -8,6 +8,7 @@ import com.breadbread.auth.entity.SsoAccount;
 import com.breadbread.auth.entity.SsoProvider;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.global.util.LogRedaction;
 import com.breadbread.user.entity.User;
 import java.util.List;
 import java.util.Map;
@@ -92,7 +93,7 @@ public class SsoService {
                                                                     "액세스 토큰 교환 실패: provider={}, status={}, body={}",
                                                                     provider,
                                                                     response.statusCode(),
-                                                                    errorBody);
+                                                                    LogRedaction.forLog(errorBody));
                                                             return Mono.error(
                                                                     new CustomException(
                                                                             ErrorCode
