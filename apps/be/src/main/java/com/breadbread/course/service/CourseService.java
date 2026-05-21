@@ -4,11 +4,13 @@ import com.breadbread.bakery.dto.BakerySummaryResponse;
 import com.breadbread.bakery.entity.*;
 import com.breadbread.bakery.repository.BakeryImageRepository;
 import com.breadbread.bakery.repository.BakeryRepository;
+import com.breadbread.course.client.DrivingRouteClient;
 import com.breadbread.course.dto.*;
 import com.breadbread.course.dto.ai.AiCourseRequest;
 import com.breadbread.course.dto.ai.AiJobStatusResponse;
 import com.breadbread.course.entity.*;
 import com.breadbread.course.repository.CourseBakeryRepository;
+import com.breadbread.course.repository.CourseDrivingRouteRepository;
 import com.breadbread.course.repository.CourseLikeRepository;
 import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.course.repository.RouteRepository;
@@ -17,6 +19,7 @@ import com.breadbread.course.service.ai.AiCourseRedisService;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.entity.User;
+import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
 import java.util.*;
 import java.util.concurrent.CompletionException;
@@ -44,6 +47,9 @@ public class CourseService {
     private final RouteRepository routeRepository;
     private final AiCourseAsyncService aiCourseAsyncService;
     private final AiCourseRedisService aiCourseRedisService;
+    private final DrivingRouteClient drivingRouteClient;
+    private final CourseDrivingRouteRepository courseDrivingRouteRepository;
+    private final CourseDrivingRouteSaver courseDrivingRouteSaver;
 
     @Transactional(readOnly = true)
     public CourseListResponse search(CourseSearch courseSearch, Pageable pageable, Long userId) {
@@ -118,13 +124,13 @@ public class CourseService {
     }
 
     @Transactional(readOnly = true)
-    public CourseDetailResponse findOne(Long id, Long userId, boolean isAdmin) {
+    public CourseDetailResponse findOne(Long id, Long userId, UserRole role) {
         Course course =
                 courseRepository
                         .findById(id)
                         .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
 
-        if (!course.isShared() && !isAdmin) {
+        if (!course.isShared() && role != UserRole.ROLE_ADMIN) {
             if (userId == null) {
                 throw new CustomException(ErrorCode.UNAUTHORIZED);
             }
@@ -286,6 +292,9 @@ public class CourseService {
                                                 .build();
                                 course.addCourseBakery(courseBakery);
                             });
+
+            courseDrivingRouteRepository.deleteAllByCourseIdIn(List.of(courseId));
+            log.info("코스 빵집 변경으로 경로 캐시 삭제: courseId={}", courseId);
         }
 
         log.info("MANUAL 코스 수정: courseId={}", courseId);
@@ -424,6 +433,82 @@ public class CourseService {
                         .findByCourseIdAndUserId(courseId, userId)
                         .orElseThrow(() -> new CustomException(ErrorCode.NOT_ROUTED));
         routeRepository.delete(route);
+    }
+
+    @Transactional(readOnly = true)
+    public DrivingRouteResponse getDrivingRoute(Long courseId, Long userId, UserRole role) {
+        Course course =
+                courseRepository
+                        .findById(courseId)
+                        .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
+        validateDrivingRouteAccess(course, userId, role);
+
+        return courseDrivingRouteRepository
+                .findById(courseId)
+                .map(cached -> DrivingRouteResponse.builder().path(cached.getPath()).build())
+                .orElseGet(() -> fetchAndSaveDrivingRoute(courseId));
+    }
+
+    private void validateDrivingRouteAccess(Course course, Long userId, UserRole role) {
+        if (!course.isShared() && role != UserRole.ROLE_ADMIN) {
+            if (userId == null) {
+                throw new CustomException(ErrorCode.UNAUTHORIZED);
+            }
+            if (course.getUser() == null || !course.getUser().getId().equals(userId)) {
+                throw new CustomException(ErrorCode.FORBIDDEN);
+            }
+        }
+    }
+
+    private DrivingRouteResponse fetchAndSaveDrivingRoute(Long courseId) {
+        Course course =
+                courseRepository
+                        .findWithBakeriesById(courseId)
+                        .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
+
+        List<Coordinate> bakeryCoordinates =
+                course.getCourseBakeries().stream()
+                        .sorted(Comparator.comparingInt(CourseBakery::getVisitOrder))
+                        .map(
+                                cb -> {
+                                    Bakery bakery = cb.getBakery();
+                                    if (bakery.getLatitude() == null
+                                            || bakery.getLongitude() == null) {
+                                        log.error("빵집 좌표 없음: bakeryId={}", bakery.getId());
+                                        throw new CustomException(ErrorCode.ROUTE_NOT_FOUND);
+                                    }
+                                    return new Coordinate(
+                                            bakery.getLatitude(), bakery.getLongitude());
+                                })
+                        .toList();
+
+        List<Coordinate> coordinates;
+        if (course.getCourseType() == CourseType.AI) {
+            AiCourseInfo aiInfo = course.getAiCourseInfo();
+            if (aiInfo == null) {
+                log.error("AI 코스 출발 위치 없음: courseId={}", courseId);
+                throw new CustomException(ErrorCode.ROUTE_NOT_FOUND);
+            }
+            Coordinate startCoord = new Coordinate(aiInfo.getLatitude(), aiInfo.getLongitude());
+            coordinates = new ArrayList<>();
+            coordinates.add(startCoord);
+            coordinates.addAll(bakeryCoordinates);
+        } else {
+            coordinates = bakeryCoordinates;
+        }
+
+        if (coordinates.size() < 2) {
+            log.warn("경로 조회 실패 - 경유지 부족: courseId={}, count={}", courseId, coordinates.size());
+            throw new CustomException(ErrorCode.ROUTE_INSUFFICIENT_WAYPOINTS);
+        }
+
+        List<Coordinate> path = drivingRouteClient.getPath(coordinates);
+        try {
+            courseDrivingRouteSaver.save(courseId, path);
+        } catch (DataIntegrityViolationException e) {
+            log.info("동시 경로 저장 충돌 무시 (이미 저장됨): courseId={}", courseId);
+        }
+        return DrivingRouteResponse.builder().path(path).build();
     }
 
     private void validateCourseActionAccess(Course course, Long userId) {
