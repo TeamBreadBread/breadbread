@@ -7,7 +7,9 @@ import com.breadbread.notification.repository.FcmTokenRepository;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.repository.UserRepository;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
+import com.google.firebase.messaging.MessagingErrorCode;
 import com.google.firebase.messaging.Notification;
 import java.util.List;
 import java.util.Map;
@@ -67,17 +69,20 @@ public class FcmService {
 
                 FirebaseMessaging.getInstance().send(builder.build());
                 log.info("FCM 전송 성공: userId={}, title={}", userId, title);
-            } catch (Exception e) {
+            } catch (FirebaseMessagingException e) {
                 log.warn(
-                        "FCM 전송 실패: userId={}, token={}, error={}",
+                        "FCM 전송 실패: userId={}, token={}, errorCode={}",
                         userId,
                         fcmToken.getToken(),
-                        e.getMessage());
-                // 만료된 토큰이면 삭제
-                if (e.getMessage() != null && e.getMessage().contains("UNREGISTERED")) {
+                        e.getMessagingErrorCode());
+                // 만료되거나 유효하지 않은 토큰 삭제
+                if (e.getMessagingErrorCode() == MessagingErrorCode.UNREGISTERED
+                        || e.getMessagingErrorCode() == MessagingErrorCode.INVALID_ARGUMENT) {
                     fcmTokenRepository.deleteByToken(fcmToken.getToken());
                     log.info("FCM 만료 토큰 삭제: userId={}", userId);
                 }
+            } catch (Exception e) {
+                log.warn("FCM 전송 중 예상치 못한 오류: userId={}, error={}", userId, e.getMessage());
             }
         }
     }

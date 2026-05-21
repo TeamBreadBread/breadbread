@@ -7,3 +7,4 @@ CREATE TABLE fcm_tokens (
 );
 
 CREATE INDEX idx_fcm_tokens_user_id ON fcm_tokens(user_id);
+CREATE UNIQUE INDEX uq_fcm_tokens_user_token ON fcm_tokens(user_id, token);
