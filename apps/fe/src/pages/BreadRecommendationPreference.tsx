@@ -22,6 +22,7 @@ import {
   type FlexibilityLevel,
   type TravelType,
 } from "@/api/courses";
+import { takeAiCourseDepartureCoords } from "@/lib/aiCourseDepartureCoords";
 import { readAiCoursePreferenceDraft } from "@/utils/aiCourseStorage";
 import { ApiBusinessError, getErrorMessage } from "@/api/types/common";
 import { getStoredAccessToken } from "@/api/auth";
@@ -190,8 +191,9 @@ export default function BreadRecommendationPreference() {
     }
 
     const step1 = readAiCoursePreferenceDraft();
-    if (!step1) {
-      window.alert("선호도 1단계 정보가 없습니다. 처음부터 다시 진행해 주세요.");
+    const departure = takeAiCourseDepartureCoords();
+    if (!step1 || !departure) {
+      window.alert("선호도·출발지 정보가 없습니다. 처음부터 다시 진행해 주세요.");
       navigate({ to: "/preference" });
       return;
     }
@@ -203,8 +205,8 @@ export default function BreadRecommendationPreference() {
       breadTypes: (selectedBySection.breadType ?? [])
         .map(mapBreadType)
         .filter((value): value is BreadType => value !== null),
-      latitude: step1.latitude,
-      longitude: step1.longitude,
+      latitude: departure.latitude,
+      longitude: departure.longitude,
       waitingPreference: (selectedBySection.waiting?.[0] ?? "") === "괜찮아요",
       drinkPreference: (selectedBySection.drink?.[0] ?? "") === "drink-0",
       bakeryCount: recommendationCount,

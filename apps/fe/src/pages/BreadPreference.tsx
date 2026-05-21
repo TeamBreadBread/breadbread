@@ -11,6 +11,7 @@ import { getAccuratePosition } from "@/lib/getAccuratePosition";
 import { isKakaoPlaceSearchConfigured, resolveCurrentLocationPlace } from "@/lib/kakaoPlaceSearch";
 import { sectionAllowsMultipleChoice } from "@/utils/preferenceSelection";
 import { cn } from "@/utils/cn";
+import { setAiCourseDepartureCoords } from "@/lib/aiCourseDepartureCoords";
 import { saveAiCoursePreferenceDraft } from "@/utils/aiCourseStorage";
 import { formatDeparturePlaceDisplay, normalizeDepartureLabel } from "@/utils/formatDeparturePlace";
 import type { KakaoSearchPlace } from "@/lib/kakaoPlaceSearch";
@@ -224,12 +225,11 @@ export default function BreadPreference() {
     const fallback = parseLatLngFromPlace(departureKeyword);
     const lat = departureCoords?.lat ?? fallback.lat;
     const lng = departureCoords?.lng ?? fallback.lng;
+    setAiCourseDepartureCoords(lat, lng);
     saveAiCoursePreferenceDraft({
       companion: selectedBySection.companion?.[0] ?? "",
       budget: selectedBySection.budget?.[0] ?? "",
       minimizeRoute: selectedBySection.route?.[0] === "최소화해주세요",
-      latitude: lat,
-      longitude: lng,
     });
     navigate({ to: "/recommendation" });
   };

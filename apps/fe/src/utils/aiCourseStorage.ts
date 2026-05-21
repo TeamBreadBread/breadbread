@@ -5,8 +5,6 @@ export type AiCoursePreferenceDraft = {
   companion: string;
   budget: string;
   minimizeRoute: boolean;
-  latitude: number;
-  longitude: number;
 };
 
 export function saveAiCoursePreferenceDraft(draft: AiCoursePreferenceDraft): void {
