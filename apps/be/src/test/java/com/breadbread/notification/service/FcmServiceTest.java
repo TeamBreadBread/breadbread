@@ -129,7 +129,8 @@ class FcmServiceTest {
         FcmToken token = fcmToken("expired-token");
         when(fcmTokenRepository.findAllByUserId(1L)).thenReturn(List.of(token));
 
-        FirebaseMessagingException exception = mockFirebaseException(MessagingErrorCode.UNREGISTERED);
+        FirebaseMessagingException exception =
+                mockFirebaseException(MessagingErrorCode.UNREGISTERED);
         FirebaseMessaging mockMessaging = mock(FirebaseMessaging.class);
         when(mockMessaging.send(any(Message.class))).thenThrow(exception);
 
@@ -147,7 +148,8 @@ class FcmServiceTest {
         FcmToken token = fcmToken("invalid-token");
         when(fcmTokenRepository.findAllByUserId(1L)).thenReturn(List.of(token));
 
-        FirebaseMessagingException exception = mockFirebaseException(MessagingErrorCode.INVALID_ARGUMENT);
+        FirebaseMessagingException exception =
+                mockFirebaseException(MessagingErrorCode.INVALID_ARGUMENT);
         FirebaseMessaging mockMessaging = mock(FirebaseMessaging.class);
         when(mockMessaging.send(any(Message.class))).thenThrow(exception);
 
@@ -186,9 +188,7 @@ class FcmServiceTest {
 
         FirebaseMessagingException exception = mockFirebaseException(MessagingErrorCode.INTERNAL);
         FirebaseMessaging mockMessaging = mock(FirebaseMessaging.class);
-        when(mockMessaging.send(any(Message.class)))
-                .thenThrow(exception)
-                .thenReturn("message-id");
+        when(mockMessaging.send(any(Message.class))).thenThrow(exception).thenReturn("message-id");
 
         try (MockedStatic<FirebaseMessaging> mocked = mockStatic(FirebaseMessaging.class)) {
             mocked.when(FirebaseMessaging::getInstance).thenReturn(mockMessaging);
