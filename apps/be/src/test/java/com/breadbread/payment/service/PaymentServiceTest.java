@@ -14,6 +14,7 @@ import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.ManualCourseInfo;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.notification.service.FcmService;
 import com.breadbread.payment.client.PortOneClient;
 import com.breadbread.payment.config.PortOneProperties;
 import com.breadbread.payment.dto.CompletePaymentRequest;
@@ -69,6 +70,7 @@ class PaymentServiceTest {
     @Mock private PaymentRepository paymentRepository;
     @Mock private WebClient webClient;
     @Mock private PortOneProperties properties;
+    @Mock private FcmService fcmService;
 
     private PortOneClient portOneClient;
     private PaymentService paymentService;
@@ -83,7 +85,8 @@ class PaymentServiceTest {
                         paymentRepository,
                         portOneClient,
                         properties,
-                        new ObjectMapper());
+                        new ObjectMapper(),
+                        fcmService);
     }
 
     @Test

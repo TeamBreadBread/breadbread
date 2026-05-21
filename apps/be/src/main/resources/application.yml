@@ -35,6 +35,8 @@ spring:
       project-id: ${GCP_PROJECT_ID:your-project-id}
       sql:
         enabled: false
+      firestore:
+        enabled: false
 
   servlet:
     multipart:
