@@ -211,3 +211,9 @@ export async function socialLogin(
   );
   return extractData(data);
 }
+
+/** 네이버 OAuth CSRF 방지용 state (서버 Redis에 저장) */
+export async function issueNaverState(): Promise<string> {
+  const { data } = await apiClient.post<ApiEnvelope<string>>(`${PATH}/naver/state`);
+  return extractData(data);
+}
