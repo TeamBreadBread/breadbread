@@ -74,6 +74,10 @@ export default defineConfig({
         target: 'https://api.breadbread.io',
         changeOrigin: true,
       },
+      '/notifications': {
+        target: 'https://api.breadbread.io',
+        changeOrigin: true,
+      },
       '/posts': {
         target: 'https://api.breadbread.io',
         changeOrigin: true,

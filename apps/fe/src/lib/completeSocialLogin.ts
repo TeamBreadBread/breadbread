@@ -1,4 +1,5 @@
 import { setSessionTokens, type TokenResponse } from "@/api/auth";
+import { onAuthSessionEstablished } from "@/lib/fcm/setupFcm";
 import { hasUserPreferenceSaved } from "@/api/user";
 import { refreshProfileCacheFromServer } from "@/lib/userProfileCache";
 import { consumePostLoginRedirect } from "@/lib/socialOAuthStorage";
@@ -35,6 +36,7 @@ export async function completeSocialLogin(
 ): Promise<void> {
   const postLogin = consumePostLoginRedirect(storagePrefix);
   setSessionTokens(tokens);
+  onAuthSessionEstablished();
   refreshProfileCacheFromServer();
   await goAfterLogin(navigate, postLogin);
 }
