@@ -60,6 +60,10 @@ public enum ErrorCode {
     ALREADY_ROUTED(HttpStatus.CONFLICT, "E0408", "이미 저장한 코스입니다."),
     NOT_ROUTED(HttpStatus.BAD_REQUEST, "E0409", "저장하지 않은 코스입니다."),
     AI_JOB_NOT_FOUND(HttpStatus.NOT_FOUND, "E0411", "존재하지 않는 AI 작업입니다."),
+    ROUTE_PROVIDER_ERROR(HttpStatus.BAD_GATEWAY, "E0412", "경로 API 서버 오류가 발생했습니다."),
+    ROUTE_NOT_FOUND(HttpStatus.UNPROCESSABLE_ENTITY, "E0413", "경로를 찾을 수 없습니다."),
+    ROUTE_INSUFFICIENT_WAYPOINTS(
+            HttpStatus.UNPROCESSABLE_ENTITY, "E0414", "경로를 생성하려면 최소 2개의 지점이 필요합니다."),
 
     // 예약 E05xx
     RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "E0501", "존재하지 않는 예약입니다."),

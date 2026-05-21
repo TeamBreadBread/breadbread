@@ -32,6 +32,8 @@ import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.bakery.repository.BreadRepository;
 import com.breadbread.bakery.repository.CrowdTimeRepository;
 import com.breadbread.bakery.repository.ReviewRepository;
+import com.breadbread.course.repository.CourseBakeryRepository;
+import com.breadbread.course.repository.CourseDrivingRouteRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.service.GcsService;
@@ -66,6 +68,8 @@ class BakeryServiceTest {
     @Mock private BakeryLikeRepository bakeryLikeRepository;
     @Mock private ReviewRepository reviewRepository;
     @Mock private GcsService gcsService;
+    @Mock private CourseBakeryRepository courseBakeryRepository;
+    @Mock private CourseDrivingRouteRepository courseDrivingRouteRepository;
 
     @InjectMocks private BakeryService bakeryService;
 
@@ -740,6 +744,36 @@ class BakeryServiceTest {
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.FORBIDDEN);
+    }
+
+    @Test
+    void updateBakery_invalidatesRouteCache_whenCoordinatesChanged() {
+        Bakery bakery = bakeryWithId(7L);
+        bakery.assignOwner(user(20L, UserRole.ROLE_BUSINESS));
+        UpdateBakeryRequest request = new UpdateBakeryRequest();
+        ReflectionTestUtils.setField(request, "lat", 37.5);
+        ReflectionTestUtils.setField(request, "lng", 127.0);
+        when(bakeryRepository.findById(7L)).thenReturn(Optional.of(bakery));
+        when(courseBakeryRepository.findCourseIdsByBakeryId(7L)).thenReturn(List.of(100L, 200L));
+
+        bakeryService.updateBakery(20L, UserRole.ROLE_BUSINESS, 7L, request);
+
+        verify(courseBakeryRepository).findCourseIdsByBakeryId(7L);
+        verify(courseDrivingRouteRepository).deleteAllByCourseIdIn(List.of(100L, 200L));
+    }
+
+    @Test
+    void updateBakery_doesNotInvalidateCache_whenCoordinatesNotChanged() {
+        Bakery bakery = bakeryWithId(7L);
+        bakery.assignOwner(user(20L, UserRole.ROLE_BUSINESS));
+        UpdateBakeryRequest request = new UpdateBakeryRequest();
+        ReflectionTestUtils.setField(request, "name", "이름만바꿈");
+        when(bakeryRepository.findById(7L)).thenReturn(Optional.of(bakery));
+
+        bakeryService.updateBakery(20L, UserRole.ROLE_BUSINESS, 7L, request);
+
+        verify(courseBakeryRepository, never()).findCourseIdsByBakeryId(any());
+        verify(courseDrivingRouteRepository, never()).deleteAllByCourseIdIn(any());
     }
 
     private static Bakery bakeryWithId(long id) {

@@ -1,6 +1,7 @@
 package com.breadbread.global.exception;
 
 import com.breadbread.global.dto.ApiResponse;
+import jakarta.validation.ConstraintViolationException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -19,8 +20,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ApiResponse<Void>> handleCustomException(CustomException e) {
-        log.error("CustomException: {}", e.getMessage());
         ErrorCode errorCode = e.getErrorCode();
+        if (errorCode.getStatus().is5xxServerError()) {
+            log.error("[{}] {}", errorCode.getCode(), e.getMessage(), e);
+        } else {
+            log.warn("[{}] {}", errorCode.getCode(), e.getMessage());
+        }
         return ResponseEntity.status(errorCode.getStatus()).body(ApiResponse.fail(errorCode));
     }
 
@@ -45,6 +50,18 @@ public class GlobalExceptionHandler {
                         ApiResponse.fail(
                                 ErrorCode.INVALID_INPUT_VALUE.getCode(),
                                 "올바르지 않은 값입니다: " + e.getValue()));
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(
+            ConstraintViolationException e) {
+        log.warn("ConstraintViolation: {}", e.getMessage());
+        String message =
+                e.getConstraintViolations().stream()
+                        .map(violation -> violation.getMessage())
+                        .collect(Collectors.joining(", "));
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.fail(ErrorCode.INVALID_INPUT_VALUE.getCode(), message));
     }
 
     @ExceptionHandler(BadCredentialsException.class)
@@ -75,7 +92,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
-        log.error("Exception: {}", e.getMessage());
+        log.error("Unhandled exception", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.fail(ErrorCode.INTERNAL_SERVER_ERROR));
     }

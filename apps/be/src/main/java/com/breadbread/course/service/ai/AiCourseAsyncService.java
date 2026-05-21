@@ -16,6 +16,7 @@ import com.breadbread.course.entity.*;
 import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.notification.service.FcmService;
 import com.breadbread.user.dto.PreferenceResponse;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserPreference;
@@ -44,6 +45,7 @@ public class AiCourseAsyncService {
     private final CourseRepository courseRepository;
     private final AiCourseRedisService aiCourseRedisService;
     private final TransactionTemplate transactionTemplate;
+    private final FcmService fcmService;
 
     @Async("aiTaskExecutor")
     public CompletableFuture<Void> processAiCourse(
@@ -209,6 +211,13 @@ public class AiCourseAsyncService {
             // 4. Redis 업데이트 (트랜잭션 밖)
             aiCourseRedisService.saveCompleted(jobId, courseId);
             log.info("[AI 코스 생성] 완료: jobId={}, courseId={}", jobId, courseId);
+
+            // 5. FCM 알림 (트랜잭션 밖, 비동기)
+            fcmService.sendToUser(
+                    userId,
+                    "코스 생성 완료 ✨",
+                    response.getName() + " 코스가 완성됐습니다",
+                    Map.of("type", "AI_COURSE", "courseId", String.valueOf(courseId)));
 
         } catch (CustomException e) {
             log.error("[AI 코스 생성] 실패 jobId={}", jobId, e);

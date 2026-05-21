@@ -50,7 +50,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 @ExtendWith(MockitoExtension.class)
 class ReservationServiceTest {
 
-    private static final LocalDate FIXED_DATE = LocalDate.of(2026, 5, 20);
+    private static final LocalDate FIXED_DATE = LocalDate.now().plusDays(1);
     private static final LocalDate NEXT_DATE = FIXED_DATE.plusDays(1);
     private static final LocalDate UPDATED_DATE = FIXED_DATE.plusDays(2);
     private static final LocalTime DEFAULT_TIME = LocalTime.of(10, 0);

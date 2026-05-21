@@ -3,6 +3,8 @@ package com.breadbread.bakery.service;
 import com.breadbread.bakery.dto.*;
 import com.breadbread.bakery.entity.*;
 import com.breadbread.bakery.repository.*;
+import com.breadbread.course.repository.CourseBakeryRepository;
+import com.breadbread.course.repository.CourseDrivingRouteRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.service.GcsService;
@@ -33,6 +35,8 @@ public class BakeryService {
     private final BakeryLikeRepository bakeryLikeRepository;
     private final ReviewRepository reviewRepository;
     private final GcsService gcsService;
+    private final CourseBakeryRepository courseBakeryRepository;
+    private final CourseDrivingRouteRepository courseDrivingRouteRepository;
 
     @Transactional(readOnly = true)
     public List<BakeryAiResponse> findAllForAi() {
@@ -209,8 +213,19 @@ public class BakeryService {
                         .findById(bakeryId)
                         .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
         checkAuthority(bakery, userId, role);
+
+        boolean coordinatesChanged = request.getLat() != null || request.getLng() != null;
+
         bakery.update(request);
         log.info("빵집 수정: bakeryId={}, userId={}", bakeryId, userId);
+
+        if (coordinatesChanged) {
+            List<Long> courseIds = courseBakeryRepository.findCourseIdsByBakeryId(bakeryId);
+            if (!courseIds.isEmpty()) {
+                courseDrivingRouteRepository.deleteAllByCourseIdIn(courseIds);
+                log.info("빵집 좌표 변경으로 경로 캐시 삭제: bakeryId={}, courseIds={}", bakeryId, courseIds);
+            }
+        }
 
         if (request.getImageUrls() != null) {
             bakery.getImages().forEach(img -> gcsService.deleteQuietly(img.getImageUrl()));
@@ -430,6 +445,7 @@ public class BakeryService {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
 
+        review.getImageUrls().forEach(gcsService::deleteQuietly);
         reviewRepository.delete(review);
         bakery.updateRating(reviewRepository.findAverageRatingByBakeryId(bakeryId).orElse(null));
         log.info("리뷰 삭제: reviewId={}, bakeryId={}, userId={}", reviewId, bakeryId, userId);

@@ -2,6 +2,7 @@ package com.breadbread.payment.service;
 
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.notification.service.FcmService;
 import com.breadbread.payment.client.PortOneClient;
 import com.breadbread.payment.config.PortOneProperties;
 import com.breadbread.payment.dto.CompletePaymentRequest;
@@ -23,6 +24,7 @@ import io.portone.sdk.server.errors.WebhookVerificationException;
 import io.portone.sdk.server.webhook.WebhookVerifier;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +46,7 @@ public class PaymentService {
     private final PortOneClient portOneClient;
     private final PortOneProperties properties;
     private final ObjectMapper objectMapper;
+    private final FcmService fcmService;
 
     @Transactional
     public PreparePaymentResponse preparePayment(Long userId, PreparePaymentRequest request) {
@@ -212,6 +215,16 @@ public class PaymentService {
         }
         try {
             confirmPaidPayment(payment, remote);
+
+            fcmService.sendToUser(
+                    payment.getUser().getId(),
+                    "결제 완료",
+                    payment.getReservation().getCourseNameSnapshot() + " 결제가 완료되었습니다.",
+                    Map.of(
+                            "type",
+                            "PAYMENT",
+                            "reservationId",
+                            String.valueOf(payment.getReservation().getId())));
         } catch (CustomException e) {
             if (e.getErrorCode() == ErrorCode.PAYMENT_ALREADY_DONE
                     || e.getErrorCode() == ErrorCode.RESERVATION_ALREADY_CONFIRMED) {

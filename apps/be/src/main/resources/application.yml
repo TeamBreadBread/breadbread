@@ -35,6 +35,8 @@ spring:
       project-id: ${GCP_PROJECT_ID:your-project-id}
       sql:
         enabled: false
+      firestore:
+        enabled: false
 
   servlet:
     multipart:
@@ -131,3 +133,13 @@ portone:
   store-id: ${PORTONE_STORE_ID:}
   channel-key: ${PORTONE_CHANNEL_KEY:}
   webhook-secret: ${PORTONE_WEBHOOK_SECRET:}
+
+naver:
+  maps:
+    client-id: ${NAVER_MAPS_CLIENT_ID}
+    client-secret: ${NAVER_MAPS_CLIENT_SECRET}
+    base-url: https://maps.apigw.ntruss.com
+    timeout-seconds: ${NAVER_MAPS_TIMEOUT_SECONDS:10}
+
+route:
+  provider: naver  # naver | kakao

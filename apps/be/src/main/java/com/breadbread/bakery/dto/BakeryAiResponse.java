@@ -3,7 +3,6 @@ package com.breadbread.bakery.dto;
 import com.breadbread.bakery.entity.*;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -16,12 +15,9 @@ public class BakeryAiResponse {
 
     private Long id;
     private String name;
-    private String address;
     private String region;
     private Double lat;
     private Double lng;
-    private String phone;
-    private String mapLink;
     private String note;
     private Double rating;
     private boolean dineInAvailable;
@@ -43,7 +39,6 @@ public class BakeryAiResponse {
     private boolean holidayClosed;
     private List<BreadInfo> breads;
     private List<CrowdTimeInfo> crowdTimes;
-    private List<String> imageUrls;
 
     public static BakeryAiResponse from(
             Bakery bakery, List<Bread> breads, List<CrowdTime> crowdTimes) {
@@ -51,12 +46,9 @@ public class BakeryAiResponse {
         return BakeryAiResponse.builder()
                 .id(bakery.getId())
                 .name(bakery.getName())
-                .address(bakery.getAddress())
                 .region(bakery.getRegion())
                 .lat(bakery.getLatitude())
                 .lng(bakery.getLongitude())
-                .phone(bakery.getPhone())
-                .mapLink(bakery.getMapLink())
                 .note(bakery.getNote())
                 .rating(bakery.getRating())
                 .dineInAvailable(bakery.isDineInAvailable())
@@ -87,11 +79,6 @@ public class BakeryAiResponse {
                 .holidayClosed(bh != null && bh.isHolidayClosed())
                 .breads(breads.stream().map(BreadInfo::from).toList())
                 .crowdTimes(crowdTimes.stream().map(CrowdTimeInfo::from).toList())
-                .imageUrls(
-                        bakery.getImages().stream()
-                                .sorted(Comparator.comparingInt(BakeryImage::getDisplayOrder))
-                                .map(BakeryImage::getImageUrl)
-                                .toList())
                 .build();
     }
 
