@@ -3,7 +3,6 @@ package com.breadbread.course.client;
 import com.breadbread.course.dto.ai.AiCourseWebhookRequest;
 import com.breadbread.course.dto.ai.AiCourseWebhookResponse;
 import com.breadbread.global.config.AiProperties;
-import com.breadbread.global.util.LogRedaction;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
@@ -45,10 +44,9 @@ public class AiWebhookClient {
                                                     .flatMap(
                                                             body -> {
                                                                 log.error(
-                                                                        "[AI 웹훅] HTTP 오류 응답: jobId={}, status={}, body={}",
+                                                                        "[AI 웹훅] HTTP 오류 응답: jobId={}, status={}",
                                                                         jobId,
-                                                                        res.statusCode(),
-                                                                        LogRedaction.forLog(body));
+                                                                        res.statusCode());
                                                                 return Mono.error(
                                                                         new IllegalStateException(
                                                                                 "AI 웹훅 HTTP 오류 ("
@@ -98,11 +96,7 @@ public class AiWebhookClient {
                     response.getBakeries() != null ? response.getBakeries().size() : 0);
             return response;
         } catch (Exception e) {
-            log.error(
-                    "[AI 웹훅] JSON 파싱 실패: jobId={}, bodyPreview={}",
-                    jobId,
-                    LogRedaction.forLog(rawBody),
-                    e);
+            log.error("[AI 웹훅] JSON 파싱 실패: jobId={}", jobId, e);
             throw new IllegalStateException(
                     "AI 응답 JSON 형식이 맞지 않습니다. Dify/n8n 마지막 노드가 백엔드 스키마(JSON)를 반환하는지 확인하세요.");
         }

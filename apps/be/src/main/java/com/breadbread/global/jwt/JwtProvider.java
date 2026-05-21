@@ -6,10 +6,10 @@ import com.breadbread.global.exception.ErrorCode;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
-import java.util.Optional;
 import javax.crypto.SecretKey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,8 +26,11 @@ public class JwtProvider {
 
     @PostConstruct
     public void init() {
-        this.accessKey = Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes());
-        this.refreshKey = Keys.hmacShaKeyFor(jwtProperties.getRefreshSecret().getBytes());
+        this.accessKey =
+                Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
+        this.refreshKey =
+                Keys.hmacShaKeyFor(
+                        jwtProperties.getRefreshSecret().getBytes(StandardCharsets.UTF_8));
     }
 
     public String createAccessToken(String userId) {
@@ -52,27 +55,6 @@ public class JwtProvider {
 
     public String getUserIdFromAccessToken(String token) {
         return parseClaims(token, accessKey).getSubject();
-    }
-
-    /** 로그아웃 등: 서명이 검증된 액세스 토큰에서 subject(userId)를 추출합니다. 만료 토큰도 허용합니다. */
-    public Optional<String> resolveUserIdFromAccessToken(String token) {
-        if (token == null || token.isBlank()) {
-            return Optional.empty();
-        }
-        try {
-            Claims claims =
-                    Jwts.parser()
-                            .verifyWith(accessKey)
-                            .build()
-                            .parseSignedClaims(token)
-                            .getPayload();
-            return Optional.ofNullable(claims.getSubject());
-        } catch (ExpiredJwtException e) {
-            return Optional.ofNullable(e.getClaims().getSubject());
-        } catch (JwtException | IllegalArgumentException e) {
-            log.warn("액세스 토큰 파싱 실패");
-            return Optional.empty();
-        }
     }
 
     public String getUserIdFromRefreshToken(String token) {

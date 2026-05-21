@@ -13,6 +13,7 @@ import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.jwt.JwtProvider;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
+import io.jsonwebtoken.JwtException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Base64;
@@ -80,8 +81,7 @@ class TokenServiceTest {
 
     @Test
     void logout_clears_refresh_whenAccessTokenGiven() {
-        when(jwtProvider.resolveUserIdFromAccessToken("access"))
-                .thenReturn(java.util.Optional.of("99"));
+        when(jwtProvider.getUserIdFromAccessToken("access")).thenReturn("99");
 
         tokenService.logout("access");
 
@@ -89,9 +89,8 @@ class TokenServiceTest {
     }
 
     @Test
-    void logout_noop_when_user_id_not_resolved() {
-        when(jwtProvider.resolveUserIdFromAccessToken("bad"))
-                .thenReturn(java.util.Optional.empty());
+    void logout_noop_when_token_invalid() {
+        when(jwtProvider.getUserIdFromAccessToken("bad")).thenThrow(new JwtException("invalid"));
 
         tokenService.logout("bad");
 
