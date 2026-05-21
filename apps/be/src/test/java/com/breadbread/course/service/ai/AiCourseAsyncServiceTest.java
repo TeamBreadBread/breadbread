@@ -22,6 +22,7 @@ import com.breadbread.course.entity.FlexibilityLevel;
 import com.breadbread.course.entity.TravelType;
 import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.notification.service.FcmService;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserPreference;
 import com.breadbread.user.entity.UserRole;
@@ -54,6 +55,7 @@ class AiCourseAsyncServiceTest {
     @Mock private CourseRepository courseRepository;
     @Mock private AiCourseRedisService aiCourseRedisService;
     @Mock private TransactionTemplate transactionTemplate;
+    @Mock private FcmService fcmService;
 
     private AiCourseAsyncService aiCourseAsyncService;
 
@@ -75,7 +77,8 @@ class AiCourseAsyncServiceTest {
                         aiWebhookClient,
                         courseRepository,
                         aiCourseRedisService,
-                        transactionTemplate);
+                        transactionTemplate,
+                        fcmService);
     }
 
     @Test
