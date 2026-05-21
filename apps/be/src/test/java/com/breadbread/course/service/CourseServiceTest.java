@@ -16,8 +16,11 @@ import com.breadbread.bakery.entity.BakeryImage;
 import com.breadbread.bakery.entity.BreadType;
 import com.breadbread.bakery.repository.BakeryImageRepository;
 import com.breadbread.bakery.repository.BakeryRepository;
+import com.breadbread.course.client.DrivingRouteClient;
+import com.breadbread.course.dto.Coordinate;
 import com.breadbread.course.dto.CourseListResponse;
 import com.breadbread.course.dto.CourseSearch;
+import com.breadbread.course.dto.DrivingRouteResponse;
 import com.breadbread.course.dto.ManualCourseRequest;
 import com.breadbread.course.dto.RouteResponse;
 import com.breadbread.course.dto.UpdateCourseRequest;
@@ -28,12 +31,14 @@ import com.breadbread.course.entity.AiCourseInfo;
 import com.breadbread.course.entity.BudgetRange;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseBakery;
+import com.breadbread.course.entity.CourseDrivingRoute;
 import com.breadbread.course.entity.CourseLike;
 import com.breadbread.course.entity.FlexibilityLevel;
 import com.breadbread.course.entity.ManualCourseInfo;
 import com.breadbread.course.entity.Route;
 import com.breadbread.course.entity.TravelType;
 import com.breadbread.course.repository.CourseBakeryRepository;
+import com.breadbread.course.repository.CourseDrivingRouteRepository;
 import com.breadbread.course.repository.CourseLikeRepository;
 import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.course.repository.RouteRepository;
@@ -72,8 +77,11 @@ class CourseServiceTest {
     @Mock private CourseLikeRepository courseLikeRepository;
     @Mock private UserRepository userRepository;
     @Mock private RouteRepository routeRepository;
+    @Mock private CourseDrivingRouteRepository courseDrivingRouteRepository;
     @Mock private AiCourseAsyncService aiCourseAsyncService;
     @Mock private AiCourseRedisService aiCourseRedisService;
+    @Mock private DrivingRouteClient drivingRouteClient;
+    @Mock private CourseDrivingRouteSaver courseDrivingRouteSaver;
 
     @InjectMocks private CourseService courseService;
 
@@ -136,7 +144,7 @@ class CourseServiceTest {
     void findOne_throws_whenCourseMissing() {
         when(courseRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> courseService.findOne(1L, 1L, false))
+        assertThatThrownBy(() -> courseService.findOne(1L, 1L, UserRole.ROLE_USER))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.COURSE_NOT_FOUND);
@@ -147,7 +155,7 @@ class CourseServiceTest {
         Course course = aiPrivateCourse(5L, owner(1L));
         when(courseRepository.findById(5L)).thenReturn(Optional.of(course));
 
-        assertThatThrownBy(() -> courseService.findOne(5L, null, false))
+        assertThatThrownBy(() -> courseService.findOne(5L, null, null))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.UNAUTHORIZED);
@@ -158,7 +166,7 @@ class CourseServiceTest {
         Course course = aiPrivateCourse(5L, owner(1L));
         when(courseRepository.findById(5L)).thenReturn(Optional.of(course));
 
-        assertThatThrownBy(() -> courseService.findOne(5L, 2L, false))
+        assertThatThrownBy(() -> courseService.findOne(5L, 2L, UserRole.ROLE_USER))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.FORBIDDEN);
@@ -179,7 +187,7 @@ class CourseServiceTest {
         when(courseLikeRepository.existsByCourseIdAndUserId(7L, 1L)).thenReturn(false);
         when(routeRepository.existsByCourseIdAndUserId(7L, 1L)).thenReturn(true);
 
-        var detail = courseService.findOne(7L, 1L, false);
+        var detail = courseService.findOne(7L, 1L, UserRole.ROLE_USER);
 
         assertThat(detail.getId()).isEqualTo(7L);
         assertThat(detail.getBakeries()).hasSize(1);
@@ -200,7 +208,7 @@ class CourseServiceTest {
         when(courseLikeRepository.existsByCourseIdAndUserId(8L, 999L)).thenReturn(false);
         when(routeRepository.existsByCourseIdAndUserId(8L, 999L)).thenReturn(false);
 
-        var detail = courseService.findOne(8L, 999L, true);
+        var detail = courseService.findOne(8L, 999L, UserRole.ROLE_ADMIN);
 
         assertThat(detail.getLikeCount()).isEqualTo(1);
         assertThat(detail.isSaved()).isFalse();
@@ -306,6 +314,7 @@ class CourseServiceTest {
 
         assertThat(course.getCourseBakeries()).hasSize(1);
         assertThat(course.getCourseBakeries().get(0).getBakery().getId()).isEqualTo(30L);
+        verify(courseDrivingRouteRepository).deleteAllByCourseIdIn(List.of(3L));
     }
 
     @Test
@@ -622,6 +631,251 @@ class CourseServiceTest {
         verify(routeRepository).delete(route);
     }
 
+    // ── getDrivingRoute ──────────────────────────────────────────────────
+
+    @Test
+    void getDrivingRoute_throws_whenCourseNotFound() {
+        when(courseRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> courseService.getDrivingRoute(1L, 1L, UserRole.ROLE_USER))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.COURSE_NOT_FOUND);
+    }
+
+    @Test
+    void getDrivingRoute_throws_unauthorized_whenPrivateCourseAndAnonymous() {
+        Course course = aiPrivateCourse(1L, owner(1L));
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+
+        assertThatThrownBy(() -> courseService.getDrivingRoute(1L, null, null))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.UNAUTHORIZED);
+    }
+
+    @Test
+    void getDrivingRoute_throws_forbidden_whenPrivateCourseAndNotOwner() {
+        Course course = aiPrivateCourse(1L, owner(1L));
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+
+        assertThatThrownBy(() -> courseService.getDrivingRoute(1L, 2L, UserRole.ROLE_USER))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.FORBIDDEN);
+    }
+
+    @Test
+    void getDrivingRoute_allows_admin_to_access_private_course() {
+        Course course = aiPrivateCourse(1L, owner(1L));
+        List<Coordinate> cachedPath =
+                List.of(new Coordinate(36.0, 127.0), new Coordinate(36.1, 127.1));
+        CourseDrivingRoute cached =
+                CourseDrivingRoute.builder().courseId(1L).path(cachedPath).build();
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.of(cached));
+
+        DrivingRouteResponse response =
+                courseService.getDrivingRoute(1L, 999L, UserRole.ROLE_ADMIN);
+
+        assertThat(response.getPath()).isEqualTo(cachedPath);
+        verify(drivingRouteClient, never()).getPath(any());
+    }
+
+    @Test
+    void getDrivingRoute_returns_cached_path_whenCacheHit() {
+        Course course = manualCourse(1L, "공유코스");
+        List<Coordinate> cachedPath =
+                List.of(new Coordinate(36.0, 127.0), new Coordinate(36.1, 127.1));
+        CourseDrivingRoute cached =
+                CourseDrivingRoute.builder().courseId(1L).path(cachedPath).build();
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.of(cached));
+
+        DrivingRouteResponse response = courseService.getDrivingRoute(1L, null, null);
+
+        assertThat(response.getPath()).isEqualTo(cachedPath);
+        verify(drivingRouteClient, never()).getPath(any());
+        verify(courseRepository, never()).findWithBakeriesById(any());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void getDrivingRoute_manual_fetchesAndSaves_whenCacheMiss() {
+        Course course = manualCourse(1L, "공유코스");
+        Bakery b1 = bakeryAt(10L, "A빵집", 36.0, 127.0);
+        Bakery b2 = bakeryAt(20L, "B빵집", 36.1, 127.1);
+        course.addCourseBakery(CourseBakery.builder().visitOrder(1).bakery(b1).build());
+        course.addCourseBakery(CourseBakery.builder().visitOrder(2).bakery(b2).build());
+
+        List<Coordinate> path = List.of(new Coordinate(36.0, 127.0), new Coordinate(36.1, 127.1));
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
+        when(courseRepository.findWithBakeriesById(1L)).thenReturn(Optional.of(course));
+        when(drivingRouteClient.getPath(any())).thenReturn(path);
+
+        DrivingRouteResponse response = courseService.getDrivingRoute(1L, null, null);
+
+        assertThat(response.getPath()).isEqualTo(path);
+
+        // MANUAL 코스는 사용자 위치 미포함 — 빵집만 좌표로 전달
+        ArgumentCaptor<List<Coordinate>> coordCaptor = ArgumentCaptor.forClass(List.class);
+        verify(drivingRouteClient).getPath(coordCaptor.capture());
+        List<Coordinate> coords = coordCaptor.getValue();
+        assertThat(coords).hasSize(2);
+        assertThat(coords.get(0).getLat()).isEqualTo(36.0);
+        assertThat(coords.get(0).getLng()).isEqualTo(127.0);
+
+        verify(courseDrivingRouteSaver).save(1L, path);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void getDrivingRoute_ai_prependsUserLocation_whenCacheMiss() {
+        User owner = owner(1L);
+        Course course = aiCourseWithLocation(2L, owner, 35.5, 126.5);
+        Bakery bakery = bakeryAt(10L, "빵집", 36.0, 127.0);
+        course.addCourseBakery(CourseBakery.builder().visitOrder(1).bakery(bakery).build());
+
+        List<Coordinate> path = List.of(new Coordinate(35.5, 126.5), new Coordinate(36.0, 127.0));
+
+        when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
+        when(courseDrivingRouteRepository.findById(2L)).thenReturn(Optional.empty());
+        when(courseRepository.findWithBakeriesById(2L)).thenReturn(Optional.of(course));
+        when(drivingRouteClient.getPath(any())).thenReturn(path);
+
+        courseService.getDrivingRoute(2L, 1L, UserRole.ROLE_USER);
+
+        // AI 코스는 AiCourseInfo의 유저 위치가 첫 번째 좌표로 추가되어야 함
+        ArgumentCaptor<List<Coordinate>> coordCaptor = ArgumentCaptor.forClass(List.class);
+        verify(drivingRouteClient).getPath(coordCaptor.capture());
+        List<Coordinate> coords = coordCaptor.getValue();
+        assertThat(coords).hasSize(2); // 유저위치 + 빵집 1개
+        assertThat(coords.get(0).getLat()).isEqualTo(35.5);
+        assertThat(coords.get(0).getLng()).isEqualTo(126.5);
+        assertThat(coords.get(1).getLat()).isEqualTo(36.0);
+    }
+
+    @Test
+    void getDrivingRoute_ai_succeeds_withOneBakery() {
+        User owner = owner(1L);
+        Course course = aiCourseWithLocation(2L, owner, 35.5, 126.5);
+        Bakery bakery = bakeryAt(10L, "빵집", 36.0, 127.0);
+        course.addCourseBakery(CourseBakery.builder().visitOrder(1).bakery(bakery).build());
+
+        List<Coordinate> path = List.of(new Coordinate(35.5, 126.5), new Coordinate(36.0, 127.0));
+
+        when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
+        when(courseDrivingRouteRepository.findById(2L)).thenReturn(Optional.empty());
+        when(courseRepository.findWithBakeriesById(2L)).thenReturn(Optional.of(course));
+        when(drivingRouteClient.getPath(any())).thenReturn(path);
+
+        DrivingRouteResponse response = courseService.getDrivingRoute(2L, 1L, UserRole.ROLE_USER);
+
+        assertThat(response.getPath()).isEqualTo(path);
+        verify(drivingRouteClient).getPath(any());
+    }
+
+    @Test
+    void getDrivingRoute_throws_whenManualCourseHasOnlyOneBakery() {
+        Course course = manualCourse(1L, "공유코스");
+        Bakery bakery = bakeryAt(10L, "빵집", 36.0, 127.0);
+        course.addCourseBakery(CourseBakery.builder().visitOrder(1).bakery(bakery).build());
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
+        when(courseRepository.findWithBakeriesById(1L)).thenReturn(Optional.of(course));
+
+        assertThatThrownBy(() -> courseService.getDrivingRoute(1L, null, null))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.ROUTE_INSUFFICIENT_WAYPOINTS);
+
+        verify(drivingRouteClient, never()).getPath(any());
+    }
+
+    @Test
+    void getDrivingRoute_throws_whenBakeryMissingCoordinates() {
+        Course course = manualCourse(1L, "공유코스");
+        Bakery b1 = bakeryAt(10L, "A빵집", 36.0, 127.0);
+        Bakery b2 = nullCoordBakery(20L, "B빵집");
+        course.addCourseBakery(CourseBakery.builder().visitOrder(1).bakery(b1).build());
+        course.addCourseBakery(CourseBakery.builder().visitOrder(2).bakery(b2).build());
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
+        when(courseRepository.findWithBakeriesById(1L)).thenReturn(Optional.of(course));
+
+        assertThatThrownBy(() -> courseService.getDrivingRoute(1L, null, null))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.ROUTE_NOT_FOUND);
+    }
+
+    @Test
+    void getDrivingRoute_throws_whenAiCourseHasNoAiInfo() {
+        User owner = owner(1L);
+        Course course = aiPrivateCourse(1L, owner);
+        ReflectionTestUtils.setField(course, "aiCourseInfo", null); // aiInfo null 강제
+        Bakery bakery = bakeryAt(10L, "빵집", 36.0, 127.0);
+        course.addCourseBakery(CourseBakery.builder().visitOrder(1).bakery(bakery).build());
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
+        when(courseRepository.findWithBakeriesById(1L)).thenReturn(Optional.of(course));
+
+        assertThatThrownBy(() -> courseService.getDrivingRoute(1L, 1L, UserRole.ROLE_USER))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.ROUTE_NOT_FOUND);
+
+        verify(drivingRouteClient, never()).getPath(any());
+    }
+
+    @Test
+    void getDrivingRoute_ignores_concurrent_save_conflict() {
+        Course course = manualCourse(1L, "공유코스");
+        Bakery b1 = bakeryAt(10L, "A빵집", 36.0, 127.0);
+        Bakery b2 = bakeryAt(20L, "B빵집", 36.1, 127.1);
+        course.addCourseBakery(CourseBakery.builder().visitOrder(1).bakery(b1).build());
+        course.addCourseBakery(CourseBakery.builder().visitOrder(2).bakery(b2).build());
+
+        List<Coordinate> path = List.of(new Coordinate(36.0, 127.0), new Coordinate(36.1, 127.1));
+
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
+        when(courseRepository.findWithBakeriesById(1L)).thenReturn(Optional.of(course));
+        when(drivingRouteClient.getPath(any())).thenReturn(path);
+        doThrow(new DataIntegrityViolationException("dup"))
+                .when(courseDrivingRouteSaver)
+                .save(eq(1L), any());
+
+        // PK 충돌이 나도 경로는 정상 반환
+        DrivingRouteResponse response = courseService.getDrivingRoute(1L, null, null);
+
+        assertThat(response.getPath()).isEqualTo(path);
+    }
+
+    // ── updateManual 추가 케이스 ─────────────────────────────────────────
+
+    @Test
+    void updateManual_doesNotInvalidateCache_whenBakeriesNotChanged() {
+        Course course = manualCourse(1L, "이름");
+        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+
+        UpdateCourseRequest request = new UpdateCourseRequest();
+        ReflectionTestUtils.setField(request, "name", "새이름");
+
+        courseService.updateManual(1L, request);
+
+        verify(courseDrivingRouteRepository, never()).deleteAllByCourseIdIn(any());
+    }
+
+    // ── 헬퍼 ─────────────────────────────────────────────────────────────
+
     private static void syncCourseBakeriesForDetail(Course course) {
         Bakery bakery = bakery(10L, "빵집");
         course.addCourseBakery(CourseBakery.builder().visitOrder(1).bakery(bakery).build());
@@ -701,5 +955,66 @@ class CourseServiceTest {
         ReflectionTestUtils.setField(request, "name", name);
         ReflectionTestUtils.setField(request, "bakeryIds", bakeryIds);
         return request;
+    }
+
+    private static Bakery bakeryAt(long id, String name, double lat, double lng) {
+        Bakery b =
+                Bakery.builder()
+                        .name(name)
+                        .address("addr")
+                        .region("서울")
+                        .latitude(lat)
+                        .longitude(lng)
+                        .phone("010")
+                        .rating(4.0)
+                        .mapLink("m")
+                        .dineInAvailable(true)
+                        .parkingAvailable(false)
+                        .drinkAvailable(true)
+                        .note("")
+                        .build();
+        ReflectionTestUtils.setField(b, "id", id);
+        return b;
+    }
+
+    private static Bakery nullCoordBakery(long id, String name) {
+        Bakery b =
+                Bakery.builder()
+                        .name(name)
+                        .address("addr")
+                        .region("서울")
+                        .latitude(0.0)
+                        .longitude(0.0)
+                        .phone("010")
+                        .rating(4.0)
+                        .mapLink("m")
+                        .dineInAvailable(true)
+                        .parkingAvailable(false)
+                        .drinkAvailable(true)
+                        .note("")
+                        .build();
+        ReflectionTestUtils.setField(b, "id", id);
+        ReflectionTestUtils.setField(b, "latitude", null);
+        ReflectionTestUtils.setField(b, "longitude", null);
+        return b;
+    }
+
+    private static Course aiCourseWithLocation(long id, User owner, double lat, double lng) {
+        AiCourseInfo aiInfo =
+                AiCourseInfo.builder()
+                        .travelType(TravelType.ALONE)
+                        .budgetRange(BudgetRange.ANY)
+                        .waitingPreference(false)
+                        .drinkPreference(false)
+                        .bakeryCount(1)
+                        .flexibilityLevel(FlexibilityLevel.ACTIVE)
+                        .recommendReason("r")
+                        .minimizeRoute(false)
+                        .latitude(lat)
+                        .longitude(lng)
+                        .build();
+        Course course = Course.createAi("AI 코스", owner, null, aiInfo, Set.of());
+        ReflectionTestUtils.setField(course, "id", id);
+        return course;
     }
 }
