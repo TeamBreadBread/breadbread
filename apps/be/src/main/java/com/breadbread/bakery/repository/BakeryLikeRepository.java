@@ -4,6 +4,8 @@ import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.BakeryLike;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -25,4 +27,9 @@ public interface BakeryLikeRepository extends JpaRepository<BakeryLike, Long> {
             "SELECT bl.bakery.id FROM BakeryLike bl WHERE bl.bakery.id IN :bakeryIds AND bl.user.id = :userId")
     List<Long> findLikedBakeryIdsByUserId(
             @Param("bakeryIds") List<Long> bakeryIds, @Param("userId") Long userId);
+
+    @Query(
+            value = "SELECT bl FROM BakeryLike bl JOIN FETCH bl.bakery WHERE bl.user.id = :userId",
+            countQuery = "SELECT COUNT(bl) FROM BakeryLike bl WHERE bl.user.id = :userId")
+    Page<BakeryLike> findByUserId(@Param("userId") Long userId, Pageable pageable);
 }
