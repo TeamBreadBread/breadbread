@@ -1,9 +1,9 @@
 import { StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { RouterProvider, createRouter } from "@tanstack/react-router";
+import { RouterProvider } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { routeTree } from "./routeTree.gen";
+import { appRouter } from "@/lib/appRouter";
 import { isKakaoMapKeyConfigured, loadKakaoMapSdk } from "@/lib/kakaoMapSdk";
 import "./index.css";
 
@@ -13,12 +13,11 @@ if (isKakaoMapKeyConfigured()) {
   });
 }
 
-const router = createRouter({ routeTree });
 const showDevtools = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEVTOOLS === "true";
 
 declare module "@tanstack/react-router" {
   interface Register {
-    router: typeof router;
+    router: typeof appRouter;
   }
 }
 
@@ -26,7 +25,7 @@ const queryClient = new QueryClient();
 
 export const App = () => (
   <QueryClientProvider client={queryClient}>
-    <RouterProvider router={router} />
+    <RouterProvider router={appRouter} />
     {showDevtools && <ReactQueryDevtools />}
   </QueryClientProvider>
 );

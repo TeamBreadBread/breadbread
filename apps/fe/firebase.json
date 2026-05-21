@@ -63,6 +63,13 @@
         }
       },
       {
+        "source": "/notifications/**",
+        "run": {
+          "serviceId": "bread-be",
+          "region": "asia-northeast3"
+        }
+      },
+      {
         "source": "/images/**",
         "run": {
           "serviceId": "bread-be",
