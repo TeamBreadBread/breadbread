@@ -10,8 +10,8 @@ const feRoot = path.resolve(__dirname)
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, feRoot, '')
   if (mode === 'development' && !env.VITE_FIREBASE_VAPID_KEY?.trim()) {
-    console.warn(
-      '[vite] VITE_FIREBASE_VAPID_KEY 없음 → apps/fe/.env.local 확인 후 dev 서버를 완전히 재시작하세요.',
+    process.stderr.write(
+      '[vite] VITE_FIREBASE_VAPID_KEY 없음 → apps/fe/.env.local 확인 후 dev 서버를 완전히 재시작하세요.\n',
     )
   }
 
