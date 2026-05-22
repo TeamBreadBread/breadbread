@@ -128,7 +128,8 @@ class AiCourseAsyncServiceTest {
 
         aiCourseAsyncService.processAiCourse("job-throw", 1L, aiRequest()).join();
 
-        verify(aiCourseRedisService).saveFailed(eq("job-throw"), eq(ErrorCode.AI_SERVER_ERROR.getMessage()));
+        verify(aiCourseRedisService)
+                .saveFailed(eq("job-throw"), eq(ErrorCode.AI_SERVER_ERROR.getMessage()));
     }
 
     @Test
@@ -182,8 +183,7 @@ class AiCourseAsyncServiceTest {
 
         verify(aiCourseRedisService)
                 .saveFailed(
-                        eq("job-e"),
-                        eq(ErrorCode.AI_RECOMMENDED_BAKERY_NOT_FOUND.getMessage()));
+                        eq("job-e"), eq(ErrorCode.AI_RECOMMENDED_BAKERY_NOT_FOUND.getMessage()));
     }
 
     private static AiCourseWebhookResponse validWebhookResponse(long bakeryId) {

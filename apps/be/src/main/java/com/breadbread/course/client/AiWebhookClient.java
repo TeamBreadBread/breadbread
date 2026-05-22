@@ -72,10 +72,7 @@ public class AiWebhookClient {
             if (e instanceof java.util.concurrent.TimeoutException
                     || (e.getMessage() != null && e.getMessage().contains("Timeout"))) {
                 long timeoutSec = aiProperties.getWebhookTimeoutSeconds();
-                log.warn(
-                        "[AI 웹훅] 타임아웃 발생: jobId={}, timeoutSeconds={}",
-                        jobId,
-                        timeoutSec);
+                log.warn("[AI 웹훅] 타임아웃 발생: jobId={}, timeoutSeconds={}", jobId, timeoutSec);
                 throw new CustomException(ErrorCode.AI_WEBHOOK_TIMEOUT);
             }
             throw new CustomException(ErrorCode.AI_WEBHOOK_CONNECTION_ERROR);
