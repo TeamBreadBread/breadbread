@@ -142,7 +142,7 @@ class CourseServiceTest {
 
     @Test
     void findOne_throws_whenCourseMissing() {
-        when(courseRepository.findById(1L)).thenReturn(Optional.empty());
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> courseService.findOne(1L, 1L, UserRole.ROLE_USER))
                 .isInstanceOf(CustomException.class)
@@ -153,7 +153,7 @@ class CourseServiceTest {
     @Test
     void findOne_privateCourse_throwsUnauthorized_whenUserMissing() {
         Course course = aiPrivateCourse(5L, owner(1L));
-        when(courseRepository.findById(5L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(5L)).thenReturn(Optional.of(course));
 
         assertThatThrownBy(() -> courseService.findOne(5L, null, null))
                 .isInstanceOf(CustomException.class)
@@ -164,7 +164,7 @@ class CourseServiceTest {
     @Test
     void findOne_privateCourse_throwsForbidden_whenNotOwner() {
         Course course = aiPrivateCourse(5L, owner(1L));
-        when(courseRepository.findById(5L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(5L)).thenReturn(Optional.of(course));
 
         assertThatThrownBy(() -> courseService.findOne(5L, 2L, UserRole.ROLE_USER))
                 .isInstanceOf(CustomException.class)
@@ -178,7 +178,7 @@ class CourseServiceTest {
         Course course = aiPrivateCourse(7L, owner);
         syncCourseBakeriesForDetail(course);
 
-        when(courseRepository.findById(7L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(7L)).thenReturn(Optional.of(course));
         when(courseBakeryRepository.findAllByCourseIdOrderByVisitOrder(7L))
                 .thenReturn(new ArrayList<>(course.getCourseBakeries()));
         when(bakeryImageRepository.findAllByBakeryIdInAndDisplayOrder(List.of(10L), 1))
@@ -199,7 +199,7 @@ class CourseServiceTest {
         Course course = aiPrivateCourse(8L, owner(3L));
         syncCourseBakeriesForDetail(course);
 
-        when(courseRepository.findById(8L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(8L)).thenReturn(Optional.of(course));
         when(courseBakeryRepository.findAllByCourseIdOrderByVisitOrder(8L))
                 .thenReturn(new ArrayList<>(course.getCourseBakeries()));
         when(bakeryImageRepository.findAllByBakeryIdInAndDisplayOrder(List.of(10L), 1))
@@ -236,7 +236,8 @@ class CourseServiceTest {
                             ReflectionTestUtils.setField(c, "id", 100L);
                             return c;
                         });
-        when(bakeryRepository.findAllById(List.of(1L, 1L))).thenReturn(List.of(bakery(1L, "B")));
+        when(bakeryRepository.findAllByIdInAndActiveTrue(List.of(1L, 1L)))
+                .thenReturn(List.of(bakery(1L, "B")));
 
         assertThatThrownBy(() -> courseService.createManual(1L, request))
                 .isInstanceOf(CustomException.class)
@@ -254,7 +255,8 @@ class CourseServiceTest {
                             ReflectionTestUtils.setField(c, "id", 100L);
                             return c;
                         });
-        when(bakeryRepository.findAllById(List.of(1L, 2L))).thenReturn(List.of(bakery(1L, "B")));
+        when(bakeryRepository.findAllByIdInAndActiveTrue(List.of(1L, 2L)))
+                .thenReturn(List.of(bakery(1L, "B")));
 
         assertThatThrownBy(() -> courseService.createManual(1L, request))
                 .isInstanceOf(CustomException.class)
@@ -274,7 +276,8 @@ class CourseServiceTest {
                             ReflectionTestUtils.setField(c, "id", 55L);
                             return c;
                         });
-        when(bakeryRepository.findAllById(List.of(10L, 20L))).thenReturn(List.of(b1, b2));
+        when(bakeryRepository.findAllByIdInAndActiveTrue(List.of(10L, 20L)))
+                .thenReturn(List.of(b1, b2));
 
         Long id = courseService.createManual(9L, request);
 
@@ -290,7 +293,7 @@ class CourseServiceTest {
     @Test
     void updateManual_throws_whenBakeryListEmpty() {
         Course course = manualCourse(1L, "이름");
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
         UpdateCourseRequest request = new UpdateCourseRequest();
         ReflectionTestUtils.setField(request, "bakeryIds", List.of());
 
@@ -303,9 +306,9 @@ class CourseServiceTest {
     @Test
     void updateManual_replacesBakeries_whenIdsProvided() {
         Course course = manualCourse(3L, "수정");
-        when(courseRepository.findById(3L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(3L)).thenReturn(Optional.of(course));
         Bakery b = bakery(30L, "새빵집");
-        when(bakeryRepository.findAllById(List.of(30L))).thenReturn(List.of(b));
+        when(bakeryRepository.findAllByIdInAndActiveTrue(List.of(30L))).thenReturn(List.of(b));
 
         UpdateCourseRequest request = new UpdateCourseRequest();
         ReflectionTestUtils.setField(request, "bakeryIds", List.of(30L));
@@ -320,7 +323,7 @@ class CourseServiceTest {
     @Test
     void updateManual_throws_whenDuplicateBakeryIdsProvided() {
         Course course = manualCourse(3L, "수정");
-        when(courseRepository.findById(3L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(3L)).thenReturn(Optional.of(course));
 
         UpdateCourseRequest request = new UpdateCourseRequest();
         ReflectionTestUtils.setField(request, "bakeryIds", List.of(30L, 30L));
@@ -334,8 +337,8 @@ class CourseServiceTest {
     @Test
     void updateManual_throws_whenBakeryMissing() {
         Course course = manualCourse(3L, "수정");
-        when(courseRepository.findById(3L)).thenReturn(Optional.of(course));
-        when(bakeryRepository.findAllById(List.of(30L, 40L)))
+        when(courseRepository.findByIdAndActiveTrue(3L)).thenReturn(Optional.of(course));
+        when(bakeryRepository.findAllByIdInAndActiveTrue(List.of(30L, 40L)))
                 .thenReturn(List.of(bakery(30L, "있음")));
 
         UpdateCourseRequest request = new UpdateCourseRequest();
@@ -350,11 +353,11 @@ class CourseServiceTest {
     @Test
     void delete_removes_course_when_found() {
         Course course = manualCourse(4L, "삭제");
-        when(courseRepository.findById(4L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(4L)).thenReturn(Optional.of(course));
 
         courseService.delete(4L);
 
-        verify(courseRepository).delete(course);
+        assertThat(course.isActive()).isFalse();
     }
 
     @Test
@@ -405,7 +408,7 @@ class CourseServiceTest {
     @Test
     void deleteAi_throws_whenManualCourse() {
         Course course = manualCourse(1L, "수동");
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
 
         assertThatThrownBy(() -> courseService.deleteAi(1L, 1L))
                 .isInstanceOf(CustomException.class)
@@ -416,7 +419,7 @@ class CourseServiceTest {
     @Test
     void deleteAi_throws_whenNotOwner() {
         Course course = aiPrivateCourse(2L, owner(1L));
-        when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(2L)).thenReturn(Optional.of(course));
 
         assertThatThrownBy(() -> courseService.deleteAi(2L, 99L))
                 .isInstanceOf(CustomException.class)
@@ -427,17 +430,17 @@ class CourseServiceTest {
     @Test
     void deleteAi_deletes_whenOwner() {
         Course course = aiPrivateCourse(2L, owner(5L));
-        when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(2L)).thenReturn(Optional.of(course));
 
         courseService.deleteAi(2L, 5L);
 
-        verify(courseRepository).delete(course);
+        assertThat(course.isActive()).isFalse();
     }
 
     @Test
     void like_throws_whenPrivateAndNotOwner() {
         Course course = aiPrivateCourse(1L, owner(1L));
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
 
         assertThatThrownBy(() -> courseService.like(1L, 2L))
                 .isInstanceOf(CustomException.class)
@@ -448,7 +451,7 @@ class CourseServiceTest {
     @Test
     void like_throws_whenAlreadyLiked() {
         Course course = manualCourse(1L, "공유");
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
         when(courseLikeRepository.existsByCourseIdAndUserId(1L, 3L)).thenReturn(true);
 
         assertThatThrownBy(() -> courseService.like(1L, 3L))
@@ -461,7 +464,7 @@ class CourseServiceTest {
     void like_saves_when_not_yet_liked() {
         Course course = manualCourse(1L, "공유");
         User user = user(3L);
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
         when(courseLikeRepository.existsByCourseIdAndUserId(1L, 3L)).thenReturn(false);
         when(userRepository.findById(3L)).thenReturn(Optional.of(user));
 
@@ -477,7 +480,7 @@ class CourseServiceTest {
     void like_maps_duplicate_key_when_concurrent_save() {
         Course course = manualCourse(1L, "공유");
         User user = user(3L);
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
         when(courseLikeRepository.existsByCourseIdAndUserId(1L, 3L)).thenReturn(false);
         when(userRepository.findById(3L)).thenReturn(Optional.of(user));
         doThrow(new DataIntegrityViolationException("dup"))
@@ -493,7 +496,7 @@ class CourseServiceTest {
     @Test
     void like_throws_when_user_missing() {
         Course course = manualCourse(1L, "shared-course");
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
         when(courseLikeRepository.existsByCourseIdAndUserId(1L, 3L)).thenReturn(false);
         when(userRepository.findById(3L)).thenReturn(Optional.empty());
 
@@ -532,7 +535,7 @@ class CourseServiceTest {
         Bakery bakery = bakery(5L, "맛집");
         course.addCourseBakery(CourseBakery.builder().visitOrder(1).bakery(bakery).build());
         Route route = Route.builder().course(course).user(user(1L)).build();
-        when(routeRepository.findByUserId(1L)).thenReturn(List.of(route));
+        when(routeRepository.findActiveByUserId(1L)).thenReturn(List.of(route));
 
         List<RouteResponse> responses = courseService.findMyRoutes(1L);
 
@@ -543,7 +546,7 @@ class CourseServiceTest {
     @Test
     void saveRoute_throws_whenAlreadySaved() {
         Course course = manualCourse(1L, "공유");
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
         when(routeRepository.existsByCourseIdAndUserId(1L, 4L)).thenReturn(true);
 
         assertThatThrownBy(() -> courseService.saveRoute(1L, 4L))
@@ -556,7 +559,7 @@ class CourseServiceTest {
     void saveRoute_persists_when_first_save() {
         Course course = manualCourse(1L, "공유");
         User user = user(4L);
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
         when(routeRepository.existsByCourseIdAndUserId(1L, 4L)).thenReturn(false);
         when(userRepository.findById(4L)).thenReturn(Optional.of(user));
 
@@ -572,7 +575,7 @@ class CourseServiceTest {
     void saveRoute_maps_violation_when_duplicate_route() {
         Course course = manualCourse(1L, "공유");
         User user = user(4L);
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
         when(routeRepository.existsByCourseIdAndUserId(1L, 4L)).thenReturn(false);
         when(userRepository.findById(4L)).thenReturn(Optional.of(user));
         doThrow(new DataIntegrityViolationException("dup"))
@@ -588,7 +591,7 @@ class CourseServiceTest {
     @Test
     void saveRoute_throws_when_user_missing() {
         Course course = manualCourse(1L, "shared-course");
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
         when(routeRepository.existsByCourseIdAndUserId(1L, 4L)).thenReturn(false);
         when(userRepository.findById(4L)).thenReturn(Optional.empty());
 
@@ -601,7 +604,7 @@ class CourseServiceTest {
     @Test
     void saveRoute_throws_when_private_course_and_requester_not_owner() {
         Course course = aiPrivateCourse(1L, owner(1L));
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
 
         assertThatThrownBy(() -> courseService.saveRoute(1L, 2L))
                 .isInstanceOf(CustomException.class)
@@ -635,7 +638,7 @@ class CourseServiceTest {
 
     @Test
     void getDrivingRoute_throws_whenCourseNotFound() {
-        when(courseRepository.findById(1L)).thenReturn(Optional.empty());
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> courseService.getDrivingRoute(1L, 1L, UserRole.ROLE_USER))
                 .isInstanceOf(CustomException.class)
@@ -646,7 +649,7 @@ class CourseServiceTest {
     @Test
     void getDrivingRoute_throws_unauthorized_whenPrivateCourseAndAnonymous() {
         Course course = aiPrivateCourse(1L, owner(1L));
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
 
         assertThatThrownBy(() -> courseService.getDrivingRoute(1L, null, null))
                 .isInstanceOf(CustomException.class)
@@ -657,7 +660,7 @@ class CourseServiceTest {
     @Test
     void getDrivingRoute_throws_forbidden_whenPrivateCourseAndNotOwner() {
         Course course = aiPrivateCourse(1L, owner(1L));
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
 
         assertThatThrownBy(() -> courseService.getDrivingRoute(1L, 2L, UserRole.ROLE_USER))
                 .isInstanceOf(CustomException.class)
@@ -673,7 +676,7 @@ class CourseServiceTest {
         CourseDrivingRoute cached =
                 CourseDrivingRoute.builder().courseId(1L).path(cachedPath).build();
 
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
         when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.of(cached));
 
         DrivingRouteResponse response =
@@ -691,14 +694,14 @@ class CourseServiceTest {
         CourseDrivingRoute cached =
                 CourseDrivingRoute.builder().courseId(1L).path(cachedPath).build();
 
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
         when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.of(cached));
 
         DrivingRouteResponse response = courseService.getDrivingRoute(1L, null, null);
 
         assertThat(response.getPath()).isEqualTo(cachedPath);
         verify(drivingRouteClient, never()).getPath(any());
-        verify(courseRepository, never()).findWithBakeriesById(any());
+        verify(courseRepository, never()).findActiveWithBakeriesById(any());
     }
 
     @Test
@@ -712,9 +715,9 @@ class CourseServiceTest {
 
         List<Coordinate> path = List.of(new Coordinate(36.0, 127.0), new Coordinate(36.1, 127.1));
 
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
         when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
-        when(courseRepository.findWithBakeriesById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
         when(drivingRouteClient.getPath(any())).thenReturn(path);
 
         DrivingRouteResponse response = courseService.getDrivingRoute(1L, null, null);
@@ -742,9 +745,9 @@ class CourseServiceTest {
 
         List<Coordinate> path = List.of(new Coordinate(35.5, 126.5), new Coordinate(36.0, 127.0));
 
-        when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(2L)).thenReturn(Optional.of(course));
         when(courseDrivingRouteRepository.findById(2L)).thenReturn(Optional.empty());
-        when(courseRepository.findWithBakeriesById(2L)).thenReturn(Optional.of(course));
+        when(courseRepository.findActiveWithBakeriesById(2L)).thenReturn(Optional.of(course));
         when(drivingRouteClient.getPath(any())).thenReturn(path);
 
         courseService.getDrivingRoute(2L, 1L, UserRole.ROLE_USER);
@@ -768,9 +771,9 @@ class CourseServiceTest {
 
         List<Coordinate> path = List.of(new Coordinate(35.5, 126.5), new Coordinate(36.0, 127.0));
 
-        when(courseRepository.findById(2L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(2L)).thenReturn(Optional.of(course));
         when(courseDrivingRouteRepository.findById(2L)).thenReturn(Optional.empty());
-        when(courseRepository.findWithBakeriesById(2L)).thenReturn(Optional.of(course));
+        when(courseRepository.findActiveWithBakeriesById(2L)).thenReturn(Optional.of(course));
         when(drivingRouteClient.getPath(any())).thenReturn(path);
 
         DrivingRouteResponse response = courseService.getDrivingRoute(2L, 1L, UserRole.ROLE_USER);
@@ -785,9 +788,9 @@ class CourseServiceTest {
         Bakery bakery = bakeryAt(10L, "빵집", 36.0, 127.0);
         course.addCourseBakery(CourseBakery.builder().visitOrder(1).bakery(bakery).build());
 
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
         when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
-        when(courseRepository.findWithBakeriesById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
 
         assertThatThrownBy(() -> courseService.getDrivingRoute(1L, null, null))
                 .isInstanceOf(CustomException.class)
@@ -805,9 +808,9 @@ class CourseServiceTest {
         course.addCourseBakery(CourseBakery.builder().visitOrder(1).bakery(b1).build());
         course.addCourseBakery(CourseBakery.builder().visitOrder(2).bakery(b2).build());
 
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
         when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
-        when(courseRepository.findWithBakeriesById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
 
         assertThatThrownBy(() -> courseService.getDrivingRoute(1L, null, null))
                 .isInstanceOf(CustomException.class)
@@ -823,9 +826,9 @@ class CourseServiceTest {
         Bakery bakery = bakeryAt(10L, "빵집", 36.0, 127.0);
         course.addCourseBakery(CourseBakery.builder().visitOrder(1).bakery(bakery).build());
 
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
         when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
-        when(courseRepository.findWithBakeriesById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
 
         assertThatThrownBy(() -> courseService.getDrivingRoute(1L, 1L, UserRole.ROLE_USER))
                 .isInstanceOf(CustomException.class)
@@ -845,9 +848,9 @@ class CourseServiceTest {
 
         List<Coordinate> path = List.of(new Coordinate(36.0, 127.0), new Coordinate(36.1, 127.1));
 
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
         when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
-        when(courseRepository.findWithBakeriesById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
         when(drivingRouteClient.getPath(any())).thenReturn(path);
         doThrow(new DataIntegrityViolationException("dup"))
                 .when(courseDrivingRouteSaver)
@@ -864,7 +867,7 @@ class CourseServiceTest {
     @Test
     void updateManual_doesNotInvalidateCache_whenBakeriesNotChanged() {
         Course course = manualCourse(1L, "이름");
-        when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
 
         UpdateCourseRequest request = new UpdateCourseRequest();
         ReflectionTestUtils.setField(request, "name", "새이름");

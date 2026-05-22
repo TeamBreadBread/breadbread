@@ -28,10 +28,14 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
     public Page<Post> searchPosts(PostSearch search, Pageable pageable) {
         QPost post = QPost.post;
 
+        BooleanExpression activeCondition = post.active.isTrue();
         BooleanExpression typeCondition = post.postType.in(search.getPostTypes());
         BooleanExpression keywordCondition = containsKeyword(post, search.getKeyword());
 
-        JPAQuery<Post> query = queryFactory.selectFrom(post).where(typeCondition, keywordCondition);
+        JPAQuery<Post> query =
+                queryFactory
+                        .selectFrom(post)
+                        .where(activeCondition, typeCondition, keywordCondition);
 
         if (search.getSort() == PostListSort.LIKE_COUNT) {
             QPostLike pl = QPostLike.postLike;
@@ -52,7 +56,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 queryFactory
                         .select(post.count())
                         .from(post)
-                        .where(typeCondition, keywordCondition)
+                        .where(activeCondition, typeCondition, keywordCondition)
                         .fetchOne();
 
         return new PageImpl<>(content, pageable, total != null ? total : 0L);

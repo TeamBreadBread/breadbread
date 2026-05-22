@@ -35,6 +35,9 @@ public class Review extends BaseEntity {
     @Size(max = 2)
     private List<String> imageUrls = new ArrayList<>();
 
+    @Column(nullable = false)
+    private boolean active = true;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
@@ -47,6 +50,10 @@ public class Review extends BaseEntity {
         if (request.getRating() != null) this.rating = request.getRating();
         if (request.getContent() != null) this.content = request.getContent();
         if (request.getImageUrls() != null) this.imageUrls = request.getImageUrls();
+    }
+
+    public void deactivate() {
+        this.active = false;
     }
 
     @Builder

@@ -72,7 +72,7 @@ public class AiCourseAsyncService {
                                                                         ErrorCode
                                                                                 .PREFERENCE_NOT_FOUND));
 
-                                List<Bakery> bakeries = bakeryRepository.findAll();
+                                List<Bakery> bakeries = bakeryRepository.findAllByActiveTrue();
                                 List<Long> ids = bakeries.stream().map(Bakery::getId).toList();
                                 Map<Long, List<Bread>> breadMap =
                                         breadRepository.findAllByBakeryIdIn(ids).stream()
@@ -146,7 +146,9 @@ public class AiCourseAsyncService {
                                                 .map(RecommendedBakeryResponse::getId)
                                                 .toList();
                                 Map<Long, Bakery> bakeryMap =
-                                        bakeryRepository.findAllById(recommendedIds).stream()
+                                        bakeryRepository
+                                                .findAllByIdInAndActiveTrue(recommendedIds)
+                                                .stream()
                                                 .collect(Collectors.toMap(Bakery::getId, b -> b));
 
                                 if (bakeryMap.size() != recommendedIds.size()) {

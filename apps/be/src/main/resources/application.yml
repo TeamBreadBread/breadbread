@@ -122,7 +122,7 @@ oauth2:
 
 ai:
   webhook-url: ${AI_COURSE_WEBHOOK_URL}
-  webhook-timeout-seconds: ${AI_WEBHOOK_TIMEOUT_SECONDS:60}
+  webhook-timeout-seconds: ${AI_WEBHOOK_TIMEOUT_SECONDS:90}
   job-ttl-hours: ${AI_JOB_TTL_HOURS:1}
 
 portone:

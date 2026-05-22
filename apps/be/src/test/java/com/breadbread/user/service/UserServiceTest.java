@@ -713,7 +713,7 @@ class UserServiceTest {
 
     @Test
     void getLikedBakeries_returns_empty_page_when_no_likes() {
-        when(bakeryLikeRepository.findByUserId(eq(1L), any(Pageable.class)))
+        when(bakeryLikeRepository.findActiveByUserId(eq(1L), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
 
         var result = userService.getLikedBakeries(1L, 0, 10);
@@ -728,7 +728,7 @@ class UserServiceTest {
         Bakery bakery = bakery(10L, "소금빵집");
         User user = user(1L);
         BakeryLike like = BakeryLike.builder().bakery(bakery).user(user).build();
-        when(bakeryLikeRepository.findByUserId(eq(1L), any(Pageable.class)))
+        when(bakeryLikeRepository.findActiveByUserId(eq(1L), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(like), PageRequest.of(0, 10), 1));
         BakeryImage thumb =
                 BakeryImage.builder().imageUrl("thumb.jpg").displayOrder(1).bakery(bakery).build();
@@ -758,7 +758,7 @@ class UserServiceTest {
                 List.of(
                         BakeryLike.builder().bakery(b1).user(user).build(),
                         BakeryLike.builder().bakery(b2).user(user).build());
-        when(bakeryLikeRepository.findByUserId(eq(5L), any(Pageable.class)))
+        when(bakeryLikeRepository.findActiveByUserId(eq(5L), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(likes, PageRequest.of(0, 10), 2));
         when(bakeryImageRepository.findAllByBakeryIdInAndDisplayOrder(anyList(), eq(1)))
                 .thenReturn(List.of());
@@ -775,7 +775,7 @@ class UserServiceTest {
         Bakery bakery = bakery(99L, "빵집");
         User user = user(7L);
         BakeryLike like = BakeryLike.builder().bakery(bakery).user(user).build();
-        when(bakeryLikeRepository.findByUserId(eq(7L), any(Pageable.class)))
+        when(bakeryLikeRepository.findActiveByUserId(eq(7L), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(like), PageRequest.of(0, 1), 5));
         when(bakeryImageRepository.findAllByBakeryIdInAndDisplayOrder(anyList(), eq(1)))
                 .thenReturn(List.of());
@@ -791,7 +791,7 @@ class UserServiceTest {
 
     @Test
     void getLikedCourses_returns_empty_page_when_no_likes() {
-        when(courseLikeRepository.findByUserId(eq(1L), any(Pageable.class)))
+        when(courseLikeRepository.findActiveByUserId(eq(1L), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
 
         var result = userService.getLikedCourses(1L, 0, 10);
@@ -808,8 +808,10 @@ class UserServiceTest {
         course.addCourseBakery(CourseBakery.builder().visitOrder(1).bakery(bakery).build());
         CourseLike like = CourseLike.builder().course(course).user(user(3L)).build();
 
-        when(courseLikeRepository.findByUserId(eq(3L), any(Pageable.class)))
+        when(courseLikeRepository.findActiveByUserId(eq(3L), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(like), PageRequest.of(0, 10), 1));
+        when(courseRepository.findAllActiveWithBakeriesByIdIn(List.of(1L)))
+                .thenReturn(List.of(course));
         when(bakeryImageRepository.findAllByBakeryIdInAndDisplayOrder(List.of(10L), 1))
                 .thenReturn(
                         List.of(
@@ -841,8 +843,10 @@ class UserServiceTest {
         Course course = course(2L, "코스");
         CourseLike like = CourseLike.builder().course(course).user(user(5L)).build();
 
-        when(courseLikeRepository.findByUserId(eq(5L), any(Pageable.class)))
+        when(courseLikeRepository.findActiveByUserId(eq(5L), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(like), PageRequest.of(0, 10), 1));
+        when(courseRepository.findAllActiveWithBakeriesByIdIn(List.of(2L)))
+                .thenReturn(List.of(course));
         when(courseLikeRepository.countByCourseIdIn(List.of(2L))).thenReturn(List.of());
         when(routeRepository.findLikedCourseIdsByUserId(List.of(2L), 5L)).thenReturn(List.of());
 
@@ -857,8 +861,10 @@ class UserServiceTest {
         Course course = course(3L, "다음 페이지");
         CourseLike like = CourseLike.builder().course(course).user(user(9L)).build();
 
-        when(courseLikeRepository.findByUserId(eq(9L), any(Pageable.class)))
+        when(courseLikeRepository.findActiveByUserId(eq(9L), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(like), PageRequest.of(0, 1), 3));
+        when(courseRepository.findAllActiveWithBakeriesByIdIn(anyList()))
+                .thenReturn(List.of(course));
         when(courseLikeRepository.countByCourseIdIn(anyList())).thenReturn(List.of());
         when(routeRepository.findLikedCourseIdsByUserId(anyList(), eq(9L))).thenReturn(List.of());
 

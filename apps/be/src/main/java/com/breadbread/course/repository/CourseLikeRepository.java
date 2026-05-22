@@ -32,4 +32,15 @@ public interface CourseLikeRepository extends JpaRepository<CourseLike, Long> {
             value = "SELECT cl FROM CourseLike cl JOIN FETCH cl.course WHERE cl.user.id = :userId",
             countQuery = "SELECT COUNT(cl) FROM CourseLike cl WHERE cl.user.id = :userId")
     Page<CourseLike> findByUserId(@Param("userId") Long userId, Pageable pageable);
+
+    @Query(
+            value =
+                    "SELECT cl FROM CourseLike cl "
+                            + "JOIN FETCH cl.course c "
+                            + "WHERE cl.user.id = :userId AND c.active = true",
+            countQuery =
+                    "SELECT COUNT(cl) FROM CourseLike cl "
+                            + "JOIN cl.course c "
+                            + "WHERE cl.user.id = :userId AND c.active = true")
+    Page<CourseLike> findActiveByUserId(@Param("userId") Long userId, Pageable pageable);
 }

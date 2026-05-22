@@ -105,7 +105,7 @@ class AiCourseAsyncServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
         when(userPreferenceRepository.findByUserId(1L))
                 .thenReturn(Optional.of(preference(user(1L))));
-        when(bakeryRepository.findAll()).thenReturn(List.of());
+        when(bakeryRepository.findAllByActiveTrue()).thenReturn(List.of());
         when(breadRepository.findAllByBakeryIdIn(List.of())).thenReturn(List.of());
         when(crowdTimeRepository.findAllByBakeryIdIn(List.of())).thenReturn(List.of());
         when(aiWebhookClient.requestCourse(eq("job-c"), any())).thenReturn(null);
@@ -120,7 +120,7 @@ class AiCourseAsyncServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
         when(userPreferenceRepository.findByUserId(1L))
                 .thenReturn(Optional.of(preference(user(1L))));
-        when(bakeryRepository.findAll()).thenReturn(List.of());
+        when(bakeryRepository.findAllByActiveTrue()).thenReturn(List.of());
         when(breadRepository.findAllByBakeryIdIn(List.of())).thenReturn(List.of());
         when(crowdTimeRepository.findAllByBakeryIdIn(List.of())).thenReturn(List.of());
         when(aiWebhookClient.requestCourse(eq("job-throw"), any()))
@@ -139,13 +139,13 @@ class AiCourseAsyncServiceTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userPreferenceRepository.findByUserId(1L)).thenReturn(Optional.of(pref));
-        when(bakeryRepository.findAll()).thenReturn(List.of(bakery));
+        when(bakeryRepository.findAllByActiveTrue()).thenReturn(List.of(bakery));
         when(breadRepository.findAllByBakeryIdIn(List.of(10L))).thenReturn(List.of());
         when(crowdTimeRepository.findAllByBakeryIdIn(List.of(10L))).thenReturn(List.of());
 
         AiCourseWebhookResponse webhookResponse = validWebhookResponse(10L);
         when(aiWebhookClient.requestCourse(eq("job-d"), any())).thenReturn(webhookResponse);
-        when(bakeryRepository.findAllById(List.of(10L))).thenReturn(List.of(bakery));
+        when(bakeryRepository.findAllByIdInAndActiveTrue(List.of(10L))).thenReturn(List.of(bakery));
         when(courseRepository.save(any(Course.class)))
                 .thenAnswer(
                         inv -> {
@@ -170,13 +170,13 @@ class AiCourseAsyncServiceTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userPreferenceRepository.findByUserId(1L)).thenReturn(Optional.of(pref));
-        when(bakeryRepository.findAll()).thenReturn(List.of(bakery));
+        when(bakeryRepository.findAllByActiveTrue()).thenReturn(List.of(bakery));
         when(breadRepository.findAllByBakeryIdIn(List.of(10L))).thenReturn(List.of());
         when(crowdTimeRepository.findAllByBakeryIdIn(List.of(10L))).thenReturn(List.of());
 
         AiCourseWebhookResponse webhookResponse = validWebhookResponse(99L);
         when(aiWebhookClient.requestCourse(eq("job-e"), any())).thenReturn(webhookResponse);
-        when(bakeryRepository.findAllById(List.of(99L))).thenReturn(List.of());
+        when(bakeryRepository.findAllByIdInAndActiveTrue(List.of(99L))).thenReturn(List.of());
 
         aiCourseAsyncService.processAiCourse("job-e", 1L, aiRequest()).join();
 

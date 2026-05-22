@@ -97,7 +97,7 @@ class BakeryServiceTest {
                         .bakery(b)
                         .build();
 
-        when(bakeryRepository.findAll()).thenReturn(List.of(b));
+        when(bakeryRepository.findAllByActiveTrue()).thenReturn(List.of(b));
         when(breadRepository.findAllByBakeryIdIn(List.of(1L))).thenReturn(List.of(bread));
         when(crowdTimeRepository.findAllByBakeryIdIn(List.of(1L))).thenReturn(List.of(crowd));
 
@@ -161,7 +161,7 @@ class BakeryServiceTest {
 
     @Test
     void findOne_throws_whenMissing() {
-        when(bakeryRepository.findById(1L)).thenReturn(Optional.empty());
+        when(bakeryRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> bakeryService.findOne(1L, null))
                 .isInstanceOf(CustomException.class)
@@ -172,7 +172,7 @@ class BakeryServiceTest {
     @Test
     void findOne_setsLiked_whenUserPresent() {
         Bakery b = bakeryWithId(3L);
-        when(bakeryRepository.findById(3L)).thenReturn(Optional.of(b));
+        when(bakeryRepository.findByIdAndActiveTrue(3L)).thenReturn(Optional.of(b));
         when(bakeryLikeRepository.countByBakery(b)).thenReturn(4L);
         when(bakeryLikeRepository.existsByBakeryIdAndUserId(3L, 9L)).thenReturn(true);
 
@@ -243,7 +243,7 @@ class BakeryServiceTest {
         Bakery bakery = bakeryWithId(1L);
         User owner = user(2L, UserRole.ROLE_BUSINESS);
         bakery.assignOwner(owner);
-        when(bakeryRepository.findById(1L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(bakery));
 
         assertThatThrownBy(
                         () ->
@@ -268,7 +268,7 @@ class BakeryServiceTest {
                                 .build());
         UpdateBakeryRequest request = new UpdateBakeryRequest();
         ReflectionTestUtils.setField(request, "imageUrls", new String[] {"new.jpg"});
-        when(bakeryRepository.findById(5L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrue(5L)).thenReturn(Optional.of(bakery));
 
         bakeryService.updateBakery(999L, UserRole.ROLE_ADMIN, 5L, request);
 
@@ -292,7 +292,7 @@ class BakeryServiceTest {
                                 .build());
         UpdateBakeryRequest request = new UpdateBakeryRequest();
         ReflectionTestUtils.setField(request, "name", "이름만변경");
-        when(bakeryRepository.findById(12L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrue(12L)).thenReturn(Optional.of(bakery));
 
         bakeryService.updateBakery(50L, UserRole.ROLE_BUSINESS, 12L, request);
 
@@ -314,20 +314,20 @@ class BakeryServiceTest {
                                 .displayOrder(1)
                                 .bakery(bakery)
                                 .build());
-        when(bakeryRepository.findById(8L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrue(8L)).thenReturn(Optional.of(bakery));
 
         bakeryService.deleteBakery(3L, UserRole.ROLE_BUSINESS, 8L);
 
         verify(gcsService).deleteQuietly("x.jpg");
         verify(bakeryImageRepository).deleteAllByBakery(bakery);
-        verify(bakeryRepository).delete(bakery);
+        assertThat(bakery.isActive()).isFalse();
     }
 
     @Test
     void deleteBakery_throws_whenForbidden() {
         Bakery bakery = bakeryWithId(15L);
         bakery.assignOwner(user(60L, UserRole.ROLE_BUSINESS));
-        when(bakeryRepository.findById(15L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrue(15L)).thenReturn(Optional.of(bakery));
 
         assertThatThrownBy(() -> bakeryService.deleteBakery(61L, UserRole.ROLE_BUSINESS, 15L))
                 .isInstanceOf(CustomException.class)
@@ -342,7 +342,7 @@ class BakeryServiceTest {
     void createBread_throws_whenForbidden() {
         Bakery bakery = bakeryWithId(1L);
         bakery.assignOwner(user(1L, UserRole.ROLE_BUSINESS));
-        when(bakeryRepository.findById(1L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(bakery));
         CreateBreadRequest request = createBreadRequest("메론빵");
 
         assertThatThrownBy(() -> bakeryService.createBread(2L, UserRole.ROLE_BUSINESS, 1L, request))
@@ -358,7 +358,7 @@ class BakeryServiceTest {
         Bakery bakery = bakeryWithId(4L);
         bakery.assignOwner(user(7L, UserRole.ROLE_BUSINESS));
         CreateBreadRequest request = createBreadRequest("소금빵");
-        when(bakeryRepository.findById(4L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrue(4L)).thenReturn(Optional.of(bakery));
         when(breadRepository.save(any(Bread.class)))
                 .thenAnswer(
                         inv -> {
@@ -389,7 +389,7 @@ class BakeryServiceTest {
         ReflectionTestUtils.setField(bread, "id", 50L);
         UpdateBreadRequest request = new UpdateBreadRequest();
         ReflectionTestUtils.setField(request, "imageUrl", "next.jpg");
-        when(bakeryRepository.findById(4L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrue(4L)).thenReturn(Optional.of(bakery));
         when(breadRepository.findById(50L)).thenReturn(Optional.of(bread));
 
         bakeryService.updateBread(7L, UserRole.ROLE_BUSINESS, 4L, 50L, request);
@@ -401,7 +401,7 @@ class BakeryServiceTest {
     void updateBread_throws_whenBreadMissing() {
         Bakery bakery = bakeryWithId(4L);
         bakery.assignOwner(user(7L, UserRole.ROLE_BUSINESS));
-        when(bakeryRepository.findById(4L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrue(4L)).thenReturn(Optional.of(bakery));
         when(breadRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(
@@ -432,7 +432,7 @@ class BakeryServiceTest {
                         .selloutMin(0)
                         .build();
         ReflectionTestUtils.setField(bread, "id", 60L);
-        when(bakeryRepository.findById(4L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrue(4L)).thenReturn(Optional.of(bakery));
         when(breadRepository.findById(60L)).thenReturn(Optional.of(bread));
 
         bakeryService.deleteBread(7L, UserRole.ROLE_BUSINESS, 4L, 60L);
@@ -444,7 +444,7 @@ class BakeryServiceTest {
     @Test
     void like_throws_whenAlreadyLiked() {
         Bakery bakery = bakeryWithId(1L);
-        when(bakeryRepository.findById(1L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(bakery));
         when(bakeryLikeRepository.existsByBakeryIdAndUserId(1L, 5L)).thenReturn(true);
 
         assertThatThrownBy(() -> bakeryService.like(1L, 5L))
@@ -457,7 +457,7 @@ class BakeryServiceTest {
     void like_maps_integrity_violation_when_duplicate_insert() {
         Bakery bakery = bakeryWithId(1L);
         User user = user(5L, UserRole.ROLE_USER);
-        when(bakeryRepository.findById(1L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(bakery));
         when(bakeryLikeRepository.existsByBakeryIdAndUserId(1L, 5L)).thenReturn(false);
         when(userRepository.findById(5L)).thenReturn(Optional.of(user));
         doThrow(new DataIntegrityViolationException("dup"))
@@ -498,7 +498,7 @@ class BakeryServiceTest {
     void like_savesLike_whenUserAndBakeryExist() {
         Bakery bakery = bakeryWithId(1L);
         User liker = user(5L, UserRole.ROLE_USER);
-        when(bakeryRepository.findById(1L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(bakery));
         when(bakeryLikeRepository.existsByBakeryIdAndUserId(1L, 5L)).thenReturn(false);
         when(userRepository.findById(5L)).thenReturn(Optional.of(liker));
 
@@ -515,7 +515,7 @@ class BakeryServiceTest {
         Bakery bakery = bakeryWithId(20L);
         User author = user(30L, UserRole.ROLE_USER);
         CreateReviewRequest request = createReviewRequest("좋아요", 5);
-        when(bakeryRepository.findById(20L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(bakery));
         when(userRepository.findById(30L)).thenReturn(Optional.of(author));
         when(reviewRepository.save(any(Review.class)))
                 .thenAnswer(
@@ -535,7 +535,7 @@ class BakeryServiceTest {
     @Test
     void createReview_throws_when_bakery_missing() {
         CreateReviewRequest request = createReviewRequest("nice", 5);
-        when(bakeryRepository.findById(99L)).thenReturn(Optional.empty());
+        when(bakeryRepository.findByIdAndActiveTrue(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> bakeryService.createReview(99L, 30L, request))
                 .isInstanceOf(CustomException.class)
@@ -548,7 +548,8 @@ class BakeryServiceTest {
     @Test
     void createReview_throws_when_user_missing() {
         CreateReviewRequest request = createReviewRequest("nice", 5);
-        when(bakeryRepository.findById(20L)).thenReturn(Optional.of(bakeryWithId(20L)));
+        when(bakeryRepository.findByIdAndActiveTrue(20L))
+                .thenReturn(Optional.of(bakeryWithId(20L)));
         when(userRepository.findById(77L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> bakeryService.createReview(20L, 77L, request))
@@ -561,7 +562,7 @@ class BakeryServiceTest {
 
     @Test
     void getReviews_throws_whenBakeryMissing() {
-        when(bakeryRepository.existsById(1L)).thenReturn(false);
+        when(bakeryRepository.existsByIdAndActiveTrue(1L)).thenReturn(false);
 
         assertThatThrownBy(() -> bakeryService.getReviews(1L, ReviewSortType.LATEST, 0, 10, null))
                 .isInstanceOf(CustomException.class)
@@ -582,8 +583,8 @@ class BakeryServiceTest {
         ReflectionTestUtils.setField(review, "id", 101L);
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        when(bakeryRepository.existsById(20L)).thenReturn(true);
-        when(reviewRepository.findAllByBakeryId(eq(20L), pageableCaptor.capture()))
+        when(bakeryRepository.existsByIdAndActiveTrue(20L)).thenReturn(true);
+        when(reviewRepository.findAllByBakeryIdAndActiveTrue(eq(20L), pageableCaptor.capture()))
                 .thenReturn(new PageImpl<>(List.of(review), PageRequest.of(0, 10), 1));
 
         var result = bakeryService.getReviews(20L, ReviewSortType.LATEST, 0, 10, 30L);
@@ -600,8 +601,8 @@ class BakeryServiceTest {
     @Test
     void getReviews_sortsByRatingDescending_whenHighRatingRequested() {
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        when(bakeryRepository.existsById(20L)).thenReturn(true);
-        when(reviewRepository.findAllByBakeryId(eq(20L), pageableCaptor.capture()))
+        when(bakeryRepository.existsByIdAndActiveTrue(20L)).thenReturn(true);
+        when(reviewRepository.findAllByBakeryIdAndActiveTrue(eq(20L), pageableCaptor.capture()))
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
 
         bakeryService.getReviews(20L, ReviewSortType.RATING_HIGH, 0, 10, null);
@@ -612,8 +613,8 @@ class BakeryServiceTest {
     @Test
     void getReviews_sortsByRatingAscending_whenLowRatingRequested() {
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        when(bakeryRepository.existsById(20L)).thenReturn(true);
-        when(reviewRepository.findAllByBakeryId(eq(20L), pageableCaptor.capture()))
+        when(bakeryRepository.existsByIdAndActiveTrue(20L)).thenReturn(true);
+        when(reviewRepository.findAllByBakeryIdAndActiveTrue(eq(20L), pageableCaptor.capture()))
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
 
         bakeryService.getReviews(20L, ReviewSortType.RATING_LOW, 0, 10, null);
@@ -624,8 +625,9 @@ class BakeryServiceTest {
     @Test
     void updateReview_throws_when_review_missing() {
         Bakery bakery = bakeryWithId(20L);
-        when(bakeryRepository.findById(20L)).thenReturn(Optional.of(bakery));
-        when(reviewRepository.findByIdAndBakeryId(999L, 20L)).thenReturn(Optional.empty());
+        when(bakeryRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(bakery));
+        when(reviewRepository.findByIdAndBakeryIdAndActiveTrue(999L, 20L))
+                .thenReturn(Optional.empty());
 
         assertThatThrownBy(
                         () -> bakeryService.updateReview(20L, 999L, 40L, new UpdateReviewRequest()))
@@ -647,8 +649,9 @@ class BakeryServiceTest {
                         .bakery(bakery)
                         .build();
         ReflectionTestUtils.setField(review, "id", 11L);
-        when(bakeryRepository.findById(20L)).thenReturn(Optional.of(bakery));
-        when(reviewRepository.findByIdAndBakeryId(11L, 20L)).thenReturn(Optional.of(review));
+        when(bakeryRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(bakery));
+        when(reviewRepository.findByIdAndBakeryIdAndActiveTrue(11L, 20L))
+                .thenReturn(Optional.of(review));
 
         assertThatThrownBy(
                         () -> bakeryService.updateReview(20L, 11L, 77L, new UpdateReviewRequest()))
@@ -674,8 +677,9 @@ class BakeryServiceTest {
         ReflectionTestUtils.setField(request, "content", "after");
         ReflectionTestUtils.setField(request, "rating", 5);
         ReflectionTestUtils.setField(request, "imageUrls", List.of("new.jpg"));
-        when(bakeryRepository.findById(20L)).thenReturn(Optional.of(bakery));
-        when(reviewRepository.findByIdAndBakeryId(11L, 20L)).thenReturn(Optional.of(review));
+        when(bakeryRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(bakery));
+        when(reviewRepository.findByIdAndBakeryIdAndActiveTrue(11L, 20L))
+                .thenReturn(Optional.of(review));
         when(reviewRepository.findAverageRatingByBakeryId(20L)).thenReturn(Optional.of(4.75));
 
         bakeryService.updateReview(20L, 11L, 40L, request);
@@ -700,21 +704,23 @@ class BakeryServiceTest {
                         .bakery(bakery)
                         .build();
         ReflectionTestUtils.setField(review, "id", 11L);
-        when(bakeryRepository.findById(20L)).thenReturn(Optional.of(bakery));
-        when(reviewRepository.findByIdAndBakeryId(11L, 20L)).thenReturn(Optional.of(review));
+        when(bakeryRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(bakery));
+        when(reviewRepository.findByIdAndBakeryIdAndActiveTrue(11L, 20L))
+                .thenReturn(Optional.of(review));
         when(reviewRepository.findAverageRatingByBakeryId(20L)).thenReturn(Optional.empty());
 
         bakeryService.deleteReview(20L, 11L, 999L, UserRole.ROLE_ADMIN);
 
-        verify(reviewRepository).delete(review);
+        assertThat(review.isActive()).isFalse();
         verify(reviewRepository).findAverageRatingByBakeryId(20L);
     }
 
     @Test
     void deleteReview_throws_when_review_missing() {
         Bakery bakery = bakeryWithId(20L);
-        when(bakeryRepository.findById(20L)).thenReturn(Optional.of(bakery));
-        when(reviewRepository.findByIdAndBakeryId(999L, 20L)).thenReturn(Optional.empty());
+        when(bakeryRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(bakery));
+        when(reviewRepository.findByIdAndBakeryIdAndActiveTrue(999L, 20L))
+                .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> bakeryService.deleteReview(20L, 999L, 40L, UserRole.ROLE_USER))
                 .isInstanceOf(CustomException.class)
@@ -737,8 +743,9 @@ class BakeryServiceTest {
                         .bakery(bakery)
                         .build();
         ReflectionTestUtils.setField(review, "id", 11L);
-        when(bakeryRepository.findById(20L)).thenReturn(Optional.of(bakery));
-        when(reviewRepository.findByIdAndBakeryId(11L, 20L)).thenReturn(Optional.of(review));
+        when(bakeryRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(bakery));
+        when(reviewRepository.findByIdAndBakeryIdAndActiveTrue(11L, 20L))
+                .thenReturn(Optional.of(review));
 
         assertThatThrownBy(() -> bakeryService.deleteReview(20L, 11L, 999L, UserRole.ROLE_USER))
                 .isInstanceOf(CustomException.class)
@@ -753,7 +760,7 @@ class BakeryServiceTest {
         UpdateBakeryRequest request = new UpdateBakeryRequest();
         ReflectionTestUtils.setField(request, "lat", 37.5);
         ReflectionTestUtils.setField(request, "lng", 127.0);
-        when(bakeryRepository.findById(7L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrue(7L)).thenReturn(Optional.of(bakery));
         when(courseBakeryRepository.findCourseIdsByBakeryId(7L)).thenReturn(List.of(100L, 200L));
 
         bakeryService.updateBakery(20L, UserRole.ROLE_BUSINESS, 7L, request);
@@ -768,7 +775,7 @@ class BakeryServiceTest {
         bakery.assignOwner(user(20L, UserRole.ROLE_BUSINESS));
         UpdateBakeryRequest request = new UpdateBakeryRequest();
         ReflectionTestUtils.setField(request, "name", "이름만바꿈");
-        when(bakeryRepository.findById(7L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrue(7L)).thenReturn(Optional.of(bakery));
 
         bakeryService.updateBakery(20L, UserRole.ROLE_BUSINESS, 7L, request);
 

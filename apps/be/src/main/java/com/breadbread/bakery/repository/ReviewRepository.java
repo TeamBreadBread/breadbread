@@ -11,18 +11,20 @@ import org.springframework.data.repository.query.Param;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
-    Page<Review> findAllByBakeryId(Long bakeryId, Pageable pageable);
+    Page<Review> findAllByBakeryIdAndActiveTrue(Long bakeryId, Pageable pageable);
 
-    Optional<Review> findByIdAndBakeryId(Long id, Long bakeryId);
+    Optional<Review> findByIdAndBakeryIdAndActiveTrue(Long id, Long bakeryId);
 
-    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.bakery.id = :bakeryId")
+    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.bakery.id = :bakeryId AND r.active = true")
     Optional<Double> findAverageRatingByBakeryId(@Param("bakeryId") Long bakeryId);
 
-    List<Review> findAllByUserIdOrderByCreatedAtDesc(Long userId);
+    List<Review> findAllByUserIdAndActiveTrueOrderByCreatedAtDesc(Long userId);
 
     @Query(
-            value = "SELECT r.id FROM Review r WHERE r.user.id = :userId ORDER BY r.createdAt DESC",
-            countQuery = "SELECT COUNT(r) FROM Review r WHERE r.user.id = :userId")
+            value =
+                    "SELECT r.id FROM Review r WHERE r.user.id = :userId AND r.active = true ORDER BY r.createdAt DESC",
+            countQuery =
+                    "SELECT COUNT(r) FROM Review r WHERE r.user.id = :userId AND r.active = true")
     Page<Long> findPageIdsByUserIdOrderByCreatedAtDesc(
             @Param("userId") Long userId, Pageable pageable);
 
@@ -30,6 +32,6 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             "SELECT DISTINCT r FROM Review r "
                     + "JOIN FETCH r.bakery "
                     + "LEFT JOIN FETCH r.imageUrls "
-                    + "WHERE r.id IN :reviewIds")
+                    + "WHERE r.id IN :reviewIds AND r.active = true")
     List<Review> findAllWithBakeryAndImagesByIdIn(@Param("reviewIds") List<Long> reviewIds);
 }

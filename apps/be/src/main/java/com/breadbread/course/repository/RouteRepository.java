@@ -27,4 +27,8 @@ public interface RouteRepository extends JpaRepository<Route, Long> {
             @Param("courseIds") List<Long> courseIds, @Param("userId") Long userId);
 
     List<Route> findByUserId(Long userId);
+
+    @Query(
+            "SELECT r FROM Route r JOIN FETCH r.course c WHERE r.user.id = :userId AND c.active = true")
+    List<Route> findActiveByUserId(@Param("userId") Long userId);
 }

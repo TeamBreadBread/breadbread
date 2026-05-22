@@ -20,6 +20,7 @@ import com.breadbread.community.respository.PostLikeRepository;
 import com.breadbread.community.respository.PostRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.global.service.GcsService;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
@@ -44,6 +45,7 @@ public class CommunityService {
     private final CommentRepository commentRepository;
     private final PostLikeRepository postLikeRepository;
     private final UserRepository userRepository;
+    private final GcsService gcsService;
 
     @Transactional(readOnly = true)
     public PostListResponse findAll(
@@ -146,7 +148,9 @@ public class CommunityService {
                         .findByIdWithUser(postId)
                         .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
         validatePostAuthority(post, userId, role);
-        postRepository.delete(post);
+        post.getImageUrls().forEach(gcsService::deleteQuietly);
+        commentRepository.deactivateAllByPostId(postId);
+        post.deactivate();
 
         log.info("게시글 삭제: postId={}, userId={}", postId, userId);
     }
@@ -155,7 +159,7 @@ public class CommunityService {
     public CommentResponse createComment(Long postId, Long userId, CreateCommentRequest request) {
         Post post =
                 postRepository
-                        .findById(postId)
+                        .findByIdAndActiveTrue(postId)
                         .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
         User user =
                 userRepository
@@ -178,7 +182,7 @@ public class CommunityService {
             Long postId, Long commentId, Long userId, UserRole role, UpdateCommentRequest request) {
         Comment comment =
                 commentRepository
-                        .findByIdAndPostId(commentId, postId)
+                        .findByIdAndPostIdAndActiveTrue(commentId, postId)
                         .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
         if (role != UserRole.ROLE_ADMIN && !comment.getUser().getId().equals(userId)) {
@@ -193,14 +197,14 @@ public class CommunityService {
     public void removeComment(Long postId, Long commentId, Long userId, UserRole role) {
         Comment comment =
                 commentRepository
-                        .findByIdAndPostId(commentId, postId)
+                        .findByIdAndPostIdAndActiveTrue(commentId, postId)
                         .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
         if (role != UserRole.ROLE_ADMIN && !comment.getUser().getId().equals(userId)) {
             throw new CustomException(ErrorCode.COMMENT_AUTHOR_ONLY);
         }
 
-        commentRepository.delete(comment);
+        comment.deactivate();
         log.info("댓글 삭제: commentId={}, postId={}, userId={}", commentId, postId, userId);
     }
 
@@ -208,7 +212,7 @@ public class CommunityService {
     public void likePost(Long postId, Long userId) {
         Post post =
                 postRepository
-                        .findById(postId)
+                        .findByIdAndActiveTrue(postId)
                         .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
         User user =
                 userRepository

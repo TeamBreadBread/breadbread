@@ -42,6 +42,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -245,7 +246,7 @@ public class UserService {
         PaginationValidator.validate(page, size);
 
         Page<BakeryLike> likes =
-                bakeryLikeRepository.findByUserId(
+                bakeryLikeRepository.findActiveByUserId(
                         userId, PageRequest.of(page, size, Sort.by("id").descending()));
         List<Bakery> bakeries = likes.getContent().stream().map(BakeryLike::getBakery).toList();
         List<Long> ids = bakeries.stream().map(Bakery::getId).toList();
@@ -289,23 +290,17 @@ public class UserService {
         PaginationValidator.validate(page, size);
 
         Page<CourseLike> likes =
-                courseLikeRepository.findByUserId(
+                courseLikeRepository.findActiveByUserId(
                         userId, PageRequest.of(page, size, Sort.by("id").descending()));
         List<Long> courseIds =
                 likes.getContent().stream().map(CourseLike::getCourse).map(Course::getId).toList();
-        Map<Long, Course> likedCoursesById =
-                likes.getContent().stream()
-                        .map(CourseLike::getCourse)
-                        .collect(Collectors.toMap(Course::getId, course -> course));
         Map<Long, Course> coursesById =
                 courseIds.isEmpty()
                         ? Map.of()
-                        : courseRepository.findAllWithBakeriesByIdIn(courseIds).stream()
+                        : courseRepository.findAllActiveWithBakeriesByIdIn(courseIds).stream()
                                 .collect(Collectors.toMap(Course::getId, course -> course));
         List<Course> courses =
-                courseIds.stream()
-                        .map(id -> coursesById.getOrDefault(id, likedCoursesById.get(id)))
-                        .toList();
+                courseIds.stream().map(coursesById::get).filter(Objects::nonNull).toList();
 
         List<Long> allBakeryIds =
                 courses.stream()

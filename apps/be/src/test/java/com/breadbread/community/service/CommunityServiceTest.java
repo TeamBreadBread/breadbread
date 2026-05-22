@@ -23,6 +23,7 @@ import com.breadbread.community.respository.PostLikeRepository;
 import com.breadbread.community.respository.PostRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.global.service.GcsService;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
@@ -48,6 +49,7 @@ class CommunityServiceTest {
     @Mock private CommentRepository commentRepository;
     @Mock private PostLikeRepository postLikeRepository;
     @Mock private UserRepository userRepository;
+    @Mock private GcsService gcsService;
 
     @InjectMocks private CommunityService communityService;
 
@@ -274,7 +276,8 @@ class CommunityServiceTest {
 
         communityService.removePost(9L, owner.getId(), UserRole.ROLE_USER);
 
-        verify(postRepository).delete(post);
+        verify(commentRepository).deactivateAllByPostId(9L);
+        assertThat(post.isActive()).isFalse();
     }
 
     @Test
@@ -285,12 +288,13 @@ class CommunityServiceTest {
 
         communityService.removePost(9L, 50L, UserRole.ROLE_ADMIN);
 
-        verify(postRepository).delete(post);
+        verify(commentRepository).deactivateAllByPostId(9L);
+        assertThat(post.isActive()).isFalse();
     }
 
     @Test
     void createComment_throws_when_post_missing() {
-        when(postRepository.findById(1L)).thenReturn(Optional.empty());
+        when(postRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> communityService.createComment(1L, 2L, commentRequest("내용")))
                 .isInstanceOf(CustomException.class)
@@ -301,7 +305,7 @@ class CommunityServiceTest {
     @Test
     void createComment_throws_when_user_missing() {
         Post post = post(1L, "t", PostType.FREE, user(3L), List.of());
-        when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+        when(postRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(post));
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> communityService.createComment(1L, 99L, commentRequest("c")))
@@ -314,7 +318,7 @@ class CommunityServiceTest {
     void createComment_returns_response_when_ok() {
         User author = user(4L);
         Post post = post(2L, "t", PostType.FREE, user(3L), List.of());
-        when(postRepository.findById(2L)).thenReturn(Optional.of(post));
+        when(postRepository.findByIdAndActiveTrue(2L)).thenReturn(Optional.of(post));
         when(userRepository.findById(4L)).thenReturn(Optional.of(author));
         Comment saved = Comment.builder().content("댓글").post(post).user(author).build();
         ReflectionTestUtils.setField(saved, "id", 77L);
@@ -330,7 +334,7 @@ class CommunityServiceTest {
 
     @Test
     void updateComment_throws_when_comment_missing() {
-        when(commentRepository.findByIdAndPostId(5L, 1L)).thenReturn(Optional.empty());
+        when(commentRepository.findByIdAndPostIdAndActiveTrue(5L, 1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(
                         () ->
@@ -352,7 +356,8 @@ class CommunityServiceTest {
         Post post = post(1L, "t", PostType.FREE, author, List.of());
         Comment comment = Comment.builder().content("c").post(post).user(author).build();
         ReflectionTestUtils.setField(comment, "id", 5L);
-        when(commentRepository.findByIdAndPostId(5L, 1L)).thenReturn(Optional.of(comment));
+        when(commentRepository.findByIdAndPostIdAndActiveTrue(5L, 1L))
+                .thenReturn(Optional.of(comment));
         UpdateCommentRequest req = new UpdateCommentRequest();
         ReflectionTestUtils.setField(req, "content", "x");
 
@@ -371,7 +376,8 @@ class CommunityServiceTest {
         Post post = post(1L, "t", PostType.FREE, author, List.of());
         Comment comment = Comment.builder().content("old").post(post).user(author).build();
         ReflectionTestUtils.setField(comment, "id", 5L);
-        when(commentRepository.findByIdAndPostId(5L, 1L)).thenReturn(Optional.of(comment));
+        when(commentRepository.findByIdAndPostIdAndActiveTrue(5L, 1L))
+                .thenReturn(Optional.of(comment));
         UpdateCommentRequest req = new UpdateCommentRequest();
         ReflectionTestUtils.setField(req, "content", "new-c");
 
@@ -386,17 +392,18 @@ class CommunityServiceTest {
         Post post = post(1L, "t", PostType.FREE, author, List.of());
         Comment comment = Comment.builder().content("c").post(post).user(author).build();
         ReflectionTestUtils.setField(comment, "id", 5L);
-        when(commentRepository.findByIdAndPostId(5L, 1L)).thenReturn(Optional.of(comment));
+        when(commentRepository.findByIdAndPostIdAndActiveTrue(5L, 1L))
+                .thenReturn(Optional.of(comment));
 
         communityService.removeComment(1L, 5L, 99L, UserRole.ROLE_ADMIN);
 
-        verify(commentRepository).delete(comment);
+        assertThat(comment.isActive()).isFalse();
     }
 
     @Test
     void likePost_throws_when_already_liked() {
         Post post = post(1L, "t", PostType.FREE, user(1L), List.of());
-        when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+        when(postRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(post));
         when(userRepository.findById(2L)).thenReturn(Optional.of(user(2L)));
         when(postLikeRepository.existsByUserIdAndPostId(2L, 1L)).thenReturn(true);
 
@@ -411,7 +418,7 @@ class CommunityServiceTest {
     @Test
     void likePost_maps_integrity_violation_when_race_on_save() {
         Post post = post(1L, "t", PostType.FREE, user(1L), List.of());
-        when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+        when(postRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(post));
         when(userRepository.findById(2L)).thenReturn(Optional.of(user(2L)));
         when(postLikeRepository.existsByUserIdAndPostId(2L, 1L)).thenReturn(false);
         doThrow(new DataIntegrityViolationException("dup"))

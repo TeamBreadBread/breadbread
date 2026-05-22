@@ -8,6 +8,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface PostRepository extends JpaRepository<Post, Long>, PostRepositoryCustom {
 
-    @Query("SELECT p FROM Post p JOIN FETCH p.user WHERE p.id = :id")
+    @Query("SELECT p FROM Post p JOIN FETCH p.user WHERE p.id = :id AND p.active = true")
     Optional<Post> findByIdWithUser(@Param("id") Long id);
+
+    Optional<Post> findByIdAndActiveTrue(Long id);
 }

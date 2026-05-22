@@ -23,8 +23,9 @@ public class CourseRepositoryImpl implements CourseRepositoryCustom {
         QCourse course = QCourse.course;
 
         BooleanExpression condition =
-                course.shared
+                course.active
                         .isTrue()
+                        .and(course.shared.isTrue())
                         .and(eqRegion(course, search.getRegion()))
                         .and(eqBreadType(course, search.getBreadType()))
                         .and(eqTheme(course, search.getTheme()))

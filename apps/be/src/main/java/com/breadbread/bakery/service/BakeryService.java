@@ -40,7 +40,7 @@ public class BakeryService {
 
     @Transactional(readOnly = true)
     public List<BakeryAiResponse> findAllForAi() {
-        List<Bakery> bakeries = bakeryRepository.findAll();
+        List<Bakery> bakeries = bakeryRepository.findAllByActiveTrue();
         List<Long> ids = bakeries.stream().map(Bakery::getId).toList();
 
         Map<Long, List<Bread>> breadMap =
@@ -138,7 +138,7 @@ public class BakeryService {
     public BakeryDetailResponse findOne(Long bakeryId, Long userId) {
         Bakery bakery =
                 bakeryRepository
-                        .findById(bakeryId)
+                        .findByIdAndActiveTrue(bakeryId)
                         .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
         Long likeCount = bakeryLikeRepository.countByBakery(bakery);
         boolean liked =
@@ -210,7 +210,7 @@ public class BakeryService {
             Long userId, UserRole role, Long bakeryId, UpdateBakeryRequest request) {
         Bakery bakery =
                 bakeryRepository
-                        .findById(bakeryId)
+                        .findByIdAndActiveTrue(bakeryId)
                         .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
         checkAuthority(bakery, userId, role);
 
@@ -248,21 +248,21 @@ public class BakeryService {
     public void deleteBakery(Long userId, UserRole role, Long bakeryId) {
         Bakery bakery =
                 bakeryRepository
-                        .findById(bakeryId)
+                        .findByIdAndActiveTrue(bakeryId)
                         .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
 
         checkAuthority(bakery, userId, role);
         log.info("빵집 삭제: bakeryId={}, userId={}", bakeryId, userId);
         bakery.getImages().forEach(img -> gcsService.deleteQuietly(img.getImageUrl()));
         bakeryImageRepository.deleteAllByBakery(bakery);
-        bakeryRepository.delete(bakery);
+        bakery.deactivate();
     }
 
     @Transactional
     public Long createBread(Long userId, UserRole role, Long bakeryId, CreateBreadRequest request) {
         Bakery bakery =
                 bakeryRepository
-                        .findById(bakeryId)
+                        .findByIdAndActiveTrue(bakeryId)
                         .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
 
         checkAuthority(bakery, userId, role);
@@ -287,7 +287,7 @@ public class BakeryService {
             Long userId, UserRole role, Long bakeryId, Long breadId, UpdateBreadRequest request) {
         Bakery bakery =
                 bakeryRepository
-                        .findById(bakeryId)
+                        .findByIdAndActiveTrue(bakeryId)
                         .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
 
         checkAuthority(bakery, userId, role);
@@ -308,7 +308,7 @@ public class BakeryService {
     public void deleteBread(Long userId, UserRole role, Long bakeryId, Long breadId) {
         Bakery bakery =
                 bakeryRepository
-                        .findById(bakeryId)
+                        .findByIdAndActiveTrue(bakeryId)
                         .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
 
         checkAuthority(bakery, userId, role);
@@ -329,7 +329,7 @@ public class BakeryService {
     public void like(Long bakeryId, Long userId) {
         Bakery bakery =
                 bakeryRepository
-                        .findById(bakeryId)
+                        .findByIdAndActiveTrue(bakeryId)
                         .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
 
         if (bakeryLikeRepository.existsByBakeryIdAndUserId(bakeryId, userId)) {
@@ -361,7 +361,7 @@ public class BakeryService {
     public Long createReview(Long bakeryId, Long userId, CreateReviewRequest request) {
         Bakery bakery =
                 bakeryRepository
-                        .findById(bakeryId)
+                        .findByIdAndActiveTrue(bakeryId)
                         .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
         User user =
                 userRepository
@@ -384,7 +384,7 @@ public class BakeryService {
     @Transactional(readOnly = true)
     public ReviewListResponse getReviews(
             Long bakeryId, ReviewSortType sort, int page, int size, Long userId) {
-        if (!bakeryRepository.existsById(bakeryId)) {
+        if (!bakeryRepository.existsByIdAndActiveTrue(bakeryId)) {
             throw new CustomException(ErrorCode.BAKERY_NOT_FOUND);
         }
         Sort sorting =
@@ -394,7 +394,8 @@ public class BakeryService {
                     default -> Sort.by("createdAt").descending();
                 };
         Page<Review> result =
-                reviewRepository.findAllByBakeryId(bakeryId, PageRequest.of(page, size, sorting));
+                reviewRepository.findAllByBakeryIdAndActiveTrue(
+                        bakeryId, PageRequest.of(page, size, sorting));
         return ReviewListResponse.builder()
                 .reviews(
                         result.getContent().stream()
@@ -412,12 +413,12 @@ public class BakeryService {
             Long bakeryId, Long reviewId, Long userId, UpdateReviewRequest request) {
         Bakery bakery =
                 bakeryRepository
-                        .findById(bakeryId)
+                        .findByIdAndActiveTrue(bakeryId)
                         .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
 
         Review review =
                 reviewRepository
-                        .findByIdAndBakeryId(reviewId, bakeryId)
+                        .findByIdAndBakeryIdAndActiveTrue(reviewId, bakeryId)
                         .orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
 
         if (!review.getUser().getId().equals(userId)) {
@@ -433,12 +434,12 @@ public class BakeryService {
     public void deleteReview(Long bakeryId, Long reviewId, Long userId, UserRole role) {
         Bakery bakery =
                 bakeryRepository
-                        .findById(bakeryId)
+                        .findByIdAndActiveTrue(bakeryId)
                         .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
 
         Review review =
                 reviewRepository
-                        .findByIdAndBakeryId(reviewId, bakeryId)
+                        .findByIdAndBakeryIdAndActiveTrue(reviewId, bakeryId)
                         .orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
 
         if (role != UserRole.ROLE_ADMIN && !review.getUser().getId().equals(userId)) {
@@ -446,7 +447,7 @@ public class BakeryService {
         }
 
         review.getImageUrls().forEach(gcsService::deleteQuietly);
-        reviewRepository.delete(review);
+        review.deactivate();
         bakery.updateRating(reviewRepository.findAverageRatingByBakeryId(bakeryId).orElse(null));
         log.info("리뷰 삭제: reviewId={}, bakeryId={}, userId={}", reviewId, bakeryId, userId);
     }
