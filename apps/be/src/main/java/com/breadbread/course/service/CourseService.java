@@ -127,7 +127,7 @@ public class CourseService {
     public CourseDetailResponse findOne(Long id, Long userId, UserRole role) {
         Course course =
                 courseRepository
-                        .findById(id)
+                        .findByIdAndActiveTrue(id)
                         .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
 
         if (!course.isShared() && role != UserRole.ROLE_ADMIN) {
@@ -193,7 +193,7 @@ public class CourseService {
         Course saved = courseRepository.save(course);
 
         List<Long> bakeryIds = request.getBakeryIds();
-        List<Bakery> bakeries = bakeryRepository.findAllById(bakeryIds);
+        List<Bakery> bakeries = bakeryRepository.findAllByIdInAndActiveTrue(bakeryIds);
 
         if (bakeryIds.size() != new HashSet<>(bakeryIds).size()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
@@ -229,7 +229,7 @@ public class CourseService {
     public void updateManual(Long courseId, UpdateCourseRequest request) {
         Course course =
                 courseRepository
-                        .findById(courseId)
+                        .findByIdAndActiveTrue(courseId)
                         .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
 
         ManualCourseInfo manualCourseInfo = null;
@@ -269,7 +269,7 @@ public class CourseService {
                 throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
             }
 
-            List<Bakery> bakeries = bakeryRepository.findAllById(bakeryIds);
+            List<Bakery> bakeries = bakeryRepository.findAllByIdInAndActiveTrue(bakeryIds);
             Map<Long, Bakery> bakeryMap =
                     bakeries.stream().collect(Collectors.toMap(Bakery::getId, b -> b));
 
@@ -304,9 +304,9 @@ public class CourseService {
     public void delete(Long courseId) {
         Course course =
                 courseRepository
-                        .findById(courseId)
+                        .findByIdAndActiveTrue(courseId)
                         .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
-        courseRepository.delete(course);
+        course.deactivate();
         log.info("코스 삭제: courseId={}", courseId);
     }
 
@@ -347,7 +347,7 @@ public class CourseService {
     public void deleteAi(Long courseId, Long userId) {
         Course course =
                 courseRepository
-                        .findById(courseId)
+                        .findByIdAndActiveTrue(courseId)
                         .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
 
         if (course.getCourseType() != CourseType.AI) {
@@ -357,7 +357,7 @@ public class CourseService {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
 
-        courseRepository.delete(course);
+        course.deactivate();
         log.info("AI 코스 삭제: courseId={}, userId={}", courseId, userId);
     }
 
@@ -365,7 +365,7 @@ public class CourseService {
     public void like(Long courseId, Long userId) {
         Course course =
                 courseRepository
-                        .findById(courseId)
+                        .findByIdAndActiveTrue(courseId)
                         .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
 
         validateCourseActionAccess(course, userId);
@@ -397,7 +397,7 @@ public class CourseService {
 
     @Transactional(readOnly = true)
     public List<RouteResponse> findMyRoutes(Long userId) {
-        List<Route> routes = routeRepository.findByUserId(userId);
+        List<Route> routes = routeRepository.findActiveByUserId(userId);
         return routes.stream().map(route -> RouteResponse.from(route.getCourse())).toList();
     }
 
@@ -405,7 +405,7 @@ public class CourseService {
     public void saveRoute(Long courseId, Long userId) {
         Course course =
                 courseRepository
-                        .findById(courseId)
+                        .findByIdAndActiveTrue(courseId)
                         .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
 
         validateCourseActionAccess(course, userId);
@@ -439,7 +439,7 @@ public class CourseService {
     public DrivingRouteResponse getDrivingRoute(Long courseId, Long userId, UserRole role) {
         Course course =
                 courseRepository
-                        .findById(courseId)
+                        .findByIdAndActiveTrue(courseId)
                         .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
         validateDrivingRouteAccess(course, userId, role);
 
@@ -463,7 +463,7 @@ public class CourseService {
     private DrivingRouteResponse fetchAndSaveDrivingRoute(Long courseId) {
         Course course =
                 courseRepository
-                        .findWithBakeriesById(courseId)
+                        .findActiveWithBakeriesById(courseId)
                         .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
 
         List<Coordinate> bakeryCoordinates =

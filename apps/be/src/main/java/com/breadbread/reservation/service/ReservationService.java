@@ -115,7 +115,7 @@ public class ReservationService {
 
         Course course =
                 courseRepository
-                        .findById(request.getCourseId())
+                        .findByIdAndActiveTrue(request.getCourseId())
                         .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
         User user =
                 userRepository

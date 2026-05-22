@@ -245,7 +245,7 @@ class ReservationServiceTest {
                                 request.getDepartureTime(),
                                 ReservationStatus.PENDING))
                 .thenReturn(Optional.empty());
-        when(courseRepository.findById(3L)).thenReturn(Optional.empty());
+        when(courseRepository.findByIdAndActiveTrue(3L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> reservationService.createReservation(10L, request))
                 .isInstanceOf(CustomException.class)
@@ -266,7 +266,7 @@ class ReservationServiceTest {
                                 request.getDepartureTime(),
                                 ReservationStatus.PENDING))
                 .thenReturn(Optional.empty());
-        when(courseRepository.findById(3L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(3L)).thenReturn(Optional.of(course));
         when(userRepository.findById(10L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> reservationService.createReservation(10L, request))
@@ -289,7 +289,7 @@ class ReservationServiceTest {
                                 request.getDepartureTime(),
                                 ReservationStatus.PENDING))
                 .thenReturn(Optional.empty());
-        when(courseRepository.findById(3L)).thenReturn(Optional.of(course));
+        when(courseRepository.findByIdAndActiveTrue(3L)).thenReturn(Optional.of(course));
         when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
         when(reservationRepository.save(any(Reservation.class)))
                 .thenAnswer(

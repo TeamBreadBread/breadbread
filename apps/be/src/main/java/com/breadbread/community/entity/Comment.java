@@ -19,6 +19,9 @@ public class Comment extends BaseEntity {
     @Column(columnDefinition = "text", nullable = false)
     private String content;
 
+    @Column(nullable = false)
+    private boolean active = true;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)
     private Post post;
@@ -36,5 +39,9 @@ public class Comment extends BaseEntity {
 
     public void update(String content) {
         this.content = content;
+    }
+
+    public void deactivate() {
+        this.active = false;
     }
 }

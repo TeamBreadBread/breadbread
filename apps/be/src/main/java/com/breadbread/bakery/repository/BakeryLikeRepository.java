@@ -32,4 +32,15 @@ public interface BakeryLikeRepository extends JpaRepository<BakeryLike, Long> {
             value = "SELECT bl FROM BakeryLike bl JOIN FETCH bl.bakery WHERE bl.user.id = :userId",
             countQuery = "SELECT COUNT(bl) FROM BakeryLike bl WHERE bl.user.id = :userId")
     Page<BakeryLike> findByUserId(@Param("userId") Long userId, Pageable pageable);
+
+    @Query(
+            value =
+                    "SELECT bl FROM BakeryLike bl "
+                            + "JOIN FETCH bl.bakery b "
+                            + "WHERE bl.user.id = :userId AND b.active = true",
+            countQuery =
+                    "SELECT COUNT(bl) FROM BakeryLike bl "
+                            + "JOIN bl.bakery b "
+                            + "WHERE bl.user.id = :userId AND b.active = true")
+    Page<BakeryLike> findActiveByUserId(@Param("userId") Long userId, Pageable pageable);
 }

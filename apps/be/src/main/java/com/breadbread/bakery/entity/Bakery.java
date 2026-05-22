@@ -146,6 +146,10 @@ public class Bakery extends BaseEntity {
         }
     }
 
+    public void deactivate() {
+        this.active = false;
+    }
+
     @Builder
     public Bakery(
             String name,

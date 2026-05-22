@@ -37,6 +37,9 @@ public class Post extends BaseEntity {
     @Column(name = "image_url", nullable = false)
     private List<String> imageUrls = new ArrayList<>();
 
+    @Column(nullable = false)
+    private boolean active = true;
+
     @OneToMany(
             mappedBy = "post",
             fetch = FetchType.LAZY,
@@ -71,5 +74,9 @@ public class Post extends BaseEntity {
         if (imageUrls != null) {
             this.imageUrls = new ArrayList<>(imageUrls);
         }
+    }
+
+    public void deactivate() {
+        this.active = false;
     }
 }

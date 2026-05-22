@@ -44,6 +44,9 @@ public class Course extends BaseEntity {
 
     private String estimatedTime;
 
+    @Column(nullable = false)
+    private boolean active = true;
+
     private boolean shared; // AI코스 공유 여부 (MANUAL은 항상 true)
 
     @Embedded private AiCourseInfo aiCourseInfo;
@@ -95,6 +98,7 @@ public class Course extends BaseEntity {
         course.region = region;
         course.manualCourseInfo = manualCourseInfo;
         course.shared = true;
+        course.active = true;
         return course;
     }
 
@@ -112,6 +116,7 @@ public class Course extends BaseEntity {
         course.aiCourseInfo = aiCourseInfo;
         course.preferredBreadTypes = preferredBreadTypes;
         course.shared = false;
+        course.active = true;
         return course;
     }
 
@@ -158,6 +163,10 @@ public class Course extends BaseEntity {
     public void unshare() {
         validateAi();
         this.shared = false;
+    }
+
+    public void deactivate() {
+        this.active = false;
     }
 
     private void validateAi() {

@@ -12,6 +12,7 @@ public class CourseBakerySummary {
     private String region;
     private Double rating;
     private String thumbnailUrl;
+    private boolean active;
 
     public static CourseBakerySummary from(Bakery bakery, String thumbnailUrl) {
         return CourseBakerySummary.builder()
@@ -20,6 +21,7 @@ public class CourseBakerySummary {
                 .region(bakery.getRegion())
                 .rating(bakery.getRating())
                 .thumbnailUrl(thumbnailUrl)
+                .active(bakery.isActive())
                 .build();
     }
 }
