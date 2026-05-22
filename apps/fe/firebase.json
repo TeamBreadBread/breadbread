@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "public",
+    "public": "dist",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -13,6 +13,18 @@
           "serviceId": "bread-be",
           "region": "asia-northeast3"
         }
+      },
+      {
+        "source": "/auth/kakao/callback",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/auth/naver/callback",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/auth/google/callback",
+        "destination": "/index.html"
       },
       {
         "source": "/auth/**",
@@ -44,6 +56,27 @@
       },
       {
         "source": "/users/**",
+        "run": {
+          "serviceId": "bread-be",
+          "region": "asia-northeast3"
+        }
+      },
+      {
+        "source": "/notifications/**",
+        "run": {
+          "serviceId": "bread-be",
+          "region": "asia-northeast3"
+        }
+      },
+      {
+        "source": "/courses/**",
+        "run": {
+          "serviceId": "bread-be",
+          "region": "asia-northeast3"
+        }
+      },
+      {
+        "source": "/payments/**",
         "run": {
           "serviceId": "bread-be",
           "region": "asia-northeast3"

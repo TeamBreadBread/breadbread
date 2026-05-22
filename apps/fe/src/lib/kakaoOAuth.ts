@@ -1,8 +1,14 @@
+import { socialLogin, type TokenResponse } from "@/api/auth";
+import { tryPostLoginRedirectPath, type PostLoginRedirectPath } from "@/lib/postLoginRedirect";
 import { kakaoOAuthRedirectUri } from "@/utils/frontBase";
 import { deriveCodeChallengeS256, generateCodeVerifier } from "@/utils/pkce";
 
+/** React Strict Mode 등으로 동일 인가 코드가 두 번 교환되는 것 방지 */
+const kakaoSocialLoginInflight = new Map<string, Promise<TokenResponse>>();
+
 const STORAGE_VERIFIER_KEY = "breadbread_oauth_kakao_code_verifier";
 const STORAGE_STATE_KEY = "breadbread_oauth_kakao_state";
+const STORAGE_POST_LOGIN_REDIRECT_KEY = "breadbread_oauth_kakao_post_login_redirect";
 
 const KAKAO_AUTHORIZE_URL = "https://kauth.kakao.com/oauth/authorize";
 
@@ -32,12 +38,25 @@ export function clearKakaoPkceSession(): void {
   sessionStorage.removeItem(STORAGE_STATE_KEY);
 }
 
+export function clearKakaoOAuthSession(): void {
+  clearKakaoPkceSession();
+  sessionStorage.removeItem(STORAGE_POST_LOGIN_REDIRECT_KEY);
+}
+
+export function consumeKakaoPostLoginRedirect(): PostLoginRedirectPath | undefined {
+  const raw = sessionStorage.getItem(STORAGE_POST_LOGIN_REDIRECT_KEY);
+  sessionStorage.removeItem(STORAGE_POST_LOGIN_REDIRECT_KEY);
+  return tryPostLoginRedirectPath(raw ?? undefined);
+}
+
 /** 카카오 인가 페이지로 리다이렉트 (PKCE S256). */
-export async function startKakaoLogin(): Promise<void> {
+export async function startKakaoLogin(postLoginRedirect?: string): Promise<void> {
   const clientIdRaw = import.meta.env.VITE_KAKAO_REST_API_KEY;
   if (!isKakaoClientIdConfigured(clientIdRaw)) {
     window.alert(
-      "카카오 로그인을 쓰려면 `VITE_KAKAO_REST_API_KEY`에 카카오 개발자 콘솔 REST API 키를 넣어 주세요.",
+      import.meta.env.PROD
+        ? "카카오 로그인 설정이 배포에 포함되지 않았습니다. GitHub Secrets의 VITE_KAKAO_REST_API_KEY를 확인해 주세요."
+        : "카카오 로그인을 쓰려면 `.env.local`의 `VITE_KAKAO_REST_API_KEY`에 카카오 REST API 키를 넣어 주세요.",
     );
     return;
   }
@@ -51,6 +70,13 @@ export async function startKakaoLogin(): Promise<void> {
   sessionStorage.setItem(STORAGE_VERIFIER_KEY, codeVerifier);
   sessionStorage.setItem(STORAGE_STATE_KEY, state);
 
+  const returnPath = tryPostLoginRedirectPath(postLoginRedirect);
+  if (returnPath) {
+    sessionStorage.setItem(STORAGE_POST_LOGIN_REDIRECT_KEY, returnPath);
+  } else {
+    sessionStorage.removeItem(STORAGE_POST_LOGIN_REDIRECT_KEY);
+  }
+
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
@@ -62,4 +88,28 @@ export async function startKakaoLogin(): Promise<void> {
   });
 
   window.location.assign(`${KAKAO_AUTHORIZE_URL}?${params.toString()}`);
+}
+
+/** 백엔드 `POST /auth/social/KAKAO` — 동일 `code` 는 한 번만 호출 */
+export function exchangeKakaoSocialLogin(params: {
+  code: string;
+  codeVerifier: string;
+  state?: string;
+}): Promise<TokenResponse> {
+  const redirectUri = kakaoOAuthRedirectUri();
+  const cacheKey = `${params.code}:${redirectUri}`;
+  const existing = kakaoSocialLoginInflight.get(cacheKey);
+  if (existing) return existing;
+
+  const promise = socialLogin("KAKAO", {
+    code: params.code,
+    redirectUri,
+    codeVerifier: params.codeVerifier,
+    state: params.state,
+  }).finally(() => {
+    kakaoSocialLoginInflight.delete(cacheKey);
+  });
+
+  kakaoSocialLoginInflight.set(cacheKey, promise);
+  return promise;
 }

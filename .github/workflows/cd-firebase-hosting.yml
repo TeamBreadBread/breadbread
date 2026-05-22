@@ -1,0 +1,67 @@
+# main 반영 시 FE를 VITE_* 시크릿으로 빌드한 뒤 Firebase Hosting에 배포합니다.
+# Repository Secrets 설정: apps/fe/DEPLOY.md 참고
+
+name: Deploy FE (Firebase Hosting)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/fe/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/cd-firebase-hosting.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: firebase-hosting-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-hosting:
+    runs-on: ubuntu-latest
+    env:
+      VITE_KAKAO_REST_API_KEY: ${{ secrets.VITE_KAKAO_REST_API_KEY }}
+      VITE_NAVER_CLIENT_ID: ${{ secrets.VITE_NAVER_CLIENT_ID }}
+      VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+      VITE_KAKAO_MAP_KEY: ${{ secrets.VITE_KAKAO_MAP_KEY }}
+      VITE_FIREBASE_VAPID_KEY: ${{ secrets.VITE_FIREBASE_VAPID_KEY }}
+      VITE_PORTONE_STORE_ID: ${{ secrets.VITE_PORTONE_STORE_ID }}
+      VITE_PORTONE_CHANNEL_KEY: ${{ secrets.VITE_PORTONE_CHANNEL_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.8.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify required VITE secrets
+        run: |
+          missing=0
+          for key in VITE_KAKAO_REST_API_KEY VITE_NAVER_CLIENT_ID VITE_GOOGLE_CLIENT_ID; do
+            if [ -z "${!key}" ]; then
+              echo "::error::GitHub Secret '$key' is not set (Repository settings → Secrets and variables → Actions)"
+              missing=1
+            fi
+          done
+          exit $missing
+
+      - name: Build FE (env baked into bundle)
+        run: pnpm --filter fe build
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          entryPoint: apps/fe
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: breadbread-491001
+          channelId: live
+          repoToken: ${{ secrets.GITHUB_TOKEN }}

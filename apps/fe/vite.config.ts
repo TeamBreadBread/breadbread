@@ -1,11 +1,22 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
-export default defineConfig({
+const feRoot = path.resolve(__dirname)
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, feRoot, '')
+  if (mode === 'development' && !env.VITE_FIREBASE_VAPID_KEY?.trim()) {
+    process.stderr.write(
+      '[vite] VITE_FIREBASE_VAPID_KEY 없음 → apps/fe/.env.local 확인 후 dev 서버를 완전히 재시작하세요.\n',
+    )
+  }
+
+  return {
+  envDir: feRoot,
   plugins: [
     TanStackRouterVite({ routesDirectory: './src/routes' }),
     react(),
@@ -43,6 +54,16 @@ export default defineConfig({
       '/auth': {
         target: 'https://api.breadbread.io',
         changeOrigin: true,
+        bypass(req) {
+          const path = req.url?.split('?')[0] ?? '';
+          if (
+            path === '/auth/kakao/callback' ||
+            path === '/auth/naver/callback' ||
+            path === '/auth/google/callback'
+          ) {
+            return '/index.html';
+          }
+        },
       },
       '/bakeries': {
         target: 'https://api.breadbread.io',
@@ -64,6 +85,10 @@ export default defineConfig({
         target: 'https://api.breadbread.io',
         changeOrigin: true,
       },
+      '/notifications': {
+        target: 'https://api.breadbread.io',
+        changeOrigin: true,
+      },
       '/posts': {
         target: 'https://api.breadbread.io',
         changeOrigin: true,
@@ -72,6 +97,13 @@ export default defineConfig({
         target: 'https://api.breadbread.io',
         changeOrigin: true,
       },
+      /** 카카오모빌리티 보행 길찾기 (로컬 CORS 우회) */
+      '/kakao-mobility': {
+        target: 'https://apis-navi.kakaomobility.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/kakao-mobility/, ''),
+      },
     },
   },
+  }
 })

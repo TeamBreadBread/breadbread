@@ -6,6 +6,8 @@ import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.jwt.JwtProvider;
 import com.breadbread.user.entity.User;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -42,9 +44,18 @@ public class TokenService {
     }
 
     public void logout(String accessToken) {
-        String userId = jwtProvider.getUserIdFromAccessToken(accessToken);
-        refreshTokenRedisService.deleteByUserId(userId);
-        log.info("로그아웃 userId={}", userId);
+        if (accessToken == null || accessToken.isBlank()) {
+            return;
+        }
+        try {
+            String userId = jwtProvider.getUserIdFromAccessToken(accessToken);
+            refreshTokenRedisService.deleteByUserId(userId);
+            log.info("로그아웃 userId={}", userId);
+        } catch (ExpiredJwtException e) {
+            log.debug("만료된 액세스 토큰으로 로그아웃 요청");
+        } catch (JwtException | IllegalArgumentException e) {
+            log.warn("로그아웃 토큰 파싱 실패");
+        }
     }
 
     public void invalidateByUserId(Long userId) {

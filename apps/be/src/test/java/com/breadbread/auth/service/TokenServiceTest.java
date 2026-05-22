@@ -13,6 +13,7 @@ import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.jwt.JwtProvider;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
+import io.jsonwebtoken.JwtException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Base64;
@@ -85,6 +86,16 @@ class TokenServiceTest {
         tokenService.logout("access");
 
         verify(refreshTokenRedisService).deleteByUserId("99");
+    }
+
+    @Test
+    void logout_noop_when_token_invalid() {
+        when(jwtProvider.getUserIdFromAccessToken("bad")).thenThrow(new JwtException("invalid"));
+
+        tokenService.logout("bad");
+
+        verify(refreshTokenRedisService, org.mockito.Mockito.never())
+                .deleteByUserId(org.mockito.ArgumentMatchers.anyString());
     }
 
     private static String sha256Base64(String token) {

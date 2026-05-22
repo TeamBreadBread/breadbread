@@ -41,7 +41,7 @@ export default function AiCourseGeneratingPage({ jobId }: AiCourseGeneratingPage
       } catch (e) {
         if (!cancelled) {
           window.alert(getErrorMessage(e));
-          navigate({ to: "/recommendation" });
+          navigate({ to: "/home" });
         }
       }
     })();

@@ -47,7 +47,9 @@ import { Route as AccountSettingsRouteImport } from "./routes/account-settings";
 import { Route as IndexRouteImport } from "./routes/index";
 import { Route as RouteIndexRouteImport } from "./routes/route.index";
 import { Route as PaymentPortoneRedirectRouteImport } from "./routes/payment.portone-redirect";
+import { Route as AuthNaverCallbackRouteImport } from "./routes/auth.naver.callback";
 import { Route as AuthKakaoCallbackRouteImport } from "./routes/auth.kakao.callback";
+import { Route as AuthGoogleCallbackRouteImport } from "./routes/auth.google.callback";
 
 const UserPreferenceRoute = UserPreferenceRouteImport.update({
   id: "/user-preference",
@@ -239,9 +241,19 @@ const PaymentPortoneRedirectRoute = PaymentPortoneRedirectRouteImport.update({
   path: "/payment/portone-redirect",
   getParentRoute: () => rootRouteImport,
 } as any);
+const AuthNaverCallbackRoute = AuthNaverCallbackRouteImport.update({
+  id: "/auth/naver/callback",
+  path: "/auth/naver/callback",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const AuthKakaoCallbackRoute = AuthKakaoCallbackRouteImport.update({
   id: "/auth/kakao/callback",
   path: "/auth/kakao/callback",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const AuthGoogleCallbackRoute = AuthGoogleCallbackRouteImport.update({
+  id: "/auth/google/callback",
+  path: "/auth/google/callback",
   getParentRoute: () => rootRouteImport,
 } as any);
 
@@ -284,7 +296,9 @@ export interface FileRoutesByFullPath {
   "/user-preference": typeof UserPreferenceRoute;
   "/payment/portone-redirect": typeof PaymentPortoneRedirectRoute;
   "/route/": typeof RouteIndexRoute;
+  "/auth/google/callback": typeof AuthGoogleCallbackRoute;
   "/auth/kakao/callback": typeof AuthKakaoCallbackRoute;
+  "/auth/naver/callback": typeof AuthNaverCallbackRoute;
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
@@ -325,7 +339,9 @@ export interface FileRoutesByTo {
   "/user-preference": typeof UserPreferenceRoute;
   "/payment/portone-redirect": typeof PaymentPortoneRedirectRoute;
   "/route": typeof RouteIndexRoute;
+  "/auth/google/callback": typeof AuthGoogleCallbackRoute;
   "/auth/kakao/callback": typeof AuthKakaoCallbackRoute;
+  "/auth/naver/callback": typeof AuthNaverCallbackRoute;
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
@@ -367,7 +383,9 @@ export interface FileRoutesById {
   "/user-preference": typeof UserPreferenceRoute;
   "/payment/portone-redirect": typeof PaymentPortoneRedirectRoute;
   "/route/": typeof RouteIndexRoute;
+  "/auth/google/callback": typeof AuthGoogleCallbackRoute;
   "/auth/kakao/callback": typeof AuthKakaoCallbackRoute;
+  "/auth/naver/callback": typeof AuthNaverCallbackRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
@@ -410,7 +428,9 @@ export interface FileRouteTypes {
     | "/user-preference"
     | "/payment/portone-redirect"
     | "/route/"
-    | "/auth/kakao/callback";
+    | "/auth/google/callback"
+    | "/auth/kakao/callback"
+    | "/auth/naver/callback";
   fileRoutesByTo: FileRoutesByTo;
   to:
     | "/"
@@ -451,7 +471,9 @@ export interface FileRouteTypes {
     | "/user-preference"
     | "/payment/portone-redirect"
     | "/route"
-    | "/auth/kakao/callback";
+    | "/auth/google/callback"
+    | "/auth/kakao/callback"
+    | "/auth/naver/callback";
   id:
     | "__root__"
     | "/"
@@ -492,7 +514,9 @@ export interface FileRouteTypes {
     | "/user-preference"
     | "/payment/portone-redirect"
     | "/route/"
-    | "/auth/kakao/callback";
+    | "/auth/google/callback"
+    | "/auth/kakao/callback"
+    | "/auth/naver/callback";
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
@@ -534,7 +558,9 @@ export interface RootRouteChildren {
   UserPreferenceRoute: typeof UserPreferenceRoute;
   PaymentPortoneRedirectRoute: typeof PaymentPortoneRedirectRoute;
   RouteIndexRoute: typeof RouteIndexRoute;
+  AuthGoogleCallbackRoute: typeof AuthGoogleCallbackRoute;
   AuthKakaoCallbackRoute: typeof AuthKakaoCallbackRoute;
+  AuthNaverCallbackRoute: typeof AuthNaverCallbackRoute;
 }
 
 declare module "@tanstack/react-router" {
@@ -805,11 +831,25 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof PaymentPortoneRedirectRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/auth/naver/callback": {
+      id: "/auth/naver/callback";
+      path: "/auth/naver/callback";
+      fullPath: "/auth/naver/callback";
+      preLoaderRoute: typeof AuthNaverCallbackRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/auth/kakao/callback": {
       id: "/auth/kakao/callback";
       path: "/auth/kakao/callback";
       fullPath: "/auth/kakao/callback";
       preLoaderRoute: typeof AuthKakaoCallbackRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/auth/google/callback": {
+      id: "/auth/google/callback";
+      path: "/auth/google/callback";
+      fullPath: "/auth/google/callback";
+      preLoaderRoute: typeof AuthGoogleCallbackRouteImport;
       parentRoute: typeof rootRouteImport;
     };
   }
@@ -854,7 +894,9 @@ const rootRouteChildren: RootRouteChildren = {
   UserPreferenceRoute: UserPreferenceRoute,
   PaymentPortoneRedirectRoute: PaymentPortoneRedirectRoute,
   RouteIndexRoute: RouteIndexRoute,
+  AuthGoogleCallbackRoute: AuthGoogleCallbackRoute,
   AuthKakaoCallbackRoute: AuthKakaoCallbackRoute,
+  AuthNaverCallbackRoute: AuthNaverCallbackRoute,
 };
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
