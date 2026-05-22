@@ -1,8 +1,15 @@
-# FE 배포 (팀 · GitHub Actions)
+# FE 배포 (팀 · Cloudflare / Firebase)
 
-운영 사이트는 **`main` push 시** [.github/workflows/cd-firebase-hosting.yml](../../.github/workflows/cd-firebase-hosting.yml) 가 자동으로 빌드·배포합니다.
+## Cloudflare Pages (현재 팀 운영)
 
-로컬 `.env.local` 은 **개발용**이며, 배포 번들에는 **GitHub Repository Secrets** 만 반영됩니다.
+- **Production Environment Variables**에 `VITE_*` 등록 후 **재배포**
+- GitHub Actions Firebase Hosting 워크플로는 **Secrets 없으면 자동 skip** (체크 실패 아님)
+
+## Firebase Hosting (선택)
+
+`FIREBASE_SERVICE_ACCOUNT` 와 필수 `VITE_*` Secrets 가 모두 있을 때만, **`main` push 시** [.github/workflows/cd-firebase-hosting.yml](../../.github/workflows/cd-firebase-hosting.yml) 가 빌드·배포합니다.
+
+로컬 `.env.local` 은 **개발용**이며, 배포 번들에는 **Cloudflare env** 또는 **GitHub Secrets** 만 반영됩니다.
 
 ## 1. GitHub Secrets 등록
 
