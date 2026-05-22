@@ -1,11 +1,22 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
-export default defineConfig({
+const feRoot = path.resolve(__dirname)
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, feRoot, '')
+  if (mode === 'development' && !env.VITE_FIREBASE_VAPID_KEY?.trim()) {
+    console.warn(
+      '[vite] VITE_FIREBASE_VAPID_KEY 없음 → apps/fe/.env.local 확인 후 dev 서버를 완전히 재시작하세요.',
+    )
+  }
+
+  return {
+  envDir: feRoot,
   plugins: [
     TanStackRouterVite({ routesDirectory: './src/routes' }),
     react(),
@@ -94,4 +105,5 @@ export default defineConfig({
       },
     },
   },
+  }
 })
