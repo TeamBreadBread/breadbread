@@ -36,7 +36,11 @@ export function clearGoogleOAuthSession(): void {
 export async function startGoogleLogin(postLoginRedirect?: string): Promise<void> {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim();
   if (!isClientIdConfigured(clientId)) {
-    window.alert("구글 로그인을 쓰려면 `.env.local`에 `VITE_GOOGLE_CLIENT_ID`를 넣어 주세요.");
+    window.alert(
+      import.meta.env.PROD
+        ? "구글 로그인 설정이 배포에 포함되지 않았습니다. GitHub Secrets의 VITE_GOOGLE_CLIENT_ID와 FE 배포 워크플로를 확인해 주세요."
+        : "구글 로그인을 쓰려면 `.env.local`에 `VITE_GOOGLE_CLIENT_ID`를 넣어 주세요.",
+    );
     return;
   }
 
