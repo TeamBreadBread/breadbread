@@ -1,4 +1,5 @@
 # main 반영 시 FE를 VITE_* 시크릿으로 빌드한 뒤 Firebase Hosting에 배포합니다.
+# Secrets 미설정 시 job 을 건너뜁니다 (Cloudflare Pages만 쓰는 팀용).
 # Repository Secrets 설정: apps/fe/DEPLOY.md 참고
 
 name: Deploy FE (Firebase Hosting)
@@ -30,34 +31,51 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check Firebase Hosting deploy prerequisites
+        id: prereq
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          ready=1
+          for key in VITE_KAKAO_REST_API_KEY VITE_NAVER_CLIENT_ID VITE_GOOGLE_CLIENT_ID; do
+            if [ -z "${!key}" ]; then
+              echo "::notice::GitHub Secret '$key' is not set — Firebase Hosting deploy will be skipped."
+              ready=0
+            fi
+          done
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "::notice::GitHub Secret 'FIREBASE_SERVICE_ACCOUNT' is not set — Firebase Hosting deploy will be skipped."
+            ready=0
+          fi
+          if [ "$ready" -eq 0 ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Cloudflare Pages 등 다른 경로로 배포 중이면 무시해도 됩니다. (apps/fe/DEPLOY.md)"
+            exit 0
+          fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
       - uses: pnpm/action-setup@v4
+        if: steps.prereq.outputs.ready == 'true'
         with:
           version: 10.8.1
 
       - uses: actions/setup-node@v4
+        if: steps.prereq.outputs.ready == 'true'
         with:
           node-version: 22
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
+        if: steps.prereq.outputs.ready == 'true'
         run: pnpm install --frozen-lockfile
 
-      - name: Verify required VITE secrets
-        run: |
-          missing=0
-          for key in VITE_KAKAO_REST_API_KEY VITE_NAVER_CLIENT_ID VITE_GOOGLE_CLIENT_ID; do
-            if [ -z "${!key}" ]; then
-              echo "::error::GitHub Secret '$key' is not set (Repository settings → Secrets and variables → Actions)"
-              missing=1
-            fi
-          done
-          exit $missing
-
       - name: Build FE (env baked into bundle)
+        if: steps.prereq.outputs.ready == 'true'
         run: pnpm --filter fe build
 
       - name: Deploy to Firebase Hosting
+        if: steps.prereq.outputs.ready == 'true'
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           entryPoint: apps/fe
