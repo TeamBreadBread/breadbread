@@ -3,6 +3,8 @@ package com.breadbread.course.client;
 import com.breadbread.course.dto.ai.AiCourseWebhookRequest;
 import com.breadbread.course.dto.ai.AiCourseWebhookResponse;
 import com.breadbread.global.config.AiProperties;
+import com.breadbread.global.exception.CustomException;
+import com.breadbread.global.exception.ErrorCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
@@ -48,11 +50,9 @@ public class AiWebhookClient {
                                                                         jobId,
                                                                         res.statusCode());
                                                                 return Mono.error(
-                                                                        new IllegalStateException(
-                                                                                "AI 웹훅 HTTP 오류 ("
-                                                                                        + res
-                                                                                                .statusCode()
-                                                                                        + "). n8n 워크플로 실행·URL을 확인하세요."));
+                                                                        new CustomException(
+                                                                                ErrorCode
+                                                                                        .AI_WEBHOOK_HTTP_ERROR));
                                                             }))
                             .bodyToMono(String.class)
                             .timeout(Duration.ofSeconds(aiProperties.getWebhookTimeoutSeconds()))
@@ -61,7 +61,7 @@ public class AiWebhookClient {
                     "[AI 웹훅] 응답 수신 완료: jobId={}, elapsed={}ms",
                     jobId,
                     System.currentTimeMillis() - start);
-        } catch (IllegalStateException e) {
+        } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
             log.error(
@@ -69,21 +69,21 @@ public class AiWebhookClient {
                     jobId,
                     System.currentTimeMillis() - start,
                     e);
-            long timeoutSec = aiProperties.getWebhookTimeoutSeconds();
             if (e instanceof java.util.concurrent.TimeoutException
                     || (e.getMessage() != null && e.getMessage().contains("Timeout"))) {
-                throw new IllegalStateException(
-                        "AI 처리 시간 초과 ("
-                                + timeoutSec
-                                + "초). n8n/Dify 실행 시간을 줄이거나 서버 AI_WEBHOOK_TIMEOUT_SECONDS를 늘려 주세요.");
+                long timeoutSec = aiProperties.getWebhookTimeoutSeconds();
+                log.warn(
+                        "[AI 웹훅] 타임아웃 발생: jobId={}, timeoutSeconds={}",
+                        jobId,
+                        timeoutSec);
+                throw new CustomException(ErrorCode.AI_WEBHOOK_TIMEOUT);
             }
-            throw new IllegalStateException(
-                    "AI 웹훅에 연결하지 못했습니다. AI_COURSE_WEBHOOK_URL·n8n 워크플로 상태를 확인하세요.");
+            throw new CustomException(ErrorCode.AI_WEBHOOK_CONNECTION_ERROR);
         }
 
         if (rawBody == null || rawBody.isBlank()) {
             log.error("[AI 웹훅] 응답 body가 비어있음");
-            throw new IllegalStateException("AI 웹훅 응답이 비어 있습니다. n8n 마지막 노드가 JSON 본문을 반환하는지 확인하세요.");
+            throw new CustomException(ErrorCode.AI_WEBHOOK_EMPTY_RESPONSE);
         }
 
         try {
@@ -97,8 +97,7 @@ public class AiWebhookClient {
             return response;
         } catch (Exception e) {
             log.error("[AI 웹훅] JSON 파싱 실패: jobId={}", jobId, e);
-            throw new IllegalStateException(
-                    "AI 응답 JSON 형식이 맞지 않습니다. Dify/n8n 마지막 노드가 백엔드 스키마(JSON)를 반환하는지 확인하세요.");
+            throw new CustomException(ErrorCode.AI_WEBHOOK_PARSE_ERROR);
         }
     }
 }

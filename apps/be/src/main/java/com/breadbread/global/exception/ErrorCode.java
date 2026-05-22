@@ -64,6 +64,18 @@ public enum ErrorCode {
     ROUTE_NOT_FOUND(HttpStatus.UNPROCESSABLE_ENTITY, "E0413", "경로를 찾을 수 없습니다."),
     ROUTE_INSUFFICIENT_WAYPOINTS(
             HttpStatus.UNPROCESSABLE_ENTITY, "E0414", "경로를 생성하려면 최소 2개의 지점이 필요합니다."),
+    AI_RECOMMENDED_BAKERY_NOT_FOUND(
+            HttpStatus.INTERNAL_SERVER_ERROR, "E0415", "AI가 추천한 빵집이 존재하지 않거나 더 이상 활성 상태가 아닙니다."),
+    AI_WEBHOOK_HTTP_ERROR(
+            HttpStatus.BAD_GATEWAY, "E0416", "AI 웹훅 HTTP 오류가 발생했습니다."),
+    AI_WEBHOOK_TIMEOUT(
+            HttpStatus.GATEWAY_TIMEOUT, "E0417", "AI 처리 시간이 초과되었습니다."),
+    AI_WEBHOOK_CONNECTION_ERROR(
+            HttpStatus.SERVICE_UNAVAILABLE, "E0418", "AI 웹훅에 연결할 수 없습니다."),
+    AI_WEBHOOK_EMPTY_RESPONSE(
+            HttpStatus.BAD_GATEWAY, "E0419", "AI 웹훅 응답이 비어 있습니다."),
+    AI_WEBHOOK_PARSE_ERROR(
+            HttpStatus.UNPROCESSABLE_ENTITY, "E0420", "AI 응답 JSON 형식이 올바르지 않습니다."),
 
     // 예약 E05xx
     RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "E0501", "존재하지 않는 예약입니다."),
