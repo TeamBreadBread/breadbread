@@ -13,6 +13,12 @@ if (isKakaoMapKeyConfigured()) {
   });
 }
 
+if (import.meta.env.DEV) {
+  void import("@/lib/fcm/debugFcm").then(({ exposeFcmDebugOnWindow }) => {
+    exposeFcmDebugOnWindow();
+  });
+}
+
 const showDevtools = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEVTOOLS === "true";
 
 declare module "@tanstack/react-router" {
