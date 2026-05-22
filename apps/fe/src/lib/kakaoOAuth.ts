@@ -54,7 +54,9 @@ export async function startKakaoLogin(postLoginRedirect?: string): Promise<void>
   const clientIdRaw = import.meta.env.VITE_KAKAO_REST_API_KEY;
   if (!isKakaoClientIdConfigured(clientIdRaw)) {
     window.alert(
-      "카카오 로그인을 쓰려면 `VITE_KAKAO_REST_API_KEY`에 카카오 개발자 콘솔 REST API 키를 넣어 주세요.",
+      import.meta.env.PROD
+        ? "카카오 로그인 설정이 배포에 포함되지 않았습니다. GitHub Secrets의 VITE_KAKAO_REST_API_KEY를 확인해 주세요."
+        : "카카오 로그인을 쓰려면 `.env.local`의 `VITE_KAKAO_REST_API_KEY`에 카카오 REST API 키를 넣어 주세요.",
     );
     return;
   }

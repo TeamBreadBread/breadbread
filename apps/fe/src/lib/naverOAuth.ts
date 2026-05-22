@@ -28,7 +28,11 @@ export function clearNaverOAuthSession(): void {
 export async function startNaverLogin(postLoginRedirect?: string): Promise<void> {
   const clientId = import.meta.env.VITE_NAVER_CLIENT_ID?.trim();
   if (!isClientIdConfigured(clientId)) {
-    window.alert("네이버 로그인을 쓰려면 `.env.local`에 `VITE_NAVER_CLIENT_ID`를 넣어 주세요.");
+    window.alert(
+      import.meta.env.PROD
+        ? "네이버 로그인 설정이 배포에 포함되지 않았습니다. GitHub Secrets의 VITE_NAVER_CLIENT_ID를 확인해 주세요."
+        : "네이버 로그인을 쓰려면 `.env.local`에 `VITE_NAVER_CLIENT_ID`를 넣어 주세요.",
+    );
     return;
   }
 
