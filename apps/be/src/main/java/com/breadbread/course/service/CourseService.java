@@ -307,6 +307,7 @@ public class CourseService {
                         .findByIdAndActiveTrue(courseId)
                         .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
         course.deactivate();
+        courseDrivingRouteRepository.deleteAllByCourseIdIn(List.of(courseId));
         log.info("코스 삭제: courseId={}", courseId);
     }
 
@@ -353,11 +354,12 @@ public class CourseService {
         if (course.getCourseType() != CourseType.AI) {
             throw new CustomException(ErrorCode.NOT_AI_COURSE);
         }
-        if (!course.getUser().getId().equals(userId)) {
+        if (course.getUser() == null || !course.getUser().getId().equals(userId)) {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
 
         course.deactivate();
+        courseDrivingRouteRepository.deleteAllByCourseIdIn(List.of(courseId));
         log.info("AI 코스 삭제: courseId={}, userId={}", courseId, userId);
     }
 
@@ -439,14 +441,65 @@ public class CourseService {
     public DrivingRouteResponse getDrivingRoute(Long courseId, Long userId, UserRole role) {
         Course course =
                 courseRepository
-                        .findByIdAndActiveTrue(courseId)
+                        .findActiveWithBakeriesById(courseId)
                         .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
         validateDrivingRouteAccess(course, userId, role);
 
-        return courseDrivingRouteRepository
-                .findById(courseId)
-                .map(cached -> DrivingRouteResponse.builder().path(cached.getPath()).build())
-                .orElseGet(() -> fetchAndSaveDrivingRoute(courseId));
+        List<Bakery> orderedBakeries =
+                course.getCourseBakeries().stream()
+                        .sorted(Comparator.comparingInt(CourseBakery::getVisitOrder))
+                        .map(CourseBakery::getBakery)
+                        .filter(Bakery::isActive)
+                        .toList();
+        int totalStayMinutes = calculateTotalStayMinutes(orderedBakeries);
+        List<Integer> stayMinutesPerBakery = getStayMinutesPerBakery(orderedBakeries);
+
+        DrivingRouteResponse response =
+                courseDrivingRouteRepository
+                        .findById(courseId)
+                        .map(
+                                cached ->
+                                        buildResponseFromCache(
+                                                cached, stayMinutesPerBakery, totalStayMinutes))
+                        .orElseGet(
+                                () ->
+                                        fetchAndSaveDrivingRoute(
+                                                course,
+                                                orderedBakeries,
+                                                stayMinutesPerBakery,
+                                                totalStayMinutes));
+
+        courseDrivingRouteSaver.updateCourseTotalMinutes(courseId, response.getTotalMinutes());
+        return response;
+    }
+
+    private int calculateTotalStayMinutes(List<Bakery> bakeries) {
+        return bakeries.stream().mapToInt(Bakery::getEstimatedStayMinutes).sum();
+    }
+
+    private List<Integer> getStayMinutesPerBakery(List<Bakery> bakeries) {
+        return bakeries.stream().map(Bakery::getEstimatedStayMinutes).toList();
+    }
+
+    private DrivingRouteResponse buildResponseFromCache(
+            CourseDrivingRoute cached, List<Integer> stayMinutesPerBakery, int totalStayMinutes) {
+        List<Integer> legs =
+                cached.getLegDurations() == null
+                        ? List.of()
+                        : cached.getLegDurations().stream()
+                                .map(this::secondsToMinutesCeil)
+                                .toList();
+
+        int totalTravelMinutes = toTotalTravelMinutes(legs, cached.getTotalTravelSeconds());
+
+        return DrivingRouteResponse.builder()
+                .path(cached.getPath())
+                .legs(legs)
+                .stayMinutesPerBakery(stayMinutesPerBakery)
+                .totalTravelMinutes(totalTravelMinutes)
+                .totalStayMinutes(totalStayMinutes)
+                .totalMinutes(totalTravelMinutes + totalStayMinutes)
+                .build();
     }
 
     private void validateDrivingRouteAccess(Course course, Long userId, UserRole role) {
@@ -460,18 +513,17 @@ public class CourseService {
         }
     }
 
-    private DrivingRouteResponse fetchAndSaveDrivingRoute(Long courseId) {
-        Course course =
-                courseRepository
-                        .findActiveWithBakeriesById(courseId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
+    private DrivingRouteResponse fetchAndSaveDrivingRoute(
+            Course course,
+            List<Bakery> orderedBakeries,
+            List<Integer> stayMinutesPerBakery,
+            int totalStayMinutes) {
+        Long courseId = course.getId();
 
         List<Coordinate> bakeryCoordinates =
-                course.getCourseBakeries().stream()
-                        .sorted(Comparator.comparingInt(CourseBakery::getVisitOrder))
+                orderedBakeries.stream()
                         .map(
-                                cb -> {
-                                    Bakery bakery = cb.getBakery();
+                                bakery -> {
                                     if (bakery.getLatitude() == null
                                             || bakery.getLongitude() == null) {
                                         log.error("빵집 좌표 없음: bakeryId={}", bakery.getId());
@@ -502,13 +554,138 @@ public class CourseService {
             throw new CustomException(ErrorCode.ROUTE_INSUFFICIENT_WAYPOINTS);
         }
 
-        List<Coordinate> path = drivingRouteClient.getPath(coordinates);
+        // Kakao Directions API: waypoints 최대 5개 (origin + destination 제외)
+        if (coordinates.size() > 7) {
+            log.warn("경로 조회 실패 - 경유지 초과: courseId={}, count={}", courseId, coordinates.size());
+            throw new CustomException(ErrorCode.ROUTE_TOO_MANY_WAYPOINTS);
+        }
+
+        RouteResult result = drivingRouteClient.getPath(coordinates);
         try {
-            courseDrivingRouteSaver.save(courseId, path);
+            courseDrivingRouteSaver.save(courseId, result);
         } catch (DataIntegrityViolationException e) {
             log.info("동시 경로 저장 충돌 무시 (이미 저장됨): courseId={}", courseId);
         }
-        return DrivingRouteResponse.builder().path(path).build();
+
+        List<Integer> legs =
+                result.getLegDurationsSeconds().stream().map(this::secondsToMinutesCeil).toList();
+        int totalTravelMinutes = toTotalTravelMinutes(legs, result.getTotalDurationSeconds());
+
+        return DrivingRouteResponse.builder()
+                .path(result.getPath())
+                .legs(legs)
+                .stayMinutesPerBakery(stayMinutesPerBakery)
+                .totalTravelMinutes(totalTravelMinutes)
+                .totalStayMinutes(totalStayMinutes)
+                .totalMinutes(totalTravelMinutes + totalStayMinutes)
+                .build();
+    }
+
+    private int secondsToMinutesCeil(int seconds) {
+        return (int) Math.ceil(seconds / 60.0);
+    }
+
+    /** legs가 있으면 합산, 없으면 총 초를 분으로 변환. legs 표시값과 항상 일치함. */
+    private int toTotalTravelMinutes(List<Integer> legs, Integer totalSeconds) {
+        if (!legs.isEmpty()) {
+            return legs.stream().mapToInt(Integer::intValue).sum();
+        }
+        return secondsToMinutesCeil(totalSeconds != null ? totalSeconds : 0);
+    }
+
+    @Transactional
+    public ReorderBakeriesResponse reorderBakeries(
+            Long courseId, Long userId, UserRole role, ReorderBakeriesRequest request) {
+        Course course =
+                courseRepository
+                        .findByIdAndActiveTrue(courseId)
+                        .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
+
+        validateEditAccess(course, userId, role);
+
+        if (request.getBakeryOrder() == null || request.getBakeryOrder().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        // 현재 코스의 빵집들 (활성만)
+        List<CourseBakery> courseBakeries =
+                courseBakeryRepository.findAllByCourseId(courseId).stream()
+                        .filter(cb -> cb.getBakery().isActive())
+                        .toList();
+
+        Set<Long> currentBakeryIds =
+                courseBakeries.stream()
+                        .map(cb -> cb.getBakery().getId())
+                        .collect(Collectors.toSet());
+
+        // 비활성/미포함 ID 제거 후 순서 목록 구성
+        List<Long> activeBakeryOrder =
+                request.getBakeryOrder().stream().filter(currentBakeryIds::contains).toList();
+
+        // 활성 빵집 목록 내 중복 ID 검증
+        if (activeBakeryOrder.size() != new HashSet<>(activeBakeryOrder).size()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        // 필터링 후 코스의 전체 활성 빵집 목록과 일치하지 않으면 에러
+        if (!new HashSet<>(activeBakeryOrder).equals(currentBakeryIds)) {
+            throw new CustomException(ErrorCode.BAKERY_ORDER_COUNT_MISMATCH);
+        }
+
+        // visitOrder 업데이트
+        Map<Long, CourseBakery> bakeryMap =
+                courseBakeries.stream()
+                        .collect(Collectors.toMap(cb -> cb.getBakery().getId(), cb -> cb));
+
+        for (int i = 0; i < activeBakeryOrder.size(); i++) {
+            final int order = i + 1;
+            bakeryMap.get(activeBakeryOrder.get(i)).setVisitOrder(order);
+        }
+
+        // 순서 변경으로 기존 경로 캐시 무효화
+        courseDrivingRouteRepository.deleteAllByCourseIdIn(List.of(courseId));
+        log.info("코스 빵집 순서 변경으로 경로 캐시 삭제: courseId={}", courseId);
+
+        // 새 순서로 전체 활성 빵집 목록 구성 후 경로 재조회
+        List<Bakery> orderedBakeries =
+                activeBakeryOrder.stream().map(id -> bakeryMap.get(id).getBakery()).toList();
+        int totalStayMinutes = calculateTotalStayMinutes(orderedBakeries);
+
+        int estimatedTotalMinutes = 0;
+        try {
+            DrivingRouteResponse routeResponse =
+                    fetchAndSaveDrivingRoute(
+                            course,
+                            orderedBakeries,
+                            getStayMinutesPerBakery(orderedBakeries),
+                            totalStayMinutes);
+            estimatedTotalMinutes = routeResponse.getTotalMinutes();
+            course.updateTotalMinutes(estimatedTotalMinutes);
+        } catch (CustomException e) {
+            log.warn(
+                    "코스 순서 변경 후 경로 갱신 실패: courseId={}, error={}",
+                    courseId,
+                    e.getErrorCode().name());
+        }
+
+        log.info(
+                "코스 빵집 순서 변경: courseId={}, userId={}, count={}",
+                courseId,
+                userId,
+                activeBakeryOrder.size());
+
+        return ReorderBakeriesResponse.builder()
+                .courseId(courseId)
+                .bakeryOrder(activeBakeryOrder)
+                .estimatedTotalMinutes(estimatedTotalMinutes)
+                .build();
+    }
+
+    private void validateEditAccess(Course course, Long userId, UserRole role) {
+        if (role == UserRole.ROLE_ADMIN) return;
+        if (course.getUser() == null || !course.getUser().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
     }
 
     private void validateCourseActionAccess(Course course, Long userId) {

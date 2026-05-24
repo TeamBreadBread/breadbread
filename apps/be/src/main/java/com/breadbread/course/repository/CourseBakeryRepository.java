@@ -9,6 +9,8 @@ import org.springframework.data.repository.query.Param;
 public interface CourseBakeryRepository extends JpaRepository<CourseBakery, Long> {
     List<CourseBakery> findAllByCourseIdOrderByVisitOrder(Long id);
 
+    List<CourseBakery> findAllByCourseId(Long courseId);
+
     @Query("SELECT cb.course.id FROM CourseBakery cb WHERE cb.bakery.id = :bakeryId")
     List<Long> findCourseIdsByBakeryId(@Param("bakeryId") Long bakeryId);
 }

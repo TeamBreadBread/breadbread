@@ -68,6 +68,9 @@ public class CreateBakeryRequest {
     private boolean parkingAvailable;
     private boolean drinkAvailable;
 
+    @Schema(description = "예상 체류 시간 (분). 미입력 시 drinkAvailable 기준 자동 설정 (40 or 20)")
+    private Integer estimatedStayMinutes;
+
     @Schema(description = "빵 나오는 시각")
     private LocalTime appearanceTime;
 

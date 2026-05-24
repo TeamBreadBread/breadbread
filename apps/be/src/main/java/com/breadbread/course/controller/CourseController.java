@@ -180,4 +180,16 @@ public class CourseController {
         UserRole role = userDetails != null ? userDetails.getRole() : null;
         return ApiResponse.ok(courseService.getDrivingRoute(id, userId, role));
     }
+
+    @Operation(summary = "코스 내 빵집 방문 순서 변경")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PatchMapping("/{courseId}/bakeries/reorder")
+    public ApiResponse<ReorderBakeriesResponse> reorderBakeries(
+            @PathVariable Long courseId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody ReorderBakeriesRequest request) {
+        return ApiResponse.ok(
+                courseService.reorderBakeries(
+                        courseId, userDetails.getId(), userDetails.getRole(), request));
+    }
 }

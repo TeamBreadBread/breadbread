@@ -52,13 +52,13 @@ public enum ErrorCode {
     COURSE_NOT_FOUND(HttpStatus.NOT_FOUND, "E0401", "존재하지 않는 코스입니다."),
     AI_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "E0402", "AI 추천 서버 오류가 발생했습니다."),
     PREFERENCE_NOT_FOUND(HttpStatus.NOT_FOUND, "E0403", "선호도 조사 결과가 없습니다."),
-    PREFERENCE_ALREADY_EXISTS(HttpStatus.CONFLICT, "E0410", "이미 선호도 조사를 완료했습니다."),
     NOT_AI_COURSE(HttpStatus.BAD_REQUEST, "E0404", "AI 코스에서만 사용할 수 있는 기능입니다."),
     COURSE_BAKERY_REQUIRED(HttpStatus.BAD_REQUEST, "E0405", "코스에 빵집이 최소 1개 이상 필요합니다."),
     ALREADY_COURSE_LIKED(HttpStatus.CONFLICT, "E0406", "이미 좋아요한 코스입니다."),
     NOT_COURSE_LIKED(HttpStatus.BAD_REQUEST, "E0407", "좋아요하지 않은 코스입니다."),
     ALREADY_ROUTED(HttpStatus.CONFLICT, "E0408", "이미 저장한 코스입니다."),
     NOT_ROUTED(HttpStatus.BAD_REQUEST, "E0409", "저장하지 않은 코스입니다."),
+    PREFERENCE_ALREADY_EXISTS(HttpStatus.CONFLICT, "E0410", "이미 선호도 조사를 완료했습니다."),
     AI_JOB_NOT_FOUND(HttpStatus.NOT_FOUND, "E0411", "존재하지 않는 AI 작업입니다."),
     ROUTE_PROVIDER_ERROR(HttpStatus.BAD_GATEWAY, "E0412", "경로 API 서버 오류가 발생했습니다."),
     ROUTE_NOT_FOUND(HttpStatus.UNPROCESSABLE_ENTITY, "E0413", "경로를 찾을 수 없습니다."),
@@ -71,6 +71,10 @@ public enum ErrorCode {
     AI_WEBHOOK_CONNECTION_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "E0418", "AI 웹훅에 연결할 수 없습니다."),
     AI_WEBHOOK_EMPTY_RESPONSE(HttpStatus.BAD_GATEWAY, "E0419", "AI 웹훅 응답이 비어 있습니다."),
     AI_WEBHOOK_PARSE_ERROR(HttpStatus.UNPROCESSABLE_ENTITY, "E0420", "AI 응답 JSON 형식이 올바르지 않습니다."),
+    BAKERY_ORDER_COUNT_MISMATCH(
+            HttpStatus.BAD_REQUEST, "E0421", "요청한 빵집 순서 목록이 코스의 활성 빵집 목록과 일치하지 않습니다."),
+    ROUTE_TOO_MANY_WAYPOINTS(
+            HttpStatus.UNPROCESSABLE_ENTITY, "E0422", "경로에 포함할 수 있는 최대 빵집 수를 초과했습니다."),
 
     // 예약 E05xx
     RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "E0501", "존재하지 않는 예약입니다."),
@@ -99,6 +103,7 @@ public enum ErrorCode {
     INVALID_GCS_URL(HttpStatus.BAD_REQUEST, "E0704", "유효하지 않은 파일 URL입니다."),
     INVALID_FILE_TYPE(
             HttpStatus.BAD_REQUEST, "E0705", "허용되지 않는 파일 형식입니다. (jpeg, jpg, png, webp만 가능)"),
+    TEMP_IMAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "E0706", "존재하지 않는 임시 이미지입니다."),
 
     // 빵터 E08xx
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "E0801", "존재하지 않는 게시글입니다."),

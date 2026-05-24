@@ -42,4 +42,8 @@ public class CourseBakery {
     void setCourse(Course course) {
         this.course = course;
     }
+
+    public void setVisitOrder(int visitOrder) {
+        this.visitOrder = visitOrder;
+    }
 }

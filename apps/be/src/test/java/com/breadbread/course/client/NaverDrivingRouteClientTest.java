@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.breadbread.course.config.NaverMapsProperties;
 import com.breadbread.course.dto.Coordinate;
+import com.breadbread.course.dto.RouteResult;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import java.util.List;
@@ -77,13 +78,13 @@ class NaverDrivingRouteClientTest {
     // ── toCoordinates ──────────────────────────────────────────────────────────
 
     @Test
-    void toCoordinates_swapsLngLat_fromNaverFormat() {
+    void toRouteResult_swapsLngLat_fromNaverFormat() {
         // Naver path format: [lng, lat]
         NaverDirectionsResponse response =
                 buildResponse(List.of(new double[] {127.1, 37.4}, new double[] {127.2, 37.5}));
 
-        List<Coordinate> coords =
-                ReflectionTestUtils.invokeMethod(client, "toCoordinates", response);
+        RouteResult result = ReflectionTestUtils.invokeMethod(client, "toRouteResult", response);
+        List<Coordinate> coords = result.getPath();
 
         assertThat(coords).hasSize(2);
         // first point: lng=127.1, lat=37.4 → Coordinate(lat=37.4, lng=127.1)
@@ -95,35 +96,35 @@ class NaverDrivingRouteClientTest {
     }
 
     @Test
-    void toCoordinates_throws_whenRouteIsNull() {
+    void toRouteResult_throws_whenRouteIsNull() {
         NaverDirectionsResponse response = new NaverDirectionsResponse();
         // route is null by default
 
         assertThatThrownBy(
-                        () -> ReflectionTestUtils.invokeMethod(client, "toCoordinates", response))
+                        () -> ReflectionTestUtils.invokeMethod(client, "toRouteResult", response))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROUTE_NOT_FOUND);
     }
 
     @Test
-    void toCoordinates_throws_whenTraoptimalIsEmpty() {
+    void toRouteResult_throws_whenTraoptimalIsEmpty() {
         NaverDirectionsResponse response = buildResponse(null);
         ReflectionTestUtils.setField(response.getRoute(), "traoptimal", List.of());
 
         assertThatThrownBy(
-                        () -> ReflectionTestUtils.invokeMethod(client, "toCoordinates", response))
+                        () -> ReflectionTestUtils.invokeMethod(client, "toRouteResult", response))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROUTE_NOT_FOUND);
     }
 
     @Test
-    void toCoordinates_throws_whenPathIsEmpty() {
+    void toRouteResult_throws_whenPathIsEmpty() {
         NaverDirectionsResponse response = buildResponse(List.of()); // empty path
 
         assertThatThrownBy(
-                        () -> ReflectionTestUtils.invokeMethod(client, "toCoordinates", response))
+                        () -> ReflectionTestUtils.invokeMethod(client, "toRouteResult", response))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROUTE_NOT_FOUND);

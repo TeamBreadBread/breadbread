@@ -47,6 +47,9 @@ public class Course extends BaseEntity {
     @Column(nullable = false)
     private boolean active = true;
 
+    @Column(name = "total_minutes")
+    private Integer totalMinutes;
+
     private boolean shared; // AI코스 공유 여부 (MANUAL은 항상 true)
 
     @Embedded private AiCourseInfo aiCourseInfo;
@@ -163,6 +166,10 @@ public class Course extends BaseEntity {
     public void unshare() {
         validateAi();
         this.shared = false;
+    }
+
+    public void updateTotalMinutes(int totalMinutes) {
+        this.totalMinutes = totalMinutes;
     }
 
     public void deactivate() {

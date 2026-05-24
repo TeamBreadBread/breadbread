@@ -25,6 +25,15 @@ class NaverDirectionsResponse {
     @NoArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     static class TraoptimalRoute {
+        private Summary summary;
         private List<double[]> path; // 각 원소: [경도(lng), 위도(lat)]
+    }
+
+    @Getter
+    @NoArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    static class Summary {
+        /** 총 이동 시간 (밀리초). */
+        private long duration;
     }
 }
