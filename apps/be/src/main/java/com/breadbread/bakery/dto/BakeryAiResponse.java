@@ -1,6 +1,7 @@
 package com.breadbread.bakery.dto;
 
 import com.breadbread.bakery.entity.*;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.List;
@@ -11,6 +12,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class BakeryAiResponse {
 
     private Long id;
@@ -41,8 +43,10 @@ public class BakeryAiResponse {
     private List<CrowdTimeInfo> crowdTimes;
 
     public static BakeryAiResponse from(
-            Bakery bakery, List<Bread> breads, List<CrowdTime> crowdTimes) {
+            Bakery bakery, List<Bread> breads, List<CrowdTime> crowdTimes, DayType dayType) {
         BusinessHours bh = bakery.getBusinessHours();
+        boolean showWeekday = dayType == null || dayType == DayType.WEEKDAY;
+        boolean showWeekend = dayType == null || dayType == DayType.WEEKEND;
         return BakeryAiResponse.builder()
                 .id(bakery.getId())
                 .name(bakery.getName())
@@ -71,10 +75,10 @@ public class BakeryAiResponse {
                         bakery.getBakeryPersonalities().stream()
                                 .map(BakeryPersonality::name)
                                 .toList())
-                .weekdayOpen(bh != null ? bh.getWeekdayOpen() : null)
-                .weekdayClose(bh != null ? bh.getWeekdayClose() : null)
-                .weekendOpen(bh != null ? bh.getWeekendOpen() : null)
-                .weekendClose(bh != null ? bh.getWeekendClose() : null)
+                .weekdayOpen(showWeekday && bh != null ? bh.getWeekdayOpen() : null)
+                .weekdayClose(showWeekday && bh != null ? bh.getWeekdayClose() : null)
+                .weekendOpen(showWeekend && bh != null ? bh.getWeekendOpen() : null)
+                .weekendClose(showWeekend && bh != null ? bh.getWeekendClose() : null)
                 .lastOrderTime(bh != null ? bh.getLastOrderTime() : null)
                 .holidayClosed(bh != null && bh.isHolidayClosed())
                 .breads(breads.stream().map(BreadInfo::from).toList())

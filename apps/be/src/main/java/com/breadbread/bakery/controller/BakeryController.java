@@ -2,7 +2,10 @@ package com.breadbread.bakery.controller;
 
 import com.breadbread.auth.dto.CustomUserDetails;
 import com.breadbread.bakery.dto.*;
+import com.breadbread.bakery.entity.BakeryPersonality;
 import com.breadbread.bakery.entity.BakerySortType;
+import com.breadbread.bakery.entity.BakeryType;
+import com.breadbread.bakery.entity.BakeryUseType;
 import com.breadbread.bakery.entity.ReviewSortType;
 import com.breadbread.bakery.service.BakeryService;
 import com.breadbread.global.dto.ApiResponse;
@@ -11,6 +14,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -25,11 +30,51 @@ public class BakeryController {
 
     private final BakeryService bakeryService;
 
-    @Operation(summary = "AI용 빵집 전체 조회")
+    @Operation(
+            summary = "AI용 빵집 목록 조회",
+            description = "키워드, 지역구, 영업중, 음료판매, 매장취식, 빵집유형, 이용유형, 분위기 필터 지원")
+    @Parameters({
+        @Parameter(name = "keyword", description = "빵집 이름 검색어"),
+        @Parameter(
+                name = "open",
+                description =
+                        "true 시 지정한 날짜·시각 기준 영업 중인 빵집만 반환, 혼잡도도 해당 요일(평일/주말)만 포함. false 시 혼잡도 전체 반환 (기본값: false)"),
+        @Parameter(name = "visitDate", description = "영업중 판단 기준 날짜 (미입력 시 오늘, 형식: yyyy-MM-dd)"),
+        @Parameter(name = "visitTime", description = "영업중 판단 기준 시각 (미입력 시 현재 시각, 형식: HH:mm)"),
+        @Parameter(name = "region", description = "지    역구 필터", example = "대전 중구"),
+        @Parameter(name = "drinkAvailable", description = "음료 판매 여부 필터"),
+        @Parameter(name = "dineInAvailable", description = "매장 취식 여부 필터"),
+        @Parameter(name = "bakeryType", description = "빵집 유형 필터"),
+        @Parameter(name = "bakeryUseTypes", description = "이용 유형 필터 (복수 선택 가능, OR 조건)"),
+        @Parameter(name = "bakeryPersonalities", description = "분위기 필터 (복수 선택 가능, OR 조건)")
+    })
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200")
     @GetMapping("/ai")
-    public ApiResponse<java.util.List<BakeryAiResponse>> findAllForAi() {
-        return ApiResponse.ok(bakeryService.findAllForAi());
+    public ApiResponse<java.util.List<BakeryAiResponse>> findAllForAi(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "false") boolean open,
+            @RequestParam(required = false) LocalDate visitDate,
+            @RequestParam(required = false) LocalTime visitTime,
+            @RequestParam(required = false) String region,
+            @RequestParam(required = false) Boolean drinkAvailable,
+            @RequestParam(required = false) Boolean dineInAvailable,
+            @RequestParam(required = false) BakeryType bakeryType,
+            @RequestParam(required = false) java.util.List<BakeryUseType> bakeryUseTypes,
+            @RequestParam(required = false) java.util.List<BakeryPersonality> bakeryPersonalities) {
+        BakeryAiSearch search =
+                BakeryAiSearch.builder()
+                        .keyword(keyword)
+                        .open(open)
+                        .visitDate(visitDate)
+                        .visitTime(visitTime)
+                        .region(region)
+                        .drinkAvailable(drinkAvailable)
+                        .dineInAvailable(dineInAvailable)
+                        .bakeryType(bakeryType)
+                        .bakeryUseTypes(bakeryUseTypes)
+                        .bakeryPersonalities(bakeryPersonalities)
+                        .build();
+        return ApiResponse.ok(bakeryService.findAllForAi(search));
     }
 
     @Operation(summary = "빵집 목록 조회", description = "키워드 검색, 지역 필터, 정렬, 영업 중 우선 배치, 페이징 지원")
