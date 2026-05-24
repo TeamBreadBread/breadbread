@@ -2,6 +2,7 @@ package com.breadbread.course.client;
 
 import com.breadbread.course.config.NaverMapsProperties;
 import com.breadbread.course.dto.Coordinate;
+import com.breadbread.course.dto.RouteResult;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import java.net.URI;
@@ -28,7 +29,7 @@ public class NaverDrivingRouteClient implements DrivingRouteClient {
     private final NaverMapsProperties naverMapsProperties;
 
     @Override
-    public List<Coordinate> getPath(List<Coordinate> coordinates) {
+    public RouteResult getPath(List<Coordinate> coordinates) {
         Coordinate start = coordinates.get(0);
         Coordinate goal = coordinates.get(coordinates.size() - 1);
         List<Coordinate> waypoints = coordinates.subList(1, coordinates.size() - 1);
@@ -46,7 +47,7 @@ public class NaverDrivingRouteClient implements DrivingRouteClient {
         NaverDirectionsResponse response = callApi(url);
         log.info("[Naver 경로] 완료: elapsed={}ms", System.currentTimeMillis() - startTime);
 
-        return toCoordinates(response);
+        return toRouteResult(response);
     }
 
     private String buildUrl(String startParam, String goalParam, List<Coordinate> waypoints) {
@@ -116,7 +117,7 @@ public class NaverDrivingRouteClient implements DrivingRouteClient {
         }
     }
 
-    private List<Coordinate> toCoordinates(NaverDirectionsResponse response) {
+    private RouteResult toRouteResult(NaverDirectionsResponse response) {
         if (response.getRoute() == null
                 || response.getRoute().getTraoptimal() == null
                 || response.getRoute().getTraoptimal().isEmpty()) {
@@ -127,7 +128,9 @@ public class NaverDrivingRouteClient implements DrivingRouteClient {
             throw new CustomException(ErrorCode.ROUTE_NOT_FOUND);
         }
 
-        List<double[]> path = response.getRoute().getTraoptimal().get(0).getPath();
+        NaverDirectionsResponse.TraoptimalRoute traoptimal =
+                response.getRoute().getTraoptimal().get(0);
+        List<double[]> path = traoptimal.getPath();
         if (path == null || path.isEmpty()) {
             throw new CustomException(ErrorCode.ROUTE_NOT_FOUND);
         }
@@ -135,9 +138,15 @@ public class NaverDrivingRouteClient implements DrivingRouteClient {
         log.info("[Naver 경로] 응답 수신: pathPoints={}", path.size());
 
         // Naver 응답은 [경도(lng), 위도(lat)] 순서 → Coordinate(lat, lng)로 변환
-        return path.stream()
-                .map(point -> new Coordinate(point[1], point[0]))
-                .toList(); // Coordinate(lat, lng)
+        List<Coordinate> coordinates =
+                path.stream().map(point -> new Coordinate(point[1], point[0])).toList();
+
+        // Naver는 구간별 시간을 제공하지 않으므로 빈 리스트, 총 시간은 ms → 초 변환
+        long durationMs =
+                traoptimal.getSummary() != null ? traoptimal.getSummary().getDuration() : 0L;
+        int totalDurationSeconds = (int) (durationMs / 1000);
+
+        return new RouteResult(coordinates, List.of(), totalDurationSeconds);
     }
 
     // Naver API 파라미터 형식: 경도,위도 (lng,lat)

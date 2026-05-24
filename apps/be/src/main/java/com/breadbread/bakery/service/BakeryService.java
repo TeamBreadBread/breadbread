@@ -171,6 +171,7 @@ public class BakeryService {
                         .dineInAvailable(request.isDineInAvailable())
                         .parkingAvailable(request.isParkingAvailable())
                         .drinkAvailable(request.isDrinkAvailable())
+                        .estimatedStayMinutes(request.getEstimatedStayMinutes())
                         .appearanceTime(request.getAppearanceTime())
                         .frequency(request.getFrequency())
                         .weekdayOpen(request.getWeekdayOpen())
@@ -256,6 +257,12 @@ public class BakeryService {
         bakery.getImages().forEach(img -> gcsService.deleteQuietly(img.getImageUrl()));
         bakeryImageRepository.deleteAllByBakery(bakery);
         bakery.deactivate();
+
+        List<Long> courseIds = courseBakeryRepository.findCourseIdsByBakeryId(bakeryId);
+        if (!courseIds.isEmpty()) {
+            courseDrivingRouteRepository.deleteAllByCourseIdIn(courseIds);
+            log.info("빵집 삭제로 경로 캐시 삭제: bakeryId={}, courseIds={}", bakeryId, courseIds);
+        }
     }
 
     @Transactional

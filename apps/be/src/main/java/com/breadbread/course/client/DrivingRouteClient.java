@@ -1,9 +1,10 @@
 package com.breadbread.course.client;
 
 import com.breadbread.course.dto.Coordinate;
+import com.breadbread.course.dto.RouteResult;
 import java.util.List;
 
 public interface DrivingRouteClient {
 
-    List<Coordinate> getPath(List<Coordinate> coordinates);
+    RouteResult getPath(List<Coordinate> coordinates);
 }

@@ -36,6 +36,7 @@ public class Bakery extends BaseEntity {
     private boolean dineInAvailable; // 매장취식여부
     private boolean parkingAvailable; // 주차가능여부
     private boolean drinkAvailable; // 음료 판매 여부
+    private int estimatedStayMinutes; // 예상 체류 시간 (분)
     private String note;
     private boolean active = true;
 
@@ -105,7 +106,10 @@ public class Bakery extends BaseEntity {
         if (req.getCrowdedDays() != null) this.crowdedDays = req.getCrowdedDays();
         if (req.getDineInAvailable() != null) this.dineInAvailable = req.getDineInAvailable();
         if (req.getParkingAvailable() != null) this.parkingAvailable = req.getParkingAvailable();
-        if (req.getDrinkAvailable() != null) this.drinkAvailable = req.getDrinkAvailable();
+        if (req.getDrinkAvailable() != null) {
+            this.drinkAvailable = req.getDrinkAvailable();
+            this.estimatedStayMinutes = this.drinkAvailable ? 40 : 20;
+        }
         if (req.getAppearanceTime() != null) this.appearanceTime = req.getAppearanceTime();
         if (req.getFrequency() != null) this.frequency = req.getFrequency();
         if (req.getWeekdayOpen() != null
@@ -174,6 +178,7 @@ public class Bakery extends BaseEntity {
             boolean dineInAvailable,
             boolean parkingAvailable,
             boolean drinkAvailable,
+            Integer estimatedStayMinutes,
             String note,
             LocalTime appearanceTime,
             Frequency frequency) {
@@ -199,6 +204,8 @@ public class Bakery extends BaseEntity {
         this.dineInAvailable = dineInAvailable;
         this.parkingAvailable = parkingAvailable;
         this.drinkAvailable = drinkAvailable;
+        this.estimatedStayMinutes =
+                estimatedStayMinutes != null ? estimatedStayMinutes : (drinkAvailable ? 40 : 20);
         this.note = note;
         this.bakeryType = bakeryType;
         this.bakeryUseTypes = bakeryUseTypes != null ? bakeryUseTypes : new ArrayList<>();

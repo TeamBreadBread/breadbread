@@ -1,9 +1,9 @@
 package com.breadbread.course.service;
 
-import com.breadbread.course.dto.Coordinate;
+import com.breadbread.course.dto.RouteResult;
 import com.breadbread.course.entity.CourseDrivingRoute;
 import com.breadbread.course.repository.CourseDrivingRouteRepository;
-import java.util.List;
+import com.breadbread.course.repository.CourseRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -16,10 +16,23 @@ import org.springframework.transaction.annotation.Transactional;
 public class CourseDrivingRouteSaver {
 
     private final CourseDrivingRouteRepository courseDrivingRouteRepository;
+    private final CourseRepository courseRepository;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void save(Long courseId, List<Coordinate> path) {
+    public void save(Long courseId, RouteResult result) {
         courseDrivingRouteRepository.save(
-                CourseDrivingRoute.builder().courseId(courseId).path(path).build());
+                CourseDrivingRoute.builder()
+                        .courseId(courseId)
+                        .path(result.getPath())
+                        .totalTravelSeconds(result.getTotalDurationSeconds())
+                        .legDurations(result.getLegDurationsSeconds())
+                        .build());
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void updateCourseTotalMinutes(Long courseId, int totalMinutes) {
+        courseRepository
+                .findById(courseId)
+                .ifPresent(course -> course.updateTotalMinutes(totalMinutes));
     }
 }

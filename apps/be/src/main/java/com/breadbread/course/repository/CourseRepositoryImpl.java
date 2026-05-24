@@ -1,9 +1,11 @@
 package com.breadbread.course.repository;
 
 import com.breadbread.bakery.entity.BreadType;
+import com.breadbread.bakery.entity.QBakery;
 import com.breadbread.course.dto.CourseSearch;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.QCourse;
+import com.breadbread.course.entity.QCourseBakery;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
@@ -21,6 +23,8 @@ public class CourseRepositoryImpl implements CourseRepositoryCustom {
     @Override
     public Page<Course> search(CourseSearch search, Pageable pageable) {
         QCourse course = QCourse.course;
+        QCourseBakery courseBakery = QCourseBakery.courseBakery;
+        QBakery bakery = QBakery.bakery;
 
         BooleanExpression condition =
                 course.active
@@ -31,9 +35,11 @@ public class CourseRepositoryImpl implements CourseRepositoryCustom {
                         .and(eqTheme(course, search.getTheme()))
                         .and(eqEditorPick(course, search.getEditorPick()));
 
-        List<Course> content =
+        // 1. 페이지네이션: ID만 조회 (fetch join 없이 → DB 페이지네이션 정확)
+        List<Long> ids =
                 queryFactory
-                        .selectFrom(course)
+                        .select(course.id)
+                        .from(course)
                         .where(condition)
                         .orderBy(course.id.desc())
                         .offset(pageable.getOffset())
@@ -41,6 +47,23 @@ public class CourseRepositoryImpl implements CourseRepositoryCustom {
                         .fetch();
 
         Long total = queryFactory.select(course.count()).from(course).where(condition).fetchOne();
+
+        if (ids.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, total != null ? total : 0L);
+        }
+
+        // 2. 해당 ID들의 courseBakeries + bakery 한 번에 fetch join
+        List<Course> content =
+                queryFactory
+                        .selectFrom(course)
+                        .distinct()
+                        .leftJoin(course.courseBakeries, courseBakery)
+                        .fetchJoin()
+                        .leftJoin(courseBakery.bakery, bakery)
+                        .fetchJoin()
+                        .where(course.id.in(ids))
+                        .orderBy(course.id.desc())
+                        .fetch();
 
         return new PageImpl<>(content, pageable, total != null ? total : 0L);
     }

@@ -141,5 +141,11 @@ naver:
     base-url: https://maps.apigw.ntruss.com
     timeout-seconds: ${NAVER_MAPS_TIMEOUT_SECONDS:10}
 
+kakao:
+  mobility:
+    app-key: ${KAKAO_MOBILITY_APP_KEY:}
+    base-url: https://apis-navi.kakaomobility.com
+    timeout-seconds: ${KAKAO_MOBILITY_TIMEOUT_SECONDS:10}
+
 route:
-  provider: naver  # naver | kakao
+  provider: kakao  # naver | kakao
