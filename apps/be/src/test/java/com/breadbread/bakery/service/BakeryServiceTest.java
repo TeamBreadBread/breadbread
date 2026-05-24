@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.breadbread.bakery.dto.BakeryAiSearch;
 import com.breadbread.bakery.dto.BakerySearch;
 import com.breadbread.bakery.dto.CreateBakeryRequest;
 import com.breadbread.bakery.dto.CreateBreadRequest;
@@ -21,6 +22,7 @@ import com.breadbread.bakery.entity.BakeryImage;
 import com.breadbread.bakery.entity.BakeryLike;
 import com.breadbread.bakery.entity.Bread;
 import com.breadbread.bakery.entity.BreadType;
+import com.breadbread.bakery.entity.BusinessHours;
 import com.breadbread.bakery.entity.CrowdLevel;
 import com.breadbread.bakery.entity.CrowdTime;
 import com.breadbread.bakery.entity.DayType;
@@ -40,6 +42,8 @@ import com.breadbread.global.service.GcsService;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -86,27 +90,205 @@ class BakeryServiceTest {
                         .signature(false)
                         .selloutMin(0)
                         .build();
-        CrowdTime crowd =
-                CrowdTime.builder()
-                        .dayType(DayType.WEEKDAY)
-                        .crowdLevel(CrowdLevel.LOW)
-                        .peakStart(null)
-                        .peakEnd(null)
-                        .expectedWaitMin(null)
-                        .sourceType("test")
-                        .bakery(b)
-                        .build();
+        CrowdTime crowd = crowdTimeOf(b, DayType.WEEKDAY);
 
-        when(bakeryRepository.findAllByActiveTrue()).thenReturn(List.of(b));
+        BakeryAiSearch search = BakeryAiSearch.builder().build();
+        when(bakeryRepository.searchForAi(any(BakeryAiSearch.class))).thenReturn(List.of(b));
         when(breadRepository.findAllByBakeryIdIn(List.of(1L))).thenReturn(List.of(bread));
         when(crowdTimeRepository.findAllByBakeryIdIn(List.of(1L))).thenReturn(List.of(crowd));
 
-        var responses = bakeryService.findAllForAi();
+        var responses = bakeryService.findAllForAi(search);
 
         assertThat(responses).hasSize(1);
         assertThat(responses.get(0).getId()).isEqualTo(1L);
         assertThat(responses.get(0).getBreads()).hasSize(1);
         assertThat(responses.get(0).getCrowdTimes()).hasSize(1);
+    }
+
+    @Test
+    void findAllForAi_returns_all_crowd_times_when_open_false() {
+        Bakery b = bakeryWithId(1L);
+        CrowdTime weekday = crowdTimeOf(b, DayType.WEEKDAY);
+        CrowdTime weekend = crowdTimeOf(b, DayType.WEEKEND);
+
+        BakeryAiSearch search = BakeryAiSearch.builder().open(false).build();
+        when(bakeryRepository.searchForAi(any(BakeryAiSearch.class))).thenReturn(List.of(b));
+        when(breadRepository.findAllByBakeryIdIn(List.of(1L))).thenReturn(List.of());
+        when(crowdTimeRepository.findAllByBakeryIdIn(List.of(1L)))
+                .thenReturn(List.of(weekday, weekend));
+
+        var responses = bakeryService.findAllForAi(search);
+
+        assertThat(responses.get(0).getCrowdTimes()).hasSize(2);
+    }
+
+    @Test
+    void findAllForAi_filters_crowd_times_to_weekday_when_weekday_open() {
+        Bakery b = bakeryWithId(1L);
+        CrowdTime weekday = crowdTimeOf(b, DayType.WEEKDAY);
+        CrowdTime weekend = crowdTimeOf(b, DayType.WEEKEND);
+
+        // 2025-05-19 is Monday
+        BakeryAiSearch search =
+                BakeryAiSearch.builder().open(true).visitDate(LocalDate.of(2025, 5, 19)).build();
+        when(bakeryRepository.searchForAi(any(BakeryAiSearch.class))).thenReturn(List.of(b));
+        when(breadRepository.findAllByBakeryIdIn(List.of(1L))).thenReturn(List.of());
+        when(crowdTimeRepository.findAllByBakeryIdIn(List.of(1L)))
+                .thenReturn(List.of(weekday, weekend));
+
+        var responses = bakeryService.findAllForAi(search);
+
+        assertThat(responses.get(0).getCrowdTimes()).hasSize(1);
+        assertThat(responses.get(0).getCrowdTimes().get(0).getDayType()).isEqualTo("WEEKDAY");
+    }
+
+    @Test
+    void findAllForAi_filters_crowd_times_to_weekend_when_weekend_open() {
+        Bakery b = bakeryWithId(1L);
+        CrowdTime weekday = crowdTimeOf(b, DayType.WEEKDAY);
+        CrowdTime weekend = crowdTimeOf(b, DayType.WEEKEND);
+
+        // 2025-05-17 is Saturday
+        BakeryAiSearch search =
+                BakeryAiSearch.builder().open(true).visitDate(LocalDate.of(2025, 5, 17)).build();
+        when(bakeryRepository.searchForAi(any(BakeryAiSearch.class))).thenReturn(List.of(b));
+        when(breadRepository.findAllByBakeryIdIn(List.of(1L))).thenReturn(List.of());
+        when(crowdTimeRepository.findAllByBakeryIdIn(List.of(1L)))
+                .thenReturn(List.of(weekday, weekend));
+
+        var responses = bakeryService.findAllForAi(search);
+
+        assertThat(responses.get(0).getCrowdTimes()).hasSize(1);
+        assertThat(responses.get(0).getCrowdTimes().get(0).getDayType()).isEqualTo("WEEKEND");
+    }
+
+    @Test
+    void findAllForAi_shows_weekday_hours_only_when_weekday_open() {
+        Bakery b = bakeryWithId(1L);
+        BusinessHours bh =
+                BusinessHours.builder()
+                        .weekdayOpen(LocalTime.of(9, 0))
+                        .weekdayClose(LocalTime.of(18, 0))
+                        .weekendOpen(LocalTime.of(10, 0))
+                        .weekendClose(LocalTime.of(17, 0))
+                        .build();
+        ReflectionTestUtils.setField(b, "businessHours", bh);
+
+        // 2025-05-19 is Monday
+        BakeryAiSearch search =
+                BakeryAiSearch.builder().open(true).visitDate(LocalDate.of(2025, 5, 19)).build();
+        when(bakeryRepository.searchForAi(any(BakeryAiSearch.class))).thenReturn(List.of(b));
+        when(breadRepository.findAllByBakeryIdIn(List.of(1L))).thenReturn(List.of());
+        when(crowdTimeRepository.findAllByBakeryIdIn(List.of(1L))).thenReturn(List.of());
+
+        var r = bakeryService.findAllForAi(search).get(0);
+
+        assertThat(r.getWeekdayOpen()).isEqualTo(LocalTime.of(9, 0));
+        assertThat(r.getWeekdayClose()).isEqualTo(LocalTime.of(18, 0));
+        assertThat(r.getWeekendOpen()).isNull();
+        assertThat(r.getWeekendClose()).isNull();
+    }
+
+    @Test
+    void findAllForAi_shows_weekend_hours_only_when_weekend_open() {
+        Bakery b = bakeryWithId(1L);
+        BusinessHours bh =
+                BusinessHours.builder()
+                        .weekdayOpen(LocalTime.of(9, 0))
+                        .weekdayClose(LocalTime.of(18, 0))
+                        .weekendOpen(LocalTime.of(10, 0))
+                        .weekendClose(LocalTime.of(17, 0))
+                        .build();
+        ReflectionTestUtils.setField(b, "businessHours", bh);
+
+        // 2025-05-17 is Saturday
+        BakeryAiSearch search =
+                BakeryAiSearch.builder().open(true).visitDate(LocalDate.of(2025, 5, 17)).build();
+        when(bakeryRepository.searchForAi(any(BakeryAiSearch.class))).thenReturn(List.of(b));
+        when(breadRepository.findAllByBakeryIdIn(List.of(1L))).thenReturn(List.of());
+        when(crowdTimeRepository.findAllByBakeryIdIn(List.of(1L))).thenReturn(List.of());
+
+        var r = bakeryService.findAllForAi(search).get(0);
+
+        assertThat(r.getWeekendOpen()).isEqualTo(LocalTime.of(10, 0));
+        assertThat(r.getWeekendClose()).isEqualTo(LocalTime.of(17, 0));
+        assertThat(r.getWeekdayOpen()).isNull();
+        assertThat(r.getWeekdayClose()).isNull();
+    }
+
+    @Test
+    void findAllForAi_shows_all_hours_when_open_false() {
+        Bakery b = bakeryWithId(1L);
+        BusinessHours bh =
+                BusinessHours.builder()
+                        .weekdayOpen(LocalTime.of(9, 0))
+                        .weekdayClose(LocalTime.of(18, 0))
+                        .weekendOpen(LocalTime.of(10, 0))
+                        .weekendClose(LocalTime.of(17, 0))
+                        .build();
+        ReflectionTestUtils.setField(b, "businessHours", bh);
+
+        BakeryAiSearch search = BakeryAiSearch.builder().open(false).build();
+        when(bakeryRepository.searchForAi(any(BakeryAiSearch.class))).thenReturn(List.of(b));
+        when(breadRepository.findAllByBakeryIdIn(List.of(1L))).thenReturn(List.of());
+        when(crowdTimeRepository.findAllByBakeryIdIn(List.of(1L))).thenReturn(List.of());
+
+        var r = bakeryService.findAllForAi(search).get(0);
+
+        assertThat(r.getWeekdayOpen()).isEqualTo(LocalTime.of(9, 0));
+        assertThat(r.getWeekdayClose()).isEqualTo(LocalTime.of(18, 0));
+        assertThat(r.getWeekendOpen()).isEqualTo(LocalTime.of(10, 0));
+        assertThat(r.getWeekendClose()).isEqualTo(LocalTime.of(17, 0));
+    }
+
+    @Test
+    void findOneForAi_returns_response_with_all_breads_and_crowd_times() {
+        Bakery b = bakeryWithId(1L);
+        Bread bread =
+                Bread.builder()
+                        .name("소금빵")
+                        .price(2500)
+                        .imageUrl(null)
+                        .bakery(b)
+                        .breadType(BreadType.BREAD)
+                        .signature(true)
+                        .selloutMin(0)
+                        .build();
+        CrowdTime weekday = crowdTimeOf(b, DayType.WEEKDAY);
+        CrowdTime weekend = crowdTimeOf(b, DayType.WEEKEND);
+
+        when(bakeryRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(b));
+        when(breadRepository.findAllByBakeryIdIn(List.of(1L))).thenReturn(List.of(bread));
+        when(crowdTimeRepository.findAllByBakeryIdIn(List.of(1L)))
+                .thenReturn(List.of(weekday, weekend));
+
+        var result = bakeryService.findOneForAi(1L);
+
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getBreads()).hasSize(1);
+        assertThat(result.getCrowdTimes()).hasSize(2);
+    }
+
+    @Test
+    void findOneForAi_throws_when_bakery_missing() {
+        when(bakeryRepository.findByIdAndActiveTrue(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> bakeryService.findOneForAi(99L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.BAKERY_NOT_FOUND);
+    }
+
+    @Test
+    void findAllForAi_returns_empty_when_no_bakeries() {
+        BakeryAiSearch search = BakeryAiSearch.builder().build();
+        when(bakeryRepository.searchForAi(any(BakeryAiSearch.class))).thenReturn(List.of());
+        when(breadRepository.findAllByBakeryIdIn(List.of())).thenReturn(List.of());
+        when(crowdTimeRepository.findAllByBakeryIdIn(List.of())).thenReturn(List.of());
+
+        var responses = bakeryService.findAllForAi(search);
+
+        assertThat(responses).isEmpty();
     }
 
     @Test
@@ -847,5 +1029,17 @@ class BakeryServiceTest {
         ReflectionTestUtils.setField(request, "content", content);
         ReflectionTestUtils.setField(request, "rating", rating);
         return request;
+    }
+
+    private static CrowdTime crowdTimeOf(Bakery bakery, DayType dayType) {
+        return CrowdTime.builder()
+                .dayType(dayType)
+                .crowdLevel(CrowdLevel.LOW)
+                .peakStart(null)
+                .peakEnd(null)
+                .expectedWaitMin(null)
+                .sourceType("test")
+                .bakery(bakery)
+                .build();
     }
 }

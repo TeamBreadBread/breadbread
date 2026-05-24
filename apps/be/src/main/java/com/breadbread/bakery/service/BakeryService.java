@@ -11,6 +11,9 @@ import com.breadbread.global.service.GcsService;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -39,8 +42,8 @@ public class BakeryService {
     private final CourseDrivingRouteRepository courseDrivingRouteRepository;
 
     @Transactional(readOnly = true)
-    public List<BakeryAiResponse> findAllForAi() {
-        List<Bakery> bakeries = bakeryRepository.findAllByActiveTrue();
+    public List<BakeryAiResponse> findAllForAi(BakeryAiSearch search) {
+        List<Bakery> bakeries = bakeryRepository.searchForAi(search);
         List<Long> ids = bakeries.stream().map(Bakery::getId).toList();
 
         Map<Long, List<Bread>> breadMap =
@@ -51,14 +54,50 @@ public class BakeryService {
                 crowdTimeRepository.findAllByBakeryIdIn(ids).stream()
                         .collect(Collectors.groupingBy(ct -> ct.getBakery().getId()));
 
+        DayType targetDayType = null;
+        if (search.isOpen()) {
+            LocalDate date =
+                    search.getVisitDate() != null
+                            ? search.getVisitDate()
+                            : LocalDate.now(ZoneId.of("Asia/Seoul"));
+            DayOfWeek dow = date.getDayOfWeek();
+            targetDayType =
+                    (dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY)
+                            ? DayType.WEEKEND
+                            : DayType.WEEKDAY;
+        }
+
+        final DayType dayTypeFilter = targetDayType;
         return bakeries.stream()
                 .map(
-                        b ->
-                                BakeryAiResponse.from(
-                                        b,
-                                        breadMap.getOrDefault(b.getId(), List.of()),
-                                        crowdTimeMap.getOrDefault(b.getId(), List.of())))
+                        b -> {
+                            List<CrowdTime> crowdTimes =
+                                    crowdTimeMap.getOrDefault(b.getId(), List.of());
+                            if (dayTypeFilter != null) {
+                                crowdTimes =
+                                        crowdTimes.stream()
+                                                .filter(ct -> ct.getDayType() == dayTypeFilter)
+                                                .toList();
+                            }
+                            return BakeryAiResponse.from(
+                                    b,
+                                    breadMap.getOrDefault(b.getId(), List.of()),
+                                    crowdTimes,
+                                    dayTypeFilter);
+                        })
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public BakeryAiResponse findOneForAi(Long id) {
+        Bakery bakery =
+                bakeryRepository
+                        .findByIdAndActiveTrue(id)
+                        .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
+        List<Long> ids = List.of(id);
+        List<Bread> breads = breadRepository.findAllByBakeryIdIn(ids);
+        List<CrowdTime> crowdTimes = crowdTimeRepository.findAllByBakeryIdIn(ids);
+        return BakeryAiResponse.from(bakery, breads, crowdTimes, null);
     }
 
     @Transactional(readOnly = true)

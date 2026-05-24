@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.Set;
 import lombok.*;
 
@@ -60,11 +61,15 @@ public class BusinessHours {
     }
 
     public LocalTime getTodayOpen() {
-        return isWeekend(LocalDate.now().getDayOfWeek()) ? weekendOpen : weekdayOpen;
+        return isWeekend(LocalDate.now(ZoneId.of("Asia/Seoul")).getDayOfWeek())
+                ? weekendOpen
+                : weekdayOpen;
     }
 
     public LocalTime getTodayClose() {
-        return isWeekend(LocalDate.now().getDayOfWeek()) ? weekendClose : weekdayClose;
+        return isWeekend(LocalDate.now(ZoneId.of("Asia/Seoul")).getDayOfWeek())
+                ? weekendClose
+                : weekdayClose;
     }
 
     private boolean isWeekend(DayOfWeek day) {

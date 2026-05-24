@@ -97,7 +97,8 @@ public class AiCourseAsyncService {
                                                                                 List.of()),
                                                                         crowdTimeMap.getOrDefault(
                                                                                 b.getId(),
-                                                                                List.of())))
+                                                                                List.of()),
+                                                                        null))
                                                 .toList();
 
                                 return AiCourseWebhookRequest.builder()
