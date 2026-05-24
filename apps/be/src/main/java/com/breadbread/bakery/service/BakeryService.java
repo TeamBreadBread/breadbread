@@ -89,6 +89,18 @@ public class BakeryService {
     }
 
     @Transactional(readOnly = true)
+    public BakeryAiResponse findOneForAi(Long id) {
+        Bakery bakery =
+                bakeryRepository
+                        .findByIdAndActiveTrue(id)
+                        .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
+        List<Long> ids = List.of(id);
+        List<Bread> breads = breadRepository.findAllByBakeryIdIn(ids);
+        List<CrowdTime> crowdTimes = crowdTimeRepository.findAllByBakeryIdIn(ids);
+        return BakeryAiResponse.from(bakery, breads, crowdTimes, null);
+    }
+
+    @Transactional(readOnly = true)
     public BakeryListResponse search(BakerySearch search, Pageable pageable, Long userId) {
         Page<Bakery> result = bakeryRepository.search(search, pageable);
         List<Bakery> bakeries = result.getContent();

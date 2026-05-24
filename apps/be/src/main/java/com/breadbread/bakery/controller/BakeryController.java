@@ -108,6 +108,13 @@ public class BakeryController {
         return ApiResponse.ok(bakeryService.search(search, PageRequest.of(page, size), userId));
     }
 
+    @Operation(summary = "AI용 빵집 상세 조회", description = "평일/주말 혼잡도·영업시간 전체 반환, null 필드 제외")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200")
+    @GetMapping("/ai/{id}")
+    public ApiResponse<BakeryAiResponse> findOneForAi(@PathVariable Long id) {
+        return ApiResponse.ok(bakeryService.findOneForAi(id));
+    }
+
     @Operation(summary = "빵집 상세 조회")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200")
     @GetMapping("/{id}")

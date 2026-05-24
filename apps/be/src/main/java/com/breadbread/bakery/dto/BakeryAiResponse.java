@@ -25,6 +25,7 @@ public class BakeryAiResponse {
     private boolean dineInAvailable;
     private boolean parkingAvailable;
     private boolean drinkAvailable;
+    private int estimatedStayMinutes;
     private String bakeryType;
     private LocalTime appearanceTime;
     private String frequency;
@@ -58,6 +59,7 @@ public class BakeryAiResponse {
                 .dineInAvailable(bakery.isDineInAvailable())
                 .parkingAvailable(bakery.isParkingAvailable())
                 .drinkAvailable(bakery.isDrinkAvailable())
+                .estimatedStayMinutes(bakery.getEstimatedStayMinutes())
                 .bakeryType(bakery.getBakeryType() != null ? bakery.getBakeryType().name() : null)
                 .appearanceTime(bakery.getAppearanceTime())
                 .frequency(bakery.getFrequency() != null ? bakery.getFrequency().name() : null)

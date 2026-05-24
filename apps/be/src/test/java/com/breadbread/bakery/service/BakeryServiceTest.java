@@ -242,6 +242,44 @@ class BakeryServiceTest {
     }
 
     @Test
+    void findOneForAi_returns_response_with_all_breads_and_crowd_times() {
+        Bakery b = bakeryWithId(1L);
+        Bread bread =
+                Bread.builder()
+                        .name("소금빵")
+                        .price(2500)
+                        .imageUrl(null)
+                        .bakery(b)
+                        .breadType(BreadType.BREAD)
+                        .signature(true)
+                        .selloutMin(0)
+                        .build();
+        CrowdTime weekday = crowdTimeOf(b, DayType.WEEKDAY);
+        CrowdTime weekend = crowdTimeOf(b, DayType.WEEKEND);
+
+        when(bakeryRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(b));
+        when(breadRepository.findAllByBakeryIdIn(List.of(1L))).thenReturn(List.of(bread));
+        when(crowdTimeRepository.findAllByBakeryIdIn(List.of(1L)))
+                .thenReturn(List.of(weekday, weekend));
+
+        var result = bakeryService.findOneForAi(1L);
+
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getBreads()).hasSize(1);
+        assertThat(result.getCrowdTimes()).hasSize(2);
+    }
+
+    @Test
+    void findOneForAi_throws_when_bakery_missing() {
+        when(bakeryRepository.findByIdAndActiveTrue(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> bakeryService.findOneForAi(99L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.BAKERY_NOT_FOUND);
+    }
+
+    @Test
     void findAllForAi_returns_empty_when_no_bakeries() {
         BakeryAiSearch search = BakeryAiSearch.builder().build();
         when(bakeryRepository.searchForAi(any(BakeryAiSearch.class))).thenReturn(List.of());
