@@ -46,7 +46,7 @@ public class KakaoDrivingRouteClient implements DrivingRouteClient {
         KakaoDirectionsResponse response = callApi(url);
         log.info("[Kakao 경로] 완료: elapsed={}ms", System.currentTimeMillis() - startTime);
 
-        return toRouteResult(response);
+        return toRouteResult(response, destination);
     }
 
     private String buildUrl(Coordinate origin, Coordinate destination, List<Coordinate> waypoints) {
@@ -115,7 +115,7 @@ public class KakaoDrivingRouteClient implements DrivingRouteClient {
         }
     }
 
-    private RouteResult toRouteResult(KakaoDirectionsResponse response) {
+    private RouteResult toRouteResult(KakaoDirectionsResponse response, Coordinate destination) {
         if (response.getRoutes() == null || response.getRoutes().isEmpty()) {
             log.error("[Kakao 경로] routes 없음");
             throw new CustomException(ErrorCode.ROUTE_NOT_FOUND);
@@ -162,6 +162,13 @@ public class KakaoDrivingRouteClient implements DrivingRouteClient {
 
         if (path.isEmpty()) {
             throw new CustomException(ErrorCode.ROUTE_NOT_FOUND);
+        }
+
+        // Kakao road vertexes가 destination 좌표까지 포함하지 않는 경우 보정
+        Coordinate last = path.get(path.size() - 1);
+        if (Math.abs(last.getLat() - destination.getLat()) > 1e-6
+                || Math.abs(last.getLng() - destination.getLng()) > 1e-6) {
+            path.add(destination);
         }
 
         log.info(
