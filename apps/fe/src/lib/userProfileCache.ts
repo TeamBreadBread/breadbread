@@ -9,8 +9,10 @@ export type CachedUserProfile = {
   userId?: number;
   loginId: string;
   name: string;
+  nickname?: string;
   email: string;
   phone?: string;
+  profileImageUrl?: string;
 };
 
 const STORAGE_KEY = "breadbread_user_profile";
@@ -89,8 +91,10 @@ export function seedProfileCacheThenRefreshFromServer(loginId: string): void {
   saveUserProfile({
     loginId: trimmed,
     name: getDisplayNameForLoginId(trimmed),
+    nickname: "",
     email: "",
     phone: "",
+    profileImageUrl: "",
   });
   void getMyProfile()
     .then((me) => {
@@ -99,8 +103,10 @@ export function seedProfileCacheThenRefreshFromServer(loginId: string): void {
         userId: me.userId != null ? Number(me.userId) : undefined,
         loginId: id,
         name: me.name?.trim() || getDisplayNameForLoginId(id),
+        nickname: me.nickname?.trim() || "",
         email: me.email ?? "",
         phone: me.phone ?? "",
+        profileImageUrl: me.profileImageUrl ?? "",
       });
     })
     .catch(() => {
@@ -117,8 +123,10 @@ export function refreshProfileCacheFromServer(): void {
         userId: me.userId != null ? Number(me.userId) : undefined,
         loginId: me.loginId?.trim() || id,
         name: me.name?.trim() || getDisplayNameForLoginId(id),
+        nickname: me.nickname?.trim() || "",
         email: me.email ?? "",
         phone: me.phone ?? "",
+        profileImageUrl: me.profileImageUrl ?? "",
       });
     })
     .catch(() => {

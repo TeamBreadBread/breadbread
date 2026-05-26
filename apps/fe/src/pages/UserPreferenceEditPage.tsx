@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { getErrorMessage } from "@/api/types/common";
+import { ApiBusinessError, getErrorMessage } from "@/api/types/common";
 import {
   getMyPreference,
+  savePreference,
   updateMyPreference,
   type BakeryPersonality,
   type BakeryType,
@@ -35,6 +36,15 @@ function sortUnique<T extends string>(values: T[]): T[] {
   return [...new Set(values)].sort();
 }
 
+function isMissingPreferenceError(error: unknown): boolean {
+  return (
+    error instanceof ApiBusinessError &&
+    (error.code === "E0403" ||
+      error.status === 404 ||
+      /선호도 조사 결과가 없습니다/.test(error.message ?? ""))
+  );
+}
+
 export default function UserPreferenceEditPage() {
   const navigate = useNavigate();
   const [questions, setQuestions] = useState<PreferenceQuestion[]>(
@@ -43,6 +53,7 @@ export default function UserPreferenceEditPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [originalSnapshot, setOriginalSnapshot] = useState<PreferenceSnapshot | null>(null);
+  const [hasExistingPreference, setHasExistingPreference] = useState(true);
 
   const handleToggleOption = (questionId: string, optionId: string) => {
     setQuestions((prevQuestions) =>
@@ -128,6 +139,7 @@ export default function UserPreferenceEditPage() {
         const preference = await getMyPreference();
         if (!mounted) return;
 
+        setHasExistingPreference(true);
         setQuestions(hydrateQuestionsFromMyPreference(preference));
 
         setOriginalSnapshot({
@@ -137,6 +149,18 @@ export default function UserPreferenceEditPage() {
           waitingTolerance: preference.waitingTolerance ?? null,
         });
       } catch (error) {
+        if (isMissingPreferenceError(error)) {
+          if (!mounted) return;
+          setHasExistingPreference(false);
+          setQuestions(INITIAL_USER_PREFERENCE_QUESTIONS);
+          setOriginalSnapshot({
+            bakeryTypes: [],
+            bakeryPersonalities: [],
+            bakeryUseTypes: [],
+            waitingTolerance: null,
+          });
+          return;
+        }
         window.alert(getErrorMessage(error));
         navigate({ to: "/my" });
       } finally {
@@ -155,13 +179,26 @@ export default function UserPreferenceEditPage() {
       return;
     try {
       setIsSubmitting(true);
-      await updateMyPreference({
+      const payload = {
         bakeryTypes: currentSnapshot.bakeryTypes,
         bakeryPersonalities: currentSnapshot.bakeryPersonalities,
         bakeryUseTypes: currentSnapshot.bakeryUseTypes,
         waitingTolerance: currentSnapshot.waitingTolerance,
-      });
-      window.alert("수정을 완료했습니다.");
+      };
+
+      if (hasExistingPreference) {
+        try {
+          await updateMyPreference(payload);
+          window.alert("수정을 완료했습니다.");
+        } catch (error) {
+          if (!isMissingPreferenceError(error)) throw error;
+          await savePreference(payload);
+          window.alert("선호도를 저장했습니다.");
+        }
+      } else {
+        await savePreference(payload);
+        window.alert("선호도를 저장했습니다.");
+      }
       navigate({ to: "/my" });
     } catch (error) {
       window.alert(getErrorMessage(error));
@@ -179,7 +216,12 @@ export default function UserPreferenceEditPage() {
           <p className="px-x5 py-x3 text-size-4 text-gray-700">내 선호도 불러오는 중...</p>
         ) : null}
 
-        <PreferenceIntroSection title={"현재 선호도를 수정해 주세요"} description="설명 문구" />
+        <PreferenceIntroSection
+          title={
+            hasExistingPreference ? "현재 선호도를 수정해 주세요" : "선호도를 먼저 선택해 주세요"
+          }
+          description="설명 문구"
+        />
 
         <div className="flex flex-col gap-x2_5">
           {questions.map((question) => {
@@ -211,7 +253,7 @@ export default function UserPreferenceEditPage() {
       <BottomDoubleCTA
         placement="fixed"
         leftText="취소하기"
-        rightText={isSubmitting ? "저장 중..." : "수정하기"}
+        rightText={isSubmitting ? "저장 중..." : hasExistingPreference ? "수정하기" : "저장하기"}
         rightDisabled={isLoading || !allQuestionsAnswered || !hasChanges || isSubmitting}
         onLeftClick={() => navigate({ to: "/my" })}
         onRightClick={handleSubmit}

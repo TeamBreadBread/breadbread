@@ -1,5 +1,7 @@
 import { apiClient, extractData } from "@/api/client";
 import { ApiBusinessError, type ApiEnvelope } from "@/api/types/common";
+import type { BakeryListItem } from "@/api/types/bakery";
+import type { CourseSummaryItem } from "@/api/courses";
 
 const PATH = "/users";
 
@@ -13,6 +15,66 @@ export type MyProfileResponse = {
   nickname?: string | null;
   grade?: string | null;
   profileImageUrl?: string | null;
+};
+
+export type UpdateMyProfileRequest = {
+  nickname?: string;
+  email?: string;
+  profileImageUrl?: string;
+};
+
+export type ChangeMyPhoneRequest = {
+  phone: string;
+  verificationToken: string;
+};
+
+export type ChangeMyPasswordRequest = {
+  currentPassword: string;
+  newPassword: string;
+  newPasswordConfirm: string;
+};
+
+export type MyReviewItem = {
+  reviewId: number;
+  bakeryId: number;
+  bakeryName: string;
+  rating: number;
+  content: string;
+  imageUrls: string[];
+  createdAt: string;
+};
+
+export type MyReviewsResponse = {
+  reviews: MyReviewItem[];
+  total: number;
+  page: number;
+  size: number;
+  hasNext: boolean;
+};
+
+export type LikedCoursesResponse = {
+  courses: Array<
+    CourseSummaryItem & {
+      saved: boolean;
+    }
+  >;
+  total: number;
+  page: number;
+  size: number;
+  hasNext: boolean;
+};
+
+export type LikedBakeriesResponse = {
+  bakeries: BakeryListItem[];
+  total: number;
+  page: number;
+  size: number;
+  hasNext: boolean;
+};
+
+export type PaginationParams = {
+  page?: number;
+  size?: number;
 };
 
 /** `BakeryType` 나열값 — Swagger 참고 */
@@ -107,5 +169,64 @@ export async function submitUserPreference(payload: UserPreferenceRequest): Prom
 
 export async function getMyProfile(): Promise<MyProfileResponse> {
   const { data } = await apiClient.get<ApiEnvelope<MyProfileResponse>>(`${PATH}/me`);
+  return extractData(data);
+}
+
+export async function updateMyProfile(body: UpdateMyProfileRequest): Promise<void> {
+  const { data } = await apiClient.patch<ApiEnvelope<Record<string, never>>>(`${PATH}/me`, body);
+  extractData(data);
+}
+
+export async function updateMyPhone(body: ChangeMyPhoneRequest): Promise<void> {
+  const { data } = await apiClient.patch<ApiEnvelope<Record<string, never>>>(
+    `${PATH}/me/phone`,
+    body,
+  );
+  extractData(data);
+}
+
+export async function updateMyPassword(body: ChangeMyPasswordRequest): Promise<void> {
+  const { data } = await apiClient.patch<ApiEnvelope<Record<string, never>>>(
+    `${PATH}/me/password`,
+    body,
+  );
+  extractData(data);
+}
+
+export async function getMyReviews(params: PaginationParams = {}): Promise<MyReviewsResponse> {
+  const { data } = await apiClient.get<ApiEnvelope<MyReviewsResponse>>(`${PATH}/me/reviews`, {
+    params: { page: params.page ?? 0, size: params.size ?? 10 },
+  });
+  return extractData(data);
+}
+
+export async function getLikedCourses(
+  params: PaginationParams = {},
+): Promise<LikedCoursesResponse> {
+  const { data } = await apiClient.get<ApiEnvelope<LikedCoursesResponse>>(
+    `${PATH}/me/liked/courses`,
+    {
+      params: { page: params.page ?? 0, size: params.size ?? 10 },
+    },
+  );
+  return extractData(data);
+}
+
+export async function getLikedBakeries(
+  params: PaginationParams = {},
+): Promise<LikedBakeriesResponse> {
+  const { data } = await apiClient.get<ApiEnvelope<LikedBakeriesResponse>>(
+    `${PATH}/me/liked/bakeries`,
+    {
+      params: { page: params.page ?? 0, size: params.size ?? 10 },
+    },
+  );
+  return extractData(data);
+}
+
+export async function checkNicknameAvailable(nickname: string): Promise<boolean> {
+  const { data } = await apiClient.get<ApiEnvelope<boolean>>(`${PATH}/check-nickname`, {
+    params: { nickname },
+  });
   return extractData(data);
 }

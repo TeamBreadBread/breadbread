@@ -22,6 +22,7 @@ export default function MyPage() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [profile, setProfile] = useState(() => getUserProfile());
   const displayName = useMemo(() => {
+    if (profile?.nickname?.trim()) return profile.nickname.trim();
     if (profile?.name?.trim()) return profile.name.trim();
     if (profile?.loginId?.trim()) return getDisplayNameForLoginId(profile.loginId);
     return "회원";
@@ -58,8 +59,10 @@ export default function MyPage() {
           userId: me.userId != null ? Number(me.userId) : undefined,
           loginId: me.loginId?.trim() || "",
           name: me.name,
+          nickname: me.nickname?.trim() || "",
           email: me.email ?? "",
           phone: me.phone ?? "",
+          profileImageUrl: me.profileImageUrl ?? "",
         };
         saveUserProfile(nextProfile);
         setProfile(nextProfile);
@@ -83,7 +86,17 @@ export default function MyPage() {
     },
     { id: "my-routes", label: "내 루트 목록", onClick: () => navigate({ to: "/route" }) },
     { id: "reservation", label: "예약 내역", onClick: () => navigate({ to: "/my-reservations" }) },
-    { id: "review", label: "내가 쓴 리뷰" },
+    { id: "review", label: "내가 쓴 리뷰", onClick: () => navigate({ to: "/my-reviews" }) },
+    {
+      id: "liked-courses",
+      label: "좋아요한 코스",
+      onClick: () => navigate({ to: "/my-liked-courses" }),
+    },
+    {
+      id: "liked-bakeries",
+      label: "좋아요한 빵집",
+      onClick: () => navigate({ to: "/my-liked-bakeries" }),
+    },
     { id: "badge", label: "획득한 뱃지" },
   ];
 

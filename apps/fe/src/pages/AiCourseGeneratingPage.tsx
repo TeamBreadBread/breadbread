@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { getCourseDetail, saveCourseRoute } from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
-import { AI_COURSE_MAX_WAIT_SECONDS, pollAiCourseStatus } from "@/utils/pollAiCourseStatus";
+import { AI_COURSE_ESTIMATED_WAIT_SECONDS, pollAiCourseStatus } from "@/utils/pollAiCourseStatus";
 import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
 
 type AiCourseGeneratingPageProps = {
@@ -12,7 +12,7 @@ type AiCourseGeneratingPageProps = {
 
 export default function AiCourseGeneratingPage({ jobId }: AiCourseGeneratingPageProps) {
   const navigate = useNavigate();
-  const [secondsLeft, setSecondsLeft] = useState(AI_COURSE_MAX_WAIT_SECONDS);
+  const [secondsLeft, setSecondsLeft] = useState(AI_COURSE_ESTIMATED_WAIT_SECONDS);
 
   useEffect(() => {
     const timer = window.setInterval(() => {

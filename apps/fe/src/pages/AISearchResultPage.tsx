@@ -1,6 +1,6 @@
 import { AppTopBar, Button } from "@/components/common";
 import { useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MobileFrame } from "@/components/layout";
 import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
 import { cn } from "@/utils/cn";
@@ -8,12 +8,16 @@ import CourseTimeline from "@/components/domain/ai-course/CourseTimeline";
 import ResultSummaryCard from "@/components/domain/ai-course/ResultSummaryCard";
 import type { CoursePlace, CourseSummary } from "@/components/domain/ai-course/types";
 import { getDevFallbackCourseId } from "@/lib/courseIdFallback";
+import {
+  getAiCourseDepartureMarkerLabel,
+  getLatestAiCourseDepartureCoords,
+} from "@/lib/aiCourseDepartureCoords";
 import CourseKakaoMap from "@/components/domain/ai-course/CourseKakaoMap";
 import { courseBakeriesToMapPoints } from "@/components/domain/ai-course/courseMapPoints";
 import handleArrow from "@/assets/icons/handle_arrowup.png";
 import { useAiSearchBottomSheet } from "@/hooks/useAiSearchBottomSheet";
 import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
-import type { CourseDetail } from "@/api/courses";
+import { getCourseDirections, type CourseDetail, type CourseDirectionPoint } from "@/api/courses";
 import { likeCourse, unlikeCourse } from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
 
@@ -47,6 +51,10 @@ type AISearchResultPageProps = {
 export default function AISearchResultPage({ courseId }: AISearchResultPageProps) {
   const navigate = useNavigate();
   const effectiveCourseId = courseId ?? getDevFallbackCourseId();
+  const [roadPathResult, setRoadPathResult] = useState<{
+    courseId: number;
+    path: CourseDirectionPoint[] | null;
+  } | null>(null);
   const storedCourseDetail = useMemo((): CourseDetail | null => {
     if (typeof window === "undefined") return null;
     const raw = sessionStorage.getItem(AI_COURSE_RESULT_STORAGE_KEY);
@@ -75,6 +83,61 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
     if (!storedCourseDetail?.bakeries?.length) return [];
     return courseBakeriesToMapPoints(storedCourseDetail.bakeries);
   }, [storedCourseDetail]);
+
+  const departurePoint = useMemo(() => {
+    const departure = getLatestAiCourseDepartureCoords();
+    if (!departure) return null;
+    return {
+      lat: departure.latitude,
+      lng: departure.longitude,
+      label: departure.markerLabel?.trim() || "출발지",
+    };
+  }, []);
+
+  const roadPath = useMemo(() => {
+    if (!effectiveCourseId) return null;
+    if (roadPathResult?.courseId !== effectiveCourseId) return undefined;
+    return roadPathResult.path;
+  }, [effectiveCourseId, roadPathResult]);
+
+  const visibleDeparturePoint = useMemo(() => {
+    if (departurePoint) return departurePoint;
+    const fallback = roadPath?.[0];
+    if (!fallback) return null;
+    return {
+      lat: fallback.lat,
+      lng: fallback.lng,
+      label: getAiCourseDepartureMarkerLabel()?.trim() || "출발지",
+    };
+  }, [departurePoint, roadPath]);
+
+  useEffect(() => {
+    if (!effectiveCourseId) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const directions = await getCourseDirections(effectiveCourseId);
+        if (cancelled) return;
+        const path = (directions.path ?? []).filter(
+          (point) => Number.isFinite(point.lat) && Number.isFinite(point.lng),
+        );
+        setRoadPathResult({
+          courseId: effectiveCourseId,
+          path: path.length > 1 ? path : null,
+        });
+      } catch {
+        if (!cancelled) {
+          setRoadPathResult({ courseId: effectiveCourseId, path: null });
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveCourseId]);
 
   const dynamicPlaces: CoursePlace[] | null = useMemo(() => {
     if (!storedCourseDetail) return null;
@@ -154,7 +217,12 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
         }}
         aria-hidden={false}
       >
-        <CourseKakaoMap bakeries={mapBakeries} className="h-full w-full" />
+        <CourseKakaoMap
+          bakeries={mapBakeries}
+          departurePoint={visibleDeparturePoint}
+          routePath={roadPath}
+          className="h-full w-full"
+        />
       </div>
 
       <div className="pointer-events-none relative z-10">
