@@ -52,7 +52,10 @@ public class FcmService {
             return;
         }
 
+        log.info("FCM 전송 시작: userId={}, 토큰 수={}, title={}", userId, tokens.size(), title);
+
         for (FcmToken fcmToken : tokens) {
+            String tokenSuffix = tokenSuffix(fcmToken.getToken());
             try {
                 Message.Builder builder =
                         Message.builder()
@@ -67,23 +70,36 @@ public class FcmService {
                     builder.putAllData(data);
                 }
 
-                FirebaseMessaging.getInstance().send(builder.build());
-                log.info("FCM 전송 성공: userId={}, title={}", userId, title);
+                String messageId = FirebaseMessaging.getInstance().send(builder.build());
+                log.info(
+                        "FCM 전송 성공: userId={}, token=...{}, messageId={}",
+                        userId,
+                        tokenSuffix,
+                        messageId);
             } catch (FirebaseMessagingException e) {
                 log.warn(
-                        "FCM 전송 실패: userId={}, token={}, errorCode={}",
+                        "FCM 전송 실패: userId={}, token=...{}, errorCode={}, message={}",
                         userId,
-                        fcmToken.getToken(),
-                        e.getMessagingErrorCode());
-                // 만료되거나 유효하지 않은 토큰 삭제
+                        tokenSuffix,
+                        e.getMessagingErrorCode(),
+                        e.getMessage());
                 if (e.getMessagingErrorCode() == MessagingErrorCode.UNREGISTERED
                         || e.getMessagingErrorCode() == MessagingErrorCode.INVALID_ARGUMENT) {
                     fcmTokenRepository.deleteByToken(fcmToken.getToken());
-                    log.info("FCM 만료 토큰 삭제: userId={}", userId);
+                    log.info("FCM 만료 토큰 삭제: userId={}, token=...{}", userId, tokenSuffix);
                 }
             } catch (Exception e) {
-                log.warn("FCM 전송 중 예상치 못한 오류: userId={}, error={}", userId, e.getMessage());
+                log.warn(
+                        "FCM 전송 중 예상치 못한 오류: userId={}, token=...{}, error={}",
+                        userId,
+                        tokenSuffix,
+                        e.getMessage());
             }
         }
+    }
+
+    private static String tokenSuffix(String token) {
+        if (token == null || token.length() <= 8) return token;
+        return token.substring(token.length() - 8);
     }
 }
