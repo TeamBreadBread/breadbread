@@ -41,6 +41,7 @@ interface KakaoLatLng {
 interface KakaoMapOptions {
   center: KakaoLatLng;
   level: number;
+  draggable?: boolean;
 }
 
 interface KakaoMap {

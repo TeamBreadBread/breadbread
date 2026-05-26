@@ -64,6 +64,20 @@ export type CourseDetail = {
   bakeries: CourseBakeryDetail[];
 };
 
+export type CourseDirectionPoint = {
+  lat: number;
+  lng: number;
+};
+
+export type CourseDirections = {
+  path: CourseDirectionPoint[];
+  legs: number[];
+  stayMinutesPerBakery: number[];
+  totalTravelMinutes: number;
+  totalStayMinutes: number;
+  totalMinutes: number;
+};
+
 export type GetCoursesParams = {
   region?: string;
   breadType?: BreadType;
@@ -119,6 +133,13 @@ export async function getCourses(params?: GetCoursesParams): Promise<CourseListR
 
 export async function getCourseDetail(courseId: number): Promise<CourseDetail> {
   const response = await apiClient.get<ApiEnvelope<CourseDetail>>(`${PATH}/${courseId}`);
+  return extractData(response.data);
+}
+
+export async function getCourseDirections(courseId: number): Promise<CourseDirections> {
+  const response = await apiClient.get<ApiEnvelope<CourseDirections>>(
+    `${PATH}/${courseId}/directions`,
+  );
   return extractData(response.data);
 }
 

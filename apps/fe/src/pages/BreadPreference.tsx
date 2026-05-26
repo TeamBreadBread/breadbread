@@ -73,6 +73,10 @@ type DepartureRecentEntry = {
 
 type SelectedBySection = Record<string, string[]>;
 
+function hasValidCoords(lat?: number, lng?: number): lat is number {
+  return Number.isFinite(lat) && Number.isFinite(lng);
+}
+
 function loadDepartureRecents(): DepartureRecentEntry[] {
   try {
     const raw = localStorage.getItem(DEPARTURE_RECENT_KEY);
@@ -85,20 +89,16 @@ function loadDepartureRecents(): DepartureRecentEntry[] {
         if (typeof item === "string" && item.trim()) {
           const { lat, lng } = parseLatLngFromPlace(item);
           const label = normalizeDepartureLabel(item);
-          return {
-            label,
-            ...(Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : {}),
-          };
+          if (!label || !hasValidCoords(lat, lng)) return null;
+          return { label, lat, lng };
         }
         if (item && typeof item === "object" && "label" in item) {
           const row = item as DepartureRecentEntry;
           const label = normalizeDepartureLabel(String(row.label ?? ""));
-          if (!label) return null;
-          return {
-            label,
-            lat: typeof row.lat === "number" ? row.lat : undefined,
-            lng: typeof row.lng === "number" ? row.lng : undefined,
-          };
+          const lat = typeof row.lat === "number" ? row.lat : undefined;
+          const lng = typeof row.lng === "number" ? row.lng : undefined;
+          if (!label || !hasValidCoords(lat, lng)) return null;
+          return { label, lat, lng };
         }
         return null;
       })
@@ -124,6 +124,7 @@ export default function BreadPreference() {
   const [selectedBySection, setSelectedBySection] = useState<SelectedBySection>({});
   const [departureKeyword, setDepartureKeyword] = useState("");
   const [departureCoords, setDepartureCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [departureMarkerLabel, setDepartureMarkerLabel] = useState<string>("출발지");
   const [isDepartureSheetOpen, setIsDepartureSheetOpen] = useState(false);
   const [sheetQuery, setSheetQuery] = useState("");
   const [recentPlaces, setRecentPlaces] = useState<DepartureRecentEntry[]>(() =>
@@ -162,12 +163,17 @@ export default function BreadPreference() {
     setIsDepartureSheetOpen(false);
   };
 
-  const confirmDeparture = (label: string, coords?: { lat: number; lng: number }) => {
+  const confirmDeparture = (
+    label: string,
+    coords: { lat: number; lng: number },
+    markerLabel = "출발지",
+  ) => {
     const t = normalizeDepartureLabel(label);
     if (!t) return;
     setDepartureKeyword(t);
-    setDepartureCoords(coords ?? null);
-    const entry: DepartureRecentEntry = coords ? { label: t, ...coords } : { label: t };
+    setDepartureCoords(coords);
+    setDepartureMarkerLabel(markerLabel);
+    const entry: DepartureRecentEntry = { label: t, ...coords };
     const next = [entry, ...recentPlaces.filter((x) => x.label !== t)];
     setRecentPlaces(next);
     saveDepartureRecents(next);
@@ -184,7 +190,11 @@ export default function BreadPreference() {
       try {
         const { latitude, longitude, accuracy } = await getAccuratePosition();
         const place = await resolveCurrentLocationPlace(latitude, longitude);
-        confirmDepartureFromPlace(place);
+        confirmDeparture(
+          formatDeparturePlaceDisplay(place),
+          { lat: place.lat, lng: place.lng },
+          "현재 위치",
+        );
 
         if (accuracy !== null && accuracy > 120) {
           window.alert(
@@ -201,7 +211,12 @@ export default function BreadPreference() {
     })();
   };
 
-  const hasDepartureResult = departureKeyword.trim().length > 0;
+  const handleManualDepartureConfirm = () => {
+    if (!sheetQueryTrimmed) return;
+    window.alert("출발지는 아래 카카오 장소 검색 결과나 현재 위치에서 선택해 주세요.");
+  };
+
+  const hasDepartureResult = departureKeyword.trim().length > 0 && departureCoords !== null;
 
   const filteredRecents = recentPlaces.filter((item) =>
     item.label.toLowerCase().includes(sheetQuery.trim().toLowerCase()),
@@ -221,11 +236,8 @@ export default function BreadPreference() {
   const canGoNext = allQuestionSectionsAnswered && hasDepartureResult;
 
   const handleGoRecommendation = () => {
-    if (!canGoNext) return;
-    const fallback = parseLatLngFromPlace(departureKeyword);
-    const lat = departureCoords?.lat ?? fallback.lat;
-    const lng = departureCoords?.lng ?? fallback.lng;
-    setAiCourseDepartureCoords(lat, lng);
+    if (!canGoNext || !departureCoords) return;
+    setAiCourseDepartureCoords(departureCoords.lat, departureCoords.lng, departureMarkerLabel);
     saveAiCoursePreferenceDraft({
       companion: selectedBySection.companion?.[0] ?? "",
       budget: selectedBySection.budget?.[0] ?? "",
@@ -327,7 +339,7 @@ export default function BreadPreference() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
-                      confirmDeparture(sheetQuery);
+                      handleManualDepartureConfirm();
                     }
                   }}
                   placeholder="예: 서울역, 강남역 2번 출구"
@@ -337,11 +349,17 @@ export default function BreadPreference() {
                   type="button"
                   aria-label="확인"
                   className="text-size-4 text-gray-700"
-                  onClick={() => confirmDeparture(sheetQuery)}
+                  onClick={handleManualDepartureConfirm}
                 >
                   ⌕
                 </button>
               </div>
+              {sheetQueryTrimmed.length > 0 ? (
+                <p className="mt-x2 px-x1 text-size-3 text-gray-600">
+                  엔터로 바로 확정되지 않습니다. 아래 카카오 장소 검색 결과에서 출발지를 선택해
+                  주세요.
+                </p>
+              ) : null}
 
               <div className="mt-x3 flex items-center justify-between border-b border-gray-200 px-x2_5 pb-x3 pt-x4">
                 <span className="text-[13px] font-bold text-gray-700">최근 검색</span>
@@ -367,12 +385,7 @@ export default function BreadPreference() {
                       type="button"
                       className="flex w-full border-b border-gray-100 px-x2_5 py-x3 text-left last:border-b-0 hover:bg-gray-100"
                       onClick={() =>
-                        confirmDeparture(
-                          item.label,
-                          item.lat !== undefined && item.lng !== undefined
-                            ? { lat: item.lat, lng: item.lng }
-                            : undefined,
-                        )
+                        confirmDeparture(item.label, { lat: item.lat!, lng: item.lng! })
                       }
                     >
                       <span className="font-pretendard text-size-5 leading-t6 text-gray-1000 line-clamp-2">
