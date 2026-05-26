@@ -13,7 +13,8 @@ export default function AccountActionSection({ items }: AccountActionSectionProp
           key={item.id}
           label={item.label}
           danger={item.danger}
-          showArrow={!item.danger}
+          showArrow={item.showArrow ?? !item.danger}
+          onClick={item.onClick}
         />
       ))}
     </section>

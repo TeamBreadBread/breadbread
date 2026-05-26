@@ -7,29 +7,68 @@ import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { getUserProfile } from "@/lib/userProfileCache";
 import { useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { getMyProfile, type MyProfileResponse } from "@/api/user";
 
 function formatKoreanMobile(phone: string | undefined): string {
   if (!phone || !/^010\d{8}$/.test(phone)) return "—";
   return `${phone.slice(0, 3)}-${phone.slice(3, 7)}-${phone.slice(7)}`;
 }
 
-const paymentItems: AccountInfo[] = [{ id: "payment", label: "결제 수단 관리" }];
-
-const accountItems: AccountInfo[] = [
-  { id: "password", label: "비밀번호 변경" },
-  { id: "withdraw", label: "회원 탈퇴", danger: true },
-];
-
 export default function AccountSettingsPage() {
   const navigate = useNavigate();
-  const p = getUserProfile();
-  const name = p?.name?.trim() || "—";
-  const email = p?.email?.trim() || "—";
+  const cachedProfile = getUserProfile();
+  const [profile, setProfile] = useState<MyProfileResponse | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void getMyProfile()
+      .then((me) => {
+        if (active) setProfile(me);
+      })
+      .catch(() => {
+        /* keep cached values */
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const name = profile?.name?.trim() || cachedProfile?.name?.trim() || "—";
+  const nickname = profile?.nickname?.trim() || "—";
+  const email = profile?.email?.trim() || cachedProfile?.email?.trim() || "—";
+  const phone = profile?.phone || cachedProfile?.phone;
   const profileItems: AccountInfo[] = [
-    { id: "name", label: "이름", value: name },
-    { id: "nickname", label: "닉네임", value: "—" },
-    { id: "email", label: "이메일", value: email },
-    { id: "phone", label: "전화번호", value: formatKoreanMobile(p?.phone) },
+    { id: "name", label: "이름", value: name, showArrow: false },
+    {
+      id: "nickname",
+      label: "닉네임",
+      value: nickname,
+      onClick: () => navigate({ to: "/account-settings/profile" }),
+    },
+    {
+      id: "email",
+      label: "이메일",
+      value: email,
+      onClick: () => navigate({ to: "/account-settings/profile" }),
+    },
+    {
+      id: "phone",
+      label: "전화번호",
+      value: formatKoreanMobile(phone),
+      onClick: () => navigate({ to: "/account-settings/phone" }),
+    },
+  ];
+  const paymentItems: AccountInfo[] = [
+    { id: "payment", label: "결제 수단 관리", showArrow: false },
+  ];
+  const accountItems: AccountInfo[] = [
+    {
+      id: "password",
+      label: "비밀번호 변경",
+      onClick: () => navigate({ to: "/account-settings/password" }),
+    },
+    { id: "withdraw", label: "회원 탈퇴", danger: true, showArrow: false },
   ];
 
   return (

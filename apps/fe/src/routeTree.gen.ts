@@ -19,8 +19,11 @@ import { Route as ResetPasswordRouteImport } from "./routes/reset-password";
 import { Route as RecommendationRouteImport } from "./routes/recommendation";
 import { Route as PreferenceRouteImport } from "./routes/preference";
 import { Route as PasswordResetSuccessRouteImport } from "./routes/password-reset-success";
+import { Route as MyReviewsRouteImport } from "./routes/my-reviews";
 import { Route as MyReservationsRouteImport } from "./routes/my-reservations";
 import { Route as MyReservationDetailRouteImport } from "./routes/my-reservation-detail";
+import { Route as MyLikedCoursesRouteImport } from "./routes/my-liked-courses";
+import { Route as MyLikedBakeriesRouteImport } from "./routes/my-liked-bakeries";
 import { Route as MyRouteImport } from "./routes/my";
 import { Route as LoginRouteImport } from "./routes/login";
 import { Route as HomeRouteImport } from "./routes/home";
@@ -47,6 +50,9 @@ import { Route as AccountSettingsRouteImport } from "./routes/account-settings";
 import { Route as IndexRouteImport } from "./routes/index";
 import { Route as RouteIndexRouteImport } from "./routes/route.index";
 import { Route as PaymentPortoneRedirectRouteImport } from "./routes/payment.portone-redirect";
+import { Route as AccountSettingsProfileRouteImport } from "./routes/account-settings.profile";
+import { Route as AccountSettingsPhoneRouteImport } from "./routes/account-settings.phone";
+import { Route as AccountSettingsPasswordRouteImport } from "./routes/account-settings.password";
 import { Route as AuthNaverCallbackRouteImport } from "./routes/auth.naver.callback";
 import { Route as AuthKakaoCallbackRouteImport } from "./routes/auth.kakao.callback";
 import { Route as AuthGoogleCallbackRouteImport } from "./routes/auth.google.callback";
@@ -101,6 +107,11 @@ const PasswordResetSuccessRoute = PasswordResetSuccessRouteImport.update({
   path: "/password-reset-success",
   getParentRoute: () => rootRouteImport,
 } as any);
+const MyReviewsRoute = MyReviewsRouteImport.update({
+  id: "/my-reviews",
+  path: "/my-reviews",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const MyReservationsRoute = MyReservationsRouteImport.update({
   id: "/my-reservations",
   path: "/my-reservations",
@@ -109,6 +120,16 @@ const MyReservationsRoute = MyReservationsRouteImport.update({
 const MyReservationDetailRoute = MyReservationDetailRouteImport.update({
   id: "/my-reservation-detail",
   path: "/my-reservation-detail",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const MyLikedCoursesRoute = MyLikedCoursesRouteImport.update({
+  id: "/my-liked-courses",
+  path: "/my-liked-courses",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const MyLikedBakeriesRoute = MyLikedBakeriesRouteImport.update({
+  id: "/my-liked-bakeries",
+  path: "/my-liked-bakeries",
   getParentRoute: () => rootRouteImport,
 } as any);
 const MyRoute = MyRouteImport.update({
@@ -241,6 +262,21 @@ const PaymentPortoneRedirectRoute = PaymentPortoneRedirectRouteImport.update({
   path: "/payment/portone-redirect",
   getParentRoute: () => rootRouteImport,
 } as any);
+const AccountSettingsProfileRoute = AccountSettingsProfileRouteImport.update({
+  id: "/profile",
+  path: "/profile",
+  getParentRoute: () => AccountSettingsRoute,
+} as any);
+const AccountSettingsPhoneRoute = AccountSettingsPhoneRouteImport.update({
+  id: "/phone",
+  path: "/phone",
+  getParentRoute: () => AccountSettingsRoute,
+} as any);
+const AccountSettingsPasswordRoute = AccountSettingsPasswordRouteImport.update({
+  id: "/password",
+  path: "/password",
+  getParentRoute: () => AccountSettingsRoute,
+} as any);
 const AuthNaverCallbackRoute = AuthNaverCallbackRouteImport.update({
   id: "/auth/naver/callback",
   path: "/auth/naver/callback",
@@ -259,7 +295,7 @@ const AuthGoogleCallbackRoute = AuthGoogleCallbackRouteImport.update({
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
-  "/account-settings": typeof AccountSettingsRoute;
+  "/account-settings": typeof AccountSettingsRouteWithChildren;
   "/ai-course-generating": typeof AiCourseGeneratingRoute;
   "/ai-search-result": typeof AiSearchResultRoute;
   "/bbangteo": typeof BbangteoRoute;
@@ -282,8 +318,11 @@ export interface FileRoutesByFullPath {
   "/home": typeof HomeRoute;
   "/login": typeof LoginRoute;
   "/my": typeof MyRoute;
+  "/my-liked-bakeries": typeof MyLikedBakeriesRoute;
+  "/my-liked-courses": typeof MyLikedCoursesRoute;
   "/my-reservation-detail": typeof MyReservationDetailRoute;
   "/my-reservations": typeof MyReservationsRoute;
+  "/my-reviews": typeof MyReviewsRoute;
   "/password-reset-success": typeof PasswordResetSuccessRoute;
   "/preference": typeof PreferenceRoute;
   "/recommendation": typeof RecommendationRoute;
@@ -294,6 +333,9 @@ export interface FileRoutesByFullPath {
   "/taxi-reservation-complete": typeof TaxiReservationCompleteRoute;
   "/taxi-reserve": typeof TaxiReserveRoute;
   "/user-preference": typeof UserPreferenceRoute;
+  "/account-settings/password": typeof AccountSettingsPasswordRoute;
+  "/account-settings/phone": typeof AccountSettingsPhoneRoute;
+  "/account-settings/profile": typeof AccountSettingsProfileRoute;
   "/payment/portone-redirect": typeof PaymentPortoneRedirectRoute;
   "/route/": typeof RouteIndexRoute;
   "/auth/google/callback": typeof AuthGoogleCallbackRoute;
@@ -302,7 +344,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
-  "/account-settings": typeof AccountSettingsRoute;
+  "/account-settings": typeof AccountSettingsRouteWithChildren;
   "/ai-course-generating": typeof AiCourseGeneratingRoute;
   "/ai-search-result": typeof AiSearchResultRoute;
   "/bbangteo": typeof BbangteoRoute;
@@ -325,8 +367,11 @@ export interface FileRoutesByTo {
   "/home": typeof HomeRoute;
   "/login": typeof LoginRoute;
   "/my": typeof MyRoute;
+  "/my-liked-bakeries": typeof MyLikedBakeriesRoute;
+  "/my-liked-courses": typeof MyLikedCoursesRoute;
   "/my-reservation-detail": typeof MyReservationDetailRoute;
   "/my-reservations": typeof MyReservationsRoute;
+  "/my-reviews": typeof MyReviewsRoute;
   "/password-reset-success": typeof PasswordResetSuccessRoute;
   "/preference": typeof PreferenceRoute;
   "/recommendation": typeof RecommendationRoute;
@@ -337,6 +382,9 @@ export interface FileRoutesByTo {
   "/taxi-reservation-complete": typeof TaxiReservationCompleteRoute;
   "/taxi-reserve": typeof TaxiReserveRoute;
   "/user-preference": typeof UserPreferenceRoute;
+  "/account-settings/password": typeof AccountSettingsPasswordRoute;
+  "/account-settings/phone": typeof AccountSettingsPhoneRoute;
+  "/account-settings/profile": typeof AccountSettingsProfileRoute;
   "/payment/portone-redirect": typeof PaymentPortoneRedirectRoute;
   "/route": typeof RouteIndexRoute;
   "/auth/google/callback": typeof AuthGoogleCallbackRoute;
@@ -346,7 +394,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   "/": typeof IndexRoute;
-  "/account-settings": typeof AccountSettingsRoute;
+  "/account-settings": typeof AccountSettingsRouteWithChildren;
   "/ai-course-generating": typeof AiCourseGeneratingRoute;
   "/ai-search-result": typeof AiSearchResultRoute;
   "/bbangteo": typeof BbangteoRoute;
@@ -369,8 +417,11 @@ export interface FileRoutesById {
   "/home": typeof HomeRoute;
   "/login": typeof LoginRoute;
   "/my": typeof MyRoute;
+  "/my-liked-bakeries": typeof MyLikedBakeriesRoute;
+  "/my-liked-courses": typeof MyLikedCoursesRoute;
   "/my-reservation-detail": typeof MyReservationDetailRoute;
   "/my-reservations": typeof MyReservationsRoute;
+  "/my-reviews": typeof MyReviewsRoute;
   "/password-reset-success": typeof PasswordResetSuccessRoute;
   "/preference": typeof PreferenceRoute;
   "/recommendation": typeof RecommendationRoute;
@@ -381,6 +432,9 @@ export interface FileRoutesById {
   "/taxi-reservation-complete": typeof TaxiReservationCompleteRoute;
   "/taxi-reserve": typeof TaxiReserveRoute;
   "/user-preference": typeof UserPreferenceRoute;
+  "/account-settings/password": typeof AccountSettingsPasswordRoute;
+  "/account-settings/phone": typeof AccountSettingsPhoneRoute;
+  "/account-settings/profile": typeof AccountSettingsProfileRoute;
   "/payment/portone-redirect": typeof PaymentPortoneRedirectRoute;
   "/route/": typeof RouteIndexRoute;
   "/auth/google/callback": typeof AuthGoogleCallbackRoute;
@@ -414,8 +468,11 @@ export interface FileRouteTypes {
     | "/home"
     | "/login"
     | "/my"
+    | "/my-liked-bakeries"
+    | "/my-liked-courses"
     | "/my-reservation-detail"
     | "/my-reservations"
+    | "/my-reviews"
     | "/password-reset-success"
     | "/preference"
     | "/recommendation"
@@ -426,6 +483,9 @@ export interface FileRouteTypes {
     | "/taxi-reservation-complete"
     | "/taxi-reserve"
     | "/user-preference"
+    | "/account-settings/password"
+    | "/account-settings/phone"
+    | "/account-settings/profile"
     | "/payment/portone-redirect"
     | "/route/"
     | "/auth/google/callback"
@@ -457,8 +517,11 @@ export interface FileRouteTypes {
     | "/home"
     | "/login"
     | "/my"
+    | "/my-liked-bakeries"
+    | "/my-liked-courses"
     | "/my-reservation-detail"
     | "/my-reservations"
+    | "/my-reviews"
     | "/password-reset-success"
     | "/preference"
     | "/recommendation"
@@ -469,6 +532,9 @@ export interface FileRouteTypes {
     | "/taxi-reservation-complete"
     | "/taxi-reserve"
     | "/user-preference"
+    | "/account-settings/password"
+    | "/account-settings/phone"
+    | "/account-settings/profile"
     | "/payment/portone-redirect"
     | "/route"
     | "/auth/google/callback"
@@ -500,8 +566,11 @@ export interface FileRouteTypes {
     | "/home"
     | "/login"
     | "/my"
+    | "/my-liked-bakeries"
+    | "/my-liked-courses"
     | "/my-reservation-detail"
     | "/my-reservations"
+    | "/my-reviews"
     | "/password-reset-success"
     | "/preference"
     | "/recommendation"
@@ -512,6 +581,9 @@ export interface FileRouteTypes {
     | "/taxi-reservation-complete"
     | "/taxi-reserve"
     | "/user-preference"
+    | "/account-settings/password"
+    | "/account-settings/phone"
+    | "/account-settings/profile"
     | "/payment/portone-redirect"
     | "/route/"
     | "/auth/google/callback"
@@ -521,7 +593,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
-  AccountSettingsRoute: typeof AccountSettingsRoute;
+  AccountSettingsRoute: typeof AccountSettingsRouteWithChildren;
   AiCourseGeneratingRoute: typeof AiCourseGeneratingRoute;
   AiSearchResultRoute: typeof AiSearchResultRoute;
   BbangteoRoute: typeof BbangteoRoute;
@@ -544,8 +616,11 @@ export interface RootRouteChildren {
   HomeRoute: typeof HomeRoute;
   LoginRoute: typeof LoginRoute;
   MyRoute: typeof MyRoute;
+  MyLikedBakeriesRoute: typeof MyLikedBakeriesRoute;
+  MyLikedCoursesRoute: typeof MyLikedCoursesRoute;
   MyReservationDetailRoute: typeof MyReservationDetailRoute;
   MyReservationsRoute: typeof MyReservationsRoute;
+  MyReviewsRoute: typeof MyReviewsRoute;
   PasswordResetSuccessRoute: typeof PasswordResetSuccessRoute;
   PreferenceRoute: typeof PreferenceRoute;
   RecommendationRoute: typeof RecommendationRoute;
@@ -635,6 +710,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof PasswordResetSuccessRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/my-reviews": {
+      id: "/my-reviews";
+      path: "/my-reviews";
+      fullPath: "/my-reviews";
+      preLoaderRoute: typeof MyReviewsRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/my-reservations": {
       id: "/my-reservations";
       path: "/my-reservations";
@@ -647,6 +729,20 @@ declare module "@tanstack/react-router" {
       path: "/my-reservation-detail";
       fullPath: "/my-reservation-detail";
       preLoaderRoute: typeof MyReservationDetailRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/my-liked-courses": {
+      id: "/my-liked-courses";
+      path: "/my-liked-courses";
+      fullPath: "/my-liked-courses";
+      preLoaderRoute: typeof MyLikedCoursesRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/my-liked-bakeries": {
+      id: "/my-liked-bakeries";
+      path: "/my-liked-bakeries";
+      fullPath: "/my-liked-bakeries";
+      preLoaderRoute: typeof MyLikedBakeriesRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/my": {
@@ -831,6 +927,27 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof PaymentPortoneRedirectRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/account-settings/profile": {
+      id: "/account-settings/profile";
+      path: "/profile";
+      fullPath: "/account-settings/profile";
+      preLoaderRoute: typeof AccountSettingsProfileRouteImport;
+      parentRoute: typeof AccountSettingsRoute;
+    };
+    "/account-settings/phone": {
+      id: "/account-settings/phone";
+      path: "/phone";
+      fullPath: "/account-settings/phone";
+      preLoaderRoute: typeof AccountSettingsPhoneRouteImport;
+      parentRoute: typeof AccountSettingsRoute;
+    };
+    "/account-settings/password": {
+      id: "/account-settings/password";
+      path: "/password";
+      fullPath: "/account-settings/password";
+      preLoaderRoute: typeof AccountSettingsPasswordRouteImport;
+      parentRoute: typeof AccountSettingsRoute;
+    };
     "/auth/naver/callback": {
       id: "/auth/naver/callback";
       path: "/auth/naver/callback";
@@ -855,9 +972,25 @@ declare module "@tanstack/react-router" {
   }
 }
 
+interface AccountSettingsRouteChildren {
+  AccountSettingsPasswordRoute: typeof AccountSettingsPasswordRoute;
+  AccountSettingsPhoneRoute: typeof AccountSettingsPhoneRoute;
+  AccountSettingsProfileRoute: typeof AccountSettingsProfileRoute;
+}
+
+const AccountSettingsRouteChildren: AccountSettingsRouteChildren = {
+  AccountSettingsPasswordRoute: AccountSettingsPasswordRoute,
+  AccountSettingsPhoneRoute: AccountSettingsPhoneRoute,
+  AccountSettingsProfileRoute: AccountSettingsProfileRoute,
+};
+
+const AccountSettingsRouteWithChildren = AccountSettingsRoute._addFileChildren(
+  AccountSettingsRouteChildren,
+);
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AccountSettingsRoute: AccountSettingsRoute,
+  AccountSettingsRoute: AccountSettingsRouteWithChildren,
   AiCourseGeneratingRoute: AiCourseGeneratingRoute,
   AiSearchResultRoute: AiSearchResultRoute,
   BbangteoRoute: BbangteoRoute,
@@ -880,8 +1013,11 @@ const rootRouteChildren: RootRouteChildren = {
   HomeRoute: HomeRoute,
   LoginRoute: LoginRoute,
   MyRoute: MyRoute,
+  MyLikedBakeriesRoute: MyLikedBakeriesRoute,
+  MyLikedCoursesRoute: MyLikedCoursesRoute,
   MyReservationDetailRoute: MyReservationDetailRoute,
   MyReservationsRoute: MyReservationsRoute,
+  MyReviewsRoute: MyReviewsRoute,
   PasswordResetSuccessRoute: PasswordResetSuccessRoute,
   PreferenceRoute: PreferenceRoute,
   RecommendationRoute: RecommendationRoute,

@@ -92,7 +92,7 @@ export type ResetPwRequest = {
 export type AuthType = "SMS" | "PASS";
 
 /** `VerificationPurpose` */
-export type VerificationPurpose = "SIGNUP" | "FIND_ID" | "FIND_PW";
+export type VerificationPurpose = "SIGNUP" | "FIND_ID" | "FIND_PW" | "CHANGE_PHONE";
 
 export type SendPhoneRequest = {
   phone: string;

@@ -3,4 +3,6 @@ export interface AccountInfo {
   label: string;
   value?: string;
   danger?: boolean;
+  showArrow?: boolean;
+  onClick?: () => void;
 }

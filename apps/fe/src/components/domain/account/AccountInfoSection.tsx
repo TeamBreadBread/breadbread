@@ -9,7 +9,14 @@ export default function AccountInfoSection({ items }: AccountInfoSectionProps) {
   return (
     <section className="w-full bg-white">
       {items.map((item) => (
-        <AccountInfoItem key={item.id} label={item.label} value={item.value} />
+        <AccountInfoItem
+          key={item.id}
+          label={item.label}
+          value={item.value}
+          danger={item.danger}
+          showArrow={item.showArrow}
+          onClick={item.onClick}
+        />
       ))}
     </section>
   );
