@@ -91,9 +91,13 @@ class KakaoDrivingRouteClientTest {
                 buildSection(120, new double[] {127.1, 37.1, 127.2, 37.2});
         KakaoDirectionsResponse.Summary summary = buildSummary(600);
         KakaoDirectionsResponse response = buildResponse(0, List.of(s1, s2), summary);
+        // destination이 마지막 vertex와 일치 → 추가 좌표 없음
+        Coordinate destination = new Coordinate(37.2, 127.2);
 
         RouteResult result =
-                (RouteResult) ReflectionTestUtils.invokeMethod(client, "toRouteResult", response);
+                (RouteResult)
+                        ReflectionTestUtils.invokeMethod(
+                                client, "toRouteResult", response, destination);
 
         // 좌표: vertexes [lng, lat] → Coordinate(lat, lng)
         assertThat(result.getPath()).hasSize(4);
@@ -110,11 +114,34 @@ class KakaoDrivingRouteClientTest {
     }
 
     @Test
+    void toRouteResult_appendsDestination_whenLastVertexDiffers() {
+        // vertexes가 destination까지 포함하지 않는 경우 destination 좌표가 path 끝에 추가되어야 함
+        KakaoDirectionsResponse.Section s1 =
+                buildSection(300, new double[] {127.0, 37.0, 127.1, 37.1});
+        KakaoDirectionsResponse.Summary summary = buildSummary(300);
+        KakaoDirectionsResponse response = buildResponse(0, List.of(s1), summary);
+        Coordinate destination = new Coordinate(37.9, 128.9); // 마지막 vertex와 다름
+
+        RouteResult result =
+                (RouteResult)
+                        ReflectionTestUtils.invokeMethod(
+                                client, "toRouteResult", response, destination);
+
+        assertThat(result.getPath()).hasSize(3); // 기존 2개 + destination 1개
+        Coordinate last = result.getPath().get(result.getPath().size() - 1);
+        assertThat(last.getLat()).isEqualTo(37.9);
+        assertThat(last.getLng()).isEqualTo(128.9);
+    }
+
+    @Test
     void toRouteResult_throws_whenRoutesNull() {
         KakaoDirectionsResponse response = new KakaoDirectionsResponse();
+        Coordinate destination = new Coordinate(37.5, 127.0);
 
         assertThatThrownBy(
-                        () -> ReflectionTestUtils.invokeMethod(client, "toRouteResult", response))
+                        () ->
+                                ReflectionTestUtils.invokeMethod(
+                                        client, "toRouteResult", response, destination))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROUTE_NOT_FOUND);
@@ -124,9 +151,12 @@ class KakaoDrivingRouteClientTest {
     void toRouteResult_throws_whenResultCodeNonZero() {
         // resultCode != 0 → 경로 탐색 실패 (예: 104 = 출발지/도착지 연결 불가)
         KakaoDirectionsResponse response = buildResponse(104, List.of(), null);
+        Coordinate destination = new Coordinate(37.5, 127.0);
 
         assertThatThrownBy(
-                        () -> ReflectionTestUtils.invokeMethod(client, "toRouteResult", response))
+                        () ->
+                                ReflectionTestUtils.invokeMethod(
+                                        client, "toRouteResult", response, destination))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROUTE_NOT_FOUND);
@@ -139,9 +169,12 @@ class KakaoDrivingRouteClientTest {
         ReflectionTestUtils.setField(emptySection, "duration", 0);
         ReflectionTestUtils.setField(emptySection, "roads", List.of());
         KakaoDirectionsResponse response = buildResponse(0, List.of(emptySection), buildSummary(0));
+        Coordinate destination = new Coordinate(37.5, 127.0);
 
         assertThatThrownBy(
-                        () -> ReflectionTestUtils.invokeMethod(client, "toRouteResult", response))
+                        () ->
+                                ReflectionTestUtils.invokeMethod(
+                                        client, "toRouteResult", response, destination))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROUTE_NOT_FOUND);
@@ -155,9 +188,12 @@ class KakaoDrivingRouteClientTest {
         KakaoDirectionsResponse.Section s2 =
                 buildSection(200, new double[] {127.1, 37.1, 127.2, 37.2});
         KakaoDirectionsResponse response = buildResponse(0, List.of(s1, s2), null); // summary null
+        Coordinate destination = new Coordinate(37.2, 127.2);
 
         RouteResult result =
-                (RouteResult) ReflectionTestUtils.invokeMethod(client, "toRouteResult", response);
+                (RouteResult)
+                        ReflectionTestUtils.invokeMethod(
+                                client, "toRouteResult", response, destination);
 
         assertThat(result.getTotalDurationSeconds()).isEqualTo(500); // 300 + 200
         assertThat(result.getLegDurationsSeconds()).containsExactly(300, 200);
