@@ -23,6 +23,9 @@ export default defineConfig(({ mode }) => {
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        importScripts: ['firebase-messaging-sw.js'],
+      },
       manifest: {
         name: 'BreadBread',
         short_name: 'BreadBread',

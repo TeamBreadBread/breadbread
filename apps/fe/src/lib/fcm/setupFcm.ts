@@ -34,7 +34,7 @@ type AppRouter = typeof appRouter;
 
 let handlersAttached = false;
 
-/** 포그라운드 수신 처리. 백그라운드·알림 클릭은 `firebase-messaging-sw.js` 가 담당합니다. */
+/** 포그라운드 수신 처리. 백그라운드·알림 클릭은 등록된 앱 Service Worker 가 담당합니다. */
 export async function setupFcmMessageHandlers(router: AppRouter): Promise<void> {
   if (!isFcmConfigured() || handlersAttached) return;
   const { isFirebaseMessagingSupported } = await import("@/lib/firebase/messaging");

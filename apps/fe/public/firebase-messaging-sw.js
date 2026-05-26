@@ -1,6 +1,8 @@
 /* eslint-disable no-undef */
 /**
- * FCM 백그라운드 알림용 Service Worker.
+ * FCM 백그라운드 알림 처리 스크립트.
+ * 프로덕션에서는 Vite PWA가 생성한 `sw.js`가 이 파일을 importScripts 로 불러 실행합니다.
+ * 개발 환경에서는 이 파일을 직접 Service Worker 로 등록해 로컬 FCM 테스트를 유지합니다.
  * 설정은 `src/lib/firebase/config.ts` 기본값과 동일하게 유지합니다.
  */
 importScripts("https://www.gstatic.com/firebasejs/12.13.0/firebase-app-compat.js");
