@@ -111,7 +111,13 @@ public enum ErrorCode {
     ALREADY_POST_LIKED(HttpStatus.CONFLICT, "E0803", "이미 좋아요한 게시글입니다."),
     NOT_POST_LIKED(HttpStatus.BAD_REQUEST, "E0804", "좋아요하지 않은 게시글입니다."),
     POST_AUTHOR_ONLY(HttpStatus.FORBIDDEN, "E0805", "게시글 작성자만 수행할 수 있습니다."),
-    COMMENT_AUTHOR_ONLY(HttpStatus.FORBIDDEN, "E0806", "댓글 작성자만 수행할 수 있습니다.");
+    COMMENT_AUTHOR_ONLY(HttpStatus.FORBIDDEN, "E0806", "댓글 작성자만 수행할 수 있습니다."),
+
+    // 투어 E09xx
+    TOUR_NOT_FOUND(HttpStatus.NOT_FOUND, "E0901", "진행 중인 투어가 없습니다."),
+    TOUR_ALREADY_STARTED(HttpStatus.CONFLICT, "E0902", "이미 시작된 투어가 있습니다."),
+    TOUR_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "E0903", "이미 완료된 투어입니다."),
+    TOUR_INVALID_VISIT_ORDER(HttpStatus.BAD_REQUEST, "E0904", "유효하지 않은 방문 순서입니다.");
 
     private final HttpStatus status;
     private final String code;
