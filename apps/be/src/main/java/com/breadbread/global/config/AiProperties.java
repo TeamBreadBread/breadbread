@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "ai")
 public class AiProperties {
     private String webhookUrl;
+    private String chatWebhookUrl;
     private long webhookTimeoutSeconds;
     private long jobTtlHours;
 }
