@@ -20,9 +20,11 @@ import java.util.List;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 
 @Getter
 @Builder
+@ToString(onlyExplicitlyIncluded = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CongestionAlertWebhookRequest {
 
