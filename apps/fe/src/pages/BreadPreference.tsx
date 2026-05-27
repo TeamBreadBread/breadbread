@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { OverlayFooter } from "@/components/common";
 import { PreferenceOptionCard } from "@/components/common/cards";
+import { IconAssets } from "@/components/icons";
 import PreferenceIntro from "@/components/domain/ai-course/PreferenceIntro";
 import PreferenceQuestionSection from "@/components/domain/ai-course/PreferenceQuestionSection";
 import PreferenceTopBar from "@/components/domain/ai-course/PreferenceTopBar";
@@ -284,7 +285,7 @@ export default function BreadPreference() {
               className={cn(
                 "flex h-[64px] w-full items-center justify-between rounded-r2 px-x4 transition-colors",
                 hasDepartureResult
-                  ? "border border-gray-600 bg-gray-300"
+                  ? "border border-orange-600 bg-orange-100"
                   : "border border-gray-200 bg-gray-100",
               )}
               onClick={openDepartureSheet}
@@ -292,7 +293,7 @@ export default function BreadPreference() {
               <span
                 className={cn(
                   "flex-1 text-left font-sans text-size-5 leading-t6",
-                  hasDepartureResult ? "text-gray-900" : "text-gray-500",
+                  hasDepartureResult ? "text-orange-600" : "text-gray-500",
                 )}
               >
                 {departureKeyword.trim() || "출발지 입력"}
@@ -365,10 +366,24 @@ export default function BreadPreference() {
                 <span className="text-[13px] font-bold text-gray-700">최근 검색</span>
                 <button
                   type="button"
-                  className="text-size-3 font-medium text-[#217cf9] disabled:opacity-50"
+                  className="flex items-center gap-x1 typo-t3medium text-blue-700 disabled:opacity-50"
                   disabled={isResolvingLocation}
                   onClick={useCurrentLocation}
                 >
+                  <span
+                    aria-hidden
+                    className="inline-block h-[14px] w-[14px] shrink-0 bg-blue-700"
+                    style={{
+                      maskImage: `url(${IconAssets.IcGps})`,
+                      maskSize: "contain",
+                      maskRepeat: "no-repeat",
+                      maskPosition: "center",
+                      WebkitMaskImage: `url(${IconAssets.IcGps})`,
+                      WebkitMaskSize: "contain",
+                      WebkitMaskRepeat: "no-repeat",
+                      WebkitMaskPosition: "center",
+                    }}
+                  />
                   {isResolvingLocation ? "위치 확인 중…" : "현재 위치"}
                 </button>
               </div>

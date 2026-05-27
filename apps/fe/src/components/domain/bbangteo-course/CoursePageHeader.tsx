@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
+import { AppIcon, IconAssets } from "@/components/icons";
 import {
   BBANGTEO_FIXED_HEADER_OUTER_CLASS,
   FIXED_TOP_BAR_SPACER_CLASS,
@@ -21,7 +21,7 @@ const CoursePageHeader = ({ title }: CoursePageHeaderProps) => {
             className="flex h-[36px] w-[36px] items-center justify-center"
             onClick={() => navigate({ to: "/bbangteo" })}
           >
-            <img src={ArrowLeft} alt="뒤로가기" className="h-[24px] w-[24px]" />
+            <AppIcon src={IconAssets.IcChevronLeft} size="x6" alt="뒤로가기" />
           </button>
           <h1 className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[18px] leading-[24px] font-bold text-[#1a1c20]">
             {title}

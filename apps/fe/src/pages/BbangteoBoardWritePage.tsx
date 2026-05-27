@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { createPost, getPost, updatePost } from "@/api/posts";
 import { uploadImages } from "@/api/image";
 import { getErrorMessage } from "@/api/types/common";
-import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
+import { AppIcon, IconAssets } from "@/components/icons";
 import BottomNav from "@/components/layout/BottomNav";
 import {
   BBANGTEO_FIXED_HEADER_OUTER_CLASS,
@@ -44,7 +44,7 @@ const WriteHeader = ({
             className="flex h-[36px] w-[36px] shrink-0 items-center justify-center"
             onClick={() => navigate({ to: "/bbangteo-board" })}
           >
-            <img src={ArrowLeft} alt="뒤로가기" className="h-[24px] w-[24px]" />
+            <AppIcon src={IconAssets.IcChevronLeft} size="x6" alt="뒤로가기" />
           </button>
           <button
             type="button"

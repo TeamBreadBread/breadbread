@@ -1,5 +1,7 @@
-import mapIcon from "@/assets/icons/mapIcon.svg";
 import bestBreadIcon from "@/assets/icons/bestBreadIcon.svg";
+import { AppIcon, IconAssets } from "@/components/icons";
+import { getCourseOrderBadgeBgClass } from "@/lib/courseOrderMarkerPalette";
+import { cn } from "@/utils/cn";
 
 interface CourseTimelineItemProps {
   index: number;
@@ -9,11 +11,12 @@ interface CourseTimelineItemProps {
 
 export default function CourseTimelineItem({ index, place, onClick }: CourseTimelineItemProps) {
   const clickableClass = onClick ? "cursor-pointer hover:bg-[#f0f3f7]" : "";
+  const badgeBgClass = getCourseOrderBadgeBgClass(index);
   return (
     <div className="flex items-start gap-x1">
       <div className="flex items-center justify-start p-x2">
         <div className="relative h-x6 w-x6">
-          <div className="h-x6 w-x6 rounded-full bg-[#868b94]" />
+          <div className={cn("h-x6 w-x6 rounded-full", badgeBgClass)} />
           <div className="absolute inset-0 flex items-center justify-center font-pretendard typo-t2medium text-white">
             {index}
           </div>
@@ -30,12 +33,7 @@ export default function CourseTimelineItem({ index, place, onClick }: CourseTime
 
         <div className="mt-x1_5 flex flex-col gap-x1">
           <div className="flex items-start gap-x1">
-            <img
-              src={mapIcon}
-              alt=""
-              aria-hidden
-              className="mt-[2px] h-[14px] w-[12px] shrink-0 object-contain"
-            />
+            <AppIcon src={IconAssets.IcPin} size={14} className="mt-[2px] shrink-0" />
             <span className="flex-1 font-pretendard typo-t3regular text-[#555d6d]">
               {place.address}
             </span>

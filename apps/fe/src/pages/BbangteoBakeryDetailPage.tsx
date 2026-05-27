@@ -10,9 +10,7 @@ import {
 } from "@/api/bakery";
 import { isBakeryReviewAuthor, type BakeryReview } from "@/api/types/bakery";
 import { getErrorMessage } from "@/api/types/common";
-import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
-import mapIcon from "@/assets/icons/mapIcon.svg";
-import ratingStar from "@/assets/icons/ratingStar.svg";
+import { AppIcon, IconAssets } from "@/components/icons";
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
 import soboroImg from "@/assets/images/soboro.png";
 import BottomNav from "@/components/layout/BottomNav";
@@ -114,7 +112,7 @@ const BackHeader = ({
             className="flex h-[36px] w-[36px] items-center justify-center text-[22px]"
             onClick={goToList}
           >
-            <img src={ArrowLeft} alt="뒤로가기" className="h-[24px] w-[24px]" />
+            <AppIcon src={IconAssets.IcChevronLeft} size="x6" alt="뒤로가기" />
           </button>
           <div className="h-[36px] w-[36px]" />
         </div>
@@ -197,7 +195,7 @@ const BakeryTitleInfo = ({
         <span>{rating}</span>
         <div className="flex items-center">
           {Array.from({ length: 5 }).map((_, idx) => (
-            <img key={idx} src={ratingStar} alt="별점" className="h-[18px] w-[18px]" />
+            <AppIcon key={idx} src={IconAssets.IcStar} size={18} />
           ))}
         </div>
       </div>
@@ -209,11 +207,7 @@ const BakeryTitleInfo = ({
 
 const BakeryInfoRow = ({ icon, text }: { icon: "address" | "status" | "phone"; text: string }) => (
   <div className="flex items-center gap-[8px]">
-    {icon === "address" ? (
-      <img src={mapIcon} alt="주소" className="h-[22px] w-[22px]" />
-    ) : (
-      <CircleIcon size={22} />
-    )}
+    {icon === "address" ? <AppIcon src={IconAssets.IcPin} size={22} /> : <CircleIcon size={22} />}
     <span className="flex-1 text-[16px] leading-[22px] text-[#1a1c20]">{text}</span>
     <CircleIcon size={22} />
   </div>
@@ -404,13 +398,11 @@ const ReviewCard = ({
                   <span>{review.rating}</span>
                   <div className="flex items-center gap-[2px]">
                     {Array.from({ length: 5 }).map((_, idx) => (
-                      <img
+                      <AppIcon
                         key={idx}
-                        src={ratingStar}
-                        alt=""
-                        className={`h-[12px] w-[12px] ${
-                          idx < review.rating ? "opacity-100" : "opacity-25"
-                        }`}
+                        src={IconAssets.IcStar}
+                        size={12}
+                        className={idx < review.rating ? "opacity-100" : "opacity-25"}
                       />
                     ))}
                   </div>

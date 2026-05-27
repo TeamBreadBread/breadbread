@@ -1,3 +1,4 @@
+import { AppIcon, IconAssets } from "@/components/icons";
 import { cn } from "@/utils/cn";
 
 interface AccountInfoItemProps {
@@ -35,10 +36,12 @@ export default function AccountInfoItem({
           <span className="whitespace-nowrap text-size-3 font-medium leading-t4 tracking-[-0.1px] text-[#b0b3ba]">
             {value}
           </span>
-          {showArrow ? <div className="h-x6 w-x6 rounded-full bg-[#d9dbe0]" /> : null}
+          {showArrow ? (
+            <AppIcon src={IconAssets.IcChevronRight} size="x6" className="opacity-60" />
+          ) : null}
         </div>
       ) : showArrow ? (
-        <div className="h-x6 w-x6 rounded-full bg-[#d9dbe0]" />
+        <AppIcon src={IconAssets.IcChevronRight} size="x6" className="opacity-60" />
       ) : null}
     </button>
   );

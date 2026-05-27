@@ -5,7 +5,7 @@ import { uploadImages } from "@/api/image";
 import { isBakeryReviewAuthor } from "@/api/types/bakery";
 import { getErrorMessage } from "@/api/types/common";
 import { getUserProfile, refreshProfileCacheFromServer } from "@/lib/userProfileCache";
-import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
+import { AppIcon, IconAssets } from "@/components/icons";
 import MobileFrame from "@/components/layout/MobileFrame";
 import {
   BBANGTEO_FIXED_HEADER_OUTER_CLASS,
@@ -182,7 +182,7 @@ export default function BbangteoBakeryReviewWritePage({
                 onClick={() => setShowExitDialog(true)}
                 aria-label="뒤로가기"
               >
-                <img src={ArrowLeft} alt="" className="h-[24px] w-[24px]" />
+                <AppIcon src={IconAssets.IcChevronLeft} size="x6" />
               </button>
               <button
                 type="button"

@@ -18,11 +18,11 @@
 	}
 
 	.red_700 {
-		color: #b91c1c;
+		color: var(--color-red-700);
 	}
 
 	.green_700 {
-		color: #15803d;
+		color: var(--color-green-700);
 	}
 }
 

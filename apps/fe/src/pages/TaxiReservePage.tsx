@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
+import { AppIcon, IconAssets } from "@/components/icons";
 import DepartureDateBottomSheet from "@/components/domain/taxi-reserve/DepartureDateBottomSheet";
 import DepartureTimeBottomSheet from "@/components/domain/taxi-reserve/DepartureTimeBottomSheet";
 import DeparturePlaceBottomSheet from "@/components/domain/taxi-reserve/DeparturePlaceBottomSheet";
@@ -163,7 +163,7 @@ export default function TaxiReservePage({ courseId }: TaxiReservePageProps) {
             }
             aria-label="뒤로가기"
           >
-            <img width={24} height={24} src={ArrowLeft} alt="" />
+            <AppIcon src={IconAssets.IcChevronLeft} size="x6" />
           </button>
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-center font-['Pretendard',sans-serif] text-[18px] font-bold leading-[24px] tracking-normal text-[#1a1c20]">
             택시 예약

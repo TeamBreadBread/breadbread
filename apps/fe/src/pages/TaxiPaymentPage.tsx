@@ -10,7 +10,7 @@ import { buildTaxiPortOnePaymentRequest } from "@/lib/buildPortonePaymentRequest
 import { resolvePortOneBrowserKeys } from "@/lib/portoneSettings";
 import { writeTaxiReturnPayload } from "@/lib/portoneTaxiReturn";
 import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
-import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
+import { AppIcon, IconAssets } from "@/components/icons";
 import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
 import { cn } from "@/utils/cn";
 
@@ -171,7 +171,7 @@ export default function TaxiPaymentPage({
           onClick={() => navigate({ to: "/taxi-reserve", search: { courseId } })}
           aria-label="뒤로가기"
         >
-          <img width={24} height={24} src={ArrowLeft} alt="" />
+          <AppIcon src={IconAssets.IcChevronLeft} size="x6" />
         </button>
         <div className="h-[36px] w-[36px] shrink-0" />
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-center font-['Pretendard',sans-serif] text-[18px] font-bold leading-[24px] tracking-normal text-[#1a1c20]">

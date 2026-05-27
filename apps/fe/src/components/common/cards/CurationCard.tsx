@@ -1,6 +1,5 @@
-import mapIcon from "@/assets/icons/mapIcon.svg";
-import starIcon from "@/assets/icons/Star.svg";
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
+import { AppIcon, IconAssets } from "@/components/icons";
 import { cn } from "@/utils/cn";
 
 type CurationCardProps = {
@@ -56,18 +55,10 @@ const CurationCard = ({
             "text-[var(--color-gray-700)]",
           )}
         >
-          <img
-            src={mapIcon}
-            alt="위치"
-            className="h-[var(--spacing-x3)] w-[var(--spacing-x3)] shrink-0"
-          />
+          <AppIcon src={IconAssets.IcPin} size="x3" />
           <span className="min-w-0 flex-1 truncate">{address}</span>
           <span className="shrink-0">·</span>
-          <img
-            src={starIcon}
-            alt="별점"
-            className="h-[var(--spacing-x3)] w-[var(--spacing-x3)] shrink-0"
-          />
+          <AppIcon src={IconAssets.IcStar} size="x3" />
           <span className="shrink-0">{rate}</span>
         </div>
       </div>

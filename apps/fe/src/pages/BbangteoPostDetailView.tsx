@@ -14,8 +14,9 @@ import {
   updateComment,
 } from "@/api/posts";
 import { getErrorMessage, ApiBusinessError } from "@/api/types/common";
-import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
+import { AppIcon, IconAssets } from "@/components/icons";
+import { ToolbarHeartLikeIcon } from "@/components/icons/PostDetailToolbarIcons";
 import BottomNav from "@/components/layout/BottomNav";
 import {
   BBANGTEO_FIXED_HEADER_OUTER_CLASS,
@@ -35,28 +36,8 @@ type BbangteoPostDetailViewProps = {
   listPath: "/bbangteo-board" | "/bbangteo-article-board";
 };
 
-/** 게시판 목록과 동일한 하트 실루엣, 상세용 크기·좋아요 여부 */
 function PostDetailLikeHeartIcon({ filled }: { filled: boolean }) {
-  return (
-    <svg
-      width={18}
-      height={18}
-      viewBox="0 0 24 24"
-      aria-hidden
-      className={
-        filled
-          ? "shrink-0 red_700 pointer-events-none"
-          : "shrink-0 text-[#868b94] pointer-events-none"
-      }
-      fill={filled ? "currentColor" : "none"}
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-    </svg>
-  );
+  return <ToolbarHeartLikeIcon liked={filled} size={18} className="pointer-events-none" />;
 }
 
 const DateTimeText = ({ date, time }: { date: string; time: string }) => (
@@ -330,7 +311,7 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
               className="flex h-[36px] w-[36px] items-center justify-center"
               onClick={() => navigate({ to: listPath })}
             >
-              <img src={ArrowLeft} alt="뒤로가기" className="h-[24px] w-[24px]" />
+              <AppIcon src={IconAssets.IcChevronLeft} size="x6" alt="뒤로가기" />
             </button>
             {author && detail ? (
               <div className="flex items-center gap-[8px]">
@@ -398,7 +379,7 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
                     className="flex items-center gap-[6px]"
                     onClick={() => navigate({ to: listPath })}
                   >
-                    <img src={ArrowLeft} alt="" className="h-[18px] w-[18px]" aria-hidden />
+                    <AppIcon src={IconAssets.IcChevronLeft} size={18} />
                     <span className="text-[14px] leading-[19px] text-[#1a1c20]">목록으로</span>
                   </button>
                   <button
