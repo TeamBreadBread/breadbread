@@ -1,4 +1,5 @@
 import { cn } from "@/utils/cn";
+import imgSuccess from "@/assets/images/Img_success.png";
 interface PasswordResetSuccessSectionProps {
   title: string;
   description: string;
@@ -11,7 +12,7 @@ export default function PasswordResetSuccessSection({
   return (
     <section className={cn("flex flex-1 flex-col items-center justify-start px-0 pb-0 pt-[156px]")}>
       <div className={cn("flex w-full flex-col items-center gap-[28px] p-[20px]")}>
-        <div className={cn("h-[100px] w-[100px] shrink-0 bg-gray-300")} />
+        <img src={imgSuccess} alt="" aria-hidden className={cn("h-[100px] w-[100px] shrink-0")} />
 
         <div className={cn("flex w-full flex-col items-center gap-[8px]")}>
           <h1

@@ -1,6 +1,8 @@
+import { AppIcon, IconAssets } from "@/components/icons";
 import { useNavigate } from "@tanstack/react-router";
 import { AppTopBar, Button } from "@/components/common";
 import MobileFrame from "@/components/layout/MobileFrame";
+import breadTaxiImage from "@/assets/images/breadTaxi.png";
 import { startGoogleLogin } from "@/lib/googleOAuth";
 import { startKakaoLogin } from "@/lib/kakaoOAuth";
 import { startNaverLogin } from "@/lib/naverOAuth";
@@ -29,6 +31,13 @@ const SOCIAL_BUTTONS = [
   },
 ] as const;
 
+const SOCIAL_ICON_BY_PROVIDER = {
+  kakao: IconAssets.IcLogoKakao,
+  naver: IconAssets.IcLogoNaver,
+  google: IconAssets.IcLogoGoogle,
+  email: IconAssets.IcPerson,
+} as const satisfies Record<(typeof SOCIAL_BUTTONS)[number]["id"], string>;
+
 type SocialProvider = (typeof SOCIAL_BUTTONS)[number]["id"];
 
 const socialButtonBaseClassName = cn(
@@ -37,7 +46,6 @@ const socialButtonBaseClassName = cn(
 );
 
 const heroTitleClassName = cn("text-size-7 font-bold leading-t8 tracking-2 text-gray-1000");
-const heroDescriptionClassName = cn("text-size-4 font-normal leading-t5 tracking-1 text-gray-700");
 const footerLinkClassName = cn(
   "font-medium leading-t4 text-gray-700",
   "disabled:cursor-not-allowed disabled:text-gray-400",
@@ -71,14 +79,18 @@ export default function LoginEntryPage() {
 
       <main className="flex flex-1 flex-col items-center gap-x4 py-x8">
         <section className="flex w-full flex-col items-center gap-x7 px-x5 text-center">
-          <div className="size-x16 rounded-full bg-gray-300" />
+          <img
+            src={breadTaxiImage}
+            alt=""
+            aria-hidden
+            className="h-[64px] w-[64px] object-contain"
+          />
           <div className="flex w-full flex-col items-center gap-x2">
             <p className={heroTitleClassName}>
-              어쩌구 저쩌구
+              로그인하고 빵빵을
               <br />
-              홍보 멘트~~
+              자유롭게 이용해보세요
             </p>
-            <p className={heroDescriptionClassName}>홍보멘트 설명이나 슬로건</p>
           </div>
         </section>
 
@@ -90,7 +102,7 @@ export default function LoginEntryPage() {
               onClick={() => handleSocialLogin(id)}
               className={cn(socialButtonBaseClassName, className)}
             >
-              <span className="size-x5 shrink-0 rounded-full bg-gray-400" />
+              <AppIcon src={SOCIAL_ICON_BY_PROVIDER[id]} size="x5" />
               {label}
             </Button>
           ))}

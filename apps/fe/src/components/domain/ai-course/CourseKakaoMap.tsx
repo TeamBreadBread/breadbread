@@ -5,6 +5,7 @@ import { loadKakaoMapSdk } from "@/lib/kakaoMapSdk";
 import { fetchKakaoWalkingRoutePath } from "@/lib/kakaoWalkingRoute";
 import type { KakaoLatLngBounds, KakaoMap } from "@/types/kakao-maps";
 import { cn } from "@/utils/cn";
+import { getCourseOrderMarkerPalette } from "@/lib/courseOrderMarkerPalette";
 import { filterValidMapPoints, type CourseMapBakery } from "./courseMapPoints";
 
 export type { CourseMapBakery } from "./courseMapPoints";
@@ -22,30 +23,8 @@ function mapPointsKey(points: CourseMapBakery[]): string {
   return points.map((b) => `${b.order}:${b.id}:${b.lat},${b.lng}`).join("|");
 }
 
-function getMarkerPalette(order: number, total: number) {
-  if (order === 1) {
-    return {
-      background: "#2563eb",
-      border: "#dbeafe",
-      text: "#ffffff",
-    };
-  }
-  if (order === total) {
-    return {
-      background: "#ef4444",
-      border: "#fee2e2",
-      text: "#ffffff",
-    };
-  }
-  return {
-    background: "#f59e0b",
-    border: "#fef3c7",
-    text: "#111827",
-  };
-}
-
-function createOrderMarkerElement(order: number, total: number, name: string): HTMLDivElement {
-  const palette = getMarkerPalette(order, total);
+function createOrderMarkerElement(order: number, name: string): HTMLDivElement {
+  const palette = getCourseOrderMarkerPalette(order);
   const wrap = document.createElement("div");
   wrap.setAttribute("role", "img");
   wrap.setAttribute("aria-label", `${order}번째 ${name}`);
@@ -275,7 +254,7 @@ function CourseKakaoMapView({
               new maps.CustomOverlay({
                 map,
                 position: overlayPosition,
-                content: createOrderMarkerElement(point.order, orderedPoints.length, point.name),
+                content: createOrderMarkerElement(point.order, point.name),
                 xAnchor: 0.5,
                 yAnchor: 1.55,
                 zIndex: 2000 + point.order,
@@ -315,7 +294,7 @@ function CourseKakaoMapView({
               new maps.CustomOverlay({
                 map,
                 position,
-                content: createOrderMarkerElement(point.order, orderedPoints.length, point.name),
+                content: createOrderMarkerElement(point.order, point.name),
                 xAnchor: 0.5,
                 yAnchor: 1.55,
                 zIndex: 2000 + point.order,

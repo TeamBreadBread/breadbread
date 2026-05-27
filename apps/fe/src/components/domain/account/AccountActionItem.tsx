@@ -1,3 +1,4 @@
+import { AppIcon, IconAssets } from "@/components/icons";
 import { cn } from "@/utils/cn";
 
 interface AccountActionItemProps {
@@ -28,7 +29,9 @@ export default function AccountActionItem({
         {label}
       </span>
 
-      {showArrow ? <div className="h-x6 w-x6 rounded-full bg-[#d9dbe0]" /> : null}
+      {showArrow ? (
+        <AppIcon src={IconAssets.IcChevronRight} size="x6" className="opacity-60" />
+      ) : null}
     </button>
   );
 }

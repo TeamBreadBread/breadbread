@@ -1,3 +1,5 @@
+import { AppIcon, IconAssets } from "@/components/icons";
+
 interface ToastBannerProps {
   message: string;
   actionText?: string;
@@ -7,8 +9,8 @@ interface ToastBannerProps {
 export default function ToastBanner({ message, actionText, onActionClick }: ToastBannerProps) {
   return (
     <div className="px-x2">
-      <div className="flex items-center gap-x1 rounded-r2 bg-[#555d6d] px-[14px] py-x3">
-        <div className="h-x6 w-x6 rounded-full bg-[#d9dbe0]" />
+      <div className="flex items-center gap-x1-5 rounded-r2 bg-[#555d6d] px-[14px] py-x3">
+        <AppIcon src={IconAssets.IcCheckCircle} size="x5" className="brightness-0 invert" />
 
         <div className="flex-1 font-pretendard typo-t4regular text-white">{message}</div>
 

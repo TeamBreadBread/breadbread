@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { getBakeryById } from "@/api/bakery";
 import type { BakeryDetail, BakeryListItem } from "@/api/types/bakery";
-import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
-import ratingStar from "@/assets/icons/ratingStar.svg";
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
+import { AppIcon, IconAssets } from "@/components/icons";
 import BottomNav from "@/components/layout/BottomNav";
 import {
   BBANGTEO_FIXED_HEADER_OUTER_CLASS,
@@ -104,7 +103,7 @@ const PageHeader = ({
             className="flex h-[36px] w-[36px] items-center justify-center text-[22px]"
             onClick={handleBack}
           >
-            <img src={ArrowLeft} alt="뒤로가기" className="h-[24px] w-[24px]" />
+            <AppIcon src={IconAssets.IcChevronLeft} size="x6" alt="뒤로가기" />
           </button>
           <h1 className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[18px] leading-[24px] font-bold text-[#1a1c20]">
             {title}
@@ -135,7 +134,7 @@ const SearchFilterSection = ({
   onKeywordChange: (value: string) => void;
 }) => (
   <section className="flex flex-col gap-[16px] bg-white px-[20px] py-[12px]">
-    <div className="flex h-[56px] items-center gap-[8px] rounded-[12px] border border-[#dcdee3] px-[20px] py-[16px]">
+    <div className="flex h-[56px] items-center gap-x1-5 rounded-[12px] border border-[#dcdee3] px-[20px] py-[16px]">
       <input
         type="search"
         value={keyword}
@@ -143,14 +142,15 @@ const SearchFilterSection = ({
         placeholder="빵집을 검색해보세요"
         className="flex-1 bg-transparent text-[16px] leading-[22px] text-[#1a1c20] placeholder:text-[#d1d3d8] outline-none"
       />
-      <CircleIcon size={24} />
+      <AppIcon src={IconAssets.IcSearch} size="x6" />
     </div>
     <div className="flex items-center gap-[8px]">
       <button
         type="button"
         className="flex max-h-[34px] items-center justify-center rounded-[9999px] bg-[#f3f4f5] p-[8px]"
+        aria-label="필터"
       >
-        <CircleIcon size={18} />
+        <AppIcon src={IconAssets.IcChevronDown} size={18} />
       </button>
       <FilterChip label="정렬" withIcon />
       <FilterChip label="영업 중" />
@@ -165,7 +165,7 @@ const BakeryMeta = ({
 }: Pick<BakeryRow, "rating" | "reviewCount" | "bookmarkCount">) => (
   <div className="flex h-[18px] items-center gap-[4px]">
     <div className="flex items-center gap-[2px]">
-      <img src={ratingStar} alt="별점" className="h-[14px] w-[14px]" />
+      <AppIcon src={IconAssets.IcStar} size={14} />
       <span className="text-[13px] leading-[18px] text-[#868b94]">{rating}</span>
       <span className="text-[13px] leading-[18px] text-[#868b94]">
         ({reviewCount.toLocaleString()})

@@ -8,7 +8,7 @@ const tokens = JSON.parse(readFileSync(join(__dirname, 'src/tokens/tokens.json')
 const lines = ['/* Do not edit directly, this file was auto-generated. */', '@theme {']
 
 // Colors: Wireframe(Temp)/Mode 1
-const colorGroups = ['gray', 'orange', 'red', 'green', 'blue']
+const colorGroups = ['gray', 'orange', 'red', 'green', 'blue', 'purple']
 for (const group of colorGroups) {
   const colors = tokens['Wireframe(Temp)/Mode 1']?.[group] ?? {}
 

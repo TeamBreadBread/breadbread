@@ -1,5 +1,5 @@
+import { AppIcon, IconAssets } from "@/components/icons";
 import { useNavigate } from "@tanstack/react-router";
-import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import { cn } from "@/utils/cn";
 import {
   FIXED_TOP_BAR_FRAME_CLASS,
@@ -67,7 +67,7 @@ export default function AppTopBar({
             onClick={handleBack}
             className="flex h-9 w-9 items-center justify-center"
           >
-            <img src={ArrowLeft} alt="" className="size-6" />
+            <AppIcon src={IconAssets.IcChevronLeft} size="x6" />
           </button>
 
           <h1

@@ -1,24 +1,22 @@
+import { AppIcon, IconAssets } from "@/components/icons";
 import { useState } from "react";
 
-const categories = ["지역별", "종류별", "에디터픽", "테마별"] as const;
-type Category = (typeof categories)[number];
+const categories = [
+  { label: "지역별", icon: IconAssets.IcPin },
+  { label: "종류별", icon: IconAssets.IcBread },
+  { label: "에디터픽", icon: IconAssets.IcStar },
+  { label: "테마별", icon: IconAssets.IcCompass },
+] as const;
 
-const CircleIcon = ({ size, color }: { size: number; color: string }) => {
-  return (
-    <div className="flex items-center justify-center p-[3px]">
-      <div
-        className="shrink-0 rounded-full"
-        style={{ width: size, height: size, backgroundColor: color }}
-      />
-    </div>
-  );
-};
+type Category = (typeof categories)[number]["label"];
 
 const CategoryCard = ({
   label,
+  icon,
   onClick,
 }: {
   label: Category;
+  icon: string;
   onClick?: (label: Category) => void;
 }) => {
   return (
@@ -27,7 +25,7 @@ const CategoryCard = ({
       onClick={() => onClick?.(label)}
       className="flex h-full w-full flex-col items-center justify-center gap-[2px] rounded-[8px] border border-[#f3f4f5] bg-[#f7f8f9] px-[20px] py-[12px]"
     >
-      <CircleIcon size={36} color="#dcdee3" />
+      <AppIcon src={icon} size={36} className="opacity-70" />
       <span className="w-full text-center text-[12px] leading-[16px] font-medium text-[#2a3038]">
         {label}
       </span>
@@ -39,7 +37,7 @@ const SearchBox = () => {
   const [searchText, setSearchText] = useState("");
 
   return (
-    <div className="flex h-[56px] shrink-0 items-center gap-[8px] rounded-[12px] border border-[#dcdee3] px-[20px] py-[16px]">
+    <div className="flex h-[56px] shrink-0 items-center gap-x1-5 rounded-[12px] border border-[#dcdee3] px-[20px] py-[16px]">
       <input
         type="search"
         value={searchText}
@@ -47,11 +45,9 @@ const SearchBox = () => {
         placeholder="빵집을 검색해보세요"
         className="flex-1 bg-transparent text-[16px] leading-[22px] text-[#1a1c20] placeholder:text-[#d1d3d8] outline-none"
       />
-      <button
-        type="button"
-        aria-label="검색"
-        className="h-[24px] w-[24px] rounded-full bg-[#dcdee3]"
-      />
+      <button type="button" aria-label="검색" className="flex shrink-0 items-center justify-center">
+        <AppIcon src={IconAssets.IcSearch} size="x6" />
+      </button>
     </div>
   );
 };
@@ -66,7 +62,12 @@ const BbangteoSearchSection = ({ onCategoryClick }: BbangteoSearchSectionProps) 
       <SearchBox />
       <div className="flex h-[90px] shrink-0 items-start gap-[9px]">
         {categories.map((category) => (
-          <CategoryCard key={category} label={category} onClick={onCategoryClick} />
+          <CategoryCard
+            key={category.label}
+            label={category.label}
+            icon={category.icon}
+            onClick={onCategoryClick}
+          />
         ))}
       </div>
     </section>
