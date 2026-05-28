@@ -1,18 +1,20 @@
 // 오른쪽 4개 카드 묶음
+import { useNavigate } from "@tanstack/react-router";
 import QuickMenuCard from "@/components/common/cards/QuickMenuCard";
-
-const quickMenus = [
-  { label: "지역별" },
-  { label: "종류별" },
-  { label: "에디터픽" },
-  { label: "테마별" },
-];
+import { QUICK_MENU_CATEGORIES } from "./quickMenuCategories";
 
 const QuickMenuGrid = () => {
+  const navigate = useNavigate();
+
   return (
-    <div className="grid flex-1 grid-cols-2 gap-[9px]">
-      {quickMenus.map((menu) => (
-        <QuickMenuCard key={menu.label} label={menu.label} />
+    <div className="grid flex-1 grid-cols-2 justify-items-center gap-[9px]">
+      {QUICK_MENU_CATEGORIES.map((menu) => (
+        <QuickMenuCard
+          key={menu.label}
+          label={menu.label}
+          imageSrc={menu.imageSrc}
+          onClick={() => navigate({ to: menu.to })}
+        />
       ))}
     </div>
   );

@@ -6,7 +6,12 @@ export const RESULT_CTA_HEIGHT_CLASS = "pb-[calc(72px+env(safe-area-inset-bottom
 const actionButtonClass =
   "h-12 rounded-r2 text-size-3 leading-t4 font-bold tracking-2 transition-colors duration-150";
 
-export default function ResultCTASection() {
+type ResultCTASectionProps = {
+  onRetry?: () => void;
+  onSave?: () => void;
+};
+
+export default function ResultCTASection({ onRetry, onSave }: ResultCTASectionProps) {
   const retryButtonClass = cn(
     actionButtonClass,
     "flex-1 bg-gray-300 text-gray-1000 hover:bg-gray-400",
@@ -18,12 +23,16 @@ export default function ResultCTASection() {
   );
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-20 px-x3">
+    <div className="fixed inset-x-0 bottom-[calc(72px+env(safe-area-inset-bottom))] z-20 px-x3">
       <div className="mx-auto max-w-[744px] bg-gray-00">
         <div className="flex gap-x2 border-t border-gray-300 px-x5 py-x3">
-          <Button className={retryButtonClass}>다시 추천받기</Button>
+          <Button type="button" className={retryButtonClass} onClick={onRetry}>
+            다시 추천받기
+          </Button>
 
-          <Button className={saveButtonClass}>코스 저장하기</Button>
+          <Button type="button" className={saveButtonClass} onClick={onSave}>
+            코스 저장하기
+          </Button>
         </div>
       </div>
     </div>

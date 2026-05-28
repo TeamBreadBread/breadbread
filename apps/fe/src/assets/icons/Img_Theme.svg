@@ -1,0 +1,72 @@
+<svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g filter="url(#filter0_g_4321_6164)">
+<path d="M30.0196 10.9928C30.731 9.4321 32.9479 9.4321 33.6593 10.9928L37.6895 19.8346C37.9914 20.4968 37.5071 21.2496 36.7794 21.2496H35.6905L40.2374 29.8111C40.9449 31.1431 39.9799 32.7494 38.4718 32.7496H25.2071C23.6988 32.7496 22.733 31.1432 23.4405 29.8111L27.9874 21.2496H26.8985C26.1709 21.2494 25.6866 20.4967 25.9884 19.8346L30.0196 10.9928Z" fill="#D9D9D9"/>
+<path d="M30.0196 10.9928C30.731 9.4321 32.9479 9.4321 33.6593 10.9928L37.6895 19.8346C37.9914 20.4968 37.5071 21.2496 36.7794 21.2496H35.6905L40.2374 29.8111C40.9449 31.1431 39.9799 32.7494 38.4718 32.7496H25.2071C23.6988 32.7496 22.733 31.1432 23.4405 29.8111L27.9874 21.2496H26.8985C26.1709 21.2494 25.6866 20.4967 25.9884 19.8346L30.0196 10.9928Z" fill="url(#paint0_radial_4321_6164)"/>
+</g>
+<g filter="url(#filter1_g_4321_6164)">
+<circle cx="13.8389" cy="10.5" r="5.5" fill="#D9D9D9"/>
+<circle cx="13.8389" cy="10.5" r="5.5" fill="url(#paint1_radial_4321_6164)"/>
+</g>
+<g filter="url(#filter2_g_4321_6164)">
+<path d="M12.8353 20.1255L3.32114 34.9186C2.46511 36.2496 3.42076 38.0004 5.00327 38.0004H30.3969C32.0343 38.0004 32.9779 36.1405 32.0109 34.8193L21.0755 19.8772C19.0028 17.0451 14.7337 17.1737 12.8353 20.1255Z" fill="#D9D9D9"/>
+<path d="M12.8353 20.1255L3.32114 34.9186C2.46511 36.2496 3.42076 38.0004 5.00327 38.0004H30.3969C32.0343 38.0004 32.9779 36.1405 32.0109 34.8193L21.0755 19.8772C19.0028 17.0451 14.7337 17.1737 12.8353 20.1255Z" fill="url(#paint2_radial_4321_6164)"/>
+</g>
+<g filter="url(#filter3_g_4321_6164)">
+<path d="M34.9687 38H5.03083C3.45471 38 2.48119 36.2484 3.29209 34.8715L4.20211 33.3264C4.39119 33.0054 4.66236 32.7427 4.98664 32.5666L8.93468 30.4215C10.885 29.3618 13.2462 29.4633 15.1019 30.6866L17.0722 31.9854C19.1681 33.3669 21.9393 32.9884 23.6039 31.0931L25.9897 28.3766C27.7099 26.4181 30.7642 26.572 32.2863 28.6938L36.6058 34.7155C37.5849 36.0804 36.628 38 34.9687 38Z" fill="#D9D9D9"/>
+<path d="M34.9687 38H5.03083C3.45471 38 2.48119 36.2484 3.29209 34.8715L4.20211 33.3264C4.39119 33.0054 4.66236 32.7427 4.98664 32.5666L8.93468 30.4215C10.885 29.3618 13.2462 29.4633 15.1019 30.6866L17.0722 31.9854C19.1681 33.3669 21.9393 32.9884 23.6039 31.0931L25.9897 28.3766C27.7099 26.4181 30.7642 26.572 32.2863 28.6938L36.6058 34.7155C37.5849 36.0804 36.628 38 34.9687 38Z" fill="url(#paint3_radial_4321_6164)"/>
+</g>
+<defs>
+<filter id="filter0_g_4321_6164" x="22.8041" y="9.42227" width="18.0695" height="23.7277" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.55555558204650879 0.55555558204650879" numOctaves="3" seed="7701" />
+<feDisplacementMap in="shape" scale="0.80000001192092896" xChannelSelector="R" yChannelSelector="G" result="displacedImage" width="100%" height="100%" />
+<feMerge result="effect1_texture_4321_6164">
+<feMergeNode in="displacedImage"/>
+</feMerge>
+</filter>
+<filter id="filter1_g_4321_6164" x="7.93887" y="4.6" width="11.8" height="11.8" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.55555558204650879 0.55555558204650879" numOctaves="3" seed="7701" />
+<feDisplacementMap in="shape" scale="0.80000001192092896" xChannelSelector="R" yChannelSelector="G" result="displacedImage" width="100%" height="100%" />
+<feMerge result="effect1_texture_4321_6164">
+<feMergeNode in="displacedImage"/>
+</feMerge>
+</filter>
+<filter id="filter2_g_4321_6164" x="2.6" y="17.4301" width="30.2004" height="20.9699" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.55555558204650879 0.55555558204650879" numOctaves="3" seed="7701" />
+<feDisplacementMap in="shape" scale="0.80000001192092896" xChannelSelector="R" yChannelSelector="G" result="displacedImage" width="100%" height="100%" />
+<feMerge result="effect1_texture_4321_6164">
+<feMergeNode in="displacedImage"/>
+</feMerge>
+</filter>
+<filter id="filter3_g_4321_6164" x="2.6" y="26.6" width="34.8" height="11.8" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.55555558204650879 0.55555558204650879" numOctaves="3" seed="7701" />
+<feDisplacementMap in="shape" scale="0.80000001192092896" xChannelSelector="R" yChannelSelector="G" result="displacedImage" width="100%" height="100%" />
+<feMerge result="effect1_texture_4321_6164">
+<feMergeNode in="displacedImage"/>
+</feMerge>
+</filter>
+<radialGradient id="paint0_radial_4321_6164" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(32 22.5) rotate(1.02614) scale(10.2516 27.2454)">
+<stop stop-color="#00CB89"/>
+<stop offset="1" stop-color="#D3F8EC"/>
+</radialGradient>
+<radialGradient id="paint1_radial_4321_6164" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(13.9183 10.9995) rotate(90) scale(7.54777 8.77273)">
+<stop offset="0.163462" stop-color="#FFBF21"/>
+<stop offset="1" stop-color="#FFF9E5"/>
+</radialGradient>
+<radialGradient id="paint2_radial_4321_6164" cx="0" cy="0" r="1" gradientTransform="matrix(-0.75 11.1836 -21.3292 -1.22612 18 28.5)" gradientUnits="userSpaceOnUse">
+<stop stop-color="#569DEE"/>
+<stop offset="1" stop-color="#BADAFF"/>
+</radialGradient>
+<radialGradient id="paint3_radial_4321_6164" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(18.5 33) rotate(91.4063) scale(10.1867 31.486)">
+<stop stop-color="#9F71E4"/>
+<stop offset="1" stop-color="#EDE5FF"/>
+</radialGradient>
+</defs>
+</svg>

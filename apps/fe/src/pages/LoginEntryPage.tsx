@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { AppIcon, IconAssets } from "@/components/icons";
-import { useNavigate } from "@tanstack/react-router";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { AppTopBar, Button } from "@/components/common";
+import ComingSoonDialog from "@/components/common/dialog/ComingSoonDialog";
 import MobileFrame from "@/components/layout/MobileFrame";
 import breadTaxiImage from "@/assets/images/breadTaxi.png";
 import { startGoogleLogin } from "@/lib/googleOAuth";
 import { startKakaoLogin } from "@/lib/kakaoOAuth";
-import { startNaverLogin } from "@/lib/naverOAuth";
 import { cn } from "@/utils/cn";
+
+const loginEntryRouteApi = getRouteApi("/login-entry");
 
 const SOCIAL_BUTTONS = [
   {
@@ -53,18 +56,20 @@ const footerLinkClassName = cn(
 
 export default function LoginEntryPage() {
   const navigate = useNavigate();
+  const { redirect } = loginEntryRouteApi.useSearch();
+  const [naverComingSoonOpen, setNaverComingSoonOpen] = useState(false);
 
   const handleSocialLogin = (provider: SocialProvider) => {
     if (provider === "email") {
-      navigate({ to: "/login", search: { redirect: undefined } });
+      navigate({ to: "/login", search: { redirect } });
+      return;
+    }
+    if (provider === "naver") {
+      setNaverComingSoonOpen(true);
       return;
     }
     if (provider === "kakao") {
       void startKakaoLogin();
-      return;
-    }
-    if (provider === "naver") {
-      void startNaverLogin();
       return;
     }
     if (provider === "google") {
@@ -137,6 +142,8 @@ export default function LoginEntryPage() {
           </button>
         </nav>
       </main>
+
+      <ComingSoonDialog open={naverComingSoonOpen} onClose={() => setNaverComingSoonOpen(false)} />
     </MobileFrame>
   );
 }

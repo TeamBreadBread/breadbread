@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import LoginPage from "@/pages/LoginPage";
+import LoginEntryPage from "@/pages/LoginEntryPage";
 import { parseLoginRedirectPath } from "@/lib/postLoginRedirect";
 
-export const Route = createFileRoute("/login")({
+export const Route = createFileRoute("/login-entry")({
   validateSearch: (search: Record<string, unknown>) => ({
     redirect: parseLoginRedirectPath(search.redirect),
   }),
-  component: LoginPage,
+  component: LoginEntryPage,
 });

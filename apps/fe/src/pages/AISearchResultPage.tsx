@@ -17,9 +17,19 @@ import { courseBakeriesToMapPoints } from "@/components/domain/ai-course/courseM
 import handleArrow from "@/assets/icons/handle_arrowup.png";
 import { useAiSearchBottomSheet } from "@/hooks/useAiSearchBottomSheet";
 import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
-import { getCourseDirections, type CourseDetail, type CourseDirectionPoint } from "@/api/courses";
-import { likeCourse, unlikeCourse } from "@/api/courses";
+import {
+  getCourseDirections,
+  likeCourse,
+  saveCourseRoute,
+  unlikeCourse,
+  type CourseDetail,
+  type CourseDirectionPoint,
+} from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
+import { useLoginRequired } from "@/lib/auth/useLoginRequired";
+import ResultCTASection from "@/components/domain/ai-course/ResultCTASection";
+import SaveRouteBanner from "@/components/domain/ai-course/SaveRouteBanner";
+import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
 
 const summary: CourseSummary = {
   title: "커플을 위한 달콤한 빵투어",
@@ -50,6 +60,7 @@ type AISearchResultPageProps = {
 
 export default function AISearchResultPage({ courseId }: AISearchResultPageProps) {
   const navigate = useNavigate();
+  const { requireLogin } = useLoginRequired();
   const effectiveCourseId = courseId ?? getDevFallbackCourseId();
   const [roadPathResult, setRoadPathResult] = useState<{
     courseId: number;
@@ -156,6 +167,7 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
     liked: Boolean(storedCourseDetail?.liked),
     count: storedCourseDetail?.likeCount ?? 0,
   }));
+  const [showSavedBanner, setShowSavedBanner] = useState(false);
 
   const { sheetRef, contentRef, liveSheetTopY, isDragging, isHalfSheet, togglePhase } =
     useAiSearchBottomSheet();
@@ -187,7 +199,7 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
     });
   };
 
-  const handleToggleCourseLike = async () => {
+  const performToggleCourseLike = async () => {
     if (!effectiveCourseId) return;
     const prev = likeState;
     const next = prev.liked
@@ -204,6 +216,40 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
       setLikeState(prev);
       window.alert(getErrorMessage(error));
     }
+  };
+
+  const handleToggleCourseLike = () => {
+    requireLogin(() => {
+      void performToggleCourseLike();
+    }, "/ai-search-result");
+  };
+
+  const handleSaveCourse = () => {
+    requireLogin(async () => {
+      if (!effectiveCourseId) return;
+      try {
+        await saveCourseRoute(effectiveCourseId);
+        setShowSavedBanner(true);
+      } catch (error) {
+        window.alert(getErrorMessage(error));
+      }
+    }, "/ai-search-result");
+  };
+
+  useEffect(() => {
+    if (!showSavedBanner) return;
+    const timer = window.setTimeout(() => {
+      setShowSavedBanner(false);
+    }, 2000);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [showSavedBanner]);
+
+  const handleRetryRecommendation = () => {
+    requireLogin(() => {
+      void navigate({ to: AI_COURSE_FLOW_START });
+    }, "/preference");
   };
 
   return (
@@ -232,7 +278,7 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
             summary={dynamicSummary ?? summary}
             liked={likeState.liked}
             likeCount={likeState.count}
-            onToggleLike={() => void handleToggleCourseLike()}
+            onToggleLike={handleToggleCourseLike}
           />
         </div>
       </div>
@@ -270,12 +316,24 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
           ref={contentRef}
           className={cn(
             "sheet-scrollbar h-[calc(100%-24px)] overflow-y-auto",
-            "pb-[calc(96px+env(safe-area-inset-bottom))]",
+            "pb-[calc(160px+env(safe-area-inset-bottom))]",
           )}
         >
           <CourseTimeline places={dynamicPlaces ?? places} onPlaceClick={handlePlaceClick} />
         </div>
       </aside>
+
+      <ResultCTASection onRetry={handleRetryRecommendation} onSave={handleSaveCourse} />
+      {showSavedBanner ? (
+        <div
+          className={cn(
+            "fixed bottom-[calc(160px+env(safe-area-inset-bottom))] left-1/2 z-30 w-full -translate-x-1/2",
+            RESPONSIVE_FRAME_WIDTH,
+          )}
+        >
+          <SaveRouteBanner />
+        </div>
+      ) : null}
 
       <div
         className={cn(

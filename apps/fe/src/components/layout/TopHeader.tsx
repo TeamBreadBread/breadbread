@@ -1,4 +1,4 @@
-import Skeleton from "@/components/common/skeleton/Skeleton";
+import leadingLogo from "@/assets/icons/Leading.svg";
 import { cn } from "@/utils/cn";
 import {
   FIXED_TOP_BAR_FRAME_CLASS,
@@ -13,7 +13,7 @@ const TopHeader = () => {
       <header className={cn(FIXED_TOP_BAR_FRAME_CLASS, RESPONSIVE_FRAME_WIDTH, "bg-white")}>
         <div className="flex h-[56px] items-center justify-between px-5">
           <div className="flex w-[63px] items-center justify-start rounded-[var(--radius-r2)] p-1">
-            <Skeleton className="h-[29px] w-full" />
+            <img src={leadingLogo} alt="빵빵" className="h-[41px] w-[63px] object-contain" />
           </div>
 
           {/* 필요하면 알림/프로필/로고 넣기 */}

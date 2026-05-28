@@ -9,10 +9,14 @@ import {
   BBANGTEO_HOME_NEWS_POST_ITEMS,
 } from "@/data/bbangteoCommunityMocks";
 import { useNavigate } from "@tanstack/react-router";
+import {
+  QUICK_MENU_ROUTE_BY_LABEL,
+  type QuickMenuCategoryLabel,
+} from "@/components/domain/home/quickMenuCategories";
 
 const sections: CommunitySectionItem[] = [
   {
-    title: "큐레이션 문구",
+    title: "대전에 왔으면 여긴 꼭 들려야지!",
     /** 헤더·패딩·축소 미리보기 카드(이미지 92 + 텍스트) 합에 맞춘 최소 높이 — 데이터는 홈과 동일 API */
     sectionHeight: 258,
     contentType: "curationApi",
@@ -43,14 +47,8 @@ const BbangteoPage = () => {
   const goToArticleBoardList = () => {
     navigate({ to: "/bbangteo-article-board" });
   };
-  const handleCategoryClick = (label: "지역별" | "종류별" | "에디터픽" | "테마별") => {
-    const toMap = {
-      지역별: "/bbangteo-region-courses",
-      종류별: "/bbangteo-type-courses",
-      에디터픽: "/bbangteo-editor-pick-courses",
-      테마별: "/bbangteo-theme-courses",
-    } as const;
-    navigate({ to: toMap[label] });
+  const handleCategoryClick = (label: QuickMenuCategoryLabel) => {
+    navigate({ to: QUICK_MENU_ROUTE_BY_LABEL[label] });
   };
 
   return (
@@ -68,7 +66,7 @@ const BbangteoPage = () => {
                 section.title === "빵빵 소식" ? goToArticleBoardList : undefined
               }
               onMoreClick={
-                section.title === "큐레이션 문구"
+                section.title === "대전에 왔으면 여긴 꼭 들려야지!"
                   ? goToBakeryList
                   : section.title === "자유 게시판"
                     ? goToBoardList

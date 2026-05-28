@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
+import { cn } from "@/utils/cn";
 
 interface SectionHeaderProps {
   title: string;
+  titleClassName?: string;
   rightText?: string;
   leftIcon?: ReactNode;
   /** `leftIcon`과 동일 용도 (홈 등에서 사용) */
@@ -16,6 +18,7 @@ interface SectionHeaderProps {
 
 export default function SectionHeader({
   title,
+  titleClassName,
   rightText,
   leftIcon,
   icon,
@@ -34,7 +37,15 @@ export default function SectionHeader({
         </div>
       ) : null}
 
-      <h3 className="font-sans text-size-6 leading-t6 font-medium tracking-2 flex-1 text-left text-gray-1000">
+      <h3
+        className={cn(
+          "flex-1 text-left",
+          titleClassName
+            ? "text-gray-1000"
+            : "font-sans text-size-6 leading-t6 font-medium tracking-2 text-gray-1000",
+          titleClassName,
+        )}
+      >
         {title}
       </h3>
     </>

@@ -41,6 +41,7 @@ const BbangteoCommunitySection = ({
       <div className={`flex flex-col gap-[12px] ${isCuration ? "" : "h-full"}`}>
         <SectionHeader
           title={section.title}
+          titleClassName={isCuration ? "typo-t6bold text-gray-1000" : undefined}
           actionLabel="더보기"
           onActionClick={onMoreClick ?? (() => {})}
           onTitleAreaClick={onSectionTitleAreaClick}

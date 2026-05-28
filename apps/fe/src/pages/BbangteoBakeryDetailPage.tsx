@@ -25,6 +25,7 @@ import { getUserProfile } from "@/lib/userProfileCache";
 import type { BakeryDetail, BakeryDetailBread } from "@/api/types/bakery";
 import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import { formatInstantInSeoul } from "@/utils/formatSeoulDateTime";
+import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 
 type MenuRow = {
   id: number;
@@ -205,13 +206,22 @@ const BakeryTitleInfo = ({
   </div>
 );
 
-const BakeryInfoRow = ({ icon, text }: { icon: "address" | "status" | "phone"; text: string }) => (
-  <div className="flex items-center gap-[8px]">
-    {icon === "address" ? <AppIcon src={IconAssets.IcPin} size={22} /> : <CircleIcon size={22} />}
-    <span className="flex-1 text-[16px] leading-[22px] text-[#1a1c20]">{text}</span>
-    <CircleIcon size={22} />
-  </div>
-);
+const BakeryInfoRow = ({ icon, text }: { icon: "address" | "status" | "phone"; text: string }) => {
+  const leadingIcon =
+    icon === "address"
+      ? IconAssets.IcPin
+      : icon === "status"
+        ? IconAssets.IcClock
+        : IconAssets.IcPhone;
+
+  return (
+    <div className="flex items-center gap-[8px]">
+      <AppIcon src={leadingIcon} size={22} />
+      <span className="flex-1 text-[16px] leading-[22px] text-[#1a1c20]">{text}</span>
+      <AppIcon src={IconAssets.IcChevronRight} size={22} className="opacity-50" />
+    </div>
+  );
+};
 
 const BakeryInfoList = ({
   address,
@@ -717,6 +727,7 @@ const BbangteoBakeryDetailPage = ({
   reviewUploaded = false,
 }: BbangteoBakeryDetailPageProps) => {
   const navigate = useNavigate();
+  const { requireLogin } = useLoginRequired();
   const { data, loading, error } = useBakeryDetail(bakeryId);
   const [isToastClosed, setIsToastClosed] = useState(false);
   const [likeState, setLikeState] = useState<{ liked: boolean; count: number } | null>(null);
@@ -730,7 +741,7 @@ const BbangteoBakeryDetailPage = ({
     }
   }, [data]);
 
-  const handleToggleLike = useCallback(async () => {
+  const performToggleLike = useCallback(async () => {
     if (bakeryId === undefined || likeBusy || likeState === null) return;
     setLikeBusy(true);
     try {
@@ -758,6 +769,12 @@ const BbangteoBakeryDetailPage = ({
       setLikeBusy(false);
     }
   }, [bakeryId, likeBusy, likeState]);
+
+  const handleToggleLike = useCallback(() => {
+    requireLogin(() => {
+      void performToggleLike();
+    }, "/bbangteo-bakery-detail");
+  }, [performToggleLike, requireLogin]);
 
   useEffect(() => {
     if (!reviewUploaded || isToastClosed) return;
@@ -817,7 +834,7 @@ const BbangteoBakeryDetailPage = ({
                 detail={data}
                 liked={likeState?.liked ?? Boolean(data.liked)}
                 likeCount={likeState?.count ?? data.likeCount ?? 0}
-                onToggleLike={() => void handleToggleLike()}
+                onToggleLike={handleToggleLike}
                 likeBusy={likeBusy}
               />
               <BakeryTabSection

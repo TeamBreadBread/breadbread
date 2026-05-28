@@ -27,7 +27,7 @@ export default function AppTopBar({
   onBackClick,
 }: AppTopBarProps) {
   const navigate = useNavigate();
-  const handleBack = onBackClick ?? onBack ?? (() => navigate({ to: "/" }));
+  const handleBack = onBackClick ?? onBack ?? (() => navigate({ to: "/home" }));
   const shouldHideBack = hideBack ?? false;
   const shouldShowBackButton = !shouldHideBack || showBackButton;
 

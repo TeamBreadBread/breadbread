@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import { getPosts, type PostListSort, type PostSummary, type PostType } from "@/api/posts";
 import { getErrorMessage } from "@/api/types/common";
 import {
@@ -257,6 +258,7 @@ type BbangteoBoardPageProps = {
 
 const BbangteoBoardPage = ({ initialTab = "자유 게시판" }: BbangteoBoardPageProps) => {
   const navigate = useNavigate();
+  const { requireLogin } = useLoginRequired();
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [page, setPage] = useState(0);
   const [items, setItems] = useState<PostSummaryWithLikeOverlay[]>([]);
@@ -381,7 +383,12 @@ const BbangteoBoardPage = ({ initialTab = "자유 게시판" }: BbangteoBoardPag
 
       {activeTab === "자유 게시판" ? (
         <FloatingWriteButton
-          onClick={() => navigate({ to: "/bbangteo-board-write", search: { editId: 0 } })}
+          onClick={() =>
+            requireLogin(
+              () => navigate({ to: "/bbangteo-board-write", search: { editId: 0 } }),
+              "/bbangteo-board-write",
+            )
+          }
         />
       ) : null}
       <BottomNav />
