@@ -1,6 +1,7 @@
 package com.breadbread.user.repository;
 
 import com.breadbread.user.entity.User;
+import com.breadbread.user.entity.UserRole;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -20,4 +21,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByNicknameAndIdNot(String nickname, Long id);
 
     boolean existsByPhone(String phone);
+
+    boolean existsByIdAndRole(Long id, UserRole role);
 }

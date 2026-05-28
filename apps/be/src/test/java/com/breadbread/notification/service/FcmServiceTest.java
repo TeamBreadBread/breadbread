@@ -200,6 +200,63 @@ class FcmServiceTest {
         }
     }
 
+    // ───────────────────────────── sendToUserSync ─────────────────────────────
+
+    @Test
+    void sendToUserSync_returns_false_whenNoTokens() {
+        when(fcmTokenRepository.findAllByUserId(1L)).thenReturn(List.of());
+
+        assertThat(fcmService.sendToUserSync(1L, "제목", "내용", null)).isFalse();
+    }
+
+    @Test
+    void sendToUserSync_returns_true_whenSendSucceeds() throws Exception {
+        FcmToken token = fcmToken("device-token");
+        when(fcmTokenRepository.findAllByUserId(1L)).thenReturn(List.of(token));
+
+        FirebaseMessaging mockMessaging = mock(FirebaseMessaging.class);
+        when(mockMessaging.send(any(Message.class))).thenReturn("msg-id");
+
+        try (MockedStatic<FirebaseMessaging> mocked = mockStatic(FirebaseMessaging.class)) {
+            mocked.when(FirebaseMessaging::getInstance).thenReturn(mockMessaging);
+
+            assertThat(fcmService.sendToUserSync(1L, "제목", "내용", null)).isTrue();
+        }
+    }
+
+    @Test
+    void sendToUserSync_returns_true_whenPartialSuccess() throws Exception {
+        FcmToken token1 = fcmToken("fail-token");
+        FcmToken token2 = fcmToken("ok-token");
+        when(fcmTokenRepository.findAllByUserId(1L)).thenReturn(List.of(token1, token2));
+
+        FirebaseMessagingException exception = mockFirebaseException(MessagingErrorCode.INTERNAL);
+        FirebaseMessaging mockMessaging = mock(FirebaseMessaging.class);
+        when(mockMessaging.send(any(Message.class))).thenThrow(exception).thenReturn("msg-id");
+
+        try (MockedStatic<FirebaseMessaging> mocked = mockStatic(FirebaseMessaging.class)) {
+            mocked.when(FirebaseMessaging::getInstance).thenReturn(mockMessaging);
+
+            assertThat(fcmService.sendToUserSync(1L, "제목", "내용", null)).isTrue();
+        }
+    }
+
+    @Test
+    void sendToUserSync_returns_false_whenAllFail() throws Exception {
+        FcmToken token = fcmToken("token");
+        when(fcmTokenRepository.findAllByUserId(1L)).thenReturn(List.of(token));
+
+        FirebaseMessagingException exception = mockFirebaseException(MessagingErrorCode.INTERNAL);
+        FirebaseMessaging mockMessaging = mock(FirebaseMessaging.class);
+        when(mockMessaging.send(any(Message.class))).thenThrow(exception);
+
+        try (MockedStatic<FirebaseMessaging> mocked = mockStatic(FirebaseMessaging.class)) {
+            mocked.when(FirebaseMessaging::getInstance).thenReturn(mockMessaging);
+
+            assertThat(fcmService.sendToUserSync(1L, "제목", "내용", null)).isFalse();
+        }
+    }
+
     // ───────────────────────────── helpers ─────────────────────────────
 
     private static User user(long id) {

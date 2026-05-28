@@ -44,16 +44,29 @@ public class FcmService {
     }
 
     @Async
+    @Transactional
     public void sendToUser(Long userId, String title, String body, Map<String, String> data) {
+        sendInternal(userId, title, body, data);
+    }
+
+    /** 동기 전송. 하나 이상 토큰에 성공하면 true 반환. */
+    @Transactional
+    public boolean sendToUserSync(
+            Long userId, String title, String body, Map<String, String> data) {
+        return sendInternal(userId, title, body, data);
+    }
+
+    private boolean sendInternal(Long userId, String title, String body, Map<String, String> data) {
         List<FcmToken> tokens = fcmTokenRepository.findAllByUserId(userId);
 
         if (tokens.isEmpty()) {
             log.info("FCM 전송 대상 토큰 없음: userId={}", userId);
-            return;
+            return false;
         }
 
         log.info("FCM 전송 시작: userId={}, 토큰 수={}, title={}", userId, tokens.size(), title);
 
+        boolean anySent = false;
         for (FcmToken fcmToken : tokens) {
             String tokenSuffix = tokenSuffix(fcmToken.getToken());
             try {
@@ -76,6 +89,7 @@ public class FcmService {
                         userId,
                         tokenSuffix,
                         messageId);
+                anySent = true;
             } catch (FirebaseMessagingException e) {
                 log.warn(
                         "FCM 전송 실패: userId={}, token=...{}, errorCode={}, message={}",
@@ -96,6 +110,7 @@ public class FcmService {
                         e.getMessage());
             }
         }
+        return anySent;
     }
 
     private static String tokenSuffix(String token) {
