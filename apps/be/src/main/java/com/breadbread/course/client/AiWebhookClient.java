@@ -64,17 +64,19 @@ public class AiWebhookClient {
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
+            if (reactor.core.Exceptions.unwrap(e)
+                    instanceof java.util.concurrent.TimeoutException) {
+                log.warn(
+                        "[AI 웹훅] 타임아웃: jobId={}, timeout={}s",
+                        jobId,
+                        aiProperties.getWebhookTimeoutSeconds());
+                throw new CustomException(ErrorCode.AI_WEBHOOK_TIMEOUT);
+            }
             log.error(
                     "[AI 웹훅] 웹훅 호출 실패: jobId={}, elapsed={}ms",
                     jobId,
                     System.currentTimeMillis() - start,
                     e);
-            if (e instanceof java.util.concurrent.TimeoutException
-                    || (e.getMessage() != null && e.getMessage().contains("Timeout"))) {
-                long timeoutSec = aiProperties.getWebhookTimeoutSeconds();
-                log.warn("[AI 웹훅] 타임아웃 발생: jobId={}, timeoutSeconds={}", jobId, timeoutSec);
-                throw new CustomException(ErrorCode.AI_WEBHOOK_TIMEOUT);
-            }
             throw new CustomException(ErrorCode.AI_WEBHOOK_CONNECTION_ERROR);
         }
 

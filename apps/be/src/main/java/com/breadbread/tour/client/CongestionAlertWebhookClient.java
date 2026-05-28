@@ -49,15 +49,19 @@ public class CongestionAlertWebhookClient {
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
+            if (reactor.core.Exceptions.unwrap(e)
+                    instanceof java.util.concurrent.TimeoutException) {
+                log.warn(
+                        "[혼잡도 웹훅] 타임아웃: userId={}, timeout={}s",
+                        request.getUserId(),
+                        aiProperties.getWebhookTimeoutSeconds());
+                throw new CustomException(ErrorCode.AI_WEBHOOK_TIMEOUT);
+            }
             log.error(
                     "[혼잡도 웹훅] 호출 실패: userId={}, elapsed={}ms",
                     request.getUserId(),
                     System.currentTimeMillis() - start,
                     e);
-            if (reactor.core.Exceptions.unwrap(e)
-                    instanceof java.util.concurrent.TimeoutException) {
-                throw new CustomException(ErrorCode.AI_WEBHOOK_TIMEOUT);
-            }
             throw new CustomException(ErrorCode.AI_WEBHOOK_CONNECTION_ERROR);
         }
 

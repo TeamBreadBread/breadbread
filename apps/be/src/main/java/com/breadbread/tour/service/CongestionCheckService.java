@@ -99,6 +99,13 @@ public class CongestionCheckService {
         } catch (CustomException e) {
             log.warn("[혼잡도 체크] 웹훅 호출 실패 — FCM 전송 생략: userId={}, error={}", userId, e.getMessage());
             return false;
+        } catch (Exception e) {
+            log.warn(
+                    "[혼잡도 체크] 웹훅 호출 중 예외 — FCM 전송 생략: userId={}, error={}",
+                    userId,
+                    e.getMessage(),
+                    e);
+            return false;
         }
 
         CongestionAlertWebhookResponse.SuggestionData suggestionData = response.getData();
