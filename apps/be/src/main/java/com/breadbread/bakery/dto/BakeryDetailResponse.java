@@ -36,7 +36,8 @@ public class BakeryDetailResponse {
     private Long likeCount;
     private boolean liked;
 
-    public static BakeryDetailResponse from(Bakery bakery, Long likeCount, boolean liked, Long reviewCount) {
+    public static BakeryDetailResponse from(
+            Bakery bakery, Long likeCount, boolean liked, Long reviewCount) {
         BusinessHours bh = bakery.getBusinessHours();
 
         List<BakeryBreadResponse> breads =
@@ -56,7 +57,10 @@ public class BakeryDetailResponse {
         List<String> closedDayNames =
                 closed == null || closed.isEmpty()
                         ? Collections.emptyList()
-                        : closed.stream().map(DayOfWeek::name).sorted().collect(Collectors.toList());
+                        : closed.stream()
+                                .map(DayOfWeek::name)
+                                .sorted()
+                                .collect(Collectors.toList());
 
         return BakeryDetailResponse.builder()
                 .id(bakery.getId())
