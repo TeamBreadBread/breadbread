@@ -3,6 +3,8 @@ on:
   pull_request:
     branches: [main]
     types: [closed]
+    paths:
+      - "apps/be/**"
 
 permissions:
   contents: read
