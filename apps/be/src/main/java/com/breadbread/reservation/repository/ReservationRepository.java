@@ -43,4 +43,14 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                     + "JOIN FETCH cb.bakery "
                     + "WHERE r.id = :id")
     Optional<Reservation> findWithCourseById(@Param("id") Long id);
+
+    @Query(
+            "SELECT DISTINCT r FROM Reservation r "
+                    + "JOIN FETCH r.user u "
+                    + "JOIN FETCH r.course c "
+                    + "JOIN FETCH c.courseBakeries cb "
+                    + "JOIN FETCH cb.bakery "
+                    + "WHERE r.departureDate = :date AND r.status = :status")
+    List<Reservation> findTodayConfirmedWithCourse(
+            @Param("date") LocalDate date, @Param("status") ReservationStatus status);
 }
