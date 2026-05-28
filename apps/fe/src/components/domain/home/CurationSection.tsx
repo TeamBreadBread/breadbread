@@ -59,6 +59,7 @@ const CurationSection = ({
             bakeryListEntryFrom="home"
             listParamsOverride={listParamsOverride}
             excludeBakeryIds={excludeBakeryIds}
+            lockSelectionOnMount
             onDisplayedBakeryIdsChange={(ids) => {
               setDisplayedPinIds(ids);
               onDisplayedBakeryIdsChange?.(ids);

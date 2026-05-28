@@ -10,9 +10,14 @@ const DONG_OPTIONS = ["소제동", "은행동"] as const;
 
 type DongCurationSectionProps = {
   excludeBakeryIds?: number[];
+  /** 1번 큐레이션 노출 확정 후 true */
+  readyToPick?: boolean;
 };
 
-const DongCurationSection = ({ excludeBakeryIds }: DongCurationSectionProps) => {
+const DongCurationSection = ({
+  excludeBakeryIds,
+  readyToPick = false,
+}: DongCurationSectionProps) => {
   const navigate = useNavigate();
   const [displayedPinIds, setDisplayedPinIds] = useState<number[]>([]);
   const [selectedDong] = useState(
@@ -51,9 +56,11 @@ const DongCurationSection = ({ excludeBakeryIds }: DongCurationSectionProps) => 
         <div className="w-full">
           <CurationBakeryContent
             bakeryListEntryFrom="home"
-            listParamsOverride={{ size: 30 }}
+            listParamsOverride={{ size: 60 }}
             excludeBakeryIds={excludeBakeryIds}
             localKeywordFilter={selectedDong}
+            lockSelectionOnMount
+            readyToPick={readyToPick}
             onDisplayedBakeryIdsChange={setDisplayedPinIds}
           />
         </div>

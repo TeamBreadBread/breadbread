@@ -82,14 +82,15 @@ export default function LoginEntryPage() {
     <MobileFrame>
       <AppTopBar title="로그인" />
 
-      <main className="flex flex-1 flex-col items-center gap-x4 py-x8">
-        <section className="flex w-full flex-col items-center gap-x7 px-x5 text-center">
-          <img
-            src={breadTaxiImage}
-            alt=""
-            aria-hidden
-            className="h-[64px] w-[64px] object-contain"
-          />
+      <main className="relative flex flex-1 flex-col items-center gap-x4 py-x8">
+        <img
+          src={breadTaxiImage}
+          alt=""
+          aria-hidden
+          className="absolute left-x5 top-x8 h-[64px] w-[64px] object-contain"
+        />
+
+        <section className="flex w-full flex-col items-center px-x5 pt-[104px] text-center">
           <div className="flex w-full flex-col items-center gap-x2">
             <p className={heroTitleClassName}>
               로그인하고 빵빵을
@@ -99,7 +100,7 @@ export default function LoginEntryPage() {
           </div>
         </section>
 
-        <section className="flex w-full flex-col gap-x2-5 px-x5">
+        <section className="flex w-full flex-col gap-x2 px-x5">
           {SOCIAL_BUTTONS.map(({ id, label, className }) => (
             <Button
               key={id}

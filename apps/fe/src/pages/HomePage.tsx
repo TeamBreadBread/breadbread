@@ -7,13 +7,22 @@ import DongCurationSection from "@/components/domain/home/DongCurationSection";
 
 const HomePage = () => {
   const [firstCurationBakeryIds, setFirstCurationBakeryIds] = useState<number[]>([]);
+  const [firstCurationReady, setFirstCurationReady] = useState(false);
 
   return (
     <AppShell>
       <main className="flex-1 space-y-[10px] pb-[56px] sm:pb-[72px]">
         <HomeHeroSection />
-        <CurationSection onDisplayedBakeryIdsChange={setFirstCurationBakeryIds} />
-        <DongCurationSection excludeBakeryIds={firstCurationBakeryIds} />
+        <CurationSection
+          onDisplayedBakeryIdsChange={(ids) => {
+            setFirstCurationBakeryIds(ids);
+            setFirstCurationReady(true);
+          }}
+        />
+        <DongCurationSection
+          excludeBakeryIds={firstCurationBakeryIds}
+          readyToPick={firstCurationReady}
+        />
       </main>
 
       <BottomNav />

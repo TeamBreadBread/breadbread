@@ -8,15 +8,17 @@ import {
   BBANGTEO_HOME_FREE_POST_ITEMS,
   BBANGTEO_HOME_NEWS_POST_ITEMS,
 } from "@/data/bbangteoCommunityMocks";
+import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   QUICK_MENU_ROUTE_BY_LABEL,
   type QuickMenuCategoryLabel,
 } from "@/components/domain/home/quickMenuCategories";
+import { BBANGTEO_CURATION_SECTION_TITLE } from "@/components/domain/bbangteo/bbangteoCuration.constants";
 
 const sections: CommunitySectionItem[] = [
   {
-    title: "대전에 왔으면 여긴 꼭 들려야지!",
+    title: BBANGTEO_CURATION_SECTION_TITLE,
     /** 헤더·패딩·축소 미리보기 카드(이미지 92 + 텍스트) 합에 맞춘 최소 높이 — 데이터는 홈과 동일 API */
     sectionHeight: 258,
     contentType: "curationApi",
@@ -37,9 +39,16 @@ const sections: CommunitySectionItem[] = [
 
 const BbangteoPage = () => {
   const navigate = useNavigate();
+  const [curationDisplayedBakeryIds, setCurationDisplayedBakeryIds] = useState<number[]>([]);
 
   const goToBakeryList = () => {
-    navigate({ to: "/bbangteo-bakery-list", search: { from: "bbangteo", curationPins: [] } });
+    navigate({
+      to: "/bbangteo-bakery-list",
+      search: {
+        from: "bbangteo",
+        curationPins: curationDisplayedBakeryIds,
+      },
+    });
   };
   const goToBoardList = () => {
     navigate({ to: "/bbangteo-board" });
@@ -62,11 +71,14 @@ const BbangteoPage = () => {
             <BbangteoCommunitySection
               key={section.title}
               section={section}
+              onCurationDisplayedBakeryIdsChange={
+                section.contentType === "curationApi" ? setCurationDisplayedBakeryIds : undefined
+              }
               onSectionTitleAreaClick={
                 section.title === "빵빵 소식" ? goToArticleBoardList : undefined
               }
               onMoreClick={
-                section.title === "대전에 왔으면 여긴 꼭 들려야지!"
+                section.title === BBANGTEO_CURATION_SECTION_TITLE
                   ? goToBakeryList
                   : section.title === "자유 게시판"
                     ? goToBoardList

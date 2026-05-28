@@ -11,9 +11,9 @@ const RecommendationHeroCard = ({ onClick }: RecommendationHeroCardProps) => {
     <button
       type="button"
       onClick={onClick}
-      className="flex h-[188px] w-[177px] flex-1 flex-col justify-between overflow-hidden rounded-[var(--radius-r2)] bg-gray-100 px-3 py-4 text-left"
+      className="flex h-[188px] w-[177px] flex-1 flex-col overflow-hidden rounded-[var(--radius-r2)] bg-gray-100 text-left"
     >
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 px-[14px] pt-4">
         <p className="typo-t3regular text-gray-700">내 취향 빵집 찾아보기</p>
         <div className="flex items-center gap-1">
           <span className="typo-t5bold text-gray-1000">AI 빵집 추천</span>
@@ -21,12 +21,12 @@ const RecommendationHeroCard = ({ onClick }: RecommendationHeroCardProps) => {
         </div>
       </div>
 
-      <div className="flex justify-end">
+      <div className="mt-auto h-[110px] w-full shrink-0">
         <img
           src={imgAiRecommand}
           alt=""
           aria-hidden
-          className="h-[106px] w-[153px] object-contain"
+          className="h-full w-full object-contain object-right-bottom"
         />
       </div>
     </button>

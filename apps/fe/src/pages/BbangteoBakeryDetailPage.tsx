@@ -1,13 +1,6 @@
-import axios from "axios";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  BAKERY_REVIEWS_DEFAULT_SIZE,
-  deleteBakeryReview,
-  getBakeryReviews,
-  likeBakery,
-  unlikeBakery,
-} from "@/api/bakery";
+import { BAKERY_REVIEWS_DEFAULT_SIZE, deleteBakeryReview, getBakeryReviews } from "@/api/bakery";
 import { isBakeryReviewAuthor, type BakeryReview } from "@/api/types/bakery";
 import { getErrorMessage } from "@/api/types/common";
 import { AppIcon, IconAssets } from "@/components/icons";
@@ -20,12 +13,17 @@ import {
 } from "@/components/layout/layout.constants";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { ToastBanner } from "@/components/common";
+import FloatingPlusButton from "@/components/common/FloatingPlusButton";
+import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import { useBakeryDetail } from "@/hooks/useBakeryDetail";
 import { getUserProfile } from "@/lib/userProfileCache";
 import type { BakeryDetail, BakeryDetailBread } from "@/api/types/bakery";
 import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import { formatInstantInSeoul } from "@/utils/formatSeoulDateTime";
-import { useLoginRequired } from "@/lib/auth/useLoginRequired";
+import { buildWeeklyHoursRows, getBakeryHoursStatusLabel } from "@/utils/bakeryBusinessHours";
+import BakeryKakaoMapPreview from "@/components/domain/bbangteo/BakeryKakaoMapPreview";
+import { formatPhoneDisplay } from "@/utils/formatPhoneNumber";
+import { cn } from "@/utils/cn";
 
 type MenuRow = {
   id: number;
@@ -38,19 +36,6 @@ type MenuRow = {
 const MAX_PREVIEW_IMAGES = 4;
 const MAX_REVIEW_PREVIEWS = 4;
 
-function formatClock(value: string | null | undefined): string | null {
-  if (value == null || value === "") return null;
-  const m = String(value).match(/(\d{1,2}):(\d{2})/);
-  return m ? `${m[1]}:${m[2]}` : null;
-}
-
-function buildHoursLabel(detail: BakeryDetail): string {
-  const open = formatClock(detail.openTime ?? undefined);
-  const close = formatClock(detail.closeTime ?? undefined);
-  if (open && close) return `오늘 ${open} ~ ${close}`;
-  return "영업 시간 정보 없음";
-}
-
 function breadsToMenus(breads: BakeryDetailBread[], bakeryName?: string): MenuRow[] {
   return breads.map((b) => ({
     id: b.id,
@@ -60,27 +45,6 @@ function breadsToMenus(breads: BakeryDetailBread[], bakeryName?: string): MenuRo
     soldOut: b.estimatedSoldOut || (bakeryName === "성심당 본점" && b.name.trim() === "튀김소보로"),
   }));
 }
-
-const CircleIcon = ({ size = 18, color = "#dcdee3" }: { size?: number; color?: string }) => (
-  <div className="rounded-full" style={{ width: size, height: size, backgroundColor: color }} />
-);
-
-const HeartIcon = ({ filled }: { filled: boolean }) => (
-  <svg
-    width="28"
-    height="28"
-    viewBox="0 0 24 24"
-    aria-hidden
-    className={filled ? "text-red-500" : "text-[#b0b3ba]"}
-    fill={filled ? "currentColor" : "none"}
-    stroke="currentColor"
-    strokeWidth="1.75"
-    strokeLinejoin="round"
-    strokeLinecap="round"
-  >
-    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-  </svg>
-);
 
 const BackHeader = ({
   listEntryFrom,
@@ -162,117 +126,126 @@ const BakeryImageGallery = ({
   );
 };
 
+const META_ICON_CLASS = "icon-gray-600";
+
 const BakeryTitleInfo = ({
   name,
   rating,
-  likeCount,
-  liked,
-  onToggleLike,
-  likeBusy,
+  reviewCount,
 }: {
   name: string;
   rating: number;
-  likeCount: number;
-  liked: boolean;
-  onToggleLike: () => void;
-  likeBusy: boolean;
+  reviewCount: number;
 }) => (
   <div className="flex flex-col gap-[10px]">
-    <div className="flex items-start justify-between gap-[12px]">
-      <h1 className="flex-1 text-[22px] leading-[30px] font-bold text-[#1a1c20]">{name}</h1>
-      <button
-        type="button"
-        aria-label={liked ? "좋아요 취소" : "좋아요"}
-        aria-pressed={liked}
-        disabled={likeBusy}
-        onClick={onToggleLike}
-        className="shrink-0 rounded-full p-[4px] disabled:opacity-45"
-      >
-        <HeartIcon filled={liked} />
-      </button>
-    </div>
-    <div className="flex items-center gap-[4px] text-[14px] leading-[19px] font-medium text-[#868b94]">
-      <div className="flex items-center gap-[2px]">
-        <span>{rating}</span>
-        <div className="flex items-center">
-          {Array.from({ length: 5 }).map((_, idx) => (
-            <AppIcon key={idx} src={IconAssets.IcStar} size={18} />
-          ))}
-        </div>
-      </div>
+    <h1 className="text-[22px] leading-[30px] font-bold text-[#1a1c20]">{name}</h1>
+    <div className="flex items-center gap-x1 text-[14px] leading-[19px] font-medium text-gray-600">
+      <AppIcon src={IconAssets.IcStar} size={18} className="icon-orange-600 shrink-0" alt="" />
+      <span>{rating.toFixed(1)}</span>
       <span>·</span>
-      <span>찜 ({likeCount.toLocaleString("ko-KR")})</span>
+      <span>후기({reviewCount.toLocaleString("ko-KR")})</span>
     </div>
   </div>
 );
 
-const BakeryInfoRow = ({ icon, text }: { icon: "address" | "status" | "phone"; text: string }) => {
-  const leadingIcon =
-    icon === "address"
-      ? IconAssets.IcPin
-      : icon === "status"
-        ? IconAssets.IcClock
-        : IconAssets.IcPhone;
+const BakeryInfoList = ({ detail }: { detail: BakeryDetail }) => {
+  const [mapExpanded, setMapExpanded] = useState(false);
+  const [hoursExpanded, setHoursExpanded] = useState(false);
+  const statusLabel = getBakeryHoursStatusLabel(detail);
+  const weeklyRows = buildWeeklyHoursRows(detail);
+  const phoneLabel = formatPhoneDisplay(detail.phone);
+  const isOpenNow = statusLabel === "영업 중";
 
   return (
-    <div className="flex items-center gap-[8px]">
-      <AppIcon src={leadingIcon} size={22} />
-      <span className="flex-1 text-[16px] leading-[22px] text-[#1a1c20]">{text}</span>
-      <AppIcon src={IconAssets.IcChevronRight} size={22} className="opacity-50" />
+    <div className="flex flex-col gap-[10px]">
+      <div className="flex flex-col">
+        <button
+          type="button"
+          aria-expanded={mapExpanded}
+          onClick={() => setMapExpanded((prev) => !prev)}
+          className="flex w-full items-center gap-[8px] text-left"
+        >
+          <AppIcon src={IconAssets.IcPin} size={22} className={META_ICON_CLASS} alt="" />
+          <span className="flex-1 text-[16px] leading-[22px] text-[#1a1c20]">{detail.address}</span>
+          <AppIcon
+            src={IconAssets.IcChevronDown}
+            size={22}
+            className={cn(META_ICON_CLASS, "transition-transform", mapExpanded && "rotate-180")}
+            alt=""
+          />
+        </button>
+        {mapExpanded ? (
+          <div className="mt-x2 h-[180px] w-full overflow-hidden rounded-r3 border border-gray-200">
+            <BakeryKakaoMapPreview
+              name={detail.name}
+              address={detail.address}
+              lat={detail.lat}
+              lng={detail.lng}
+              className="h-full w-full"
+            />
+          </div>
+        ) : null}
+      </div>
+
+      <div className="flex flex-col">
+        <button
+          type="button"
+          aria-expanded={hoursExpanded}
+          onClick={() => setHoursExpanded((prev) => !prev)}
+          className="flex w-full items-center gap-[8px] text-left"
+        >
+          <AppIcon src={IconAssets.IcClock} size={22} className={META_ICON_CLASS} alt="" />
+          <span
+            className={cn(
+              "flex-1 text-[16px] leading-[22px]",
+              isOpenNow ? "font-medium text-orange-600" : "text-[#1a1c20]",
+            )}
+          >
+            {statusLabel}
+          </span>
+          <AppIcon
+            src={IconAssets.IcChevronDown}
+            size={22}
+            className={cn(META_ICON_CLASS, "transition-transform", hoursExpanded && "rotate-180")}
+            alt=""
+          />
+        </button>
+        {hoursExpanded ? (
+          <ul className="mt-x2 flex flex-col gap-x1 border-t border-gray-200 pt-x2 pl-[30px]">
+            {weeklyRows.map((row) => (
+              <li
+                key={row.label}
+                className="flex items-center justify-between gap-x2 text-[14px] leading-[19px] text-gray-700"
+              >
+                <span className={row.isToday ? "font-semibold text-gray-1000" : undefined}>
+                  {row.label}
+                </span>
+                <span>{row.text}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+
+      <div className="flex items-center gap-[8px]">
+        <AppIcon src={IconAssets.IcPhone} size={22} className={META_ICON_CLASS} alt="" />
+        <span className="flex-1 text-[16px] leading-[22px] text-[#1a1c20]">{phoneLabel}</span>
+      </div>
     </div>
   );
 };
 
-const BakeryInfoList = ({
-  address,
-  hoursLabel,
-  phoneLabel,
-}: {
-  address: string;
-  hoursLabel: string;
-  phoneLabel: string;
-}) => (
-  <div className="flex flex-col gap-[10px]">
-    <BakeryInfoRow icon="address" text={address} />
-    <BakeryInfoRow icon="status" text={hoursLabel} />
-    <BakeryInfoRow icon="phone" text={phoneLabel} />
-  </div>
-);
-
-const BakeryHero = ({
-  detail,
-  liked,
-  likeCount,
-  onToggleLike,
-  likeBusy,
-}: {
-  detail: BakeryDetail;
-  liked: boolean;
-  likeCount: number;
-  onToggleLike: () => void;
-  likeBusy: boolean;
-}) => {
+const BakeryHero = ({ detail }: { detail: BakeryDetail }) => {
   const rating = detail.rating != null ? Number(detail.rating) : 0;
-  const phoneLabel = detail.phone?.trim() ? detail.phone : "등록된 전화번호가 없습니다";
+  const reviewCount = detail.reviewCount != null ? Number(detail.reviewCount) : 0;
   const images = detail.imageUrls ?? [];
 
   return (
     <section className="flex flex-col">
       <BakeryImageGallery imageUrls={images} bakeryName={detail.name} />
       <div className="flex flex-col gap-[16px] px-[20px] py-[16px]">
-        <BakeryTitleInfo
-          name={detail.name}
-          rating={rating}
-          likeCount={likeCount}
-          liked={liked}
-          onToggleLike={onToggleLike}
-          likeBusy={likeBusy}
-        />
-        <BakeryInfoList
-          address={detail.address}
-          hoursLabel={buildHoursLabel(detail)}
-          phoneLabel={phoneLabel}
-        />
+        <BakeryTitleInfo name={detail.name} rating={rating} reviewCount={reviewCount} />
+        <BakeryInfoList detail={detail} />
       </div>
     </section>
   );
@@ -554,7 +527,18 @@ const BakeryTabSection = ({
   const [reviewsLoadingMore, setReviewsLoadingMore] = useState(false);
   const [reviewsError, setReviewsError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { requireLogin } = useLoginRequired();
   const viewerUserId = getUserProfile()?.userId;
+
+  const handleWriteReview = useCallback(() => {
+    if (bakeryId === undefined) return;
+    requireLogin(() => {
+      void navigate({
+        to: "/bbangteo-bakery-review-write",
+        search: { bakeryId, from: listEntryFrom, reviewId: undefined },
+      });
+    }, "/bbangteo");
+  }, [bakeryId, listEntryFrom, navigate, requireLogin]);
 
   const loadReviewsFirstPage = useCallback(async () => {
     if (bakeryId === undefined) return;
@@ -638,24 +622,6 @@ const BakeryTabSection = ({
         <MenuList menus={menus} />
       ) : (
         <>
-          <div className="px-[20px] py-[16px]">
-            <button
-              type="button"
-              className="flex w-full items-center gap-[10px] rounded-[8px] bg-[#eff6ff] px-[16px] py-[18px]"
-              onClick={() =>
-                void navigate({
-                  to: "/bbangteo-bakery-review-write",
-                  search: { bakeryId, from: listEntryFrom, reviewId: undefined },
-                })
-              }
-            >
-              <CircleIcon size={24} />
-              <span className="flex-1 text-left text-[16px] leading-[22px] font-bold text-[#1a1c20]">
-                후기 작성하기
-              </span>
-              <CircleIcon size={24} />
-            </button>
-          </div>
           <ReviewList
             reviews={reviews}
             totalCount={reviewTotal}
@@ -669,6 +635,8 @@ const BakeryTabSection = ({
             loadingMore={reviewsLoadingMore}
             onLoadMore={loadReviewsNextPage}
           />
+          <div className="h-[90px] shrink-0" aria-hidden />
+          <FloatingPlusButton ariaLabel="후기 작성" onClick={handleWriteReview} />
         </>
       )}
     </section>
@@ -727,54 +695,8 @@ const BbangteoBakeryDetailPage = ({
   reviewUploaded = false,
 }: BbangteoBakeryDetailPageProps) => {
   const navigate = useNavigate();
-  const { requireLogin } = useLoginRequired();
   const { data, loading, error } = useBakeryDetail(bakeryId);
   const [isToastClosed, setIsToastClosed] = useState(false);
-  const [likeState, setLikeState] = useState<{ liked: boolean; count: number } | null>(null);
-  const [likeBusy, setLikeBusy] = useState(false);
-
-  useEffect(() => {
-    if (data) {
-      setLikeState({ liked: Boolean(data.liked), count: data.likeCount ?? 0 });
-    } else {
-      setLikeState(null);
-    }
-  }, [data]);
-
-  const performToggleLike = useCallback(async () => {
-    if (bakeryId === undefined || likeBusy || likeState === null) return;
-    setLikeBusy(true);
-    try {
-      if (likeState.liked) {
-        await unlikeBakery(bakeryId);
-        setLikeState((s) => (s ? { liked: false, count: Math.max(0, s.count - 1) } : s));
-      } else {
-        await likeBakery(bakeryId);
-        setLikeState((s) => (s ? { liked: true, count: s.count + 1 } : s));
-      }
-    } catch (e) {
-      if (axios.isAxiosError(e)) {
-        const st = e.response?.status;
-        if (st === 409 && !likeState.liked) {
-          setLikeState((s) => (s ? { liked: true, count: s.count } : s));
-          return;
-        }
-        if (st === 400 && likeState.liked) {
-          setLikeState((s) => (s ? { liked: false, count: s.count } : s));
-          return;
-        }
-      }
-      alert(getErrorMessage(e));
-    } finally {
-      setLikeBusy(false);
-    }
-  }, [bakeryId, likeBusy, likeState]);
-
-  const handleToggleLike = useCallback(() => {
-    requireLogin(() => {
-      void performToggleLike();
-    }, "/bbangteo-bakery-detail");
-  }, [performToggleLike, requireLogin]);
 
   useEffect(() => {
     if (!reviewUploaded || isToastClosed) return;
@@ -830,13 +752,7 @@ const BbangteoBakeryDetailPage = ({
             </div>
           ) : data ? (
             <>
-              <BakeryHero
-                detail={data}
-                liked={likeState?.liked ?? Boolean(data.liked)}
-                likeCount={likeState?.count ?? data.likeCount ?? 0}
-                onToggleLike={handleToggleLike}
-                likeBusy={likeBusy}
-              />
+              <BakeryHero detail={data} />
               <BakeryTabSection
                 menus={breadsToMenus(data.breads ?? [], data.name)}
                 showReviewTab={reviewUploaded}

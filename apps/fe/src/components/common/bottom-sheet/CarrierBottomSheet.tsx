@@ -1,3 +1,4 @@
+import { AppIcon, IconAssets } from "@/components/icons";
 import { cn } from "@/utils/cn";
 
 interface BottomSheetOption {
@@ -69,18 +70,11 @@ export default function BottomSheet({
                           {option.label}
                         </span>
 
-                        <div
-                          className={cn(
-                            "flex h-x6 w-x6 items-center justify-center rounded-full border",
-                            isSelected
-                              ? "border-gray-800 bg-gray-800"
-                              : "border-gray-400 bg-gray-00",
-                          )}
-                        >
-                          {isSelected ? (
-                            <div className="h-x2 w-x2 rounded-full bg-gray-00" />
-                          ) : null}
-                        </div>
+                        {isSelected ? (
+                          <AppIcon src={IconAssets.IcCheck} size="x6" alt="" />
+                        ) : (
+                          <span className="h-x6 w-x6 shrink-0" aria-hidden />
+                        )}
                       </button>
                     </li>
                   );

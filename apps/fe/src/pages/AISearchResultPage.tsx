@@ -1,4 +1,5 @@
 import { AppTopBar, Button } from "@/components/common";
+import { AppIcon, IconAssets } from "@/components/icons";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { MobileFrame } from "@/components/layout";
@@ -273,7 +274,19 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
 
       <div className="pointer-events-none relative z-10">
         <div className="pointer-events-auto bg-white shadow-[0_1px_0_rgba(0,0,0,0.06)]">
-          <AppTopBar title="AI 추천 코스" onBack={() => navigate({ to: "/home" })} />
+          <AppTopBar
+            title="AI 추천 코스"
+            onBack={() => navigate({ to: "/home" })}
+            rightAction={
+              <button
+                type="button"
+                aria-label="더보기"
+                className="flex items-center justify-center"
+              >
+                <AppIcon src={IconAssets.IcKebab} size={24} alt="" />
+              </button>
+            }
+          />
           <ResultSummaryCard
             summary={dynamicSummary ?? summary}
             liked={likeState.liked}

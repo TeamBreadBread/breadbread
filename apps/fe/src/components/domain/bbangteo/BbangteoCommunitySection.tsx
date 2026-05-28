@@ -45,7 +45,8 @@ const BbangteoCommunitySection = ({
           actionLabel="더보기"
           onActionClick={onMoreClick ?? (() => {})}
           onTitleAreaClick={onSectionTitleAreaClick}
-          icon={<CircleIcon size={18} color="#dcdee3" />}
+          showDefaultIcon={!isCuration}
+          icon={isCuration ? undefined : <CircleIcon size={18} color="#dcdee3" />}
         />
 
         {section.contentType === "curationApi" ? (
@@ -54,6 +55,7 @@ const BbangteoCommunitySection = ({
               compact
               displayCount={CURATION_BBANGTEO_DISPLAY_COUNT}
               bakeryListEntryFrom="bbangteo"
+              lockSelectionOnMount
               onDisplayedBakeryIdsChange={onCurationDisplayedBakeryIdsChange}
             />
           </div>
