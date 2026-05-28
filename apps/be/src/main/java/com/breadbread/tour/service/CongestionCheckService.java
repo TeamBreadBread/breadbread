@@ -137,6 +137,7 @@ public class CongestionCheckService {
                 reservationRepository.findTodayConfirmedWithCourse(
                         today, ReservationStatus.CONFIRMED);
 
+        if (upcoming.isEmpty()) return;
         log.info("[혼잡도 체크] 출발 전 대상 예약 수: {}", upcoming.size());
         for (Reservation reservation : upcoming) {
             LocalTime departureTime = reservation.getDepartureTime();
