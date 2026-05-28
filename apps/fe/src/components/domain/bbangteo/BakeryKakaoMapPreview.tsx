@@ -38,17 +38,17 @@ async function resolveCoordinates(
 
   try {
     const kakao = await loadKakaoMapSdk();
-    const { services } = kakao;
+    const services = kakao.maps.services;
     if (!services?.Geocoder) return null;
 
     const geocoder = new services.Geocoder();
     return await new Promise((resolve) => {
-      geocoder.addressSearch(trimmed, (result, status) => {
+      geocoder.addressSearch(trimmed, (result: { x?: string; y?: string }[], status: string) => {
         if (status !== services.Status.OK || !result?.[0]) {
           resolve(null);
           return;
         }
-        const first = result[0] as { x?: string; y?: string };
+        const first = result[0];
         const resolvedLat = Number(first.y);
         const resolvedLng = Number(first.x);
         if (!Number.isFinite(resolvedLat) || !Number.isFinite(resolvedLng)) {
