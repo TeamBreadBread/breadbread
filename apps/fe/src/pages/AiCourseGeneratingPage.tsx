@@ -13,13 +13,15 @@ type AiCourseGeneratingPageProps = {
 export default function AiCourseGeneratingPage({ jobId }: AiCourseGeneratingPageProps) {
   const navigate = useNavigate();
   const [secondsLeft, setSecondsLeft] = useState(AI_COURSE_ESTIMATED_WAIT_SECONDS);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    if (errorMessage) return;
     const timer = window.setInterval(() => {
       setSecondsLeft((s) => Math.max(0, s - 1));
     }, 1000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [errorMessage]);
 
   useEffect(() => {
     let cancelled = false;
@@ -28,21 +30,22 @@ export default function AiCourseGeneratingPage({ jobId }: AiCourseGeneratingPage
       try {
         const courseId = await pollAiCourseStatus(jobId);
         if (cancelled) return;
-        try {
-          await saveCourseRoute(courseId);
-        } catch {
-          // 이미 저장된 코스거나 일시 오류여도 결과 화면 이동은 계속 진행
-        }
-        if (cancelled) return;
-        const courseDetail = await getCourseDetail(courseId);
+        // 루트 저장과 상세 조회는 서로 독립적이라 병렬로 처리해 대기 시간을 줄인다.
+        // 루트 저장은 이미 저장된 코스거나 일시 오류여도 화면 이동을 막지 않는다.
+        const [, courseDetail] = await Promise.all([
+          saveCourseRoute(courseId).catch(() => undefined),
+          getCourseDetail(courseId),
+        ]);
         if (cancelled) return;
         sessionStorage.setItem(AI_COURSE_RESULT_STORAGE_KEY, JSON.stringify(courseDetail));
         navigate({ to: "/ai-search-result", search: { courseId } });
       } catch (e) {
-        if (!cancelled) {
-          window.alert(getErrorMessage(e));
-          navigate({ to: "/home" });
-        }
+        if (cancelled) return;
+        // 진단용: 콘솔에 jobId와 원본 에러를 자세히 남긴다.
+        // eslint-disable-next-line no-console
+        console.error("[AI 코스 생성 실패]", { jobId, error: e });
+        // 바로 홈으로 튕기지 않고, 무슨 일이 있었는지 화면에 남겨 둔다.
+        setErrorMessage(getErrorMessage(e));
       }
     })();
 
@@ -50,6 +53,45 @@ export default function AiCourseGeneratingPage({ jobId }: AiCourseGeneratingPage
       cancelled = true;
     };
   }, [jobId, navigate]);
+
+  if (errorMessage) {
+    return (
+      <MobileFrame className="flex min-h-screen flex-col bg-white">
+        <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 pb-24">
+          <p className="text-center font-pretendard text-lg font-semibold text-gray-1000">
+            AI 코스 생성에 실패했어요
+          </p>
+
+          <div className="w-full max-w-[320px] rounded-r2 border border-gray-200 bg-gray-50 px-x4 py-x4">
+            <p className="font-pretendard text-size-3 font-medium text-gray-500">오류 메시지</p>
+            <p className="mt-x1 break-words font-pretendard text-size-4 leading-t5 text-gray-900">
+              {errorMessage}
+            </p>
+            <p className="mt-x2 break-all font-pretendard text-size-2 leading-t4 text-gray-400">
+              jobId: {jobId}
+            </p>
+          </div>
+
+          <div className="flex w-full max-w-[320px] flex-col gap-x2">
+            <button
+              type="button"
+              className="h-[52px] w-full rounded-r2 bg-orange-600 font-pretendard text-size-4 font-semibold text-white"
+              onClick={() => navigate({ to: "/recommendation" })}
+            >
+              다시 시도하기
+            </button>
+            <button
+              type="button"
+              className="h-[52px] w-full rounded-r2 border border-gray-200 bg-white font-pretendard text-size-4 font-medium text-gray-700"
+              onClick={() => navigate({ to: "/home" })}
+            >
+              홈으로 가기
+            </button>
+          </div>
+        </main>
+      </MobileFrame>
+    );
+  }
 
   return (
     <MobileFrame className="flex min-h-screen flex-col bg-white">

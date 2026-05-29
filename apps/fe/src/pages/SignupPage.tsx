@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { checkId, signup, type UserRole } from "@/api/auth";
 import { getErrorMessage } from "@/api/types/common";
 import { ActionField, AppTopBar, BottomCTA, TextField } from "@/components/common";
+import { PasswordToggleIcon } from "@/components/icons";
 import {
   PhoneVerificationSection,
   SignupSection,
@@ -20,6 +21,7 @@ export default function SignupPage() {
   const [isUserIdDupChecked, setIsUserIdDupChecked] = useState(false);
   const [isDuplicateLoginId, setIsDuplicateLoginId] = useState(false);
   const [password, setPassword] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [email, setEmail] = useState("");
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [phoneVerificationToken, setPhoneVerificationToken] = useState<string | null>(null);
@@ -175,7 +177,7 @@ export default function SignupPage() {
 
   return (
     <MobileFrame>
-      <AppTopBar title="회원가입" />
+      <AppTopBar title="회원가입" onBack={() => navigate({ to: "/login-entry" })} />
 
       <main className="flex flex-1 flex-col gap-x8 bg-white px-x5 py-x8">
         <SignupSection label="이름">
@@ -218,10 +220,23 @@ export default function SignupPage() {
         >
           <TextField
             placeholder="비밀번호를 입력해주세요"
-            type="password"
+            type={isPasswordVisible ? "text" : "password"}
             value={password}
             onChange={handlePasswordChange}
             className={passwordInputClassName}
+            trailingIcon={
+              <button
+                type="button"
+                aria-label={isPasswordVisible ? "비밀번호 숨기기" : "비밀번호 보기"}
+                onClick={() => setIsPasswordVisible((prev) => !prev)}
+                className="flex shrink-0 items-center justify-center"
+              >
+                <PasswordToggleIcon
+                  visible={isPasswordVisible}
+                  className={isPasswordVisible ? "text-gray-900" : "text-gray-700"}
+                />
+              </button>
+            }
           />
         </SignupSection>
 

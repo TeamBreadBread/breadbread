@@ -6,6 +6,12 @@ import { useNavigate } from "@tanstack/react-router";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { Button } from "@/components/common";
 import RecommendationIconAsset from "@/assets/icons/StarCTA.svg";
+import BreadCategoryImg from "@/assets/icons/Img_Bread.svg";
+import SandwichCategoryImg from "@/assets/icons/Img_Sandwich.svg";
+import CakeCategoryImg from "@/assets/icons/Img_Cake.svg";
+import RicecakeCategoryImg from "@/assets/icons/Img_Ricecake.svg";
+import CookieCategoryImg from "@/assets/icons/Img_Cookie.svg";
+import DietbreadCategoryImg from "@/assets/icons/Img_Dietbread.svg";
 import PreferenceIntro from "@/components/domain/ai-course/PreferenceIntro";
 import PreferenceOptionCard from "@/components/common/cards/PreferenceOptionCard";
 import PreferenceQuestionSection from "@/components/domain/ai-course/PreferenceQuestionSection";
@@ -30,6 +36,8 @@ import { getStoredAccessToken } from "@/api/auth";
 type OptionItem = {
   label: string;
   withIcon?: boolean;
+  /** 빵 카테고리 아이콘 이미지 경로 (없으면 기본 원형) */
+  iconSrc?: string;
   /** 선택 상태용 고유값(라벨이 같을 때) */
   value?: string;
 };
@@ -52,12 +60,12 @@ const QUESTION_SECTIONS: QuestionItem[] = [
     allowMultiple: true,
     columns: 2,
     options: [
-      { label: "빵", withIcon: true },
-      { label: "샌드위치", withIcon: true },
-      { label: "케이크", withIcon: true },
-      { label: "떡", withIcon: true },
-      { label: "쿠키", withIcon: true },
-      { label: "다이어트 빵", withIcon: true },
+      { label: "빵", withIcon: true, iconSrc: BreadCategoryImg },
+      { label: "샌드위치", withIcon: true, iconSrc: SandwichCategoryImg },
+      { label: "케이크", withIcon: true, iconSrc: CakeCategoryImg },
+      { label: "떡", withIcon: true, iconSrc: RicecakeCategoryImg },
+      { label: "쿠키", withIcon: true, iconSrc: CookieCategoryImg },
+      { label: "다이어트 빵", withIcon: true, iconSrc: DietbreadCategoryImg },
     ],
   },
   {
@@ -106,6 +114,10 @@ const REQUIRED_CARD_SECTION_IDS = ["waiting", "drink", "courseChangePreference"]
 
 function CircleIcon() {
   return <div className="h-x14 w-x14 rounded-full bg-gray-400" />;
+}
+
+function BreadCategoryIcon({ src, label }: { src: string; label: string }) {
+  return <img src={src} alt={label} className="h-x14 w-x14 object-contain" />;
 }
 
 function RecommendationIcon() {
@@ -256,13 +268,6 @@ export default function BreadRecommendationPreference() {
               helperText={section.helperText}
               columns={section.columns}
               fullWidthChild={section.id === "count"}
-              icon={
-                section.id === "count" ? (
-                  <div className="flex flex-row items-center justify-start p-[3px]">
-                    <div className="h-[18px] w-[18px] shrink-0 rounded-full bg-[#dcdee3]" />
-                  </div>
-                ) : undefined
-              }
             >
               {section.id === "count" ? (
                 <RecommendationCountStepper
@@ -278,7 +283,13 @@ export default function BreadRecommendationPreference() {
                       label={option.label}
                       selected={selectedBySection[section.id]?.includes(optionValue) ?? false}
                       onClick={() => handleSelect(section.id, optionValue)}
-                      icon={option.withIcon ? <CircleIcon /> : undefined}
+                      icon={
+                        option.iconSrc ? (
+                          <BreadCategoryIcon src={option.iconSrc} label={option.label} />
+                        ) : option.withIcon ? (
+                          <CircleIcon />
+                        ) : undefined
+                      }
                     />
                   );
                 })

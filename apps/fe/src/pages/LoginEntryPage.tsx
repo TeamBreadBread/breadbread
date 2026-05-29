@@ -80,43 +80,50 @@ export default function LoginEntryPage() {
 
   return (
     <MobileFrame>
-      <AppTopBar title="로그인" />
+      <AppTopBar title="로그인" onBack={() => navigate({ to: "/home" })} />
 
-      <main className="relative flex flex-1 flex-col items-center gap-x4 py-x8">
-        <img
-          src={breadTaxiImage}
-          alt=""
-          aria-hidden
-          className="absolute left-x5 top-x8 h-[64px] w-[64px] object-contain"
-        />
+      <main className="relative flex flex-1 flex-col items-center py-x8">
+        <div className="flex w-full flex-col items-center gap-x4">
+          <section className="flex w-full flex-col items-center px-x5 pt-x8 text-center">
+            <img
+              src={breadTaxiImage}
+              alt=""
+              aria-hidden
+              className="mb-x6 h-[64px] w-[64px] object-contain"
+            />
+            <div className="flex w-full flex-col items-center gap-x2">
+              <p className={heroTitleClassName}>
+                로그인하고 빵빵을
+                <br />
+                자유롭게 이용해보세요
+              </p>
+            </div>
+          </section>
 
-        <section className="flex w-full flex-col items-center px-x5 pt-[104px] text-center">
-          <div className="flex w-full flex-col items-center gap-x2">
-            <p className={heroTitleClassName}>
-              로그인하고 빵빵을
-              <br />
-              자유롭게 이용해보세요
-            </p>
-          </div>
-        </section>
-
-        <section className="flex w-full flex-col gap-x2 px-x5">
-          {SOCIAL_BUTTONS.map(({ id, label, className }) => (
-            <Button
-              key={id}
-              type="button"
-              onClick={() => handleSocialLogin(id)}
-              className={cn(socialButtonBaseClassName, className)}
-            >
-              <AppIcon src={SOCIAL_ICON_BY_PROVIDER[id]} size="x5" />
-              {label}
-            </Button>
-          ))}
-        </section>
+          <section className="flex w-full flex-col gap-x2 px-x5">
+            {SOCIAL_BUTTONS.map(({ id, label, className }) => (
+              <Button
+                key={id}
+                type="button"
+                onClick={() => handleSocialLogin(id)}
+                className={cn(socialButtonBaseClassName, className)}
+              >
+                {id === "email" ? null : (
+                  <AppIcon
+                    src={SOCIAL_ICON_BY_PROVIDER[id]}
+                    size="x5"
+                    className={id === "naver" ? "[filter:brightness(0)_invert(1)]" : undefined}
+                  />
+                )}
+                {label}
+              </Button>
+            ))}
+          </section>
+        </div>
 
         <nav
           aria-label="로그인 하단 링크"
-          className="flex items-center gap-x3 text-size-3 tracking-1"
+          className="mt-[36px] flex items-center gap-x3 text-size-3 tracking-1"
         >
           <button
             type="button"

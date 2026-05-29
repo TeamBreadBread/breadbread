@@ -28,6 +28,7 @@ import {
 } from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
+import CuratorChatWidget from "@/components/domain/curator/CuratorChatWidget";
 import ResultCTASection from "@/components/domain/ai-course/ResultCTASection";
 import SaveRouteBanner from "@/components/domain/ai-course/SaveRouteBanner";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
@@ -358,6 +359,8 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
           빵택시 예약
         </Button>
       </div>
+
+      <CuratorChatWidget courseId={effectiveCourseId} />
     </MobileFrame>
   );
 }

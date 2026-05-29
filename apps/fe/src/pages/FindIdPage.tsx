@@ -46,7 +46,7 @@ export default function FindIdPage() {
 
   return (
     <MobileFrame>
-      <AppTopBar title="" />
+      <AppTopBar title="" onBack={() => navigate({ to: "/login-entry" })} />
 
       <main className="flex flex-1 flex-col items-center gap-x4 pt-x10">
         <AuthIntroSection

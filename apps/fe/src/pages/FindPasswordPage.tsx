@@ -54,7 +54,7 @@ export default function FindPasswordPage() {
 
   return (
     <MobileFrame>
-      <AppTopBar title="" onBack={() => navigate({ to: "/" })} />
+      <AppTopBar title="" onBack={() => navigate({ to: "/login-entry" })} />
 
       <main className="flex flex-1 flex-col items-center gap-x4 pt-x10">
         <AuthIntroSection

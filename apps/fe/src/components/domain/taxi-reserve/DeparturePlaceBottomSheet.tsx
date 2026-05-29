@@ -298,7 +298,7 @@ export default function DeparturePlaceBottomSheet({
                       onClick={useCurrentLocation}
                     >
                       <LocationPinGlyph />
-                      <span className="whitespace-nowrap font-['Pretendard',sans-serif] text-[14px] leading-[19px] tracking-normal text-[#217cf9]">
+                      <span className="whitespace-nowrap font-['Pretendard',sans-serif] text-[14px] font-medium leading-[19px] tracking-normal text-[#217cf9]">
                         현재 위치
                       </span>
                     </button>
