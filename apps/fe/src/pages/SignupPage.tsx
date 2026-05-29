@@ -177,7 +177,10 @@ export default function SignupPage() {
 
   return (
     <MobileFrame>
-      <AppTopBar title="회원가입" onBack={() => navigate({ to: "/login-entry" })} />
+      <AppTopBar
+        title="회원가입"
+        onBack={() => navigate({ to: "/login-entry", search: { redirect: undefined } })}
+      />
 
       <main className="flex flex-1 flex-col gap-x8 bg-white px-x5 py-x8">
         <SignupSection label="이름">
