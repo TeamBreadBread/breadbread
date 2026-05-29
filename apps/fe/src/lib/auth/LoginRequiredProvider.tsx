@@ -1,28 +1,45 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
-import { useNavigate } from "@tanstack/react-router";
-import LoginRequiredDialog from "@/components/common/dialog/LoginRequiredDialog";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
+import BreadBotWidget from "@/components/domain/curator/BreadBotWidget";
 import { isLoggedIn } from "@/lib/auth/isLoggedIn";
 import { tryPostLoginRedirectPath } from "@/lib/postLoginRedirect";
-import { LoginRequiredContext } from "@/lib/auth/LoginRequiredContext";
+import { LoginRequiredContext, type BotBubble } from "@/lib/auth/LoginRequiredContext";
+
+const DEFAULT_LOGIN_BUBBLE_TEXT =
+  "이 기능은 로그인이 필요해요.\n로그인하면 더 많은 기능을 사용할 수 있어요!";
+
+/** 챗봇을 숨길 인증 관련 경로 prefix */
+const BOT_HIDDEN_PATH_PREFIXES = [
+  "/login",
+  "/signup",
+  "/find-id",
+  "/find-password",
+  "/reset-password",
+  "/password-reset-success",
+  "/auth",
+];
 
 export function LoginRequiredProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const botHidden = BOT_HIDDEN_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  const [bubble, setBubble] = useState<BotBubble | null>(null);
   const [redirectPath, setRedirectPath] = useState<string | undefined>();
+  const [botCourseId, setBotCourseIdState] = useState<number | null>(null);
 
-  const closeDialog = useCallback(() => {
-    setOpen(false);
+  const hideBubble = useCallback(() => {
+    setBubble(null);
     setRedirectPath(undefined);
   }, []);
 
   const goLogin = useCallback(() => {
     const redirect = tryPostLoginRedirectPath(redirectPath);
-    closeDialog();
+    hideBubble();
     void navigate({
       to: "/login-entry",
       search: { redirect },
     });
-  }, [closeDialog, navigate, redirectPath]);
+  }, [hideBubble, navigate, redirectPath]);
 
   const requireLogin = useCallback((onAuthorized: () => void, returnPath?: string) => {
     if (isLoggedIn()) {
@@ -30,15 +47,40 @@ export function LoginRequiredProvider({ children }: { children: ReactNode }) {
       return;
     }
     setRedirectPath(returnPath);
-    setOpen(true);
+    setBubble({ kind: "login", text: DEFAULT_LOGIN_BUBBLE_TEXT, redirectPath: returnPath });
   }, []);
 
-  const value = useMemo(() => ({ requireLogin }), [requireLogin]);
+  const promptLoginOnEnter = useCallback((returnPath?: string) => {
+    if (isLoggedIn()) return;
+    setRedirectPath(returnPath);
+    setBubble({ kind: "login", text: DEFAULT_LOGIN_BUBBLE_TEXT, redirectPath: returnPath });
+  }, []);
+
+  const showInfoBubble = useCallback((text: string) => {
+    setBubble({ kind: "info", text });
+  }, []);
+
+  const setBotCourseId = useCallback((courseId: number | null) => {
+    setBotCourseIdState(courseId);
+  }, []);
+
+  const value = useMemo(
+    () => ({ requireLogin, promptLoginOnEnter, showInfoBubble, setBotCourseId }),
+    [requireLogin, promptLoginOnEnter, showInfoBubble, setBotCourseId],
+  );
 
   return (
     <LoginRequiredContext.Provider value={value}>
       {children}
-      <LoginRequiredDialog open={open} onCancel={closeDialog} onLogin={goLogin} />
+      {botHidden ? null : (
+        <BreadBotWidget
+          bubble={bubble}
+          courseId={botCourseId}
+          onGuestContinue={hideBubble}
+          onGoLogin={goLogin}
+          onCloseBubble={hideBubble}
+        />
+      )}
     </LoginRequiredContext.Provider>
   );
 }

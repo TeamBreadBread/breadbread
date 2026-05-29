@@ -15,9 +15,12 @@ import type { MyMenu } from "@/components/domain/my/types";
 import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { useNavigate } from "@tanstack/react-router";
+import { isLoggedIn } from "@/lib/auth/isLoggedIn";
+import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 
 export default function MyPage() {
   const navigate = useNavigate();
+  const { promptLoginOnEnter } = useLoginRequired();
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [profile, setProfile] = useState(() => getUserProfile());
@@ -47,6 +50,12 @@ export default function MyPage() {
       void navigate({ to: "/home" });
     })();
   };
+
+  useEffect(() => {
+    if (!isLoggedIn()) {
+      promptLoginOnEnter("/my");
+    }
+  }, [promptLoginOnEnter]);
 
   useEffect(() => {
     let mounted = true;

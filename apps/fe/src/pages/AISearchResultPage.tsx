@@ -26,7 +26,6 @@ import {
 } from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
-import CuratorChatWidget from "@/components/domain/curator/CuratorChatWidget";
 import ResultCTASection from "@/components/domain/ai-course/ResultCTASection";
 import SaveRouteBanner from "@/components/domain/ai-course/SaveRouteBanner";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
@@ -62,7 +61,7 @@ type AISearchResultPageProps = {
 
 export default function AISearchResultPage({ courseId, from }: AISearchResultPageProps) {
   const navigate = useNavigate();
-  const { requireLogin } = useLoginRequired();
+  const { requireLogin, setBotCourseId } = useLoginRequired();
   const effectiveCourseId = courseId ?? getDevFallbackCourseId();
   const [roadPathResult, setRoadPathResult] = useState<{
     courseId: number;
@@ -151,6 +150,11 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
       cancelled = true;
     };
   }, [effectiveCourseId]);
+
+  useEffect(() => {
+    setBotCourseId(effectiveCourseId ?? null);
+    return () => setBotCourseId(null);
+  }, [effectiveCourseId, setBotCourseId]);
 
   const dynamicPlaces: CoursePlace[] | null = useMemo(() => {
     if (!storedCourseDetail) return null;
@@ -327,8 +331,6 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
           </Button>
         </div>
       ) : null}
-
-      <CuratorChatWidget courseId={effectiveCourseId} />
     </MobileFrame>
   );
 }

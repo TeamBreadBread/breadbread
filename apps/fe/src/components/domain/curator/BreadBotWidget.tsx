@@ -1,8 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { sendCuratorChat } from "@/api/curator";
 import { getErrorMessage } from "@/api/types/common";
+import type { BotBubble } from "@/lib/auth/LoginRequiredContext";
 import { cn } from "@/utils/cn";
 import BreadDefaultLogo from "@/assets/icons/BreadDefaultLogo.svg";
+
+const QUICK_REPLIES = [
+  "현재 코스 설명해줘",
+  "다음 빵집 추천해줘",
+  "코스 순서 바꿀까?",
+  "혼잡하면 어디가 좋아?",
+] as const;
 
 type ChatRole = "user" | "bot";
 
@@ -12,12 +20,26 @@ type ChatMessage = {
   text: string;
 };
 
-type CuratorChatWidgetProps = {
-  /** 현재 보고 있는 코스 컨텍스트(있으면 함께 전달) */
+type BreadBotWidgetProps = {
+  /** 현재 표시할 말풍선(없으면 숨김) */
+  bubble: BotBubble | null;
+  /** 큐레이터 채팅에 함께 보낼 코스 컨텍스트 */
   courseId?: number | null;
+  /** "게스트로 이용하기(계속 진행)" — 말풍선만 닫고 현재 화면 유지 */
+  onGuestContinue: () => void;
+  /** "로그인하러가기" */
+  onGoLogin: () => void;
+  /** 말풍선 닫기(X, 또는 채팅 열기 등) */
+  onCloseBubble: () => void;
 };
 
-export default function CuratorChatWidget({ courseId }: CuratorChatWidgetProps) {
+export default function BreadBotWidget({
+  bubble,
+  courseId,
+  onGuestContinue,
+  onGoLogin,
+  onCloseBubble,
+}: BreadBotWidgetProps) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -29,8 +51,13 @@ export default function CuratorChatWidget({ courseId }: CuratorChatWidgetProps) 
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading, open]);
 
-  const handleSend = () => {
-    const text = input.trim();
+  const openChat = () => {
+    onCloseBubble();
+    setOpen(true);
+  };
+
+  const sendMessage = (raw: string) => {
+    const text = raw.trim();
     if (!text || loading) return;
 
     setMessages((prev) => [...prev, { id: `u-${Date.now()}`, role: "user", text }]);
@@ -60,6 +87,10 @@ export default function CuratorChatWidget({ courseId }: CuratorChatWidgetProps) 
     })();
   };
 
+  const handleSend = () => sendMessage(input);
+
+  const showBubble = bubble !== null && !open;
+
   return (
     <>
       {open ? (
@@ -72,7 +103,7 @@ export default function CuratorChatWidget({ courseId }: CuratorChatWidgetProps) 
                   빵빵 큐레이터
                 </span>
                 <span className="font-pretendard text-size-2 leading-t3 text-gray-600">
-                  코스에 대해 무엇이든 물어보세요
+                  무엇이든 물어보세요
                 </span>
               </div>
               <button
@@ -87,9 +118,27 @@ export default function CuratorChatWidget({ courseId }: CuratorChatWidgetProps) 
 
             <div ref={listRef} className="flex-1 space-y-x2 overflow-y-auto px-x4 py-x3">
               {messages.length === 0 && !loading ? (
-                <p className="px-x1 py-x2 font-pretendard text-size-3 leading-t4 text-gray-500">
-                  안녕하세요! 추천된 코스에 대해 궁금한 점을 물어보세요.
-                </p>
+                <div className="space-y-x3">
+                  <div className="rounded-r3 bg-gray-100 px-x3 py-x2-5">
+                    <p className="whitespace-pre-line font-pretendard text-size-3 leading-t5 text-gray-1000">
+                      {
+                        "안녕하세요! 🍞\nBreadBread AI 큐레이터입니다.\n\n현재 코스 설명, 다음 빵집 추천, 순서 변경 등 궁금한 점을 자유롭게 물어보세요!"
+                      }
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-x2">
+                    {QUICK_REPLIES.map((q) => (
+                      <button
+                        key={q}
+                        type="button"
+                        onClick={() => sendMessage(q)}
+                        className="w-full rounded-r3 border border-orange-300 bg-orange-100 px-x3 py-x2 text-left font-pretendard text-size-3 leading-t4 text-orange-700 transition-colors hover:bg-orange-200"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ) : null}
 
               {messages.map((m) => (
@@ -145,11 +194,53 @@ export default function CuratorChatWidget({ courseId }: CuratorChatWidgetProps) 
         </div>
       ) : null}
 
+      {/* 말풍선 (채팅이 닫혀 있을 때만) */}
+      {showBubble ? (
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[72] mx-auto w-full max-w-[744px]">
+          <div className="pointer-events-auto fixed right-[20px] bottom-[170px] w-[min(280px,calc(100%-40px))] rounded-r4 bg-white p-x4 shadow-[0_8px_28px_rgba(0,0,0,0.2)] md:right-[calc((100vw-744px)/2+20px)]">
+            <button
+              type="button"
+              aria-label="안내 닫기"
+              onClick={onCloseBubble}
+              className="absolute right-x2 top-x2 flex h-x6 w-x6 items-center justify-center rounded-full text-size-3 text-gray-400 hover:bg-gray-100"
+            >
+              ✕
+            </button>
+
+            <p className="whitespace-pre-wrap pr-x4 font-pretendard text-size-3 leading-t5 text-gray-1000">
+              {bubble.text}
+            </p>
+
+            {bubble.kind === "login" ? (
+              <div className="mt-x3 flex flex-col gap-x2">
+                <button
+                  type="button"
+                  onClick={onGoLogin}
+                  className="h-[40px] w-full rounded-r2 bg-orange-600 font-pretendard text-size-3 font-bold text-gray-00"
+                >
+                  로그인하러가기
+                </button>
+                <button
+                  type="button"
+                  onClick={onGuestContinue}
+                  className="h-[40px] w-full rounded-r2 border border-gray-300 bg-white font-pretendard text-size-3 font-medium text-gray-700"
+                >
+                  게스트로 이용하기
+                </button>
+              </div>
+            ) : null}
+
+            {/* 봇을 가리키는 꼬리 */}
+            <div className="absolute -bottom-[7px] right-[28px] h-[14px] w-[14px] rotate-45 bg-white shadow-[3px_3px_6px_rgba(0,0,0,0.06)]" />
+          </div>
+        </div>
+      ) : null}
+
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[70] mx-auto w-full max-w-[744px]">
         <button
           type="button"
           aria-label={open ? "AI 큐레이터 닫기" : "AI 큐레이터 채팅 열기"}
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => (open ? setOpen(false) : openChat())}
           className="pointer-events-auto fixed right-[20px] bottom-[104px] z-[70] flex h-[56px] w-[56px] items-center justify-center rounded-full bg-orange-200 shadow-[0_4px_12px_rgba(0,0,0,0.18)] md:right-[calc((100vw-744px)/2+20px)]"
         >
           <img
