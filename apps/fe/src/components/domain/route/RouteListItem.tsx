@@ -7,6 +7,7 @@ import type { RouteCourse } from "./types";
 interface RouteListItemProps {
   course: RouteCourse;
   onClick?: () => void;
+  onOpenCourse?: (courseId: string) => void;
   onDeleteCourse?: (courseId: string) => void;
   onToggleCourseLike?: (courseId: string) => void;
 }
@@ -21,6 +22,7 @@ function buildCourseShareLink(courseId: string): string {
 export default function RouteListItem({
   course,
   onClick,
+  onOpenCourse,
   onDeleteCourse,
   onToggleCourseLike,
 }: RouteListItemProps) {
@@ -170,7 +172,18 @@ export default function RouteListItem({
       </div>
 
       {isExpanded ? (
-        <div className="mx-auto mb-x6 flex h-[130px] w-full max-w-[362px] flex-col items-start justify-start overflow-hidden rounded-r2 border border-gray-200 bg-gray-100 p-[14px] md:max-w-full">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => onOpenCourse?.(course.id)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              onOpenCourse?.(course.id);
+            }
+          }}
+          className="mx-auto mb-x6 flex h-[130px] w-full max-w-[362px] cursor-pointer flex-col items-start justify-start overflow-hidden rounded-r2 border border-gray-200 bg-gray-100 p-[14px] md:max-w-full"
+        >
           <div className="relative flex w-full flex-col items-start justify-start gap-[6px] px-0 py-[4px]">
             <div className="absolute bottom-0 left-[2px] top-0 w-[2px] bg-gray-300" />
 

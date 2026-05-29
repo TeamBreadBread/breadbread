@@ -30,6 +30,7 @@ import {
   persistDetailToLikeOverlay,
   setPostLikeOverlay,
 } from "@/lib/postLikeLocalCache";
+import { cn } from "@/utils/cn";
 import { formatInstantInSeoul } from "@/utils/formatSeoulDateTime";
 
 type BbangteoPostDetailViewProps = {
@@ -400,7 +401,7 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
                     <span
                       className={
                         detail.liked
-                          ? "text-[14px] leading-[19px] red_700"
+                          ? "text-[14px] leading-[19px] text-red-600"
                           : "text-[14px] leading-[19px] text-[#1a1c20]"
                       }
                     >
@@ -519,10 +520,18 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
             <button
               type="button"
               disabled={commentBusy || mockPost || !commentText.trim()}
-              className="shrink-0 text-[13px] font-medium text-[#555d6d] disabled:opacity-40"
+              aria-label="댓글 전송"
+              className={cn(
+                "flex h-[28px] w-[28px] shrink-0 items-center justify-center",
+                commentText.trim() && !commentBusy && !mockPost
+                  ? "text-orange-600"
+                  : "text-gray-600",
+              )}
               onClick={() => void onSubmitComment()}
             >
-              등록
+              <svg width={22} height={22} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <path d="M4.4462 19.9126C4.10187 20.0546 3.77475 20.0236 3.46485 19.8193C3.15495 19.6151 3 19.3176 3 18.9268V14.1313L11.264 12L3 9.86867V5.07318C3 4.68244 3.15495 4.38494 3.46485 4.18068C3.77475 3.97643 4.10187 3.94535 4.4462 4.08744L20.3544 11.0143C20.7848 11.2096 21 11.5382 21 12C21 12.4618 20.7848 12.7904 20.3544 12.9857L4.4462 19.9126Z" />
+              </svg>
             </button>
           </div>
         </div>

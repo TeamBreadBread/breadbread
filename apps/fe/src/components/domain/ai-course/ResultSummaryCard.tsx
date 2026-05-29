@@ -64,16 +64,18 @@ export default function ResultSummaryCard({
         </div>
       </div>
 
-      <button
-        type="button"
-        aria-label={liked ? "코스 좋아요 취소" : "코스 좋아요"}
-        aria-pressed={liked}
-        className="ml-x2 flex min-w-[52px] shrink-0 flex-col items-center justify-center gap-[2px]"
-        onClick={onToggleLike}
-      >
-        <HeartIcon filled={liked} />
-        <span className="font-pretendard text-size-2 text-[#555d6d]">{likeCount}</span>
-      </button>
+      {onToggleLike ? (
+        <button
+          type="button"
+          aria-label={liked ? "코스 좋아요 취소" : "코스 좋아요"}
+          aria-pressed={liked}
+          className="ml-x2 flex min-w-[52px] shrink-0 flex-col items-center justify-center gap-[2px]"
+          onClick={onToggleLike}
+        >
+          <HeartIcon filled={liked} />
+          <span className="font-pretendard text-size-2 text-[#555d6d]">{likeCount}</span>
+        </button>
+      ) : null}
     </section>
   );
 }
