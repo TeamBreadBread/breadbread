@@ -25,6 +25,7 @@ import { Route as MyReservationDetailRouteImport } from './routes/my-reservation
 import { Route as MyLikedCoursesRouteImport } from './routes/my-liked-courses'
 import { Route as MyLikedBakeriesRouteImport } from './routes/my-liked-bakeries'
 import { Route as MyRouteImport } from './routes/my'
+import { Route as LoginEntryRouteImport } from './routes/login-entry'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as FindPasswordRouteImport } from './routes/find-password'
@@ -135,6 +136,11 @@ const MyLikedBakeriesRoute = MyLikedBakeriesRouteImport.update({
 const MyRoute = MyRouteImport.update({
   id: '/my',
   path: '/my',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginEntryRoute = LoginEntryRouteImport.update({
+  id: '/login-entry',
+  path: '/login-entry',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -320,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/find-password': typeof FindPasswordRoute
   '/home': typeof HomeRoute
   '/login': typeof LoginRoute
+  '/login-entry': typeof LoginEntryRoute
   '/my': typeof MyRoute
   '/my-liked-bakeries': typeof MyLikedBakeriesRoute
   '/my-liked-courses': typeof MyLikedCoursesRoute
@@ -369,6 +376,7 @@ export interface FileRoutesByTo {
   '/find-password': typeof FindPasswordRoute
   '/home': typeof HomeRoute
   '/login': typeof LoginRoute
+  '/login-entry': typeof LoginEntryRoute
   '/my': typeof MyRoute
   '/my-liked-bakeries': typeof MyLikedBakeriesRoute
   '/my-liked-courses': typeof MyLikedCoursesRoute
@@ -419,6 +427,7 @@ export interface FileRoutesById {
   '/find-password': typeof FindPasswordRoute
   '/home': typeof HomeRoute
   '/login': typeof LoginRoute
+  '/login-entry': typeof LoginEntryRoute
   '/my': typeof MyRoute
   '/my-liked-bakeries': typeof MyLikedBakeriesRoute
   '/my-liked-courses': typeof MyLikedCoursesRoute
@@ -470,6 +479,7 @@ export interface FileRouteTypes {
     | '/find-password'
     | '/home'
     | '/login'
+    | '/login-entry'
     | '/my'
     | '/my-liked-bakeries'
     | '/my-liked-courses'
@@ -519,6 +529,7 @@ export interface FileRouteTypes {
     | '/find-password'
     | '/home'
     | '/login'
+    | '/login-entry'
     | '/my'
     | '/my-liked-bakeries'
     | '/my-liked-courses'
@@ -568,6 +579,7 @@ export interface FileRouteTypes {
     | '/find-password'
     | '/home'
     | '/login'
+    | '/login-entry'
     | '/my'
     | '/my-liked-bakeries'
     | '/my-liked-courses'
@@ -618,6 +630,7 @@ export interface RootRouteChildren {
   FindPasswordRoute: typeof FindPasswordRoute
   HomeRoute: typeof HomeRoute
   LoginRoute: typeof LoginRoute
+  LoginEntryRoute: typeof LoginEntryRoute
   MyRoute: typeof MyRoute
   MyLikedBakeriesRoute: typeof MyLikedBakeriesRoute
   MyLikedCoursesRoute: typeof MyLikedCoursesRoute
@@ -753,6 +766,13 @@ declare module '@tanstack/react-router' {
       path: '/my'
       fullPath: '/my'
       preLoaderRoute: typeof MyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login-entry': {
+      id: '/login-entry'
+      path: '/login-entry'
+      fullPath: '/login-entry'
+      preLoaderRoute: typeof LoginEntryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -1015,6 +1035,7 @@ const rootRouteChildren: RootRouteChildren = {
   FindPasswordRoute: FindPasswordRoute,
   HomeRoute: HomeRoute,
   LoginRoute: LoginRoute,
+  LoginEntryRoute: LoginEntryRoute,
   MyRoute: MyRoute,
   MyLikedBakeriesRoute: MyLikedBakeriesRoute,
   MyLikedCoursesRoute: MyLikedCoursesRoute,

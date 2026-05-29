@@ -1,0 +1,92 @@
+<svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g filter="url(#filter0_g_4351_10872)">
+<path d="M39.4765 24.9211C39.4765 34.4415 31.7587 38.9839 22.2383 38.9839C10.4437 39.3985 5 31.7587 5 22.2383C5 12.7178 11.3509 5.00016 22.2383 5C34.0328 4.99983 39.4765 15.4007 39.4765 24.9211Z" fill="url(#paint0_radial_4351_10872)"/>
+</g>
+<g filter="url(#filter1_g_4351_10872)">
+<circle cx="12.258" cy="17.7023" r="2.72183" fill="#945529" fill-opacity="0.75"/>
+</g>
+<g filter="url(#filter2_g_4351_10872)">
+<circle cx="24.9601" cy="32.2179" r="2.72183" fill="#945529" fill-opacity="0.75"/>
+</g>
+<g filter="url(#filter3_g_4351_10872)">
+<circle cx="14.9796" cy="30.4044" r="1.81455" fill="#945529" fill-opacity="0.75"/>
+</g>
+<g filter="url(#filter4_g_4351_10872)">
+<circle cx="23.5992" cy="13.6198" r="2.26819" fill="#945529" fill-opacity="0.75"/>
+</g>
+<g filter="url(#filter5_g_4351_10872)">
+<circle cx="22.692" cy="22.692" r="2.26819" fill="#945529" fill-opacity="0.75"/>
+</g>
+<g filter="url(#filter6_g_4351_10872)">
+<circle cx="32.6715" cy="22.692" r="2.26819" fill="#945529" fill-opacity="0.75"/>
+</g>
+<defs>
+<filter id="filter0_g_4351_10872" x="4.44555" y="4.44555" width="35.5855" height="35.1089" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.42942783236503601 0.42942783236503601" numOctaves="3" seed="7701" />
+<feDisplacementMap in="shape" scale="1.1088953018188477" xChannelSelector="R" yChannelSelector="G" result="displacedImage" width="100%" height="100%" />
+<feMerge result="effect1_texture_4351_10872">
+<feMergeNode in="displacedImage"/>
+</feMerge>
+</filter>
+<filter id="filter1_g_4351_10872" x="9.17322" y="14.6176" width="6.16918" height="6.16918" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.42942783236503601 0.42942783236503601" numOctaves="3" seed="7701" />
+<feDisplacementMap in="shape" scale="0.72582238912582397" xChannelSelector="R" yChannelSelector="G" result="displacedImage" width="100%" height="100%" />
+<feMerge result="effect1_texture_4351_10872">
+<feMergeNode in="displacedImage"/>
+</feMerge>
+</filter>
+<filter id="filter2_g_4351_10872" x="21.8754" y="29.1332" width="6.16918" height="6.16918" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.42942783236503601 0.42942783236503601" numOctaves="3" seed="7701" />
+<feDisplacementMap in="shape" scale="0.72582238912582397" xChannelSelector="R" yChannelSelector="G" result="displacedImage" width="100%" height="100%" />
+<feMerge result="effect1_texture_4351_10872">
+<feMergeNode in="displacedImage"/>
+</feMerge>
+</filter>
+<filter id="filter3_g_4351_10872" x="12.8021" y="28.2269" width="4.35473" height="4.35473" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.42942783236503601 0.42942783236503601" numOctaves="3" seed="7701" />
+<feDisplacementMap in="shape" scale="0.72582238912582397" xChannelSelector="R" yChannelSelector="G" result="displacedImage" width="100%" height="100%" />
+<feMerge result="effect1_texture_4351_10872">
+<feMergeNode in="displacedImage"/>
+</feMerge>
+</filter>
+<filter id="filter4_g_4351_10872" x="20.9681" y="10.9887" width="5.26196" height="5.26293" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.42942783236503601 0.42942783236503601" numOctaves="3" seed="7701" />
+<feDisplacementMap in="shape" scale="0.72582238912582397" xChannelSelector="R" yChannelSelector="G" result="displacedImage" width="100%" height="100%" />
+<feMerge result="effect1_texture_4351_10872">
+<feMergeNode in="displacedImage"/>
+</feMerge>
+</filter>
+<filter id="filter5_g_4351_10872" x="20.0609" y="20.0609" width="5.26196" height="5.26293" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.42942783236503601 0.42942783236503601" numOctaves="3" seed="7701" />
+<feDisplacementMap in="shape" scale="0.72582238912582397" xChannelSelector="R" yChannelSelector="G" result="displacedImage" width="100%" height="100%" />
+<feMerge result="effect1_texture_4351_10872">
+<feMergeNode in="displacedImage"/>
+</feMerge>
+</filter>
+<filter id="filter6_g_4351_10872" x="30.0404" y="20.0609" width="5.26196" height="5.26293" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.42942783236503601 0.42942783236503601" numOctaves="3" seed="7701" />
+<feDisplacementMap in="shape" scale="0.72582238912582397" xChannelSelector="R" yChannelSelector="G" result="displacedImage" width="100%" height="100%" />
+<feMerge result="effect1_texture_4351_10872">
+<feMergeNode in="displacedImage"/>
+</feMerge>
+</filter>
+<radialGradient id="paint0_radial_4351_10872" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(14.0728 10.4437) rotate(57.7835) scale(39.1419 51.0343)">
+<stop stop-color="#FBD289"/>
+<stop offset="1" stop-color="#F3A84B"/>
+</radialGradient>
+</defs>
+</svg>

@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { cn } from "@/utils/cn";
+import { AppIcon, IconAssets } from "@/components/icons";
 import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
+import { cn } from "@/utils/cn";
 import type { RouteCourse } from "./types";
 
 interface RouteListItemProps {
@@ -15,25 +16,6 @@ function buildCourseShareLink(courseId: string): string {
   const url = new URL(origin + pathname);
   url.searchParams.set("course", courseId);
   return url.toString();
-}
-
-function HeartIcon({ filled }: { filled: boolean }) {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      aria-hidden
-      className={filled ? "text-red-500" : "text-[#b0b3ba]"}
-      fill={filled ? "currentColor" : "none"}
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinejoin="round"
-      strokeLinecap="round"
-    >
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-    </svg>
-  );
 }
 
 export default function RouteListItem({
@@ -113,7 +95,7 @@ export default function RouteListItem({
         className="flex w-full cursor-pointer items-start gap-[10px] py-x6 text-left"
       >
         <div className="flex h-[46px] w-[46px] items-center justify-center p-[6px]">
-          <div className="h-[35px] w-[35px] rounded-full bg-gray-400" />
+          <AppIcon src={IconAssets.IcCompass} size={35} alt="" />
         </div>
 
         <div className="flex-1">
@@ -143,7 +125,12 @@ export default function RouteListItem({
                 <span className="font-pretendard typo-t3regular whitespace-nowrap text-gray-900">
                   {course.storeCount}곳
                 </span>
-                <div className="h-[18px] w-[18px] rounded-full bg-gray-500" />
+                <AppIcon
+                  src={IconAssets.IcChevronDown}
+                  size={18}
+                  className={cn("transition-transform", isExpanded && "rotate-180")}
+                  alt=""
+                />
               </div>
             </div>
 
@@ -157,7 +144,12 @@ export default function RouteListItem({
               onClick={handleToggleLike}
               className="flex items-center gap-x1"
             >
-              <HeartIcon filled={course.liked} />
+              <AppIcon
+                src={IconAssets.IcHeart}
+                size={18}
+                className={course.liked ? "red_700" : "opacity-45"}
+                alt=""
+              />
               <span className="font-pretendard typo-t3regular whitespace-nowrap text-gray-900">
                 {course.likeCount}
               </span>
@@ -184,7 +176,7 @@ export default function RouteListItem({
 
             {course.bakeryNames.map((store) => (
               <div key={store} className="flex w-full items-center justify-start gap-[6.5px]">
-                <div className="z-10 h-[6px] w-[6px] rounded-full bg-gray-500" />
+                <AppIcon src={IconAssets.IcPin} size={6} className="z-10" alt="" />
                 <div className="flex-1 font-pretendard text-size-3 font-normal leading-t4 text-gray-800">
                   {store}
                 </div>
@@ -222,13 +214,13 @@ export default function RouteListItem({
 
             <div className="flex w-full flex-row items-start justify-start px-[20px] py-0">
               <div className="flex w-full flex-col items-start justify-start">
-                <div className="flex w-full flex-col items-start justify-start">
+                <div className="flex w-full flex-col items-start justify-start gap-x2">
                   <button
                     type="button"
                     onClick={handleCopyLink}
-                    className="flex w-full flex-row items-center justify-start gap-x1 overflow-hidden bg-white px-0 py-[16px] text-left"
+                    className="flex w-full flex-row items-center justify-start gap-x2 overflow-hidden bg-white px-0 py-[16px] text-left"
                   >
-                    <div className="h-6 w-6 shrink-0 rounded-full bg-gray-500" />
+                    <AppIcon src={IconAssets.IcLink} size={24} alt="" />
                     <div className="flex-1 font-pretendard text-size-5 font-normal leading-t6 text-gray-1000">
                       링크 복사하기
                     </div>
@@ -237,9 +229,9 @@ export default function RouteListItem({
                   <button
                     type="button"
                     onClick={handleKakaoShare}
-                    className="flex w-full flex-row items-center justify-start gap-x1 overflow-hidden bg-white px-0 py-[16px] text-left"
+                    className="flex w-full flex-row items-center justify-start gap-x2 overflow-hidden bg-white px-0 py-[16px] text-left"
                   >
-                    <div className="h-6 w-6 shrink-0 rounded-full bg-gray-500" />
+                    <AppIcon src={IconAssets.IcLogoKakao} size={24} alt="" />
                     <div className="flex-1 font-pretendard text-size-5 font-normal leading-t6 text-gray-1000">
                       카카오톡으로 공유하기
                     </div>
@@ -248,9 +240,9 @@ export default function RouteListItem({
                   <button
                     type="button"
                     onClick={handleDeleteCourse}
-                    className="flex w-full flex-row items-center justify-start gap-x1 overflow-hidden bg-white px-0 py-[16px] text-left"
+                    className="flex w-full flex-row items-center justify-start gap-x2 overflow-hidden bg-white px-0 py-[16px] text-left"
                   >
-                    <div className="h-6 w-6 shrink-0 rounded-full bg-gray-500" />
+                    <AppIcon src={IconAssets.IcTrash} size={24} alt="" />
                     <div
                       className={cn(
                         "flex-1 font-pretendard text-size-5 font-normal leading-t6",

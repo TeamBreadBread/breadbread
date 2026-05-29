@@ -1,31 +1,26 @@
-import { AppIcon, IconAssets } from "@/components/icons";
 import { useState } from "react";
-
-const categories = [
-  { label: "지역별", icon: IconAssets.IcPin },
-  { label: "종류별", icon: IconAssets.IcBread },
-  { label: "에디터픽", icon: IconAssets.IcStar },
-  { label: "테마별", icon: IconAssets.IcCompass },
-] as const;
-
-type Category = (typeof categories)[number]["label"];
+import { AppIcon, IconAssets } from "@/components/icons";
+import {
+  QUICK_MENU_CATEGORIES,
+  type QuickMenuCategoryLabel,
+} from "@/components/domain/home/quickMenuCategories";
 
 const CategoryCard = ({
   label,
-  icon,
+  imageSrc,
   onClick,
 }: {
-  label: Category;
-  icon: string;
-  onClick?: (label: Category) => void;
+  label: QuickMenuCategoryLabel;
+  imageSrc: string;
+  onClick?: (label: QuickMenuCategoryLabel) => void;
 }) => {
   return (
     <button
       type="button"
       onClick={() => onClick?.(label)}
-      className="flex h-full w-full flex-col items-center justify-center gap-[2px] rounded-[8px] border border-[#f3f4f5] bg-[#f7f8f9] px-[20px] py-[12px]"
+      className="flex h-full w-full flex-col items-center justify-center gap-x1-5 rounded-[8px] border border-[#f3f4f5] bg-[#f7f8f9] px-[20px] py-[12px]"
     >
-      <AppIcon src={icon} size={36} className="opacity-70" />
+      <img src={imageSrc} alt="" aria-hidden className="h-[44px] w-[44px] object-contain" />
       <span className="w-full text-center text-[12px] leading-[16px] font-medium text-[#2a3038]">
         {label}
       </span>
@@ -53,7 +48,7 @@ const SearchBox = () => {
 };
 
 type BbangteoSearchSectionProps = {
-  onCategoryClick?: (label: Category) => void;
+  onCategoryClick?: (label: QuickMenuCategoryLabel) => void;
 };
 
 const BbangteoSearchSection = ({ onCategoryClick }: BbangteoSearchSectionProps) => {
@@ -61,11 +56,11 @@ const BbangteoSearchSection = ({ onCategoryClick }: BbangteoSearchSectionProps) 
     <section className="flex flex-col gap-[16px] bg-white px-[20px] py-[18px]">
       <SearchBox />
       <div className="flex h-[90px] shrink-0 items-start gap-[9px]">
-        {categories.map((category) => (
+        {QUICK_MENU_CATEGORIES.map((category) => (
           <CategoryCard
             key={category.label}
             label={category.label}
-            icon={category.icon}
+            imageSrc={category.imageSrc}
             onClick={onCategoryClick}
           />
         ))}

@@ -21,11 +21,20 @@ interface KakaoMapServices {
   };
 }
 
+interface KakaoAddressSearchResult {
+  x: string;
+  y: string;
+}
+
 interface KakaoGeocoder {
   coord2Address(
     lng: number,
     lat: number,
     callback: (result: unknown[], status: string) => void,
+  ): void;
+  addressSearch(
+    address: string,
+    callback: (result: KakaoAddressSearchResult[], status: string) => void,
   ): void;
 }
 

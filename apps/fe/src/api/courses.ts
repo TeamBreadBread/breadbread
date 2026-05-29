@@ -126,6 +126,16 @@ export type MyRouteCourse = {
   bakeryNames: string[];
 };
 
+export type ReorderCourseBakeriesRequest = {
+  bakeryOrder: number[];
+};
+
+export type ReorderCourseBakeriesResponse = {
+  courseId: number;
+  bakeryOrder: number[];
+  estimatedTotalMinutes: number;
+};
+
 export async function getCourses(params?: GetCoursesParams): Promise<CourseListResponse> {
   const { data } = await apiClient.get<ApiEnvelope<CourseListResponse>>(PATH, { params });
   return extractData(data);
@@ -214,6 +224,17 @@ export async function requestAiCourse(body: AiCourseRequest): Promise<string> {
 export async function getAiCourseStatus(jobId: string): Promise<AiCourseStatusResponse> {
   const response = await apiClient.get<ApiEnvelope<AiCourseStatusResponse>>(
     `${PATH}/ai/status/${jobId}`,
+  );
+  return extractData(response.data);
+}
+
+export async function reorderCourseBakeries(
+  courseId: number,
+  body: ReorderCourseBakeriesRequest,
+): Promise<ReorderCourseBakeriesResponse> {
+  const response = await apiClient.patch<ApiEnvelope<ReorderCourseBakeriesResponse>>(
+    `${PATH}/${courseId}/bakeries/reorder`,
+    body,
   );
   return extractData(response.data);
 }

@@ -2,9 +2,13 @@ import { getAiCourseStatus } from "@/api/courses";
 
 /** 로딩 화면에 보여줄 사용자용 예상 대기 시간 */
 export const AI_COURSE_ESTIMATED_WAIT_SECONDS = 30;
-/** 실제 폴링 타임아웃 */
-export const AI_COURSE_POLL_MAX_ATTEMPTS = 30;
-export const AI_COURSE_POLL_INTERVAL_MS = 2_000;
+/**
+ * 실제 폴링 타임아웃.
+ * BE webhook 타임아웃(90초)보다 길게 잡아, 생성이 길어져도 프런트가 먼저 끊기지 않도록 한다.
+ * 1.5초 간격 × 80회 = 약 120초.
+ */
+export const AI_COURSE_POLL_MAX_ATTEMPTS = 80;
+export const AI_COURSE_POLL_INTERVAL_MS = 1_500;
 export const AI_COURSE_MAX_WAIT_SECONDS = Math.ceil(
   (AI_COURSE_POLL_MAX_ATTEMPTS * AI_COURSE_POLL_INTERVAL_MS) / 1000,
 );

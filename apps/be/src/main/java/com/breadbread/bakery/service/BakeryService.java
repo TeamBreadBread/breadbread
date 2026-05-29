@@ -182,7 +182,8 @@ public class BakeryService {
         Long likeCount = bakeryLikeRepository.countByBakery(bakery);
         boolean liked =
                 userId != null && bakeryLikeRepository.existsByBakeryIdAndUserId(bakeryId, userId);
-        return BakeryDetailResponse.from(bakery, likeCount, liked);
+        long reviewCount = reviewRepository.countByBakeryIdAndActiveTrue(bakeryId);
+        return BakeryDetailResponse.from(bakery, likeCount, liked, reviewCount);
     }
 
     @Transactional

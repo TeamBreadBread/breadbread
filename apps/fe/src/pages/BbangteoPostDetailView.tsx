@@ -24,6 +24,7 @@ import {
 } from "@/components/layout/layout.constants";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { getMockPostDetailById, isBbangteoMockPostId } from "@/data/bbangteoCommunityMocks";
+import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import {
   applyOverlayToPostDetail,
   persistDetailToLikeOverlay,
@@ -87,6 +88,7 @@ const ImageRow = ({ urls }: { urls: string[] }) => {
 
 export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPostDetailViewProps) {
   const navigate = useNavigate();
+  const { requireLogin } = useLoginRequired();
   const [detail, setDetail] = useState<PostDetail | null>(null);
   const [loadError, setLoadError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -151,7 +153,7 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
     void load();
   }, [load]);
 
-  const onToggleLike = async () => {
+  const performToggleLike = async () => {
     if (!detail || likeBusy || likePendingRef.current) return;
     if (isBbangteoMockPostId(detail.id)) {
       const wasLiked = detail.liked;
@@ -189,10 +191,6 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
       setPostLikeOverlay(id, { liked: wasLiked, likeCount: prevCount });
       setDetail((d) => (d && d.id === id ? { ...d, liked: wasLiked, likeCount: prevCount } : d));
       if (e instanceof ApiBusinessError) {
-        if (e.status === 401) {
-          alert("로그인 후 좋아요할 수 있습니다.");
-          return;
-        }
         if (e.status === 409 && !wasLiked) {
           try {
             const fresh = await getPost(id);
@@ -221,6 +219,14 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
       likePendingRef.current = false;
       setLikeBusy(false);
     }
+  };
+
+  const onToggleLike = () => {
+    const returnPath =
+      listPath === "/bbangteo-article-board" ? "/bbangteo-article-board" : "/bbangteo-board";
+    requireLogin(() => {
+      void performToggleLike();
+    }, returnPath);
   };
 
   const onDeletePost = async () => {

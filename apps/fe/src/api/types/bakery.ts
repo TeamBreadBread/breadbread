@@ -47,8 +47,14 @@ export type BakeryDetail = {
   imageUrls?: string[];
   openTime?: string | null;
   closeTime?: string | null;
+  weekdayOpen?: string | null;
+  weekdayClose?: string | null;
+  weekendOpen?: string | null;
+  weekendClose?: string | null;
+  closedDays?: string[] | null;
   phone?: string | null;
   rating?: number | null;
+  reviewCount?: number | null;
   breads: BakeryDetailBread[];
   likeCount?: number | null;
   liked?: boolean | null;

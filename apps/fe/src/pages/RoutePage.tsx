@@ -14,9 +14,11 @@ import {
   unlikeCourse,
 } from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
+import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 
 export default function RoutePage() {
   const navigate = useNavigate();
+  const { requireLogin } = useLoginRequired();
   const [courses, setCourses] = useState<RouteCourse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -77,7 +79,7 @@ export default function RoutePage() {
     }
   };
 
-  const handleToggleCourseLike = async (courseId: string) => {
+  const performToggleCourseLike = async (courseId: string) => {
     const parsed = Number.parseInt(courseId, 10);
     if (!Number.isFinite(parsed)) return;
     const prev = courses;
@@ -103,6 +105,12 @@ export default function RoutePage() {
       setCourses(prev);
       window.alert(getErrorMessage(error));
     }
+  };
+
+  const handleToggleCourseLike = (courseId: string) => {
+    requireLogin(() => {
+      void performToggleCourseLike(courseId);
+    }, "/route");
   };
 
   return (

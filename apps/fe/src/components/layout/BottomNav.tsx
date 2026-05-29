@@ -1,5 +1,6 @@
 import { AppIcon, IconAssets } from "@/components/icons";
 import { useLocation, useNavigate } from "@tanstack/react-router";
+import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import BottomNavItem from "./BottomNavItem";
 import { APP_SHELL_MAX_WIDTH } from "./layout.constants";
 
@@ -19,6 +20,18 @@ const navItems: NavItem[] = [
 const BottomNav = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { requireLogin } = useLoginRequired();
+
+  const handleNavClick = (to: NavItem["to"]) => {
+    if (!to) return;
+    if (to === "/my") {
+      requireLogin(() => {
+        void navigate({ to });
+      }, "/my");
+      return;
+    }
+    void navigate({ to });
+  };
 
   return (
     <nav
@@ -47,7 +60,7 @@ const BottomNav = () => {
                   className={isActive ? "opacity-100" : "opacity-45"}
                 />
               }
-              onClick={to ? () => navigate({ to }) : undefined}
+              onClick={to ? () => handleNavClick(to) : undefined}
             />
           );
         })}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { GetBakeriesParams } from "@/api/types/bakery";
 import { useNavigate } from "@tanstack/react-router";
 import Skeleton from "@/components/common/skeleton/Skeleton";
@@ -10,6 +10,7 @@ import {
   CURATION_DISPLAY_COUNT,
   shuffleArray,
 } from "./curationBakeryContentParams";
+import { bakeryMatchesDong } from "./matchBakeryByDong";
 import CurationFooter, { type CurationItem } from "./CurationFooter";
 
 type CurationBakeryContentProps = {
@@ -23,6 +24,16 @@ type CurationBakeryContentProps = {
   onDisplayedBakeryIdsChange?: (ids: number[]) => void;
   /** 기본값: 홈과 동일 4장 — 빵터는 6장 등 */
   displayCount?: number;
+  /** 기본 목록 파라미터에 덮어쓸 추가 조건 (예: 지역 키워드) */
+  listParamsOverride?: Partial<GetBakeriesParams>;
+  /** 이미 다른 섹션에서 사용한 빵집 id를 제외 */
+  excludeBakeryIds?: number[];
+  /** 주소/이름에 포함되는 키워드로 클라이언트 필터링 */
+  localKeywordFilter?: string;
+  /** true면 마운트(새로고침) 후 첫 픽만 사용하고 이후 재섞지 않음 */
+  lockSelectionOnMount?: boolean;
+  /** lock 사용 시 false면 스켈레톤 유지 (위 큐레이션 id 대기 등) */
+  readyToPick?: boolean;
 };
 
 export function CurationBakeryContent({
@@ -31,28 +42,66 @@ export function CurationBakeryContent({
   onCardClick,
   onDisplayedBakeryIdsChange,
   displayCount: displayCountProp,
+  listParamsOverride,
+  excludeBakeryIds,
+  localKeywordFilter,
+  lockSelectionOnMount = false,
+  readyToPick = true,
 }: CurationBakeryContentProps) {
   const navigate = useNavigate();
+  const [lockedItems, setLockedItems] = useState<CurationItem[] | null>(null);
   const displayCount = displayCountProp ?? CURATION_DISPLAY_COUNT;
-  const listParams: GetBakeriesParams = useMemo(
-    () => ({
+  const listParams: GetBakeriesParams = useMemo(() => {
+    const requestedSize = listParamsOverride?.size ?? CURATION_BAKERY_LIST_PARAMS.size;
+    return {
       ...CURATION_BAKERY_LIST_PARAMS,
-      size: Math.max(CURATION_BAKERY_LIST_PARAMS.size, displayCount),
-    }),
-    [displayCount],
-  );
+      ...listParamsOverride,
+      size: Math.max(requestedSize, displayCount),
+    };
+  }, [displayCount, listParamsOverride]);
   const { data, loading, error } = useBakeries(listParams);
 
-  const items: CurationItem[] = useMemo(() => {
+  const pickedItems: CurationItem[] = useMemo(() => {
+    if (lockSelectionOnMount && !readyToPick) {
+      return [];
+    }
     if (!data?.bakeries?.length) return [];
-    const picked = shuffleArray(data.bakeries).slice(0, displayCount);
+
+    const keyword = localKeywordFilter?.trim();
+    const scopedByKeyword = keyword
+      ? data.bakeries.filter((bakery) => bakeryMatchesDong(bakery, keyword))
+      : data.bakeries;
+    const excluded = new Set(excludeBakeryIds ?? []);
+    const filtered = scopedByKeyword.filter((bakery) => !excluded.has(bakery.id));
+    const source = filtered.length > 0 ? filtered : scopedByKeyword;
+    const picked = shuffleArray(source).slice(0, displayCount);
+    const addressMaxTokens = compact ? 2 : 4;
     return picked.map((b) => ({
       bakeryId: b.id,
       title: b.name,
-      address: b.address?.trim() ? formatCurationAddress(b.address.trim()) : "주소 정보 없음",
+      address: b.address?.trim()
+        ? formatCurationAddress(b.address.trim(), addressMaxTokens)
+        : "주소 정보 없음",
       rate: b.rating != null ? Number(b.rating) : 0,
     }));
-  }, [data, displayCount]);
+  }, [
+    data,
+    displayCount,
+    excludeBakeryIds,
+    localKeywordFilter,
+    compact,
+    lockSelectionOnMount,
+    readyToPick,
+  ]);
+
+  // 첫 픽만 state에 고정 (리프레시마다 재섞임 방지)
+  useEffect(() => {
+    if (!lockSelectionOnMount || !readyToPick || pickedItems.length === 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- lock-on-mount one-time snapshot
+    setLockedItems((prev) => prev ?? pickedItems);
+  }, [lockSelectionOnMount, readyToPick, pickedItems]);
+
+  const items = lockSelectionOnMount && lockedItems ? lockedItems : pickedItems;
 
   useEffect(() => {
     if (!onDisplayedBakeryIdsChange) return;
@@ -85,7 +134,7 @@ export function CurationBakeryContent({
     ? "h-[92px] w-[118px] flex-shrink-0 rounded-[var(--radius-r3)]"
     : "h-[240px] w-[254px] flex-shrink-0 rounded-[var(--radius-r3)]";
 
-  if (loading) {
+  if (loading || (lockSelectionOnMount && !readyToPick)) {
     return (
       <div className="flex w-full gap-[var(--spacing-x4)] overflow-x-auto overflow-y-hidden pb-1">
         {Array.from({ length: displayCount }).map((_, i) => (
@@ -109,6 +158,7 @@ export function CurationBakeryContent({
       itemClassName={compact ? "!w-[118px] shrink-0" : undefined}
       cardImageClassName={compact ? "!w-[118px] !h-[92px]" : undefined}
       breadIconClassName={compact ? "!w-[28px] !h-[28px]" : undefined}
+      metaIconClassName={compact ? "icon-gray-600" : undefined}
       onItemClick={handleItemClick}
     />
   );

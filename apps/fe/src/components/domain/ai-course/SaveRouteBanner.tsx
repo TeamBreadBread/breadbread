@@ -1,4 +1,5 @@
 import ToastBanner from "@/components/common/feedback/ToastBanner";
+import icCheckCircleGreen from "@/assets/icons/Ic_CheckCircle_Green.svg";
 
 interface SaveRouteBannerProps {
   onActionClick?: () => void;
@@ -10,6 +11,8 @@ export default function SaveRouteBanner({ onActionClick }: SaveRouteBannerProps)
       message="루트에 저장되었습니다."
       actionText="이동하기"
       onActionClick={onActionClick}
+      iconSrc={icCheckCircleGreen}
+      iconClassName=""
     />
   );
 }

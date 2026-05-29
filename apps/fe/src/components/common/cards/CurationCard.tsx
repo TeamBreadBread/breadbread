@@ -9,6 +9,8 @@ type CurationCardProps = {
   className?: string;
   imageClassName?: string;
   breadIconClassName?: string;
+  /** 지도·별점 아이콘 (예: `icon-gray-600`) */
+  metaIconClassName?: string;
 };
 
 const CurationCard = ({
@@ -18,6 +20,7 @@ const CurationCard = ({
   className,
   imageClassName,
   breadIconClassName,
+  metaIconClassName,
 }: CurationCardProps) => {
   return (
     <div className={cn("w-full flex flex-col gap-[var(--spacing-x2)]", className)}>
@@ -55,10 +58,10 @@ const CurationCard = ({
             "text-[var(--color-gray-700)]",
           )}
         >
-          <AppIcon src={IconAssets.IcPin} size="x3" />
+          <AppIcon src={IconAssets.IcPin} size="x3" className={metaIconClassName} />
           <span className="min-w-0 flex-1 truncate">{address}</span>
           <span className="shrink-0">·</span>
-          <AppIcon src={IconAssets.IcStar} size="x3" />
+          <AppIcon src={IconAssets.IcStar} size="x3" className={metaIconClassName} />
           <span className="shrink-0">{rate}</span>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { AppIcon, IconAssets } from "@/components/icons";
 import { useNavigate } from "@tanstack/react-router";
 import { cn } from "@/utils/cn";
@@ -16,6 +17,7 @@ interface AppTopBarProps {
   centered?: boolean;
   showBackButton?: boolean;
   onBackClick?: () => void;
+  rightAction?: ReactNode;
 }
 
 export default function AppTopBar({
@@ -25,9 +27,10 @@ export default function AppTopBar({
   centered = false,
   showBackButton = false,
   onBackClick,
+  rightAction,
 }: AppTopBarProps) {
   const navigate = useNavigate();
-  const handleBack = onBackClick ?? onBack ?? (() => navigate({ to: "/" }));
+  const handleBack = onBackClick ?? onBack ?? (() => navigate({ to: "/home" }));
   const shouldHideBack = hideBack ?? false;
   const shouldShowBackButton = !shouldHideBack || showBackButton;
 
@@ -80,7 +83,11 @@ export default function AppTopBar({
             {title}
           </h1>
 
-          <div className="h-9 w-9" />
+          {rightAction ? (
+            <div className="flex h-9 w-9 items-center justify-center">{rightAction}</div>
+          ) : (
+            <div className="h-9 w-9" />
+          )}
         </div>
       </header>
       <div className={FIXED_TOP_BAR_SPACER_CLASS} aria-hidden />

@@ -1,4 +1,4 @@
-import { AppIcon, IconAssets } from "@/components/icons";
+import { PasswordToggleIcon } from "@/components/icons";
 import { useState } from "react";
 
 interface PasswordFieldProps {
@@ -39,10 +39,9 @@ export default function PasswordField({
         onClick={() => setVisible((prev) => !prev)}
         className="flex shrink-0 items-center justify-center"
       >
-        <AppIcon
-          src={visible ? IconAssets.IcEyeSlash : IconAssets.IcEye}
-          size="x6"
-          className="opacity-70"
+        <PasswordToggleIcon
+          visible={visible}
+          className={visible ? "text-gray-900" : "text-gray-700"}
         />
       </button>
     </div>

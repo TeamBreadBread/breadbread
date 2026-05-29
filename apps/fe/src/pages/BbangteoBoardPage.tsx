@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import { getPosts, type PostListSort, type PostSummary, type PostType } from "@/api/posts";
 import { getErrorMessage } from "@/api/types/common";
 import {
@@ -8,6 +9,7 @@ import {
 } from "@/data/bbangteoCommunityMocks";
 import { AppIcon, IconAssets } from "@/components/icons";
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
+import FloatingPlusButton from "@/components/common/FloatingPlusButton";
 import BottomNav from "@/components/layout/BottomNav";
 import {
   BBANGTEO_FIXED_HEADER_OUTER_CLASS,
@@ -232,31 +234,13 @@ const PostList = ({
   );
 };
 
-const FloatingWriteButton = ({ onClick }: { onClick: () => void }) => {
-  return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] mx-auto w-full max-w-[744px]">
-      <button
-        type="button"
-        aria-label="글쓰기"
-        onClick={onClick}
-        className="pointer-events-auto fixed right-[20px] bottom-[76px] z-[60] flex h-[56px] w-[56px] items-center justify-center rounded-full bg-gray-800 shadow-[0_4px_12px_rgba(0,0,0,0.18)] sm:bottom-[80px] md:right-[calc((100vw-744px)/2+20px)]"
-      >
-        <div className="relative h-[24px] w-[24px]">
-          <div className="absolute left-[3px] top-[4px] h-[14px] w-[18px] rounded-[3px] border border-white" />
-          <div className="absolute left-[9px] top-[1px] h-[6px] w-[6px] rounded-full bg-white" />
-          <div className="absolute left-[18px] top-[16px] h-[2px] w-[8px] -rotate-45 rounded-full bg-white" />
-        </div>
-      </button>
-    </div>
-  );
-};
-
 type BbangteoBoardPageProps = {
   initialTab?: TabType;
 };
 
 const BbangteoBoardPage = ({ initialTab = "자유 게시판" }: BbangteoBoardPageProps) => {
   const navigate = useNavigate();
+  const { requireLogin } = useLoginRequired();
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [page, setPage] = useState(0);
   const [items, setItems] = useState<PostSummaryWithLikeOverlay[]>([]);
@@ -380,8 +364,13 @@ const BbangteoBoardPage = ({ initialTab = "자유 게시판" }: BbangteoBoardPag
       </div>
 
       {activeTab === "자유 게시판" ? (
-        <FloatingWriteButton
-          onClick={() => navigate({ to: "/bbangteo-board-write", search: { editId: 0 } })}
+        <FloatingPlusButton
+          onClick={() =>
+            requireLogin(
+              () => navigate({ to: "/bbangteo-board-write", search: { editId: 0 } }),
+              "/bbangteo-board-write",
+            )
+          }
         />
       ) : null}
       <BottomNav />

@@ -10,6 +10,7 @@ import {
   FIXED_TOP_BAR_SPACER_CLASS,
 } from "@/components/layout/layout.constants";
 import MobileFrame from "@/components/layout/MobileFrame";
+import { CURATION_BBANGTEO_DISPLAY_COUNT } from "@/components/domain/home/curationBakeryContentParams";
 import { useBakeries } from "@/hooks/useBakeries";
 import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import { cn } from "@/utils/cn";
@@ -345,8 +346,11 @@ const BbangteoBakeryListPage = ({ listEntryFrom, curationPinIds }: BbangteoBaker
     return pinIdsKey
       .split(",")
       .map((segment) => Number.parseInt(segment.trim(), 10))
-      .filter((n) => Number.isFinite(n) && n > 0);
+      .filter((n) => Number.isFinite(n) && n > 0)
+      .slice(0, CURATION_BBANGTEO_DISPLAY_COUNT);
   }, [pinIdsKey]);
+
+  const isBbangteoCurationOnly = listEntryFrom === "bbangteo" && pins.length > 0 && !keyword.trim();
 
   const handleKeywordChange = (value: string) => {
     setKeyword(value);
@@ -367,7 +371,10 @@ const BbangteoBakeryListPage = ({ listEntryFrom, curationPinIds }: BbangteoBaker
   });
 
   const pinResolutionActive =
-    page === 0 && queryKeyword == null && pins.length > 0 && Boolean(data?.bakeries?.length);
+    page === 0 &&
+    queryKeyword == null &&
+    pins.length > 0 &&
+    (isBbangteoCurationOnly || Boolean(data?.bakeries?.length));
 
   const listIds = useMemo(() => new Set(data?.bakeries?.map((b) => b.id) ?? []), [data?.bakeries]);
 
@@ -448,8 +455,20 @@ const BbangteoBakeryListPage = ({ listEntryFrom, curationPinIds }: BbangteoBaker
   }, [data]);
 
   const rows: BakeryRow[] = useMemo(() => {
-    if (!apiRows.length) return [];
     const applyPins = page === 0 && !queryKeyword && pins.length > 0;
+
+    if (isBbangteoCurationOnly) {
+      const pinnedOrdered: BakeryRow[] = [];
+      for (const id of pins) {
+        const fromList = apiRows.find((r) => r.id === id);
+        const fetched = resolvedPinRowsById.get(id);
+        const row = fromList ?? fetched;
+        if (row) pinnedOrdered.push(row);
+      }
+      return pinnedOrdered;
+    }
+
+    if (!apiRows.length) return [];
     if (!applyPins) {
       return apiRows;
     }
@@ -464,7 +483,7 @@ const BbangteoBakeryListPage = ({ listEntryFrom, curationPinIds }: BbangteoBaker
     }
     const tail = apiRows.filter((r) => !pinSet.has(r.id));
     return [...pinnedOrdered, ...tail].slice(0, PAGE_SIZE);
-  }, [apiRows, page, queryKeyword, pins, resolvedPinRowsById]);
+  }, [apiRows, page, queryKeyword, pins, resolvedPinRowsById, isBbangteoCurationOnly]);
 
   const total = data?.total ?? 0;
   const totalPages = total === 0 ? 0 : Math.ceil(total / PAGE_SIZE);
@@ -503,7 +522,7 @@ const BbangteoBakeryListPage = ({ listEntryFrom, curationPinIds }: BbangteoBaker
           ) : (
             <>
               <BakeryList items={rows} onItemClick={handleBakeryClick} />
-              {totalPages > 0 ? (
+              {totalPages > 0 && !isBbangteoCurationOnly ? (
                 <PageNumberNav currentPage={page} totalPages={totalPages} onSelectPage={setPage} />
               ) : null}
             </>
