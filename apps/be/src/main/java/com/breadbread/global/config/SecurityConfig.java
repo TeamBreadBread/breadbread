@@ -107,6 +107,8 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/posts/**")
                                         .permitAll()
+                                        .requestMatchers("/admin/**")
+                                        .hasRole("ADMIN")
                                         .anyRequest()
                                         .authenticated())
                 .addFilterBefore(

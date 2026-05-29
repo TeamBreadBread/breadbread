@@ -13,4 +13,10 @@ public interface CourseBakeryRepository extends JpaRepository<CourseBakery, Long
 
     @Query("SELECT cb.course.id FROM CourseBakery cb WHERE cb.bakery.id = :bakeryId")
     List<Long> findCourseIdsByBakeryId(@Param("bakeryId") Long bakeryId);
+
+    /** 혼잡도 체크용 — bakery N+1 방지 */
+    @Query(
+            "SELECT cb FROM CourseBakery cb JOIN FETCH cb.bakery WHERE cb.course.id = :courseId"
+                    + " ORDER BY cb.visitOrder")
+    List<CourseBakery> findAllByCourseIdWithBakery(@Param("courseId") Long courseId);
 }

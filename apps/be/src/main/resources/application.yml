@@ -124,6 +124,8 @@ oauth2:
 
 ai:
   webhook-url: ${AI_COURSE_WEBHOOK_URL}
+  chat-webhook-url: ${AI_CHAT_WEBHOOK_URL}
+  congestion-webhook-url: ${AI_CONGESTION_WEBHOOK_URL}
   webhook-timeout-seconds: ${AI_WEBHOOK_TIMEOUT_SECONDS:90}
   job-ttl-hours: ${AI_JOB_TTL_HOURS:1}
 

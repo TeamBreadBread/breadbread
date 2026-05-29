@@ -3,6 +3,8 @@ on:
   pull_request:
     branches: [main]
     types: [closed]
+    paths:
+      - "apps/be/**"
 
 permissions:
   contents: read
@@ -82,6 +84,8 @@ jobs:
             KAKAO_CLIENT_ID=KAKAO_CLIENT_ID:latest
             KAKAO_CLIENT_SECRET=KAKAO_CLIENT_SECRET:latest
             AI_COURSE_WEBHOOK_URL=AI_COURSE_WEBHOOK_URL:latest
+            AI_CHAT_WEBHOOK_URL=AI_CHAT_WEBHOOK_URL:latest
+            AI_CONGESTION_WEBHOOK_URL=AI_CONGESTION_WEBHOOK_URL:latest
             PORTONE_API_SECRET=PORTONE_API_SECRET:latest
             PORTONE_STORE_ID=PORTONE_STORE_ID:latest
             PORTONE_CHANNEL_KEY=PORTONE_CHANNEL_KEY:latest
