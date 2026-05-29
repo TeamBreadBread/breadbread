@@ -26,7 +26,7 @@ export default function PreferenceQuestionSection({
 
   return (
     <section className="flex w-full flex-col items-stretch gap-x4 overflow-hidden bg-gray-00 p-x5">
-      <SectionHeader title={title} rightText={helperText} icon={icon} />
+      <SectionHeader title={title} rightText={helperText} icon={icon} showDefaultIcon={false} />
       {fullWidthChild ? (
         <div className="w-full min-w-0">{children}</div>
       ) : (

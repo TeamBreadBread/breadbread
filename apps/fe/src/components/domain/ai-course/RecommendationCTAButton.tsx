@@ -24,7 +24,13 @@ export default function RecommendationCTAButton({
       variant="primary"
       fullWidth
       disabled={disabled}
-      className={cn("max-w-x80 gap-x2 disabled:pointer-events-none disabled:opacity-40", className)}
+      className={cn(
+        "max-w-x80 gap-x2",
+        disabled
+          ? "pointer-events-none bg-gray-500 text-gray-300 opacity-40"
+          : "bg-orange-600 text-gray-00",
+        className,
+      )}
       onClick={onClick}
     >
       {icon ? <span className="flex items-center justify-center">{icon}</span> : null}

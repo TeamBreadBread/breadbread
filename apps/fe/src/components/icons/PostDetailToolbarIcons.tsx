@@ -1,29 +1,15 @@
-/** 게시글 상세 — 목록 버튼(햄버거), 좋아요(하트) */
+import { AppIcon, IconAssets } from "@/components/icons";
+import { cn } from "@/utils/cn";
+
+/** 게시글 상세 — 목록 버튼(케밥), 좋아요(하트) */
 export function ToolbarHamburgerIcon({
   size = 22,
-  className = "shrink-0 text-[#1a1c20]",
+  className = "shrink-0",
 }: {
   size?: number;
   className?: string;
 }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden
-      className={className}
-    >
-      <path
-        d="M4 7h16M4 12h16M4 17h16"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
+  return <AppIcon src={IconAssets.IcKebab} size={size} className={className} />;
 }
 
 export function ToolbarHeartLikeIcon({
@@ -35,43 +21,16 @@ export function ToolbarHeartLikeIcon({
   size?: number;
   className?: string;
 }) {
-  if (liked) {
-    return (
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden
-        className={className ?? "shrink-0"}
-      >
-        <path
-          fillRule="evenodd"
-          clipRule="evenodd"
-          d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-          fill="#ef4444"
-        />
-      </svg>
-    );
-  }
   return (
     <svg
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
+      fill="currentColor"
       aria-hidden
-      className={className ?? "shrink-0 text-[#adb1ba]"}
+      className={cn("shrink-0", liked ? "text-red-600" : "text-gray-1000 opacity-45", className)}
     >
-      <path
-        d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <path d="M8.22857 4.5C5.28857 4.5 3 6.93435 3 9.90673C3 11.3141 3.50877 12.4992 4.30354 13.5992C5.08361 14.6789 6.16878 15.7152 7.3608 16.8235L7.36444 16.8269L10.5698 19.7688C10.7179 19.9048 10.8601 20.0352 10.9893 20.1364C11.1311 20.2474 11.304 20.3614 11.5237 20.4287C11.8342 20.5238 12.1658 20.5238 12.4763 20.4287C12.696 20.3614 12.8689 20.2474 13.0107 20.1364C13.1399 20.0352 13.282 19.9048 13.4302 19.7688L16.6356 16.8269L16.6392 16.8235C17.8312 15.7152 18.9164 14.6789 19.6965 13.5992C20.4912 12.4992 21 11.3141 21 9.90673C21 6.93435 18.7114 4.5 15.7714 4.5C14.2779 4.5 12.9451 5.13261 12 6.14668C11.0549 5.13261 9.72212 4.5 8.22857 4.5Z" />
     </svg>
   );
 }

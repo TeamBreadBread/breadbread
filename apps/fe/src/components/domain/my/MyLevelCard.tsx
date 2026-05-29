@@ -1,3 +1,5 @@
+import { AppIcon, IconAssets } from "@/components/icons";
+
 interface MyLevelCardProps {
   level: string;
   title: string;
@@ -26,7 +28,7 @@ export default function MyLevelCard({
             </span>
           </div>
 
-          <div className="ml-auto h-x6 w-x6 rounded-full bg-[#d9dbe0]" />
+          <AppIcon src={IconAssets.IcChevronRight} size="x6" className="ml-auto opacity-60" />
         </div>
 
         <div className="mt-[14px] flex flex-col gap-x2">

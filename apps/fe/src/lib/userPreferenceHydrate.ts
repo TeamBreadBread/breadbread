@@ -85,10 +85,33 @@ export const INITIAL_USER_PREFERENCE_QUESTIONS: PreferenceQuestion[] = [
   },
 ];
 
+function asArray<T extends string>(value: unknown): T[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is T => typeof item === "string");
+}
+
+function asWaitingTolerance(value: unknown): WaitingTolerance | null {
+  if (typeof value !== "string") return null;
+  const waitingValues: WaitingTolerance[] = ["NO_WAIT", "UNDER_20", "UNDER_30", "ANYTIME"];
+  return waitingValues.includes(value as WaitingTolerance) ? (value as WaitingTolerance) : null;
+}
+
+export function normalizeMyPreference(
+  preference: Partial<MyPreferenceResponse> | null | undefined,
+): MyPreferenceResponse {
+  return {
+    bakeryTypes: asArray<BakeryType>(preference?.bakeryTypes),
+    bakeryPersonalities: asArray<BakeryPersonality>(preference?.bakeryPersonalities),
+    bakeryUseTypes: asArray<BakeryUseType>(preference?.bakeryUseTypes),
+    waitingTolerance: asWaitingTolerance(preference?.waitingTolerance) ?? "UNDER_20",
+  };
+}
+
 /** GET /users/preference 응답을 설문 UI 상태로 변환합니다. */
 export function hydrateQuestionsFromMyPreference(
-  preference: MyPreferenceResponse,
+  preferenceInput: MyPreferenceResponse,
 ): PreferenceQuestion[] {
+  const preference = normalizeMyPreference(preferenceInput);
   const typeIdSet = new Set(
     Object.entries(USER_PREFERENCE_BAKERY_TYPE_MAP)
       .filter(([, value]) => value && preference.bakeryTypes.includes(value))

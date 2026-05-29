@@ -13,6 +13,7 @@ type CurationFooterProps = {
   itemClassName?: string;
   cardImageClassName?: string;
   breadIconClassName?: string;
+  metaIconClassName?: string;
   onItemClick?: (item: CurationItem, index: number) => void;
 };
 
@@ -21,6 +22,7 @@ const CurationFooter = ({
   itemClassName,
   cardImageClassName,
   breadIconClassName,
+  metaIconClassName,
   onItemClick,
 }: CurationFooterProps) => {
   if (items.length === 0) {
@@ -51,6 +53,7 @@ const CurationFooter = ({
                   rate={item.rate}
                   imageClassName={cardImageClassName}
                   breadIconClassName={breadIconClassName}
+                  metaIconClassName={metaIconClassName}
                 />
               </button>
             ) : (
@@ -60,6 +63,7 @@ const CurationFooter = ({
                 rate={item.rate}
                 imageClassName={cardImageClassName}
                 breadIconClassName={breadIconClassName}
+                metaIconClassName={metaIconClassName}
               />
             )}
           </div>

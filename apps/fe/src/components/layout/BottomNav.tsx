@@ -1,22 +1,37 @@
+import { AppIcon, IconAssets } from "@/components/icons";
 import { useLocation, useNavigate } from "@tanstack/react-router";
+import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import BottomNavItem from "./BottomNavItem";
 import { APP_SHELL_MAX_WIDTH } from "./layout.constants";
 
 type NavItem = {
   label: string;
+  icon: string;
   to?: "/home" | "/route" | "/bbangteo" | "/my";
 };
 
 const navItems: NavItem[] = [
-  { label: "홈", to: "/home" },
-  { label: "루트", to: "/route" },
-  { label: "빵터", to: "/bbangteo" },
-  { label: "MY", to: "/my" },
+  { label: "홈", icon: IconAssets.IcHome, to: "/home" },
+  { label: "루트", icon: IconAssets.IcCompass, to: "/route" },
+  { label: "빵터", icon: IconAssets.IcChat, to: "/bbangteo" },
+  { label: "MY", icon: IconAssets.IcPerson, to: "/my" },
 ];
 
 const BottomNav = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { requireLogin } = useLoginRequired();
+
+  const handleNavClick = (to: NavItem["to"]) => {
+    if (!to) return;
+    if (to === "/my") {
+      requireLogin(() => {
+        void navigate({ to });
+      }, "/my");
+      return;
+    }
+    void navigate({ to });
+  };
 
   return (
     <nav
@@ -38,7 +53,14 @@ const BottomNav = () => {
               key={item.label}
               label={item.label}
               active={isActive}
-              onClick={to ? () => navigate({ to }) : undefined}
+              icon={
+                <AppIcon
+                  src={item.icon}
+                  size={20}
+                  className={isActive ? "opacity-100" : "opacity-45"}
+                />
+              }
+              onClick={to ? () => handleNavClick(to) : undefined}
             />
           );
         })}

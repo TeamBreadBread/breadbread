@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import { getPosts, type PostListSort, type PostSummary, type PostType } from "@/api/posts";
 import { getErrorMessage } from "@/api/types/common";
 import {
   getMockArticleBoardSummaries,
   getMockFreeBoardSummaries,
 } from "@/data/bbangteoCommunityMocks";
-import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
+import { AppIcon, IconAssets } from "@/components/icons";
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
+import FloatingPlusButton from "@/components/common/FloatingPlusButton";
 import BottomNav from "@/components/layout/BottomNav";
 import {
   BBANGTEO_FIXED_HEADER_OUTER_CLASS,
@@ -54,7 +56,7 @@ const BackHeader = () => {
             className="flex h-[36px] w-[36px] items-center justify-center"
             onClick={() => navigate({ to: "/bbangteo" })}
           >
-            <img src={ArrowLeft} alt="뒤로가기" className="h-[24px] w-[24px]" />
+            <AppIcon src={IconAssets.IcChevronLeft} size="x6" alt="뒤로가기" />
           </button>
           <div className="h-[36px] w-[36px] shrink-0" />
         </div>
@@ -119,38 +121,10 @@ const BoardTabs = ({
 };
 
 const ListHeartIcon = ({ filled }: { filled?: boolean }) => (
-  <svg
-    width={14}
-    height={14}
-    viewBox="0 0 24 24"
-    aria-hidden
-    className={filled ? "shrink-0 red_700" : "shrink-0 text-[#868b94]"}
-    fill={filled ? "currentColor" : "none"}
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-  </svg>
+  <AppIcon src={IconAssets.IcHeart} size={14} className={filled ? "red_700" : "opacity-45"} />
 );
 
-const ListCommentIcon = () => (
-  <svg
-    width={14}
-    height={14}
-    viewBox="0 0 24 24"
-    aria-hidden
-    className="shrink-0 text-[#868b94]"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-  </svg>
-);
+const ListCommentIcon = () => <AppIcon src={IconAssets.IcChat} size={14} className="opacity-45" />;
 
 const PostMetaItem = ({
   count,
@@ -260,31 +234,13 @@ const PostList = ({
   );
 };
 
-const FloatingWriteButton = ({ onClick }: { onClick: () => void }) => {
-  return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] mx-auto w-full max-w-[744px]">
-      <button
-        type="button"
-        aria-label="글쓰기"
-        onClick={onClick}
-        className="pointer-events-auto fixed right-[20px] bottom-[76px] z-[60] flex h-[56px] w-[56px] items-center justify-center rounded-full bg-gray-800 shadow-[0_4px_12px_rgba(0,0,0,0.18)] sm:bottom-[80px] md:right-[calc((100vw-744px)/2+20px)]"
-      >
-        <div className="relative h-[24px] w-[24px]">
-          <div className="absolute left-[3px] top-[4px] h-[14px] w-[18px] rounded-[3px] border border-white" />
-          <div className="absolute left-[9px] top-[1px] h-[6px] w-[6px] rounded-full bg-white" />
-          <div className="absolute left-[18px] top-[16px] h-[2px] w-[8px] -rotate-45 rounded-full bg-white" />
-        </div>
-      </button>
-    </div>
-  );
-};
-
 type BbangteoBoardPageProps = {
   initialTab?: TabType;
 };
 
 const BbangteoBoardPage = ({ initialTab = "자유 게시판" }: BbangteoBoardPageProps) => {
   const navigate = useNavigate();
+  const { requireLogin } = useLoginRequired();
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [page, setPage] = useState(0);
   const [items, setItems] = useState<PostSummaryWithLikeOverlay[]>([]);
@@ -408,8 +364,13 @@ const BbangteoBoardPage = ({ initialTab = "자유 게시판" }: BbangteoBoardPag
       </div>
 
       {activeTab === "자유 게시판" ? (
-        <FloatingWriteButton
-          onClick={() => navigate({ to: "/bbangteo-board-write", search: { editId: 0 } })}
+        <FloatingPlusButton
+          onClick={() =>
+            requireLogin(
+              () => navigate({ to: "/bbangteo-board-write", search: { editId: 0 } }),
+              "/bbangteo-board-write",
+            )
+          }
         />
       ) : null}
       <BottomNav />

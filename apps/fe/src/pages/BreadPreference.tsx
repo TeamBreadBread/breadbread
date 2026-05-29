@@ -16,10 +16,16 @@ import { saveAiCoursePreferenceDraft } from "@/utils/aiCourseStorage";
 import { formatDeparturePlaceDisplay, normalizeDepartureLabel } from "@/utils/formatDeparturePlace";
 import type { KakaoSearchPlace } from "@/lib/kakaoPlaceSearch";
 import { parseLatLngFromPlace } from "@/utils/parseLatLngFromPlace";
+import AloneCategoryImg from "@/assets/icons/Img_alone.svg";
+import CoupleCategoryImg from "@/assets/icons/Img_couple.svg";
+import FriendCategoryImg from "@/assets/icons/Img_friend.svg";
+import FamilyCategoryImg from "@/assets/icons/Img_family.svg";
 
 type OptionItem = {
   label: string;
   withIcon?: boolean;
+  /** 함께하는 대상 아이콘 이미지 경로 (없으면 기본 원형) */
+  iconSrc?: string;
 };
 
 type QuestionItem = {
@@ -37,10 +43,10 @@ const QUESTION_SECTIONS: QuestionItem[] = [
     title: "누구와 함께 하시나요?",
     helperText: "",
     options: [
-      { label: "혼자", withIcon: true },
-      { label: "커플", withIcon: true },
-      { label: "친구", withIcon: true },
-      { label: "가족", withIcon: true },
+      { label: "혼자", withIcon: true, iconSrc: AloneCategoryImg },
+      { label: "커플", withIcon: true, iconSrc: CoupleCategoryImg },
+      { label: "친구", withIcon: true, iconSrc: FriendCategoryImg },
+      { label: "가족", withIcon: true, iconSrc: FamilyCategoryImg },
     ],
   },
   {
@@ -118,6 +124,67 @@ function saveDepartureRecents(items: DepartureRecentEntry[]) {
 
 function CircleIcon() {
   return <div className="h-x14 w-x14 rounded-full bg-gray-400" />;
+}
+
+function CompanionIcon({ src, label }: { src: string; label: string }) {
+  return <img src={src} alt={label} className="h-x14 w-x14 object-contain" />;
+}
+
+function PinIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+      className={cn("size-x6 shrink-0", className)}
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M13.6518 20.9825C14.3428 20.4319 15.2665 19.638 16.1932 18.6662C18.0085 16.7625 20 14.006 20 10.9611C20 6.56429 16.4183 3 12 3C7.58172 3 4 6.56429 4 10.9611C4 14.006 5.99152 16.7625 7.80681 18.6662C8.73347 19.638 9.65717 20.4319 10.3482 20.9825C10.7282 21.2853 11.115 21.583 11.5181 21.8552C11.8039 22.0477 12.194 22.0485 12.4802 21.8563C12.8839 21.5838 13.2713 21.2857 13.6518 20.9825ZM14.6192 10.961C14.6192 12.4004 13.4466 13.5673 12.0001 13.5673C10.5537 13.5673 9.38108 12.4004 9.38108 10.961C9.38108 9.52155 10.5537 8.35467 12.0001 8.35467C13.4466 8.35467 14.6192 9.52155 14.6192 10.961Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function GpsIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+      className={cn("h-[14px] w-[14px] shrink-0", className)}
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M12.0002 3.7998C16.5299 3.79991 20.1616 7.45356 20.1985 11.9629C20.1989 11.9752 20.2004 11.9876 20.2004 12C20.2004 12.0036 20.1995 12.0072 20.1995 12.0107C20.1995 12.0179 20.2004 12.0251 20.2004 12.0322C20.2004 16.5838 16.5414 20.2001 12.0002 20.2002C7.45896 20.2002 3.80006 16.5839 3.80005 12.0322V12C3.80005 11.9876 3.80058 11.9752 3.80103 11.9629C3.83793 7.4535 7.47051 3.7998 12.0002 3.7998ZM13.0002 7.7998C13.0002 8.35202 12.5524 8.7997 12.0002 8.7998C11.448 8.7998 11.0002 8.35209 11.0002 7.7998V5.87988C8.37786 6.30412 6.3191 8.37118 5.88599 11H7.80005C8.35233 11 8.80005 11.4477 8.80005 12C8.79994 12.5522 8.35227 13 7.80005 13H5.87524C6.28531 15.6425 8.35076 17.7021 11.0002 18.1211V16.2002C11.0002 15.6479 11.448 15.2002 12.0002 15.2002C12.5524 15.2003 13.0002 15.648 13.0002 16.2002V18.1211C15.6497 17.702 17.7152 15.6425 18.1252 13H16.2004C15.6482 13 15.2005 12.5522 15.2004 12C15.2004 11.4477 15.6482 11 16.2004 11H18.1145C17.6814 8.37124 15.6226 6.30419 13.0002 5.87988V7.7998Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function SearchIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+      className={cn("size-x6 shrink-0", className)}
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M10.2861 3C14.3097 3.00023 17.5713 6.26248 17.5713 10.2861C17.5712 11.9382 17.0195 13.4605 16.0928 14.6826C16.1071 14.6954 16.122 14.7079 16.1357 14.7217L20.707 19.293C21.0974 19.6835 21.0974 20.3165 20.707 20.707C20.3166 21.0975 19.6835 21.0974 19.293 20.707L14.7217 16.1357C14.7079 16.122 14.6954 16.1071 14.6826 16.0928C13.4605 17.0195 11.9382 17.5712 10.2861 17.5713C6.26248 17.5713 3.00023 14.3097 3 10.2861C3 6.26234 6.26234 3 10.2861 3ZM10.2861 5C7.36691 5 5 7.36691 5 10.2861C5.00023 13.2052 7.36705 15.5713 10.2861 15.5713C13.205 15.5711 15.5711 13.205 15.5713 10.2861C15.5713 7.36705 13.2052 5.00023 10.2861 5Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
 }
 
 export default function BreadPreference() {
@@ -249,7 +316,11 @@ export default function BreadPreference() {
   return (
     <MobileFrame>
       <div className="pb-footer-safe flex flex-1 flex-col">
-        <PreferenceTopBar title="빵 취향 선택" onCancel={() => navigate({ to: "/home" })} />
+        <PreferenceTopBar
+          title="빵 취향 선택"
+          onBack={() => navigate({ to: "/home" })}
+          onCancel={() => navigate({ to: "/home" })}
+        />
 
         <PreferenceIntro
           currentStep={1}
@@ -272,34 +343,43 @@ export default function BreadPreference() {
                   label={option.label}
                   selected={selectedBySection[section.id]?.includes(option.label) ?? false}
                   onClick={() => handleSelect(section.id, option.label)}
-                  icon={option.withIcon ? <CircleIcon /> : undefined}
+                  icon={
+                    option.iconSrc ? (
+                      <CompanionIcon src={option.iconSrc} label={option.label} />
+                    ) : option.withIcon ? (
+                      <CircleIcon />
+                    ) : undefined
+                  }
                 />
               ))}
             </PreferenceQuestionSection>
           ))}
 
-          <PreferenceQuestionSection title="출발지 검색" helperText="" columns={1}>
+          <PreferenceQuestionSection
+            title="어디서부터 빵투어를 시작해볼까요?"
+            helperText=""
+            columns={1}
+          >
             <button
               type="button"
               className={cn(
-                "flex h-[64px] w-full items-center justify-between rounded-r2 px-x4 transition-colors",
+                "flex h-[64px] w-full items-center gap-x2 rounded-r2 px-x4 transition-colors",
                 hasDepartureResult
-                  ? "border border-gray-600 bg-gray-300"
-                  : "border border-gray-200 bg-gray-100",
+                  ? "border border-orange-600 bg-orange-100"
+                  : "border border-gray-200 bg-gray-00",
               )}
               onClick={openDepartureSheet}
             >
+              <PinIcon className={hasDepartureResult ? "text-orange-600" : "text-gray-500"} />
               <span
                 className={cn(
                   "flex-1 text-left font-sans text-size-5 leading-t6",
-                  hasDepartureResult ? "text-gray-900" : "text-gray-500",
+                  hasDepartureResult ? "text-orange-600" : "text-gray-500",
                 )}
               >
                 {departureKeyword.trim() || "출발지 입력"}
               </span>
-              <span className="text-size-4 text-gray-500" aria-hidden>
-                ⌕
-              </span>
+              <SearchIcon className="text-gray-1000" />
             </button>
           </PreferenceQuestionSection>
         </div>
@@ -328,7 +408,7 @@ export default function BreadPreference() {
                 출발지 검색
               </h3>
               <p className="mt-x1 font-pretendard text-size-3 leading-t4 text-gray-700">
-                장소명을 입력하면 카카오맵에서 관련 장소를 찾아드립니다.
+                선택하신 장소 주변으로 코스를 짜드려요.
               </p>
 
               <div className="mt-x4 flex h-x14 items-center gap-x2 rounded-r3 border border-gray-300 px-x5">
@@ -342,7 +422,7 @@ export default function BreadPreference() {
                       handleManualDepartureConfirm();
                     }
                   }}
-                  placeholder="예: 서울역, 강남역 2번 출구"
+                  placeholder="빵집 이름이나 동네를 입력해보세요"
                   className="min-w-0 flex-1 bg-transparent font-pretendard text-size-5 leading-t6 text-gray-1000 outline-none placeholder:text-gray-400"
                 />
                 <button
@@ -365,10 +445,11 @@ export default function BreadPreference() {
                 <span className="text-[13px] font-bold text-gray-700">최근 검색</span>
                 <button
                   type="button"
-                  className="text-size-3 font-medium text-[#217cf9] disabled:opacity-50"
+                  className="flex items-center gap-x1 typo-t3medium text-blue-700 disabled:opacity-50"
                   disabled={isResolvingLocation}
                   onClick={useCurrentLocation}
                 >
+                  <GpsIcon className="text-blue-700" />
                   {isResolvingLocation ? "위치 확인 중…" : "현재 위치"}
                 </button>
               </div>

@@ -1,14 +1,26 @@
 // 큐레이션 문구 + 더보기 + 큰 하단 콘텐츠 영역
 // SectionHeader(제목+더보기) + CurationBakeryContent(홈·빵터와 동일 API)
 import { useState } from "react";
+import type { GetBakeriesParams } from "@/api/types/bakery";
 import { useNavigate } from "@tanstack/react-router";
 import SectionHeader from "@/components/common/section-header/SectionHeader";
-import Skeleton from "@/components/common/skeleton/Skeleton";
 import { cn } from "@/utils/cn";
 import { APP_SHELL_MAX_WIDTH } from "@/components/layout/layout.constants";
 import { CurationBakeryContent } from "./CurationBakeryContent";
 
-const CurationSection = () => {
+type CurationSectionProps = {
+  title?: string;
+  listParamsOverride?: Partial<GetBakeriesParams>;
+  excludeBakeryIds?: number[];
+  onDisplayedBakeryIdsChange?: (ids: number[]) => void;
+};
+
+const CurationSection = ({
+  title = "대전에 왔으면 여긴 꼭 들려야지!",
+  listParamsOverride,
+  excludeBakeryIds,
+  onDisplayedBakeryIdsChange,
+}: CurationSectionProps = {}) => {
   const navigate = useNavigate();
   const [displayedPinIds, setDisplayedPinIds] = useState<number[]>([]);
 
@@ -35,18 +47,23 @@ const CurationSection = () => {
     >
       <div className="flex flex-col gap-[var(--spacing-x3)]">
         <SectionHeader
-          title="큐레이션 문구"
+          title={title}
+          titleClassName="typo-t6bold text-gray-1000"
+          showDefaultIcon={false}
           actionLabel="더보기"
           onActionClick={handleMoreClick}
-          icon={
-            <Skeleton shape="circle" className="h-[var(--spacing-x4-5)] w-[var(--spacing-x4-5)]" />
-          }
         />
 
         <div className="w-full">
           <CurationBakeryContent
             bakeryListEntryFrom="home"
-            onDisplayedBakeryIdsChange={setDisplayedPinIds}
+            listParamsOverride={listParamsOverride}
+            excludeBakeryIds={excludeBakeryIds}
+            lockSelectionOnMount
+            onDisplayedBakeryIdsChange={(ids) => {
+              setDisplayedPinIds(ids);
+              onDisplayedBakeryIdsChange?.(ids);
+            }}
           />
         </div>
       </div>

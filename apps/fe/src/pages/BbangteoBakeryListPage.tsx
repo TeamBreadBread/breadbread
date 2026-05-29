@@ -2,15 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { getBakeryById } from "@/api/bakery";
 import type { BakeryDetail, BakeryListItem } from "@/api/types/bakery";
-import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
-import ratingStar from "@/assets/icons/ratingStar.svg";
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
+import { AppIcon, IconAssets } from "@/components/icons";
 import BottomNav from "@/components/layout/BottomNav";
 import {
   BBANGTEO_FIXED_HEADER_OUTER_CLASS,
   FIXED_TOP_BAR_SPACER_CLASS,
 } from "@/components/layout/layout.constants";
 import MobileFrame from "@/components/layout/MobileFrame";
+import { CURATION_BBANGTEO_DISPLAY_COUNT } from "@/components/domain/home/curationBakeryContentParams";
 import { useBakeries } from "@/hooks/useBakeries";
 import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import { cn } from "@/utils/cn";
@@ -104,7 +104,7 @@ const PageHeader = ({
             className="flex h-[36px] w-[36px] items-center justify-center text-[22px]"
             onClick={handleBack}
           >
-            <img src={ArrowLeft} alt="뒤로가기" className="h-[24px] w-[24px]" />
+            <AppIcon src={IconAssets.IcChevronLeft} size="x6" alt="뒤로가기" />
           </button>
           <h1 className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[18px] leading-[24px] font-bold text-[#1a1c20]">
             {title}
@@ -135,7 +135,7 @@ const SearchFilterSection = ({
   onKeywordChange: (value: string) => void;
 }) => (
   <section className="flex flex-col gap-[16px] bg-white px-[20px] py-[12px]">
-    <div className="flex h-[56px] items-center gap-[8px] rounded-[12px] border border-[#dcdee3] px-[20px] py-[16px]">
+    <div className="flex h-[56px] items-center gap-x1-5 rounded-[12px] border border-[#dcdee3] px-[20px] py-[16px]">
       <input
         type="search"
         value={keyword}
@@ -143,14 +143,15 @@ const SearchFilterSection = ({
         placeholder="빵집을 검색해보세요"
         className="flex-1 bg-transparent text-[16px] leading-[22px] text-[#1a1c20] placeholder:text-[#d1d3d8] outline-none"
       />
-      <CircleIcon size={24} />
+      <AppIcon src={IconAssets.IcSearch} size="x6" />
     </div>
     <div className="flex items-center gap-[8px]">
       <button
         type="button"
         className="flex max-h-[34px] items-center justify-center rounded-[9999px] bg-[#f3f4f5] p-[8px]"
+        aria-label="필터"
       >
-        <CircleIcon size={18} />
+        <AppIcon src={IconAssets.IcChevronDown} size={18} />
       </button>
       <FilterChip label="정렬" withIcon />
       <FilterChip label="영업 중" />
@@ -165,7 +166,7 @@ const BakeryMeta = ({
 }: Pick<BakeryRow, "rating" | "reviewCount" | "bookmarkCount">) => (
   <div className="flex h-[18px] items-center gap-[4px]">
     <div className="flex items-center gap-[2px]">
-      <img src={ratingStar} alt="별점" className="h-[14px] w-[14px]" />
+      <AppIcon src={IconAssets.IcStar} size={14} />
       <span className="text-[13px] leading-[18px] text-[#868b94]">{rating}</span>
       <span className="text-[13px] leading-[18px] text-[#868b94]">
         ({reviewCount.toLocaleString()})
@@ -345,8 +346,11 @@ const BbangteoBakeryListPage = ({ listEntryFrom, curationPinIds }: BbangteoBaker
     return pinIdsKey
       .split(",")
       .map((segment) => Number.parseInt(segment.trim(), 10))
-      .filter((n) => Number.isFinite(n) && n > 0);
+      .filter((n) => Number.isFinite(n) && n > 0)
+      .slice(0, CURATION_BBANGTEO_DISPLAY_COUNT);
   }, [pinIdsKey]);
+
+  const isBbangteoCurationOnly = listEntryFrom === "bbangteo" && pins.length > 0 && !keyword.trim();
 
   const handleKeywordChange = (value: string) => {
     setKeyword(value);
@@ -367,7 +371,10 @@ const BbangteoBakeryListPage = ({ listEntryFrom, curationPinIds }: BbangteoBaker
   });
 
   const pinResolutionActive =
-    page === 0 && queryKeyword == null && pins.length > 0 && Boolean(data?.bakeries?.length);
+    page === 0 &&
+    queryKeyword == null &&
+    pins.length > 0 &&
+    (isBbangteoCurationOnly || Boolean(data?.bakeries?.length));
 
   const listIds = useMemo(() => new Set(data?.bakeries?.map((b) => b.id) ?? []), [data?.bakeries]);
 
@@ -448,8 +455,20 @@ const BbangteoBakeryListPage = ({ listEntryFrom, curationPinIds }: BbangteoBaker
   }, [data]);
 
   const rows: BakeryRow[] = useMemo(() => {
-    if (!apiRows.length) return [];
     const applyPins = page === 0 && !queryKeyword && pins.length > 0;
+
+    if (isBbangteoCurationOnly) {
+      const pinnedOrdered: BakeryRow[] = [];
+      for (const id of pins) {
+        const fromList = apiRows.find((r) => r.id === id);
+        const fetched = resolvedPinRowsById.get(id);
+        const row = fromList ?? fetched;
+        if (row) pinnedOrdered.push(row);
+      }
+      return pinnedOrdered;
+    }
+
+    if (!apiRows.length) return [];
     if (!applyPins) {
       return apiRows;
     }
@@ -464,7 +483,7 @@ const BbangteoBakeryListPage = ({ listEntryFrom, curationPinIds }: BbangteoBaker
     }
     const tail = apiRows.filter((r) => !pinSet.has(r.id));
     return [...pinnedOrdered, ...tail].slice(0, PAGE_SIZE);
-  }, [apiRows, page, queryKeyword, pins, resolvedPinRowsById]);
+  }, [apiRows, page, queryKeyword, pins, resolvedPinRowsById, isBbangteoCurationOnly]);
 
   const total = data?.total ?? 0;
   const totalPages = total === 0 ? 0 : Math.ceil(total / PAGE_SIZE);
@@ -503,7 +522,7 @@ const BbangteoBakeryListPage = ({ listEntryFrom, curationPinIds }: BbangteoBaker
           ) : (
             <>
               <BakeryList items={rows} onItemClick={handleBakeryClick} />
-              {totalPages > 0 ? (
+              {totalPages > 0 && !isBbangteoCurationOnly ? (
                 <PageNumberNav currentPage={page} totalPages={totalPages} onSelectPage={setPage} />
               ) : null}
             </>

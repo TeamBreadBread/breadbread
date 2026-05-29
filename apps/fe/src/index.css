@@ -18,11 +18,22 @@
 	}
 
 	.red_700 {
-		color: #b91c1c;
+		color: var(--color-red-700);
 	}
 
 	.green_700 {
-		color: #15803d;
+		color: var(--color-green-700);
+	}
+
+	/** SVG img 아이콘을 gray_600(#A9ACB3) 톤으로 */
+	.icon-gray-600 {
+		filter: brightness(0) saturate(100%) invert(71%) sepia(4%) saturate(508%)
+			hue-rotate(186deg) brightness(94%) contrast(88%);
+	}
+
+	.icon-orange-600 {
+		filter: brightness(0) saturate(100%) invert(58%) sepia(79%) saturate(1742%)
+			hue-rotate(346deg) brightness(101%) contrast(101%);
 	}
 }
 

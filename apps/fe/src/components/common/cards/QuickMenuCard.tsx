@@ -5,22 +5,32 @@ import Skeleton from "@/components/common/skeleton/Skeleton";
 
 type QuickMenuCardProps = {
   label: string;
+  imageSrc?: string;
   icon?: ReactNode;
+  onClick?: () => void;
 };
 
-const QuickMenuCard = ({ label, icon }: QuickMenuCardProps) => {
+const QuickMenuCard = ({ label, imageSrc, icon, onClick }: QuickMenuCardProps) => {
   return (
     <button
       type="button"
-      className="flex h-[89px] w-full flex-col items-center justify-center gap-[2px] overflow-hidden rounded-[var(--radius-r2)] border border-gray-200 bg-gray-100 px-5 py-3"
+      onClick={onClick}
+      className="flex h-[90px] w-full min-w-0 flex-col items-center justify-center gap-x1-5 overflow-hidden rounded-[var(--radius-r2)] border border-gray-200 bg-gray-100 px-3 py-3 text-center"
     >
-      <div className="flex items-center justify-center p-[6px]">
-        {icon ?? <Skeleton shape="circle" className="h-[36px] w-[36px]" />}
+      <div className="mx-auto flex h-[36px] w-[36px] shrink-0 items-center justify-center">
+        {imageSrc ? (
+          <img
+            src={imageSrc}
+            alt=""
+            aria-hidden
+            className="block h-[36px] w-[36px] object-contain object-center"
+          />
+        ) : (
+          (icon ?? <Skeleton shape="circle" className="h-[36px] w-[36px]" />)
+        )}
       </div>
 
-      <span className="text-center text-[12px] leading-[16px] font-medium text-gray-900">
-        {label}
-      </span>
+      <span className="typo-t2medium whitespace-nowrap text-gray-1000">{label}</span>
     </button>
   );
 };

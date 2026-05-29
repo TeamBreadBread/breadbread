@@ -1,11 +1,15 @@
 import type { ReactNode } from "react";
+import { cn } from "@/utils/cn";
 
 interface SectionHeaderProps {
   title: string;
+  titleClassName?: string;
   rightText?: string;
   leftIcon?: ReactNode;
   /** `leftIcon`과 동일 용도 (홈 등에서 사용) */
   icon?: ReactNode;
+  /** 아이콘 미지정 시 기본 원형 아이콘 노출 여부 */
+  showDefaultIcon?: boolean;
   actionLabel?: string;
   onActionClick?: () => void;
   /** 제목 영역(아이콘+타이틀)만 탭했을 때 (더보기 버튼 제외) */
@@ -14,9 +18,11 @@ interface SectionHeaderProps {
 
 export default function SectionHeader({
   title,
+  titleClassName,
   rightText,
   leftIcon,
   icon,
+  showDefaultIcon = true,
   actionLabel,
   onActionClick,
   onTitleAreaClick,
@@ -25,11 +31,21 @@ export default function SectionHeader({
 
   const titleArea = (
     <>
-      <div className="flex items-center justify-start p-x0-5">
-        {leading ?? <div className="h-x4-5 w-x4-5 rounded-full bg-gray-400" />}
-      </div>
+      {leading || showDefaultIcon ? (
+        <div className="flex items-center justify-start p-x0-5">
+          {leading ?? <div className="h-x4-5 w-x4-5 rounded-full bg-gray-400" />}
+        </div>
+      ) : null}
 
-      <h3 className="font-sans text-size-6 leading-t6 font-medium tracking-2 flex-1 text-left text-gray-1000">
+      <h3
+        className={cn(
+          "flex-1 text-left",
+          titleClassName
+            ? "text-gray-1000"
+            : "font-sans text-size-6 leading-t6 font-medium tracking-2 text-gray-1000",
+          titleClassName,
+        )}
+      >
         {title}
       </h3>
     </>

@@ -1,3 +1,5 @@
+import { AppIcon, IconAssets } from "@/components/icons";
+
 interface RouteHeroCardProps {
   title: string;
   description: string;
@@ -12,7 +14,7 @@ export default function RouteHeroCard({ title, description, onClick }: RouteHero
       className="flex w-full items-center gap-x2_5 overflow-hidden rounded-r2 bg-[#eff6ff] px-x4 py-[18px] text-left"
     >
       <div className="flex h-x14 w-x14 items-center justify-center p-[7px]">
-        <div className="h-[42px] w-[42px] rounded-full bg-gray-400" />
+        <AppIcon src={IconAssets.IcAi} size={42} alt="" />
       </div>
 
       <div className="flex-1">
@@ -22,7 +24,7 @@ export default function RouteHeroCard({ title, description, onClick }: RouteHero
         <div className="font-pretendard typo-t3regular text-gray-700">{description}</div>
       </div>
 
-      <div className="h-x6 w-x6 rounded-full bg-gray-500" />
+      <AppIcon src={IconAssets.IcChevronRight} size="x6" alt="" />
     </button>
   );
 }

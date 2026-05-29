@@ -14,8 +14,9 @@ import {
   updateComment,
 } from "@/api/posts";
 import { getErrorMessage, ApiBusinessError } from "@/api/types/common";
-import ArrowLeft from "@/assets/icons/ArrowLeft.svg";
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
+import { AppIcon, IconAssets } from "@/components/icons";
+import { ToolbarHeartLikeIcon } from "@/components/icons/PostDetailToolbarIcons";
 import BottomNav from "@/components/layout/BottomNav";
 import {
   BBANGTEO_FIXED_HEADER_OUTER_CLASS,
@@ -23,11 +24,13 @@ import {
 } from "@/components/layout/layout.constants";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { getMockPostDetailById, isBbangteoMockPostId } from "@/data/bbangteoCommunityMocks";
+import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import {
   applyOverlayToPostDetail,
   persistDetailToLikeOverlay,
   setPostLikeOverlay,
 } from "@/lib/postLikeLocalCache";
+import { cn } from "@/utils/cn";
 import { formatInstantInSeoul } from "@/utils/formatSeoulDateTime";
 
 type BbangteoPostDetailViewProps = {
@@ -35,28 +38,8 @@ type BbangteoPostDetailViewProps = {
   listPath: "/bbangteo-board" | "/bbangteo-article-board";
 };
 
-/** 게시판 목록과 동일한 하트 실루엣, 상세용 크기·좋아요 여부 */
 function PostDetailLikeHeartIcon({ filled }: { filled: boolean }) {
-  return (
-    <svg
-      width={18}
-      height={18}
-      viewBox="0 0 24 24"
-      aria-hidden
-      className={
-        filled
-          ? "shrink-0 red_700 pointer-events-none"
-          : "shrink-0 text-[#868b94] pointer-events-none"
-      }
-      fill={filled ? "currentColor" : "none"}
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-    </svg>
-  );
+  return <ToolbarHeartLikeIcon liked={filled} size={18} className="pointer-events-none" />;
 }
 
 const DateTimeText = ({ date, time }: { date: string; time: string }) => (
@@ -106,6 +89,7 @@ const ImageRow = ({ urls }: { urls: string[] }) => {
 
 export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPostDetailViewProps) {
   const navigate = useNavigate();
+  const { requireLogin } = useLoginRequired();
   const [detail, setDetail] = useState<PostDetail | null>(null);
   const [loadError, setLoadError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -170,7 +154,7 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
     void load();
   }, [load]);
 
-  const onToggleLike = async () => {
+  const performToggleLike = async () => {
     if (!detail || likeBusy || likePendingRef.current) return;
     if (isBbangteoMockPostId(detail.id)) {
       const wasLiked = detail.liked;
@@ -208,10 +192,6 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
       setPostLikeOverlay(id, { liked: wasLiked, likeCount: prevCount });
       setDetail((d) => (d && d.id === id ? { ...d, liked: wasLiked, likeCount: prevCount } : d));
       if (e instanceof ApiBusinessError) {
-        if (e.status === 401) {
-          alert("로그인 후 좋아요할 수 있습니다.");
-          return;
-        }
         if (e.status === 409 && !wasLiked) {
           try {
             const fresh = await getPost(id);
@@ -240,6 +220,14 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
       likePendingRef.current = false;
       setLikeBusy(false);
     }
+  };
+
+  const onToggleLike = () => {
+    const returnPath =
+      listPath === "/bbangteo-article-board" ? "/bbangteo-article-board" : "/bbangteo-board";
+    requireLogin(() => {
+      void performToggleLike();
+    }, returnPath);
   };
 
   const onDeletePost = async () => {
@@ -330,7 +318,7 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
               className="flex h-[36px] w-[36px] items-center justify-center"
               onClick={() => navigate({ to: listPath })}
             >
-              <img src={ArrowLeft} alt="뒤로가기" className="h-[24px] w-[24px]" />
+              <AppIcon src={IconAssets.IcChevronLeft} size="x6" alt="뒤로가기" />
             </button>
             {author && detail ? (
               <div className="flex items-center gap-[8px]">
@@ -398,7 +386,7 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
                     className="flex items-center gap-[6px]"
                     onClick={() => navigate({ to: listPath })}
                   >
-                    <img src={ArrowLeft} alt="" className="h-[18px] w-[18px]" aria-hidden />
+                    <AppIcon src={IconAssets.IcChevronLeft} size={18} />
                     <span className="text-[14px] leading-[19px] text-[#1a1c20]">목록으로</span>
                   </button>
                   <button
@@ -413,7 +401,7 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
                     <span
                       className={
                         detail.liked
-                          ? "text-[14px] leading-[19px] red_700"
+                          ? "text-[14px] leading-[19px] text-red-600"
                           : "text-[14px] leading-[19px] text-[#1a1c20]"
                       }
                     >
@@ -532,10 +520,18 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
             <button
               type="button"
               disabled={commentBusy || mockPost || !commentText.trim()}
-              className="shrink-0 text-[13px] font-medium text-[#555d6d] disabled:opacity-40"
+              aria-label="댓글 전송"
+              className={cn(
+                "flex h-[28px] w-[28px] shrink-0 items-center justify-center",
+                commentText.trim() && !commentBusy && !mockPost
+                  ? "text-orange-600"
+                  : "text-gray-600",
+              )}
               onClick={() => void onSubmitComment()}
             >
-              등록
+              <svg width={22} height={22} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <path d="M4.4462 19.9126C4.10187 20.0546 3.77475 20.0236 3.46485 19.8193C3.15495 19.6151 3 19.3176 3 18.9268V14.1313L11.264 12L3 9.86867V5.07318C3 4.68244 3.15495 4.38494 3.46485 4.18068C3.77475 3.97643 4.10187 3.94535 4.4462 4.08744L20.3544 11.0143C20.7848 11.2096 21 11.5382 21 12C21 12.4618 20.7848 12.7904 20.3544 12.9857L4.4462 19.9126Z" />
+              </svg>
             </button>
           </div>
         </div>

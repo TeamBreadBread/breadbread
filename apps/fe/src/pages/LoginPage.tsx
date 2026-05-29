@@ -5,6 +5,7 @@ import { getErrorMessage } from "@/api/types/common";
 import { hasUserPreferenceSaved } from "@/api/user";
 import { seedProfileCacheThenRefreshFromServer } from "@/lib/userProfileCache";
 import { AppTopBar, Button } from "@/components/common";
+import { PasswordToggleIcon } from "@/components/icons";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { onAuthSessionEstablished } from "@/lib/fcm/setupFcm";
 import { tryPostLoginRedirectPath } from "@/lib/postLoginRedirect";
@@ -28,6 +29,7 @@ const LoginPage = () => {
   const { redirect } = loginRouteApi.useSearch();
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isLoginEnabled = userId.trim().length > 0 && password.trim().length > 0;
@@ -79,7 +81,7 @@ const LoginPage = () => {
 
   return (
     <MobileFrame>
-      <AppTopBar title="아이디로 로그인" />
+      <AppTopBar title="아이디로 로그인" onBack={() => navigate({ to: "/home" })} />
 
       <main className="flex flex-1 flex-col items-center pb-x8 pt-[60px]">
         <form
@@ -98,14 +100,27 @@ const LoginPage = () => {
             autoComplete="username"
           />
           <label className="mt-x5 font-pretendard typo-t4medium text-gray-800">비밀번호</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className={cn(credentialInputClassName, "mt-x2")}
-            placeholder="비밀번호를 입력해 주세요"
-            autoComplete="current-password"
-          />
+          <div className="relative mt-x2 flex items-center">
+            <input
+              type={isPasswordVisible ? "text" : "password"}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className={cn(credentialInputClassName, "pr-12")}
+              placeholder="비밀번호를 입력해 주세요"
+              autoComplete="current-password"
+            />
+            <button
+              type="button"
+              aria-label={isPasswordVisible ? "비밀번호 숨기기" : "비밀번호 보기"}
+              onClick={() => setIsPasswordVisible((prev) => !prev)}
+              className="absolute right-x4 flex shrink-0 items-center justify-center"
+            >
+              <PasswordToggleIcon
+                visible={isPasswordVisible}
+                className={isPasswordVisible ? "text-gray-900" : "text-gray-700"}
+              />
+            </button>
+          </div>
           {!!loginError && (
             <p className="mt-x2 pl-x1 text-size-3 leading-t4 tracking-1 text-red-500">
               {loginError}

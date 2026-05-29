@@ -11,8 +11,8 @@ export const CURATION_BAKERY_LIST_PARAMS = {
 /** 홈 큐레이션 등 기본 노출 장수 */
 export const CURATION_DISPLAY_COUNT = 4;
 
-/** 빵터 탭 큐레이션 문구 섹션 */
-export const CURATION_BBANGTEO_DISPLAY_COUNT = 6;
+/** 빵터 탭 큐레이션 — "…맛집 5곳" */
+export const CURATION_BBANGTEO_DISPLAY_COUNT = 5;
 
 export function shuffleArray<T>(items: readonly T[]): T[] {
   const copy = [...items];

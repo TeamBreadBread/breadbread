@@ -19,6 +19,7 @@ import type { PreferenceQuestion } from "@/components/domain/ai-course/types";
 import {
   hydrateQuestionsFromMyPreference,
   INITIAL_USER_PREFERENCE_QUESTIONS,
+  normalizeMyPreference,
   USER_PREFERENCE_BAKERY_PERSONALITY_MAP as BAKERY_PERSONALITY_MAP,
   USER_PREFERENCE_BAKERY_TYPE_MAP as BAKERY_TYPE_MAP,
   USER_PREFERENCE_BAKERY_USE_TYPE_MAP as BAKERY_USE_TYPE_MAP,
@@ -136,8 +137,9 @@ export default function UserPreferenceEditPage() {
     const loadMyPreference = async () => {
       try {
         setIsLoading(true);
-        const preference = await getMyPreference();
+        const rawPreference = await getMyPreference();
         if (!mounted) return;
+        const preference = normalizeMyPreference(rawPreference);
 
         setHasExistingPreference(true);
         setQuestions(hydrateQuestionsFromMyPreference(preference));
@@ -161,8 +163,17 @@ export default function UserPreferenceEditPage() {
           });
           return;
         }
+        if (!mounted) return;
+        // 네트워크/서버 오류 시에도 페이지를 유지해서 "진입 즉시 튕김"을 막습니다.
         window.alert(getErrorMessage(error));
-        navigate({ to: "/my" });
+        setHasExistingPreference(false);
+        setQuestions(INITIAL_USER_PREFERENCE_QUESTIONS);
+        setOriginalSnapshot({
+          bakeryTypes: [],
+          bakeryPersonalities: [],
+          bakeryUseTypes: [],
+          waitingTolerance: null,
+        });
       } finally {
         if (mounted) setIsLoading(false);
       }

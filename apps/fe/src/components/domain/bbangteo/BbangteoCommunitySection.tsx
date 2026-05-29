@@ -41,10 +41,12 @@ const BbangteoCommunitySection = ({
       <div className={`flex flex-col gap-[12px] ${isCuration ? "" : "h-full"}`}>
         <SectionHeader
           title={section.title}
+          titleClassName={isCuration ? "typo-t6bold text-gray-1000" : undefined}
           actionLabel="더보기"
           onActionClick={onMoreClick ?? (() => {})}
           onTitleAreaClick={onSectionTitleAreaClick}
-          icon={<CircleIcon size={18} color="#dcdee3" />}
+          showDefaultIcon={!isCuration}
+          icon={isCuration ? undefined : <CircleIcon size={18} color="#dcdee3" />}
         />
 
         {section.contentType === "curationApi" ? (
@@ -53,6 +55,7 @@ const BbangteoCommunitySection = ({
               compact
               displayCount={CURATION_BBANGTEO_DISPLAY_COUNT}
               bakeryListEntryFrom="bbangteo"
+              lockSelectionOnMount
               onDisplayedBakeryIdsChange={onCurationDisplayedBakeryIdsChange}
             />
           </div>

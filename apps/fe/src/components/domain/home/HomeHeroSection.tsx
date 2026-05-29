@@ -5,13 +5,20 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { getStoredAccessToken } from "@/api/auth";
 import { getMyProfile } from "@/api/user";
+import { isLoggedIn } from "@/lib/auth/isLoggedIn";
+import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
+import leadingLogo from "@/assets/icons/Leading.svg";
 import RecommendationHeroCard from "./RecommendationHeroCard";
 import QuickMenuGrid from "./QuickMenuGrid";
+import { pickRandomHomeGreetingBread } from "./homeGreetingBreads";
 import { getDisplayNameForLoginId, getUserProfile, saveUserProfile } from "@/lib/userProfileCache";
 
 const HomeHeroSection = () => {
   const navigate = useNavigate();
+  const { requireLogin } = useLoginRequired();
+  const loggedIn = isLoggedIn();
+  const [greetingBread] = useState(() => pickRandomHomeGreetingBread());
   const [displayName, setDisplayName] = useState(() => {
     const profile = getUserProfile();
     if (profile?.name?.trim()) return profile.name.trim();
@@ -45,22 +52,29 @@ const HomeHeroSection = () => {
   }, []);
 
   const goAiCoursePreferenceFlow = () => {
-    if (!getStoredAccessToken()) {
-      void navigate({ to: "/login", search: { redirect: "/preference" } });
-      return;
-    }
-    void navigate({ to: AI_COURSE_FLOW_START });
+    requireLogin(() => {
+      void navigate({ to: AI_COURSE_FLOW_START });
+    }, "/preference");
   };
 
   return (
-    <section className="bg-white px-5 py-[18px]">
+    <section className="bg-white px-5 pb-[18px] pt-[max(18px,env(safe-area-inset-top))]">
       <div className="flex flex-col gap-4">
-        <h1 className="text-[20px] leading-[27px] tracking-[-0.02em] text-gray-1000">
-          <span className="font-bold">{displayName}</span>
-          <span className="font-medium">님, 오늘은 </span>
-          <span className="font-bold">명란소금빵</span>
-          <span className="font-medium"> 어떠세요? 🍞</span>
-        </h1>
+        <div className="flex flex-col gap-[18px]">
+          <img src={leadingLogo} alt="빵빵" className="h-[41px] w-[63px] object-contain" />
+          <h1 className="text-[20px] leading-[27px] tracking-[-0.02em] text-gray-1000">
+            {loggedIn ? (
+              <>
+                <span className="font-bold">{displayName}</span>
+                <span className="font-medium">님, 오늘은 </span>
+              </>
+            ) : (
+              <span className="font-medium">오늘은 </span>
+            )}
+            <span className="font-bold">{greetingBread.name}</span>
+            <span className="font-medium"> 어떠세요? {greetingBread.emoji}</span>
+          </h1>
+        </div>
 
         <div className="flex gap-2">
           <RecommendationHeroCard onClick={goAiCoursePreferenceFlow} />

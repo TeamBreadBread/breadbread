@@ -14,9 +14,11 @@ import {
   unlikeCourse,
 } from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
+import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 
 export default function RoutePage() {
   const navigate = useNavigate();
+  const { requireLogin } = useLoginRequired();
   const [courses, setCourses] = useState<RouteCourse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -77,7 +79,7 @@ export default function RoutePage() {
     }
   };
 
-  const handleToggleCourseLike = async (courseId: string) => {
+  const performToggleCourseLike = async (courseId: string) => {
     const parsed = Number.parseInt(courseId, 10);
     if (!Number.isFinite(parsed)) return;
     const prev = courses;
@@ -105,6 +107,18 @@ export default function RoutePage() {
     }
   };
 
+  const handleToggleCourseLike = (courseId: string) => {
+    requireLogin(() => {
+      void performToggleCourseLike(courseId);
+    }, "/route");
+  };
+
+  const handleOpenCourse = (courseId: string) => {
+    const parsed = Number.parseInt(courseId, 10);
+    if (!Number.isFinite(parsed)) return;
+    void navigate({ to: "/ai-search-result", search: { courseId: parsed, from: "route" } });
+  };
+
   return (
     <MobileFrame>
       <div className="flex flex-1 flex-col bg-white">
@@ -123,6 +137,7 @@ export default function RoutePage() {
           ) : null}
           <RouteListSection
             courses={courses}
+            onOpenCourse={handleOpenCourse}
             onDeleteCourse={handleDeleteCourse}
             onToggleCourseLike={handleToggleCourseLike}
           />

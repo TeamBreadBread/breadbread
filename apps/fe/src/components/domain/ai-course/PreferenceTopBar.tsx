@@ -1,4 +1,4 @@
-import ArrowLeftIcon from "@/assets/icons/ArrowLeft.svg";
+import { AppIcon, IconAssets } from "@/components/icons";
 import { cn } from "@/utils/cn";
 import {
   FIXED_TOP_BAR_FRAME_CLASS,
@@ -30,7 +30,7 @@ export default function PreferenceTopBar({ title, onBack, onCancel }: Preference
             onClick={handleBack}
             className="relative z-[1] flex h-x9 w-x9 shrink-0 items-center justify-center rounded-full hover:bg-gray-100"
           >
-            <img src={ArrowLeftIcon} alt="" aria-hidden="true" className="h-x4 w-x4" />
+            <AppIcon src={IconAssets.IcChevronLeft} size="x6" />
           </button>
 
           {onCancel ? (

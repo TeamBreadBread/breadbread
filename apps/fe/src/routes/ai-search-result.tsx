@@ -13,14 +13,20 @@ function parseCourseId(value: unknown): number | null {
   return null;
 }
 
+type AISearchResultSearch = {
+  courseId: number | null;
+  from?: "route";
+};
+
 export const Route = createFileRoute("/ai-search-result")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): AISearchResultSearch => ({
     courseId: parseCourseId(search.courseId),
+    ...(search.from === "route" ? { from: "route" as const } : {}),
   }),
   component: AISearchResultRoute,
 });
 
 function AISearchResultRoute() {
   const search = Route.useSearch();
-  return <AISearchResultPage courseId={search.courseId} />;
+  return <AISearchResultPage courseId={search.courseId} from={search.from} />;
 }

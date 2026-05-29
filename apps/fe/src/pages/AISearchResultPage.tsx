@@ -1,4 +1,5 @@
 import { AppTopBar, Button } from "@/components/common";
+import { AppIcon, IconAssets } from "@/components/icons";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { MobileFrame } from "@/components/layout";
@@ -17,9 +18,17 @@ import { courseBakeriesToMapPoints } from "@/components/domain/ai-course/courseM
 import handleArrow from "@/assets/icons/handle_arrowup.png";
 import { useAiSearchBottomSheet } from "@/hooks/useAiSearchBottomSheet";
 import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
-import { getCourseDirections, type CourseDetail, type CourseDirectionPoint } from "@/api/courses";
-import { likeCourse, unlikeCourse } from "@/api/courses";
+import {
+  getCourseDirections,
+  saveCourseRoute,
+  type CourseDetail,
+  type CourseDirectionPoint,
+} from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
+import { useLoginRequired } from "@/lib/auth/useLoginRequired";
+import ResultCTASection from "@/components/domain/ai-course/ResultCTASection";
+import SaveRouteBanner from "@/components/domain/ai-course/SaveRouteBanner";
+import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
 
 const summary: CourseSummary = {
   title: "커플을 위한 달콤한 빵투어",
@@ -46,10 +55,13 @@ const places: CoursePlace[] = [
 
 type AISearchResultPageProps = {
   courseId: number | null;
+  /** 진입 경로. "route"(내 루트 목록)로 들어온 경우에만 빵택시 예약 노출 */
+  from?: "route";
 };
 
-export default function AISearchResultPage({ courseId }: AISearchResultPageProps) {
+export default function AISearchResultPage({ courseId, from }: AISearchResultPageProps) {
   const navigate = useNavigate();
+  const { requireLogin, setBotCourseId } = useLoginRequired();
   const effectiveCourseId = courseId ?? getDevFallbackCourseId();
   const [roadPathResult, setRoadPathResult] = useState<{
     courseId: number;
@@ -139,6 +151,11 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
     };
   }, [effectiveCourseId]);
 
+  useEffect(() => {
+    setBotCourseId(effectiveCourseId ?? null);
+    return () => setBotCourseId(null);
+  }, [effectiveCourseId, setBotCourseId]);
+
   const dynamicPlaces: CoursePlace[] | null = useMemo(() => {
     if (!storedCourseDetail) return null;
     if (!Array.isArray(storedCourseDetail.bakeries)) return null;
@@ -152,10 +169,7 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
     });
   }, [storedCourseDetail]);
 
-  const [likeState, setLikeState] = useState(() => ({
-    liked: Boolean(storedCourseDetail?.liked),
-    count: storedCourseDetail?.likeCount ?? 0,
-  }));
+  const [showSavedBanner, setShowSavedBanner] = useState(false);
 
   const { sheetRef, contentRef, liveSheetTopY, isDragging, isHalfSheet, togglePhase } =
     useAiSearchBottomSheet();
@@ -187,23 +201,32 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
     });
   };
 
-  const handleToggleCourseLike = async () => {
-    if (!effectiveCourseId) return;
-    const prev = likeState;
-    const next = prev.liked
-      ? { liked: false, count: Math.max(0, prev.count - 1) }
-      : { liked: true, count: prev.count + 1 };
-    setLikeState(next);
-    try {
-      if (prev.liked) {
-        await unlikeCourse(effectiveCourseId);
-      } else {
-        await likeCourse(effectiveCourseId);
+  const handleSaveCourse = () => {
+    requireLogin(async () => {
+      if (!effectiveCourseId) return;
+      try {
+        await saveCourseRoute(effectiveCourseId);
+        setShowSavedBanner(true);
+      } catch (error) {
+        window.alert(getErrorMessage(error));
       }
-    } catch (error) {
-      setLikeState(prev);
-      window.alert(getErrorMessage(error));
-    }
+    }, "/ai-search-result");
+  };
+
+  useEffect(() => {
+    if (!showSavedBanner) return;
+    const timer = window.setTimeout(() => {
+      setShowSavedBanner(false);
+    }, 2000);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [showSavedBanner]);
+
+  const handleRetryRecommendation = () => {
+    requireLogin(() => {
+      void navigate({ to: AI_COURSE_FLOW_START });
+    }, "/preference");
   };
 
   return (
@@ -227,13 +250,20 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
 
       <div className="pointer-events-none relative z-10">
         <div className="pointer-events-auto bg-white shadow-[0_1px_0_rgba(0,0,0,0.06)]">
-          <AppTopBar title="AI 추천 코스" onBack={() => navigate({ to: "/home" })} />
-          <ResultSummaryCard
-            summary={dynamicSummary ?? summary}
-            liked={likeState.liked}
-            likeCount={likeState.count}
-            onToggleLike={() => void handleToggleCourseLike()}
+          <AppTopBar
+            title="AI 추천 코스"
+            onBack={() => navigate({ to: "/home" })}
+            rightAction={
+              <button
+                type="button"
+                aria-label="더보기"
+                className="flex items-center justify-center"
+              >
+                <AppIcon src={IconAssets.IcKebab} size={24} alt="" />
+              </button>
+            }
           />
+          <ResultSummaryCard summary={dynamicSummary ?? summary} />
         </div>
       </div>
 
@@ -270,23 +300,37 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
           ref={contentRef}
           className={cn(
             "sheet-scrollbar h-[calc(100%-24px)] overflow-y-auto",
-            "pb-[calc(96px+env(safe-area-inset-bottom))]",
+            "pb-[calc(160px+env(safe-area-inset-bottom))]",
           )}
         >
           <CourseTimeline places={dynamicPlaces ?? places} onPlaceClick={handlePlaceClick} />
         </div>
       </aside>
 
-      <div
-        className={cn(
-          "fixed bottom-0 left-1/2 z-30 -translate-x-1/2 border-t border-gray-300 bg-white px-[20px] pb-[max(16px,env(safe-area-inset-bottom))] pt-x3",
-          RESPONSIVE_FRAME_WIDTH,
-        )}
-      >
-        <Button variant="primary" fullWidth type="button" onClick={goBreadTaxiReserve}>
-          빵택시 예약
-        </Button>
-      </div>
+      <ResultCTASection onRetry={handleRetryRecommendation} onSave={handleSaveCourse} />
+      {showSavedBanner ? (
+        <div
+          className={cn(
+            "fixed bottom-[calc(160px+env(safe-area-inset-bottom))] left-1/2 z-30 w-full -translate-x-1/2",
+            RESPONSIVE_FRAME_WIDTH,
+          )}
+        >
+          <SaveRouteBanner />
+        </div>
+      ) : null}
+
+      {from === "route" ? (
+        <div
+          className={cn(
+            "fixed bottom-0 left-1/2 z-30 -translate-x-1/2 border-t border-gray-300 bg-white px-[20px] pb-[max(16px,env(safe-area-inset-bottom))] pt-x3",
+            RESPONSIVE_FRAME_WIDTH,
+          )}
+        >
+          <Button variant="primary" fullWidth type="button" onClick={goBreadTaxiReserve}>
+            빵택시 예약
+          </Button>
+        </div>
+      ) : null}
     </MobileFrame>
   );
 }

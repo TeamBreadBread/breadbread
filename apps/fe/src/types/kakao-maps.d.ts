@@ -21,11 +21,20 @@ interface KakaoMapServices {
   };
 }
 
+interface KakaoAddressSearchResult {
+  x: string;
+  y: string;
+}
+
 interface KakaoGeocoder {
   coord2Address(
     lng: number,
     lat: number,
     callback: (result: unknown[], status: string) => void,
+  ): void;
+  addressSearch(
+    address: string,
+    callback: (result: KakaoAddressSearchResult[], status: string) => void,
   ): void;
 }
 
@@ -47,6 +56,8 @@ interface KakaoMapOptions {
 interface KakaoMap {
   setCenter(latlng: KakaoLatLng): void;
   setBounds(bounds: KakaoLatLngBounds): void;
+  setDraggable(draggable: boolean): void;
+  setZoomable(zoomable: boolean): void;
   relayout(): void;
 }
 

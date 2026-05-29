@@ -1,10 +1,15 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { AppIcon, IconAssets } from "@/components/icons";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { AppTopBar, Button } from "@/components/common";
+import ComingSoonDialog from "@/components/common/dialog/ComingSoonDialog";
 import MobileFrame from "@/components/layout/MobileFrame";
+import breadTaxiImage from "@/assets/images/breadTaxi.png";
 import { startGoogleLogin } from "@/lib/googleOAuth";
 import { startKakaoLogin } from "@/lib/kakaoOAuth";
-import { startNaverLogin } from "@/lib/naverOAuth";
 import { cn } from "@/utils/cn";
+
+const loginEntryRouteApi = getRouteApi("/login-entry");
 
 const SOCIAL_BUTTONS = [
   {
@@ -29,6 +34,13 @@ const SOCIAL_BUTTONS = [
   },
 ] as const;
 
+const SOCIAL_ICON_BY_PROVIDER = {
+  kakao: IconAssets.IcLogoKakao,
+  naver: IconAssets.IcLogoNaver,
+  google: IconAssets.IcLogoGoogle,
+  email: IconAssets.IcPerson,
+} as const satisfies Record<(typeof SOCIAL_BUTTONS)[number]["id"], string>;
+
 type SocialProvider = (typeof SOCIAL_BUTTONS)[number]["id"];
 
 const socialButtonBaseClassName = cn(
@@ -37,7 +49,6 @@ const socialButtonBaseClassName = cn(
 );
 
 const heroTitleClassName = cn("text-size-7 font-bold leading-t8 tracking-2 text-gray-1000");
-const heroDescriptionClassName = cn("text-size-4 font-normal leading-t5 tracking-1 text-gray-700");
 const footerLinkClassName = cn(
   "font-medium leading-t4 text-gray-700",
   "disabled:cursor-not-allowed disabled:text-gray-400",
@@ -45,18 +56,20 @@ const footerLinkClassName = cn(
 
 export default function LoginEntryPage() {
   const navigate = useNavigate();
+  const { redirect } = loginEntryRouteApi.useSearch();
+  const [naverComingSoonOpen, setNaverComingSoonOpen] = useState(false);
 
   const handleSocialLogin = (provider: SocialProvider) => {
     if (provider === "email") {
-      navigate({ to: "/login", search: { redirect: undefined } });
+      navigate({ to: "/login", search: { redirect } });
+      return;
+    }
+    if (provider === "naver") {
+      setNaverComingSoonOpen(true);
       return;
     }
     if (provider === "kakao") {
       void startKakaoLogin();
-      return;
-    }
-    if (provider === "naver") {
-      void startNaverLogin();
       return;
     }
     if (provider === "google") {
@@ -67,38 +80,50 @@ export default function LoginEntryPage() {
 
   return (
     <MobileFrame>
-      <AppTopBar title="로그인" />
+      <AppTopBar title="로그인" onBack={() => navigate({ to: "/home" })} />
 
-      <main className="flex flex-1 flex-col items-center gap-x4 py-x8">
-        <section className="flex w-full flex-col items-center gap-x7 px-x5 text-center">
-          <div className="size-x16 rounded-full bg-gray-300" />
-          <div className="flex w-full flex-col items-center gap-x2">
-            <p className={heroTitleClassName}>
-              어쩌구 저쩌구
-              <br />
-              홍보 멘트~~
-            </p>
-            <p className={heroDescriptionClassName}>홍보멘트 설명이나 슬로건</p>
-          </div>
-        </section>
+      <main className="relative flex flex-1 flex-col items-center py-x8">
+        <div className="flex w-full flex-col items-center gap-x4">
+          <section className="flex w-full flex-col items-center px-x5 pt-x8 text-center">
+            <img
+              src={breadTaxiImage}
+              alt=""
+              aria-hidden
+              className="mb-x6 h-[64px] w-[64px] object-contain"
+            />
+            <div className="flex w-full flex-col items-center gap-x2">
+              <p className={heroTitleClassName}>
+                로그인하고 빵빵을
+                <br />
+                자유롭게 이용해보세요
+              </p>
+            </div>
+          </section>
 
-        <section className="flex w-full flex-col gap-x2-5 px-x5">
-          {SOCIAL_BUTTONS.map(({ id, label, className }) => (
-            <Button
-              key={id}
-              type="button"
-              onClick={() => handleSocialLogin(id)}
-              className={cn(socialButtonBaseClassName, className)}
-            >
-              <span className="size-x5 shrink-0 rounded-full bg-gray-400" />
-              {label}
-            </Button>
-          ))}
-        </section>
+          <section className="flex w-full flex-col gap-x2 px-x5">
+            {SOCIAL_BUTTONS.map(({ id, label, className }) => (
+              <Button
+                key={id}
+                type="button"
+                onClick={() => handleSocialLogin(id)}
+                className={cn(socialButtonBaseClassName, className)}
+              >
+                {id === "email" ? null : (
+                  <AppIcon
+                    src={SOCIAL_ICON_BY_PROVIDER[id]}
+                    size="x5"
+                    className={id === "naver" ? "[filter:brightness(0)_invert(1)]" : undefined}
+                  />
+                )}
+                {label}
+              </Button>
+            ))}
+          </section>
+        </div>
 
         <nav
           aria-label="로그인 하단 링크"
-          className="flex items-center gap-x3 text-size-3 tracking-1"
+          className="mt-[36px] flex items-center gap-x3 text-size-3 tracking-1"
         >
           <button
             type="button"
@@ -125,6 +150,8 @@ export default function LoginEntryPage() {
           </button>
         </nav>
       </main>
+
+      <ComingSoonDialog open={naverComingSoonOpen} onClose={() => setNaverComingSoonOpen(false)} />
     </MobileFrame>
   );
 }
