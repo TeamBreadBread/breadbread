@@ -316,7 +316,11 @@ export default function BreadPreference() {
   return (
     <MobileFrame>
       <div className="pb-footer-safe flex flex-1 flex-col">
-        <PreferenceTopBar title="빵 취향 선택" onCancel={() => navigate({ to: "/home" })} />
+        <PreferenceTopBar
+          title="빵 취향 선택"
+          onBack={() => navigate({ to: "/home" })}
+          onCancel={() => navigate({ to: "/home" })}
+        />
 
         <PreferenceIntro
           currentStep={1}

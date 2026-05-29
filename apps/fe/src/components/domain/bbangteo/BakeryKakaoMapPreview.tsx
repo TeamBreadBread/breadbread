@@ -102,6 +102,9 @@ export default function BakeryKakaoMapPreview({
           level: 3,
           draggable: true,
         });
+        // 일부 SDK 버전은 생성자 옵션의 draggable을 무시하므로 명시적으로 활성화한다.
+        map.setDraggable(true);
+        map.setZoomable(true);
         mapRef.current = map;
         marker = new maps.Marker({ position: center, map });
 

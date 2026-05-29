@@ -20,9 +20,7 @@ import { useAiSearchBottomSheet } from "@/hooks/useAiSearchBottomSheet";
 import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
 import {
   getCourseDirections,
-  likeCourse,
   saveCourseRoute,
-  unlikeCourse,
   type CourseDetail,
   type CourseDirectionPoint,
 } from "@/api/courses";
@@ -58,9 +56,11 @@ const places: CoursePlace[] = [
 
 type AISearchResultPageProps = {
   courseId: number | null;
+  /** 진입 경로. "route"(내 루트 목록)로 들어온 경우에만 빵택시 예약 노출 */
+  from?: "route";
 };
 
-export default function AISearchResultPage({ courseId }: AISearchResultPageProps) {
+export default function AISearchResultPage({ courseId, from }: AISearchResultPageProps) {
   const navigate = useNavigate();
   const { requireLogin } = useLoginRequired();
   const effectiveCourseId = courseId ?? getDevFallbackCourseId();
@@ -165,10 +165,6 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
     });
   }, [storedCourseDetail]);
 
-  const [likeState, setLikeState] = useState(() => ({
-    liked: Boolean(storedCourseDetail?.liked),
-    count: storedCourseDetail?.likeCount ?? 0,
-  }));
   const [showSavedBanner, setShowSavedBanner] = useState(false);
 
   const { sheetRef, contentRef, liveSheetTopY, isDragging, isHalfSheet, togglePhase } =
@@ -199,31 +195,6 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
         reviewTab: undefined,
       },
     });
-  };
-
-  const performToggleCourseLike = async () => {
-    if (!effectiveCourseId) return;
-    const prev = likeState;
-    const next = prev.liked
-      ? { liked: false, count: Math.max(0, prev.count - 1) }
-      : { liked: true, count: prev.count + 1 };
-    setLikeState(next);
-    try {
-      if (prev.liked) {
-        await unlikeCourse(effectiveCourseId);
-      } else {
-        await likeCourse(effectiveCourseId);
-      }
-    } catch (error) {
-      setLikeState(prev);
-      window.alert(getErrorMessage(error));
-    }
-  };
-
-  const handleToggleCourseLike = () => {
-    requireLogin(() => {
-      void performToggleCourseLike();
-    }, "/ai-search-result");
   };
 
   const handleSaveCourse = () => {
@@ -288,12 +259,7 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
               </button>
             }
           />
-          <ResultSummaryCard
-            summary={dynamicSummary ?? summary}
-            liked={likeState.liked}
-            likeCount={likeState.count}
-            onToggleLike={handleToggleCourseLike}
-          />
+          <ResultSummaryCard summary={dynamicSummary ?? summary} />
         </div>
       </div>
 
@@ -349,16 +315,18 @@ export default function AISearchResultPage({ courseId }: AISearchResultPageProps
         </div>
       ) : null}
 
-      <div
-        className={cn(
-          "fixed bottom-0 left-1/2 z-30 -translate-x-1/2 border-t border-gray-300 bg-white px-[20px] pb-[max(16px,env(safe-area-inset-bottom))] pt-x3",
-          RESPONSIVE_FRAME_WIDTH,
-        )}
-      >
-        <Button variant="primary" fullWidth type="button" onClick={goBreadTaxiReserve}>
-          빵택시 예약
-        </Button>
-      </div>
+      {from === "route" ? (
+        <div
+          className={cn(
+            "fixed bottom-0 left-1/2 z-30 -translate-x-1/2 border-t border-gray-300 bg-white px-[20px] pb-[max(16px,env(safe-area-inset-bottom))] pt-x3",
+            RESPONSIVE_FRAME_WIDTH,
+          )}
+        >
+          <Button variant="primary" fullWidth type="button" onClick={goBreadTaxiReserve}>
+            빵택시 예약
+          </Button>
+        </div>
+      ) : null}
 
       <CuratorChatWidget courseId={effectiveCourseId} />
     </MobileFrame>

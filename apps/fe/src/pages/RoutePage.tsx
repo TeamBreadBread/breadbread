@@ -113,6 +113,12 @@ export default function RoutePage() {
     }, "/route");
   };
 
+  const handleOpenCourse = (courseId: string) => {
+    const parsed = Number.parseInt(courseId, 10);
+    if (!Number.isFinite(parsed)) return;
+    void navigate({ to: "/ai-search-result", search: { courseId: parsed, from: "route" } });
+  };
+
   return (
     <MobileFrame>
       <div className="flex flex-1 flex-col bg-white">
@@ -131,6 +137,7 @@ export default function RoutePage() {
           ) : null}
           <RouteListSection
             courses={courses}
+            onOpenCourse={handleOpenCourse}
             onDeleteCourse={handleDeleteCourse}
             onToggleCourseLike={handleToggleCourseLike}
           />

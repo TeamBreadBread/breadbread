@@ -15,7 +15,7 @@ const QuickMenuCard = ({ label, imageSrc, icon, onClick }: QuickMenuCardProps) =
     <button
       type="button"
       onClick={onClick}
-      className="flex h-[90px] w-[84.5px] flex-col items-center justify-center gap-x1-5 overflow-hidden rounded-[var(--radius-r2)] border border-gray-200 bg-gray-100 px-3 py-3 text-center"
+      className="flex h-[90px] w-full min-w-0 flex-col items-center justify-center gap-x1-5 overflow-hidden rounded-[var(--radius-r2)] border border-gray-200 bg-gray-100 px-3 py-3 text-center"
     >
       <div className="mx-auto flex h-[36px] w-[36px] shrink-0 items-center justify-center">
         {imageSrc ? (

@@ -7,7 +7,7 @@ const QuickMenuGrid = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="grid flex-1 grid-cols-2 justify-items-center gap-[9px]">
+    <div className="grid flex-1 grid-cols-2 gap-[9px]">
       {QUICK_MENU_CATEGORIES.map((menu) => (
         <QuickMenuCard
           key={menu.label}

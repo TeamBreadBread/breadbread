@@ -56,6 +56,8 @@ interface KakaoMapOptions {
 interface KakaoMap {
   setCenter(latlng: KakaoLatLng): void;
   setBounds(bounds: KakaoLatLngBounds): void;
+  setDraggable(draggable: boolean): void;
+  setZoomable(zoomable: boolean): void;
   relayout(): void;
 }
 
