@@ -40,6 +40,8 @@ public class BakeryService {
     private final GcsService gcsService;
     private final CourseBakeryRepository courseBakeryRepository;
     private final CourseDrivingRouteRepository courseDrivingRouteRepository;
+    private final BakeryImageUrlResolver bakeryImageUrlResolver;
+    private final GooglePlacesUpdateService googlePlacesUpdateService;
 
     @Transactional(readOnly = true)
     public List<BakeryAiResponse> findAllForAi(BakeryAiSearch search) {
@@ -106,11 +108,6 @@ public class BakeryService {
         List<Bakery> bakeries = result.getContent();
 
         List<Long> ids = bakeries.stream().map(Bakery::getId).toList();
-        Map<Long, String> thumbnailMap =
-                bakeryImageRepository.findAllByBakeryIdInAndDisplayOrder(ids, 1).stream()
-                        .collect(
-                                Collectors.toMap(
-                                        img -> img.getBakery().getId(), BakeryImage::getImageUrl));
         Map<Long, List<String>> previewUrlsByBakery = new HashMap<>();
         Map<Long, Integer> remainingPreviewByBakery = new HashMap<>();
         if (!ids.isEmpty()) {
@@ -124,22 +121,15 @@ public class BakeryService {
                         imagesByBakery.getOrDefault(bakeryId, List.of()).stream()
                                 .sorted(Comparator.comparingInt(BakeryImage::getDisplayOrder))
                                 .toList();
-                int total = ordered.size();
-                int remaining = total > 4 ? total - 4 : 0;
+                int remaining = ordered.size() > 4 ? ordered.size() - 4 : 0;
                 List<String> firstFour =
-                        ordered.stream().limit(4).map(BakeryImage::getImageUrl).toList();
-                if (firstFour.isEmpty()) {
-                    String thumb = thumbnailMap.get(bakeryId);
-                    if (thumb != null) {
-                        previewUrlsByBakery.put(bakeryId, List.of(thumb));
-                    } else {
-                        previewUrlsByBakery.put(bakeryId, List.of());
-                    }
-                    remainingPreviewByBakery.put(bakeryId, 0);
-                } else {
-                    previewUrlsByBakery.put(bakeryId, firstFour);
-                    remainingPreviewByBakery.put(bakeryId, remaining);
-                }
+                        ordered.stream()
+                                .limit(4)
+                                .map(bakeryImageUrlResolver::resolve)
+                                .filter(url -> url != null)
+                                .toList();
+                previewUrlsByBakery.put(bakeryId, firstFour);
+                remainingPreviewByBakery.put(bakeryId, remaining);
             }
         }
         Map<Long, Long> likeCountMap =
@@ -155,16 +145,19 @@ public class BakeryService {
                 .bakeries(
                         bakeries.stream()
                                 .map(
-                                        b ->
-                                                BakerySummaryResponse.from(
-                                                        b,
-                                                        thumbnailMap.get(b.getId()),
-                                                        likeCountMap.getOrDefault(b.getId(), 0L),
-                                                        likeIds.contains(b.getId()),
-                                                        previewUrlsByBakery.getOrDefault(
-                                                                b.getId(), List.of()),
-                                                        remainingPreviewByBakery.getOrDefault(
-                                                                b.getId(), 0)))
+                                        b -> {
+                                            List<String> previews =
+                                                    previewUrlsByBakery.getOrDefault(
+                                                            b.getId(), List.of());
+                                            return BakerySummaryResponse.from(
+                                                    b,
+                                                    previews.isEmpty() ? null : previews.get(0),
+                                                    likeCountMap.getOrDefault(b.getId(), 0L),
+                                                    likeIds.contains(b.getId()),
+                                                    previews,
+                                                    remainingPreviewByBakery.getOrDefault(
+                                                            b.getId(), 0));
+                                        })
                                 .toList())
                 .total((int) result.getTotalElements())
                 .page(pageable.getPageNumber())
@@ -182,7 +175,31 @@ public class BakeryService {
         Long likeCount = bakeryLikeRepository.countByBakery(bakery);
         boolean liked =
                 userId != null && bakeryLikeRepository.existsByBakeryIdAndUserId(bakeryId, userId);
-        return BakeryDetailResponse.from(bakery, likeCount, liked);
+
+        // 이미지가 없으면 Google Places에서 자동 동기화 후 신규 이미지 조회.
+        // syncBakery는 REQUIRES_NEW 트랜잭션이므로 readOnly 컨텍스트에서도 write 가능.
+        List<BakeryImage> images =
+                bakery.getImages() != null ? bakery.getImages() : Collections.emptyList();
+        if (images.isEmpty()) {
+            try {
+                googlePlacesUpdateService.syncBakery(bakeryId);
+                images =
+                        bakeryImageRepository.findAllByBakeryIdInOrderByDisplayOrderAsc(
+                                List.of(bakeryId));
+            } catch (Exception e) {
+                log.warn("[자동 Places 동기화] 실패: bakeryId={}", bakeryId, e);
+                images = Collections.emptyList();
+            }
+        }
+
+        List<String> imageUrls =
+                images.stream()
+                        .sorted(Comparator.comparingInt(BakeryImage::getDisplayOrder))
+                        .map(bakeryImageUrlResolver::resolve)
+                        .filter(url -> url != null)
+                        .toList();
+
+        return BakeryDetailResponse.from(bakery, likeCount, liked, imageUrls);
     }
 
     @Transactional
@@ -268,7 +285,13 @@ public class BakeryService {
         }
 
         if (request.getImageUrls() != null) {
-            bakery.getImages().forEach(img -> gcsService.deleteQuietly(img.getImageUrl()));
+            bakery.getImages()
+                    .forEach(
+                            img -> {
+                                if (img.getImageUrl() != null) {
+                                    gcsService.deleteQuietly(img.getImageUrl());
+                                }
+                            });
             bakeryImageRepository.deleteAllByBakery(bakery);
             List<BakeryImage> images = new ArrayList<>();
             String[] urls = request.getImageUrls();
@@ -293,7 +316,13 @@ public class BakeryService {
 
         checkAuthority(bakery, userId, role);
         log.info("빵집 삭제: bakeryId={}, userId={}", bakeryId, userId);
-        bakery.getImages().forEach(img -> gcsService.deleteQuietly(img.getImageUrl()));
+        bakery.getImages()
+                .forEach(
+                        img -> {
+                            if (img.getImageUrl() != null) {
+                                gcsService.deleteQuietly(img.getImageUrl());
+                            }
+                        });
         bakeryImageRepository.deleteAllByBakery(bakery);
         bakery.deactivate();
 

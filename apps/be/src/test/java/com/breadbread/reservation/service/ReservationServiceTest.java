@@ -12,6 +12,7 @@ import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.BakeryImage;
 import com.breadbread.bakery.entity.BakeryType;
 import com.breadbread.bakery.repository.BakeryImageRepository;
+import com.breadbread.bakery.service.BakeryImageUrlResolver;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseBakery;
 import com.breadbread.course.entity.ManualCourseInfo;
@@ -63,6 +64,7 @@ class ReservationServiceTest {
     @Mock private CourseLikeRepository courseLikeRepository;
     @Mock private BakeryImageRepository bakeryImageRepository;
     @Mock private PaymentRepository paymentRepository;
+    @Mock private BakeryImageUrlResolver bakeryImageUrlResolver;
 
     @InjectMocks private ReservationService reservationService;
 
@@ -132,6 +134,8 @@ class ReservationServiceTest {
                                         .displayOrder(1)
                                         .imageUrl("thumb.jpg")
                                         .build()));
+        when(bakeryImageUrlResolver.resolve(any(BakeryImage.class)))
+                .thenAnswer(inv -> ((BakeryImage) inv.getArgument(0)).getImageUrl());
         when(courseLikeRepository.countByCourse(course)).thenReturn(2L);
         when(courseLikeRepository.existsByCourseIdAndUserId(3L, 10L)).thenReturn(true);
         when(paymentRepository.findTopByReservationIdAndStatusOrderByPaidAtDesc(

@@ -28,8 +28,8 @@ public class Bakery extends BaseEntity {
     private String name; // • 매장 명
     private String address; // • 매장 주소
     private String region; // 지역구
-    private Double latitude; // 위도
-    private Double longitude; // 경도
+    private double latitude; // 위도
+    private double longitude; // 경도
     private String phone; // • 문의 전화 번호
     private Double rating; // • 별점 평균 (null 허용 위해 Double로 저장)
     private String mapLink; // • 지도 링크
@@ -38,6 +38,7 @@ public class Bakery extends BaseEntity {
     private boolean drinkAvailable; // 음료 판매 여부
     private int estimatedStayMinutes; // 예상 체류 시간 (분)
     private String note;
+    private String dong; // 행정동 (구글 Places 동기화로 채워짐)
     private boolean active = true;
 
     @Embedded private BusinessHours businessHours; // • 운영 시간
@@ -150,6 +151,10 @@ public class Bakery extends BaseEntity {
         }
     }
 
+    public void updateDong(String dong) {
+        this.dong = dong;
+    }
+
     public void deactivate() {
         this.active = false;
     }
@@ -159,8 +164,8 @@ public class Bakery extends BaseEntity {
             String name,
             String address,
             String region,
-            Double latitude,
-            Double longitude,
+            double latitude,
+            double longitude,
             Set<DayOfWeek> closedDays,
             Set<DayOfWeek> crowdedDays,
             LocalTime weekdayOpen,

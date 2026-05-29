@@ -9,12 +9,12 @@ import com.breadbread.bakery.dto.BakerySummaryResponse;
 import com.breadbread.bakery.dto.MyReviewListResponse;
 import com.breadbread.bakery.dto.MyReviewResponse;
 import com.breadbread.bakery.entity.Bakery;
-import com.breadbread.bakery.entity.BakeryImage;
 import com.breadbread.bakery.entity.BakeryLike;
 import com.breadbread.bakery.entity.Review;
 import com.breadbread.bakery.repository.BakeryImageRepository;
 import com.breadbread.bakery.repository.BakeryLikeRepository;
 import com.breadbread.bakery.repository.ReviewRepository;
+import com.breadbread.bakery.service.BakeryImageUrlResolver;
 import com.breadbread.course.dto.CourseBakerySummary;
 import com.breadbread.course.dto.CourseListResponse;
 import com.breadbread.course.dto.CourseSummaryResponse;
@@ -39,6 +39,7 @@ import com.breadbread.user.entity.UserPreference;
 import com.breadbread.user.repository.UserPreferenceRepository;
 import com.breadbread.user.repository.UserRepository;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +70,7 @@ public class UserService {
     private final CourseLikeRepository courseLikeRepository;
     private final CourseRepository courseRepository;
     private final RouteRepository routeRepository;
+    private final BakeryImageUrlResolver bakeryImageUrlResolver;
 
     @Transactional
     public void savePreference(Long userId, CreatePreferenceRequest request) {
@@ -251,14 +253,16 @@ public class UserService {
         List<Bakery> bakeries = likes.getContent().stream().map(BakeryLike::getBakery).toList();
         List<Long> ids = bakeries.stream().map(Bakery::getId).toList();
 
-        Map<Long, String> thumbnailMap =
-                ids.isEmpty()
-                        ? Map.of()
-                        : bakeryImageRepository.findAllByBakeryIdInAndDisplayOrder(ids, 1).stream()
-                                .collect(
-                                        Collectors.toMap(
-                                                img -> img.getBakery().getId(),
-                                                BakeryImage::getImageUrl));
+        Map<Long, String> thumbnailMap = new HashMap<>();
+        if (!ids.isEmpty()) {
+            bakeryImageRepository
+                    .findAllByBakeryIdInAndDisplayOrder(ids, 1)
+                    .forEach(
+                            img -> {
+                                String url = bakeryImageUrlResolver.resolve(img);
+                                if (url != null) thumbnailMap.put(img.getBakery().getId(), url);
+                            });
+        }
         Map<Long, Long> likeCountMap =
                 ids.isEmpty()
                         ? Map.of()
@@ -309,16 +313,16 @@ public class UserService {
                         .distinct()
                         .toList();
 
-        Map<Long, String> thumbnailMap =
-                allBakeryIds.isEmpty()
-                        ? Map.of()
-                        : bakeryImageRepository
-                                .findAllByBakeryIdInAndDisplayOrder(allBakeryIds, 1)
-                                .stream()
-                                .collect(
-                                        Collectors.toMap(
-                                                img -> img.getBakery().getId(),
-                                                BakeryImage::getImageUrl));
+        Map<Long, String> thumbnailMap = new HashMap<>();
+        if (!allBakeryIds.isEmpty()) {
+            bakeryImageRepository
+                    .findAllByBakeryIdInAndDisplayOrder(allBakeryIds, 1)
+                    .forEach(
+                            img -> {
+                                String url = bakeryImageUrlResolver.resolve(img);
+                                if (url != null) thumbnailMap.put(img.getBakery().getId(), url);
+                            });
+        }
 
         Map<Long, Integer> likeCountMap =
                 courseIds.isEmpty()
