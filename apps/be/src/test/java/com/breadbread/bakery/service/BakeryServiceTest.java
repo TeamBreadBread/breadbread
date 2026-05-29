@@ -358,11 +358,13 @@ class BakeryServiceTest {
         when(bakeryRepository.findByIdAndActiveTrue(3L)).thenReturn(Optional.of(b));
         when(bakeryLikeRepository.countByBakery(b)).thenReturn(4L);
         when(bakeryLikeRepository.existsByBakeryIdAndUserId(3L, 9L)).thenReturn(true);
+        when(reviewRepository.countByBakeryIdAndActiveTrue(3L)).thenReturn(12L);
 
         var detail = bakeryService.findOne(3L, 9L);
 
         assertThat(detail.getLikeCount()).isEqualTo(4L);
         assertThat(detail.isLiked()).isTrue();
+        assertThat(detail.getReviewCount()).isEqualTo(12L);
     }
 
     @Test

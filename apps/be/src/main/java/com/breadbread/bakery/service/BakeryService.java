@@ -175,6 +175,7 @@ public class BakeryService {
         Long likeCount = bakeryLikeRepository.countByBakery(bakery);
         boolean liked =
                 userId != null && bakeryLikeRepository.existsByBakeryIdAndUserId(bakeryId, userId);
+        long reviewCount = reviewRepository.countByBakeryIdAndActiveTrue(bakeryId);
 
         // 이미지가 없으면 Google Places에서 자동 동기화 후 신규 이미지 조회.
         // syncBakery는 REQUIRES_NEW 트랜잭션이므로 readOnly 컨텍스트에서도 write 가능.
@@ -199,7 +200,7 @@ public class BakeryService {
                         .filter(url -> url != null)
                         .toList();
 
-        return BakeryDetailResponse.from(bakery, likeCount, liked, imageUrls);
+        return BakeryDetailResponse.from(bakery, likeCount, liked, reviewCount, imageUrls);
     }
 
     @Transactional

@@ -13,6 +13,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     Page<Review> findAllByBakeryIdAndActiveTrue(Long bakeryId, Pageable pageable);
 
+    long countByBakeryIdAndActiveTrue(Long bakeryId);
+
     Optional<Review> findByIdAndBakeryIdAndActiveTrue(Long id, Long bakeryId);
 
     @Query("SELECT AVG(r.rating) FROM Review r WHERE r.bakery.id = :bakeryId AND r.active = true")
