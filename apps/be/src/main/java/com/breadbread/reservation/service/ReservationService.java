@@ -1,7 +1,7 @@
 package com.breadbread.reservation.service;
 
-import com.breadbread.bakery.entity.BakeryImage;
 import com.breadbread.bakery.repository.BakeryImageRepository;
+import com.breadbread.bakery.service.BakeryImageUrlResolver;
 import com.breadbread.course.dto.CourseBakerySummary;
 import com.breadbread.course.dto.CourseSummaryResponse;
 import com.breadbread.course.entity.Course;
@@ -22,11 +22,11 @@ import com.breadbread.user.repository.UserRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -42,6 +42,7 @@ public class ReservationService {
     private final CourseLikeRepository courseLikeRepository;
     private final BakeryImageRepository bakeryImageRepository;
     private final PaymentRepository paymentRepository;
+    private final BakeryImageUrlResolver bakeryImageUrlResolver;
 
     private static final Set<ReservationStatus> ACTIVE_STATUSES =
             Set.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED);
@@ -194,13 +195,14 @@ public class ReservationService {
     private CourseSummaryResponse buildCourseSummary(Course course, Long userId) {
         List<CourseBakery> courseBakeries = course.getCourseBakeries();
         List<Long> bakeryIds = courseBakeries.stream().map(cb -> cb.getBakery().getId()).toList();
-        Map<Long, String> thumbnailMap =
-                bakeryImageRepository.findAllByBakeryIdInAndDisplayOrder(bakeryIds, 1).stream()
-                        .collect(
-                                Collectors.toMap(
-                                        img -> img.getBakery().getId(),
-                                        BakeryImage::getImageUrl,
-                                        (a, b) -> a));
+        Map<Long, String> thumbnailMap = new HashMap<>();
+        bakeryImageRepository
+                .findAllByBakeryIdInAndDisplayOrder(bakeryIds, 1)
+                .forEach(
+                        img -> {
+                            String url = bakeryImageUrlResolver.resolve(img);
+                            if (url != null) thumbnailMap.putIfAbsent(img.getBakery().getId(), url);
+                        });
         List<CourseBakerySummary> bakeries =
                 courseBakeries.stream()
                         .map(

@@ -4,6 +4,7 @@ import com.breadbread.bakery.dto.BakerySummaryResponse;
 import com.breadbread.bakery.entity.*;
 import com.breadbread.bakery.repository.BakeryImageRepository;
 import com.breadbread.bakery.repository.BakeryRepository;
+import com.breadbread.bakery.service.BakeryImageUrlResolver;
 import com.breadbread.course.client.DrivingRouteClient;
 import com.breadbread.course.dto.*;
 import com.breadbread.course.dto.ai.AiCourseRequest;
@@ -50,6 +51,7 @@ public class CourseService {
     private final DrivingRouteClient drivingRouteClient;
     private final CourseDrivingRouteRepository courseDrivingRouteRepository;
     private final CourseDrivingRouteSaver courseDrivingRouteSaver;
+    private final BakeryImageUrlResolver bakeryImageUrlResolver;
 
     @Transactional(readOnly = true)
     public CourseListResponse search(CourseSearch courseSearch, Pageable pageable, Long userId) {
@@ -64,11 +66,14 @@ public class CourseService {
                         .distinct()
                         .toList();
 
-        Map<Long, String> thumbnailMap =
-                bakeryImageRepository.findAllByBakeryIdInAndDisplayOrder(allBakeryIds, 1).stream()
-                        .collect(
-                                Collectors.toMap(
-                                        img -> img.getBakery().getId(), BakeryImage::getImageUrl));
+        Map<Long, String> thumbnailMap = new HashMap<>();
+        bakeryImageRepository
+                .findAllByBakeryIdInAndDisplayOrder(allBakeryIds, 1)
+                .forEach(
+                        img -> {
+                            String url = bakeryImageUrlResolver.resolve(img);
+                            if (url != null) thumbnailMap.put(img.getBakery().getId(), url);
+                        });
 
         Map<Long, Integer> likeCountMap =
                 courseLikeRepository.countByCourseIdIn(courseIds).stream()
@@ -144,11 +149,14 @@ public class CourseService {
 
         List<Long> bakeryIds = courseBakeries.stream().map(cb -> cb.getBakery().getId()).toList();
 
-        Map<Long, String> thumbnailMap =
-                bakeryImageRepository.findAllByBakeryIdInAndDisplayOrder(bakeryIds, 1).stream()
-                        .collect(
-                                Collectors.toMap(
-                                        img -> img.getBakery().getId(), BakeryImage::getImageUrl));
+        Map<Long, String> thumbnailMap = new HashMap<>();
+        bakeryImageRepository
+                .findAllByBakeryIdInAndDisplayOrder(bakeryIds, 1)
+                .forEach(
+                        img -> {
+                            String url = bakeryImageUrlResolver.resolve(img);
+                            if (url != null) thumbnailMap.put(img.getBakery().getId(), url);
+                        });
 
         List<BakerySummaryResponse> bakeries =
                 courseBakeries.stream()
@@ -522,16 +530,7 @@ public class CourseService {
 
         List<Coordinate> bakeryCoordinates =
                 orderedBakeries.stream()
-                        .map(
-                                bakery -> {
-                                    if (bakery.getLatitude() == null
-                                            || bakery.getLongitude() == null) {
-                                        log.error("빵집 좌표 없음: bakeryId={}", bakery.getId());
-                                        throw new CustomException(ErrorCode.ROUTE_NOT_FOUND);
-                                    }
-                                    return new Coordinate(
-                                            bakery.getLatitude(), bakery.getLongitude());
-                                })
+                        .map(bakery -> new Coordinate(bakery.getLatitude(), bakery.getLongitude()))
                         .toList();
 
         List<Coordinate> coordinates;

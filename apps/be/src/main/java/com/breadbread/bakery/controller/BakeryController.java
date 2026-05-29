@@ -8,6 +8,7 @@ import com.breadbread.bakery.entity.BakeryType;
 import com.breadbread.bakery.entity.BakeryUseType;
 import com.breadbread.bakery.entity.ReviewSortType;
 import com.breadbread.bakery.service.BakeryService;
+import com.breadbread.bakery.service.GooglePlacesUpdateService;
 import com.breadbread.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -19,6 +20,7 @@ import java.time.LocalTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 public class BakeryController {
 
     private final BakeryService bakeryService;
+    private final GooglePlacesUpdateService googlePlacesUpdateService;
 
     @Operation(
             summary = "AI용 빵집 목록 조회",
@@ -251,6 +254,26 @@ public class BakeryController {
             @PathVariable Long bakeryId,
             @PathVariable Long reviewId) {
         bakeryService.deleteReview(bakeryId, reviewId, userDetails.getId(), userDetails.getRole());
+        return ApiResponse.ok();
+    }
+
+    @Operation(
+            summary = "빵집 구글 Places 동기화 (관리자 전용)",
+            description = "구글 Places API로 dong 및 이미지(placePhotoName)를 업데이트한다.")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{id}/sync-places")
+    public ApiResponse<Void> syncPlaces(@PathVariable Long id) {
+        googlePlacesUpdateService.syncBakery(id);
+        return ApiResponse.ok();
+    }
+
+    @Operation(
+            summary = "전체 빵집 구글 Places 동기화 (관리자 전용)",
+            description = "활성 상태인 모든 빵집을 구글 Places API와 동기화한다. 개별 실패는 무시하고 계속 진행한다.")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/sync-places")
+    public ApiResponse<Void> syncAllPlaces() {
+        googlePlacesUpdateService.syncAllBakeries();
         return ApiResponse.ok();
     }
 }

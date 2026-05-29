@@ -3,7 +3,6 @@ package com.breadbread.bakery.dto;
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.BusinessHours;
 import java.time.LocalTime;
-import java.util.Collections;
 import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
@@ -32,7 +31,8 @@ public class BakerySummaryResponse {
 
     public static BakerySummaryResponse from(
             Bakery bakery, String thumbnailUrl, Long likeCount, boolean liked) {
-        return from(bakery, thumbnailUrl, likeCount, liked, Collections.emptyList(), 0);
+        List<String> previews = thumbnailUrl == null ? List.of() : List.of(thumbnailUrl);
+        return from(bakery, thumbnailUrl, likeCount, liked, previews, 0);
     }
 
     public static BakerySummaryResponse from(

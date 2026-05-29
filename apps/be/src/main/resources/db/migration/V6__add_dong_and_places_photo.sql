@@ -1,0 +1,9 @@
+ALTER TABLE bakery
+    ADD COLUMN dong VARCHAR(100);
+
+ALTER TABLE bakery_image
+    ADD COLUMN place_id VARCHAR(255);
+
+ALTER TABLE bakery
+    ALTER COLUMN latitude SET NOT NULL,
+    ALTER COLUMN longitude SET NOT NULL;

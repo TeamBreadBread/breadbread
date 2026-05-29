@@ -1,12 +1,10 @@
 package com.breadbread.bakery.dto;
 
 import com.breadbread.bakery.entity.Bakery;
-import com.breadbread.bakery.entity.BakeryImage;
 import com.breadbread.bakery.entity.BusinessHours;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -19,6 +17,7 @@ public class BakeryDetailResponse {
     private Long id;
     private String name;
     private String address;
+    private String dong;
     private Double lat;
     private Double lng;
     private List<String> imageUrls;
@@ -37,21 +36,17 @@ public class BakeryDetailResponse {
     private boolean liked;
 
     public static BakeryDetailResponse from(
-            Bakery bakery, Long likeCount, boolean liked, Long reviewCount) {
+            Bakery bakery,
+            Long likeCount,
+            boolean liked,
+            Long reviewCount,
+            List<String> resolvedImageUrls) {
         BusinessHours bh = bakery.getBusinessHours();
 
         List<BakeryBreadResponse> breads =
                 bakery.getBreads() == null
                         ? Collections.emptyList()
                         : bakery.getBreads().stream().map(BakeryBreadResponse::from).toList();
-
-        List<String> imageUrls =
-                bakery.getImages() == null
-                        ? Collections.emptyList()
-                        : bakery.getImages().stream()
-                                .sorted(Comparator.comparingInt(BakeryImage::getDisplayOrder))
-                                .map(BakeryImage::getImageUrl)
-                                .toList();
 
         Set<DayOfWeek> closed = bakery.getClosedDays();
         List<String> closedDayNames =
@@ -66,11 +61,12 @@ public class BakeryDetailResponse {
                 .id(bakery.getId())
                 .name(bakery.getName())
                 .address(bakery.getAddress())
+                .dong(bakery.getDong())
                 .lat(bakery.getLatitude())
                 .lng(bakery.getLongitude())
                 .phone(bakery.getPhone())
                 .rating(bakery.getRating())
-                .imageUrls(imageUrls)
+                .imageUrls(resolvedImageUrls)
                 .openTime(bh != null ? bh.getTodayOpen() : null)
                 .closeTime(bh != null ? bh.getTodayClose() : null)
                 .weekdayOpen(bh != null ? bh.getWeekdayOpen() : null)

@@ -8,1008 +8,1005 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as UserPreferenceRouteImport } from './routes/user-preference'
-import { Route as TaxiReserveRouteImport } from './routes/taxi-reserve'
-import { Route as TaxiReservationCompleteRouteImport } from './routes/taxi-reservation-complete'
-import { Route as TaxiPaymentRouteImport } from './routes/taxi-payment'
-import { Route as SignupResultRouteImport } from './routes/signup-result'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as RecommendationRouteImport } from './routes/recommendation'
-import { Route as PreferenceRouteImport } from './routes/preference'
-import { Route as PasswordResetSuccessRouteImport } from './routes/password-reset-success'
-import { Route as MyReviewsRouteImport } from './routes/my-reviews'
-import { Route as MyReservationsRouteImport } from './routes/my-reservations'
-import { Route as MyReservationDetailRouteImport } from './routes/my-reservation-detail'
-import { Route as MyLikedCoursesRouteImport } from './routes/my-liked-courses'
-import { Route as MyLikedBakeriesRouteImport } from './routes/my-liked-bakeries'
-import { Route as MyRouteImport } from './routes/my'
-import { Route as LoginEntryRouteImport } from './routes/login-entry'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as HomeRouteImport } from './routes/home'
-import { Route as FindPasswordRouteImport } from './routes/find-password'
-import { Route as FindIdResultRouteImport } from './routes/find-id-result'
-import { Route as FindIdFailureRouteImport } from './routes/find-id-failure'
-import { Route as FindIdRouteImport } from './routes/find-id'
-import { Route as BbangteoTypeCoursesRouteImport } from './routes/bbangteo-type-courses'
-import { Route as BbangteoThemeCoursesRouteImport } from './routes/bbangteo-theme-courses'
-import { Route as BbangteoRegionCoursesRouteImport } from './routes/bbangteo-region-courses'
-import { Route as BbangteoEditorPickCoursesRouteImport } from './routes/bbangteo-editor-pick-courses'
-import { Route as BbangteoBoardWriteRouteImport } from './routes/bbangteo-board-write'
-import { Route as BbangteoBoardPostDetailRouteImport } from './routes/bbangteo-board-post-detail'
-import { Route as BbangteoBoardRouteImport } from './routes/bbangteo-board'
-import { Route as BbangteoBbangticlePostDetailRouteImport } from './routes/bbangteo-bbangticle-post-detail'
-import { Route as BbangteoBakeryReviewWriteRouteImport } from './routes/bbangteo-bakery-review-write'
-import { Route as BbangteoBakeryListRouteImport } from './routes/bbangteo-bakery-list'
-import { Route as BbangteoBakeryDetailRouteImport } from './routes/bbangteo-bakery-detail'
-import { Route as BbangteoArticleBoardRouteImport } from './routes/bbangteo-article-board'
-import { Route as BbangteoRouteImport } from './routes/bbangteo'
-import { Route as AiSearchResultRouteImport } from './routes/ai-search-result'
-import { Route as AiCourseGeneratingRouteImport } from './routes/ai-course-generating'
-import { Route as AccountSettingsRouteImport } from './routes/account-settings'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as RouteIndexRouteImport } from './routes/route.index'
-import { Route as PaymentPortoneRedirectRouteImport } from './routes/payment.portone-redirect'
-import { Route as AccountSettingsProfileRouteImport } from './routes/account-settings.profile'
-import { Route as AccountSettingsPhoneRouteImport } from './routes/account-settings.phone'
-import { Route as AccountSettingsPasswordRouteImport } from './routes/account-settings.password'
-import { Route as AuthNaverCallbackRouteImport } from './routes/auth.naver.callback'
-import { Route as AuthKakaoCallbackRouteImport } from './routes/auth.kakao.callback'
-import { Route as AuthGoogleCallbackRouteImport } from './routes/auth.google.callback'
+import { Route as rootRouteImport } from "./routes/__root";
+import { Route as UserPreferenceRouteImport } from "./routes/user-preference";
+import { Route as TaxiReserveRouteImport } from "./routes/taxi-reserve";
+import { Route as TaxiReservationCompleteRouteImport } from "./routes/taxi-reservation-complete";
+import { Route as TaxiPaymentRouteImport } from "./routes/taxi-payment";
+import { Route as SignupResultRouteImport } from "./routes/signup-result";
+import { Route as SignupRouteImport } from "./routes/signup";
+import { Route as ResetPasswordRouteImport } from "./routes/reset-password";
+import { Route as RecommendationRouteImport } from "./routes/recommendation";
+import { Route as PreferenceRouteImport } from "./routes/preference";
+import { Route as PasswordResetSuccessRouteImport } from "./routes/password-reset-success";
+import { Route as MyReviewsRouteImport } from "./routes/my-reviews";
+import { Route as MyReservationsRouteImport } from "./routes/my-reservations";
+import { Route as MyReservationDetailRouteImport } from "./routes/my-reservation-detail";
+import { Route as MyLikedCoursesRouteImport } from "./routes/my-liked-courses";
+import { Route as MyLikedBakeriesRouteImport } from "./routes/my-liked-bakeries";
+import { Route as MyRouteImport } from "./routes/my";
+import { Route as LoginEntryRouteImport } from "./routes/login-entry";
+import { Route as LoginRouteImport } from "./routes/login";
+import { Route as HomeRouteImport } from "./routes/home";
+import { Route as FindPasswordRouteImport } from "./routes/find-password";
+import { Route as FindIdResultRouteImport } from "./routes/find-id-result";
+import { Route as FindIdFailureRouteImport } from "./routes/find-id-failure";
+import { Route as FindIdRouteImport } from "./routes/find-id";
+import { Route as BbangteoTypeCoursesRouteImport } from "./routes/bbangteo-type-courses";
+import { Route as BbangteoThemeCoursesRouteImport } from "./routes/bbangteo-theme-courses";
+import { Route as BbangteoRegionCoursesRouteImport } from "./routes/bbangteo-region-courses";
+import { Route as BbangteoEditorPickCoursesRouteImport } from "./routes/bbangteo-editor-pick-courses";
+import { Route as BbangteoBoardWriteRouteImport } from "./routes/bbangteo-board-write";
+import { Route as BbangteoBoardPostDetailRouteImport } from "./routes/bbangteo-board-post-detail";
+import { Route as BbangteoBoardRouteImport } from "./routes/bbangteo-board";
+import { Route as BbangteoBbangticlePostDetailRouteImport } from "./routes/bbangteo-bbangticle-post-detail";
+import { Route as BbangteoBakeryReviewWriteRouteImport } from "./routes/bbangteo-bakery-review-write";
+import { Route as BbangteoBakeryListRouteImport } from "./routes/bbangteo-bakery-list";
+import { Route as BbangteoBakeryDetailRouteImport } from "./routes/bbangteo-bakery-detail";
+import { Route as BbangteoArticleBoardRouteImport } from "./routes/bbangteo-article-board";
+import { Route as BbangteoRouteImport } from "./routes/bbangteo";
+import { Route as AiSearchResultRouteImport } from "./routes/ai-search-result";
+import { Route as AiCourseGeneratingRouteImport } from "./routes/ai-course-generating";
+import { Route as AccountSettingsRouteImport } from "./routes/account-settings";
+import { Route as IndexRouteImport } from "./routes/index";
+import { Route as RouteIndexRouteImport } from "./routes/route.index";
+import { Route as PaymentPortoneRedirectRouteImport } from "./routes/payment.portone-redirect";
+import { Route as AccountSettingsProfileRouteImport } from "./routes/account-settings.profile";
+import { Route as AccountSettingsPhoneRouteImport } from "./routes/account-settings.phone";
+import { Route as AccountSettingsPasswordRouteImport } from "./routes/account-settings.password";
+import { Route as AuthNaverCallbackRouteImport } from "./routes/auth.naver.callback";
+import { Route as AuthKakaoCallbackRouteImport } from "./routes/auth.kakao.callback";
+import { Route as AuthGoogleCallbackRouteImport } from "./routes/auth.google.callback";
 
 const UserPreferenceRoute = UserPreferenceRouteImport.update({
-  id: '/user-preference',
-  path: '/user-preference',
+  id: "/user-preference",
+  path: "/user-preference",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const TaxiReserveRoute = TaxiReserveRouteImport.update({
-  id: '/taxi-reserve',
-  path: '/taxi-reserve',
+  id: "/taxi-reserve",
+  path: "/taxi-reserve",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const TaxiReservationCompleteRoute = TaxiReservationCompleteRouteImport.update({
-  id: '/taxi-reservation-complete',
-  path: '/taxi-reservation-complete',
+  id: "/taxi-reservation-complete",
+  path: "/taxi-reservation-complete",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const TaxiPaymentRoute = TaxiPaymentRouteImport.update({
-  id: '/taxi-payment',
-  path: '/taxi-payment',
+  id: "/taxi-payment",
+  path: "/taxi-payment",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const SignupResultRoute = SignupResultRouteImport.update({
-  id: '/signup-result',
-  path: '/signup-result',
+  id: "/signup-result",
+  path: "/signup-result",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
+  id: "/signup",
+  path: "/signup",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
+  id: "/reset-password",
+  path: "/reset-password",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const RecommendationRoute = RecommendationRouteImport.update({
-  id: '/recommendation',
-  path: '/recommendation',
+  id: "/recommendation",
+  path: "/recommendation",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const PreferenceRoute = PreferenceRouteImport.update({
-  id: '/preference',
-  path: '/preference',
+  id: "/preference",
+  path: "/preference",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const PasswordResetSuccessRoute = PasswordResetSuccessRouteImport.update({
-  id: '/password-reset-success',
-  path: '/password-reset-success',
+  id: "/password-reset-success",
+  path: "/password-reset-success",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const MyReviewsRoute = MyReviewsRouteImport.update({
-  id: '/my-reviews',
-  path: '/my-reviews',
+  id: "/my-reviews",
+  path: "/my-reviews",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const MyReservationsRoute = MyReservationsRouteImport.update({
-  id: '/my-reservations',
-  path: '/my-reservations',
+  id: "/my-reservations",
+  path: "/my-reservations",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const MyReservationDetailRoute = MyReservationDetailRouteImport.update({
-  id: '/my-reservation-detail',
-  path: '/my-reservation-detail',
+  id: "/my-reservation-detail",
+  path: "/my-reservation-detail",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const MyLikedCoursesRoute = MyLikedCoursesRouteImport.update({
-  id: '/my-liked-courses',
-  path: '/my-liked-courses',
+  id: "/my-liked-courses",
+  path: "/my-liked-courses",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const MyLikedBakeriesRoute = MyLikedBakeriesRouteImport.update({
-  id: '/my-liked-bakeries',
-  path: '/my-liked-bakeries',
+  id: "/my-liked-bakeries",
+  path: "/my-liked-bakeries",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const MyRoute = MyRouteImport.update({
-  id: '/my',
-  path: '/my',
+  id: "/my",
+  path: "/my",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const LoginEntryRoute = LoginEntryRouteImport.update({
-  id: '/login-entry',
-  path: '/login-entry',
+  id: "/login-entry",
+  path: "/login-entry",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+  id: "/login",
+  path: "/login",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const HomeRoute = HomeRouteImport.update({
-  id: '/home',
-  path: '/home',
+  id: "/home",
+  path: "/home",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const FindPasswordRoute = FindPasswordRouteImport.update({
-  id: '/find-password',
-  path: '/find-password',
+  id: "/find-password",
+  path: "/find-password",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const FindIdResultRoute = FindIdResultRouteImport.update({
-  id: '/find-id-result',
-  path: '/find-id-result',
+  id: "/find-id-result",
+  path: "/find-id-result",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const FindIdFailureRoute = FindIdFailureRouteImport.update({
-  id: '/find-id-failure',
-  path: '/find-id-failure',
+  id: "/find-id-failure",
+  path: "/find-id-failure",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const FindIdRoute = FindIdRouteImport.update({
-  id: '/find-id',
-  path: '/find-id',
+  id: "/find-id",
+  path: "/find-id",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const BbangteoTypeCoursesRoute = BbangteoTypeCoursesRouteImport.update({
-  id: '/bbangteo-type-courses',
-  path: '/bbangteo-type-courses',
+  id: "/bbangteo-type-courses",
+  path: "/bbangteo-type-courses",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const BbangteoThemeCoursesRoute = BbangteoThemeCoursesRouteImport.update({
-  id: '/bbangteo-theme-courses',
-  path: '/bbangteo-theme-courses',
+  id: "/bbangteo-theme-courses",
+  path: "/bbangteo-theme-courses",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const BbangteoRegionCoursesRoute = BbangteoRegionCoursesRouteImport.update({
-  id: '/bbangteo-region-courses',
-  path: '/bbangteo-region-courses',
+  id: "/bbangteo-region-courses",
+  path: "/bbangteo-region-courses",
   getParentRoute: () => rootRouteImport,
-} as any)
-const BbangteoEditorPickCoursesRoute =
-  BbangteoEditorPickCoursesRouteImport.update({
-    id: '/bbangteo-editor-pick-courses',
-    path: '/bbangteo-editor-pick-courses',
-    getParentRoute: () => rootRouteImport,
-  } as any)
+} as any);
+const BbangteoEditorPickCoursesRoute = BbangteoEditorPickCoursesRouteImport.update({
+  id: "/bbangteo-editor-pick-courses",
+  path: "/bbangteo-editor-pick-courses",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const BbangteoBoardWriteRoute = BbangteoBoardWriteRouteImport.update({
-  id: '/bbangteo-board-write',
-  path: '/bbangteo-board-write',
+  id: "/bbangteo-board-write",
+  path: "/bbangteo-board-write",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const BbangteoBoardPostDetailRoute = BbangteoBoardPostDetailRouteImport.update({
-  id: '/bbangteo-board-post-detail',
-  path: '/bbangteo-board-post-detail',
+  id: "/bbangteo-board-post-detail",
+  path: "/bbangteo-board-post-detail",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const BbangteoBoardRoute = BbangteoBoardRouteImport.update({
-  id: '/bbangteo-board',
-  path: '/bbangteo-board',
+  id: "/bbangteo-board",
+  path: "/bbangteo-board",
   getParentRoute: () => rootRouteImport,
-} as any)
-const BbangteoBbangticlePostDetailRoute =
-  BbangteoBbangticlePostDetailRouteImport.update({
-    id: '/bbangteo-bbangticle-post-detail',
-    path: '/bbangteo-bbangticle-post-detail',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const BbangteoBakeryReviewWriteRoute =
-  BbangteoBakeryReviewWriteRouteImport.update({
-    id: '/bbangteo-bakery-review-write',
-    path: '/bbangteo-bakery-review-write',
-    getParentRoute: () => rootRouteImport,
-  } as any)
+} as any);
+const BbangteoBbangticlePostDetailRoute = BbangteoBbangticlePostDetailRouteImport.update({
+  id: "/bbangteo-bbangticle-post-detail",
+  path: "/bbangteo-bbangticle-post-detail",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const BbangteoBakeryReviewWriteRoute = BbangteoBakeryReviewWriteRouteImport.update({
+  id: "/bbangteo-bakery-review-write",
+  path: "/bbangteo-bakery-review-write",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const BbangteoBakeryListRoute = BbangteoBakeryListRouteImport.update({
-  id: '/bbangteo-bakery-list',
-  path: '/bbangteo-bakery-list',
+  id: "/bbangteo-bakery-list",
+  path: "/bbangteo-bakery-list",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const BbangteoBakeryDetailRoute = BbangteoBakeryDetailRouteImport.update({
-  id: '/bbangteo-bakery-detail',
-  path: '/bbangteo-bakery-detail',
+  id: "/bbangteo-bakery-detail",
+  path: "/bbangteo-bakery-detail",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const BbangteoArticleBoardRoute = BbangteoArticleBoardRouteImport.update({
-  id: '/bbangteo-article-board',
-  path: '/bbangteo-article-board',
+  id: "/bbangteo-article-board",
+  path: "/bbangteo-article-board",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const BbangteoRoute = BbangteoRouteImport.update({
-  id: '/bbangteo',
-  path: '/bbangteo',
+  id: "/bbangteo",
+  path: "/bbangteo",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AiSearchResultRoute = AiSearchResultRouteImport.update({
-  id: '/ai-search-result',
-  path: '/ai-search-result',
+  id: "/ai-search-result",
+  path: "/ai-search-result",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AiCourseGeneratingRoute = AiCourseGeneratingRouteImport.update({
-  id: '/ai-course-generating',
-  path: '/ai-course-generating',
+  id: "/ai-course-generating",
+  path: "/ai-course-generating",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AccountSettingsRoute = AccountSettingsRouteImport.update({
-  id: '/account-settings',
-  path: '/account-settings',
+  id: "/account-settings",
+  path: "/account-settings",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const RouteIndexRoute = RouteIndexRouteImport.update({
-  id: '/route/',
-  path: '/route/',
+  id: "/route/",
+  path: "/route/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const PaymentPortoneRedirectRoute = PaymentPortoneRedirectRouteImport.update({
-  id: '/payment/portone-redirect',
-  path: '/payment/portone-redirect',
+  id: "/payment/portone-redirect",
+  path: "/payment/portone-redirect",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AccountSettingsProfileRoute = AccountSettingsProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
+  id: "/profile",
+  path: "/profile",
   getParentRoute: () => AccountSettingsRoute,
-} as any)
+} as any);
 const AccountSettingsPhoneRoute = AccountSettingsPhoneRouteImport.update({
-  id: '/phone',
-  path: '/phone',
+  id: "/phone",
+  path: "/phone",
   getParentRoute: () => AccountSettingsRoute,
-} as any)
+} as any);
 const AccountSettingsPasswordRoute = AccountSettingsPasswordRouteImport.update({
-  id: '/password',
-  path: '/password',
+  id: "/password",
+  path: "/password",
   getParentRoute: () => AccountSettingsRoute,
-} as any)
+} as any);
 const AuthNaverCallbackRoute = AuthNaverCallbackRouteImport.update({
-  id: '/auth/naver/callback',
-  path: '/auth/naver/callback',
+  id: "/auth/naver/callback",
+  path: "/auth/naver/callback",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AuthKakaoCallbackRoute = AuthKakaoCallbackRouteImport.update({
-  id: '/auth/kakao/callback',
-  path: '/auth/kakao/callback',
+  id: "/auth/kakao/callback",
+  path: "/auth/kakao/callback",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AuthGoogleCallbackRoute = AuthGoogleCallbackRouteImport.update({
-  id: '/auth/google/callback',
-  path: '/auth/google/callback',
+  id: "/auth/google/callback",
+  path: "/auth/google/callback",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/account-settings': typeof AccountSettingsRouteWithChildren
-  '/ai-course-generating': typeof AiCourseGeneratingRoute
-  '/ai-search-result': typeof AiSearchResultRoute
-  '/bbangteo': typeof BbangteoRoute
-  '/bbangteo-article-board': typeof BbangteoArticleBoardRoute
-  '/bbangteo-bakery-detail': typeof BbangteoBakeryDetailRoute
-  '/bbangteo-bakery-list': typeof BbangteoBakeryListRoute
-  '/bbangteo-bakery-review-write': typeof BbangteoBakeryReviewWriteRoute
-  '/bbangteo-bbangticle-post-detail': typeof BbangteoBbangticlePostDetailRoute
-  '/bbangteo-board': typeof BbangteoBoardRoute
-  '/bbangteo-board-post-detail': typeof BbangteoBoardPostDetailRoute
-  '/bbangteo-board-write': typeof BbangteoBoardWriteRoute
-  '/bbangteo-editor-pick-courses': typeof BbangteoEditorPickCoursesRoute
-  '/bbangteo-region-courses': typeof BbangteoRegionCoursesRoute
-  '/bbangteo-theme-courses': typeof BbangteoThemeCoursesRoute
-  '/bbangteo-type-courses': typeof BbangteoTypeCoursesRoute
-  '/find-id': typeof FindIdRoute
-  '/find-id-failure': typeof FindIdFailureRoute
-  '/find-id-result': typeof FindIdResultRoute
-  '/find-password': typeof FindPasswordRoute
-  '/home': typeof HomeRoute
-  '/login': typeof LoginRoute
-  '/login-entry': typeof LoginEntryRoute
-  '/my': typeof MyRoute
-  '/my-liked-bakeries': typeof MyLikedBakeriesRoute
-  '/my-liked-courses': typeof MyLikedCoursesRoute
-  '/my-reservation-detail': typeof MyReservationDetailRoute
-  '/my-reservations': typeof MyReservationsRoute
-  '/my-reviews': typeof MyReviewsRoute
-  '/password-reset-success': typeof PasswordResetSuccessRoute
-  '/preference': typeof PreferenceRoute
-  '/recommendation': typeof RecommendationRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/signup': typeof SignupRoute
-  '/signup-result': typeof SignupResultRoute
-  '/taxi-payment': typeof TaxiPaymentRoute
-  '/taxi-reservation-complete': typeof TaxiReservationCompleteRoute
-  '/taxi-reserve': typeof TaxiReserveRoute
-  '/user-preference': typeof UserPreferenceRoute
-  '/account-settings/password': typeof AccountSettingsPasswordRoute
-  '/account-settings/phone': typeof AccountSettingsPhoneRoute
-  '/account-settings/profile': typeof AccountSettingsProfileRoute
-  '/payment/portone-redirect': typeof PaymentPortoneRedirectRoute
-  '/route/': typeof RouteIndexRoute
-  '/auth/google/callback': typeof AuthGoogleCallbackRoute
-  '/auth/kakao/callback': typeof AuthKakaoCallbackRoute
-  '/auth/naver/callback': typeof AuthNaverCallbackRoute
+  "/": typeof IndexRoute;
+  "/account-settings": typeof AccountSettingsRouteWithChildren;
+  "/ai-course-generating": typeof AiCourseGeneratingRoute;
+  "/ai-search-result": typeof AiSearchResultRoute;
+  "/bbangteo": typeof BbangteoRoute;
+  "/bbangteo-article-board": typeof BbangteoArticleBoardRoute;
+  "/bbangteo-bakery-detail": typeof BbangteoBakeryDetailRoute;
+  "/bbangteo-bakery-list": typeof BbangteoBakeryListRoute;
+  "/bbangteo-bakery-review-write": typeof BbangteoBakeryReviewWriteRoute;
+  "/bbangteo-bbangticle-post-detail": typeof BbangteoBbangticlePostDetailRoute;
+  "/bbangteo-board": typeof BbangteoBoardRoute;
+  "/bbangteo-board-post-detail": typeof BbangteoBoardPostDetailRoute;
+  "/bbangteo-board-write": typeof BbangteoBoardWriteRoute;
+  "/bbangteo-editor-pick-courses": typeof BbangteoEditorPickCoursesRoute;
+  "/bbangteo-region-courses": typeof BbangteoRegionCoursesRoute;
+  "/bbangteo-theme-courses": typeof BbangteoThemeCoursesRoute;
+  "/bbangteo-type-courses": typeof BbangteoTypeCoursesRoute;
+  "/find-id": typeof FindIdRoute;
+  "/find-id-failure": typeof FindIdFailureRoute;
+  "/find-id-result": typeof FindIdResultRoute;
+  "/find-password": typeof FindPasswordRoute;
+  "/home": typeof HomeRoute;
+  "/login": typeof LoginRoute;
+  "/login-entry": typeof LoginEntryRoute;
+  "/my": typeof MyRoute;
+  "/my-liked-bakeries": typeof MyLikedBakeriesRoute;
+  "/my-liked-courses": typeof MyLikedCoursesRoute;
+  "/my-reservation-detail": typeof MyReservationDetailRoute;
+  "/my-reservations": typeof MyReservationsRoute;
+  "/my-reviews": typeof MyReviewsRoute;
+  "/password-reset-success": typeof PasswordResetSuccessRoute;
+  "/preference": typeof PreferenceRoute;
+  "/recommendation": typeof RecommendationRoute;
+  "/reset-password": typeof ResetPasswordRoute;
+  "/signup": typeof SignupRoute;
+  "/signup-result": typeof SignupResultRoute;
+  "/taxi-payment": typeof TaxiPaymentRoute;
+  "/taxi-reservation-complete": typeof TaxiReservationCompleteRoute;
+  "/taxi-reserve": typeof TaxiReserveRoute;
+  "/user-preference": typeof UserPreferenceRoute;
+  "/account-settings/password": typeof AccountSettingsPasswordRoute;
+  "/account-settings/phone": typeof AccountSettingsPhoneRoute;
+  "/account-settings/profile": typeof AccountSettingsProfileRoute;
+  "/payment/portone-redirect": typeof PaymentPortoneRedirectRoute;
+  "/route/": typeof RouteIndexRoute;
+  "/auth/google/callback": typeof AuthGoogleCallbackRoute;
+  "/auth/kakao/callback": typeof AuthKakaoCallbackRoute;
+  "/auth/naver/callback": typeof AuthNaverCallbackRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/account-settings': typeof AccountSettingsRouteWithChildren
-  '/ai-course-generating': typeof AiCourseGeneratingRoute
-  '/ai-search-result': typeof AiSearchResultRoute
-  '/bbangteo': typeof BbangteoRoute
-  '/bbangteo-article-board': typeof BbangteoArticleBoardRoute
-  '/bbangteo-bakery-detail': typeof BbangteoBakeryDetailRoute
-  '/bbangteo-bakery-list': typeof BbangteoBakeryListRoute
-  '/bbangteo-bakery-review-write': typeof BbangteoBakeryReviewWriteRoute
-  '/bbangteo-bbangticle-post-detail': typeof BbangteoBbangticlePostDetailRoute
-  '/bbangteo-board': typeof BbangteoBoardRoute
-  '/bbangteo-board-post-detail': typeof BbangteoBoardPostDetailRoute
-  '/bbangteo-board-write': typeof BbangteoBoardWriteRoute
-  '/bbangteo-editor-pick-courses': typeof BbangteoEditorPickCoursesRoute
-  '/bbangteo-region-courses': typeof BbangteoRegionCoursesRoute
-  '/bbangteo-theme-courses': typeof BbangteoThemeCoursesRoute
-  '/bbangteo-type-courses': typeof BbangteoTypeCoursesRoute
-  '/find-id': typeof FindIdRoute
-  '/find-id-failure': typeof FindIdFailureRoute
-  '/find-id-result': typeof FindIdResultRoute
-  '/find-password': typeof FindPasswordRoute
-  '/home': typeof HomeRoute
-  '/login': typeof LoginRoute
-  '/login-entry': typeof LoginEntryRoute
-  '/my': typeof MyRoute
-  '/my-liked-bakeries': typeof MyLikedBakeriesRoute
-  '/my-liked-courses': typeof MyLikedCoursesRoute
-  '/my-reservation-detail': typeof MyReservationDetailRoute
-  '/my-reservations': typeof MyReservationsRoute
-  '/my-reviews': typeof MyReviewsRoute
-  '/password-reset-success': typeof PasswordResetSuccessRoute
-  '/preference': typeof PreferenceRoute
-  '/recommendation': typeof RecommendationRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/signup': typeof SignupRoute
-  '/signup-result': typeof SignupResultRoute
-  '/taxi-payment': typeof TaxiPaymentRoute
-  '/taxi-reservation-complete': typeof TaxiReservationCompleteRoute
-  '/taxi-reserve': typeof TaxiReserveRoute
-  '/user-preference': typeof UserPreferenceRoute
-  '/account-settings/password': typeof AccountSettingsPasswordRoute
-  '/account-settings/phone': typeof AccountSettingsPhoneRoute
-  '/account-settings/profile': typeof AccountSettingsProfileRoute
-  '/payment/portone-redirect': typeof PaymentPortoneRedirectRoute
-  '/route': typeof RouteIndexRoute
-  '/auth/google/callback': typeof AuthGoogleCallbackRoute
-  '/auth/kakao/callback': typeof AuthKakaoCallbackRoute
-  '/auth/naver/callback': typeof AuthNaverCallbackRoute
+  "/": typeof IndexRoute;
+  "/account-settings": typeof AccountSettingsRouteWithChildren;
+  "/ai-course-generating": typeof AiCourseGeneratingRoute;
+  "/ai-search-result": typeof AiSearchResultRoute;
+  "/bbangteo": typeof BbangteoRoute;
+  "/bbangteo-article-board": typeof BbangteoArticleBoardRoute;
+  "/bbangteo-bakery-detail": typeof BbangteoBakeryDetailRoute;
+  "/bbangteo-bakery-list": typeof BbangteoBakeryListRoute;
+  "/bbangteo-bakery-review-write": typeof BbangteoBakeryReviewWriteRoute;
+  "/bbangteo-bbangticle-post-detail": typeof BbangteoBbangticlePostDetailRoute;
+  "/bbangteo-board": typeof BbangteoBoardRoute;
+  "/bbangteo-board-post-detail": typeof BbangteoBoardPostDetailRoute;
+  "/bbangteo-board-write": typeof BbangteoBoardWriteRoute;
+  "/bbangteo-editor-pick-courses": typeof BbangteoEditorPickCoursesRoute;
+  "/bbangteo-region-courses": typeof BbangteoRegionCoursesRoute;
+  "/bbangteo-theme-courses": typeof BbangteoThemeCoursesRoute;
+  "/bbangteo-type-courses": typeof BbangteoTypeCoursesRoute;
+  "/find-id": typeof FindIdRoute;
+  "/find-id-failure": typeof FindIdFailureRoute;
+  "/find-id-result": typeof FindIdResultRoute;
+  "/find-password": typeof FindPasswordRoute;
+  "/home": typeof HomeRoute;
+  "/login": typeof LoginRoute;
+  "/login-entry": typeof LoginEntryRoute;
+  "/my": typeof MyRoute;
+  "/my-liked-bakeries": typeof MyLikedBakeriesRoute;
+  "/my-liked-courses": typeof MyLikedCoursesRoute;
+  "/my-reservation-detail": typeof MyReservationDetailRoute;
+  "/my-reservations": typeof MyReservationsRoute;
+  "/my-reviews": typeof MyReviewsRoute;
+  "/password-reset-success": typeof PasswordResetSuccessRoute;
+  "/preference": typeof PreferenceRoute;
+  "/recommendation": typeof RecommendationRoute;
+  "/reset-password": typeof ResetPasswordRoute;
+  "/signup": typeof SignupRoute;
+  "/signup-result": typeof SignupResultRoute;
+  "/taxi-payment": typeof TaxiPaymentRoute;
+  "/taxi-reservation-complete": typeof TaxiReservationCompleteRoute;
+  "/taxi-reserve": typeof TaxiReserveRoute;
+  "/user-preference": typeof UserPreferenceRoute;
+  "/account-settings/password": typeof AccountSettingsPasswordRoute;
+  "/account-settings/phone": typeof AccountSettingsPhoneRoute;
+  "/account-settings/profile": typeof AccountSettingsProfileRoute;
+  "/payment/portone-redirect": typeof PaymentPortoneRedirectRoute;
+  "/route": typeof RouteIndexRoute;
+  "/auth/google/callback": typeof AuthGoogleCallbackRoute;
+  "/auth/kakao/callback": typeof AuthKakaoCallbackRoute;
+  "/auth/naver/callback": typeof AuthNaverCallbackRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/account-settings': typeof AccountSettingsRouteWithChildren
-  '/ai-course-generating': typeof AiCourseGeneratingRoute
-  '/ai-search-result': typeof AiSearchResultRoute
-  '/bbangteo': typeof BbangteoRoute
-  '/bbangteo-article-board': typeof BbangteoArticleBoardRoute
-  '/bbangteo-bakery-detail': typeof BbangteoBakeryDetailRoute
-  '/bbangteo-bakery-list': typeof BbangteoBakeryListRoute
-  '/bbangteo-bakery-review-write': typeof BbangteoBakeryReviewWriteRoute
-  '/bbangteo-bbangticle-post-detail': typeof BbangteoBbangticlePostDetailRoute
-  '/bbangteo-board': typeof BbangteoBoardRoute
-  '/bbangteo-board-post-detail': typeof BbangteoBoardPostDetailRoute
-  '/bbangteo-board-write': typeof BbangteoBoardWriteRoute
-  '/bbangteo-editor-pick-courses': typeof BbangteoEditorPickCoursesRoute
-  '/bbangteo-region-courses': typeof BbangteoRegionCoursesRoute
-  '/bbangteo-theme-courses': typeof BbangteoThemeCoursesRoute
-  '/bbangteo-type-courses': typeof BbangteoTypeCoursesRoute
-  '/find-id': typeof FindIdRoute
-  '/find-id-failure': typeof FindIdFailureRoute
-  '/find-id-result': typeof FindIdResultRoute
-  '/find-password': typeof FindPasswordRoute
-  '/home': typeof HomeRoute
-  '/login': typeof LoginRoute
-  '/login-entry': typeof LoginEntryRoute
-  '/my': typeof MyRoute
-  '/my-liked-bakeries': typeof MyLikedBakeriesRoute
-  '/my-liked-courses': typeof MyLikedCoursesRoute
-  '/my-reservation-detail': typeof MyReservationDetailRoute
-  '/my-reservations': typeof MyReservationsRoute
-  '/my-reviews': typeof MyReviewsRoute
-  '/password-reset-success': typeof PasswordResetSuccessRoute
-  '/preference': typeof PreferenceRoute
-  '/recommendation': typeof RecommendationRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/signup': typeof SignupRoute
-  '/signup-result': typeof SignupResultRoute
-  '/taxi-payment': typeof TaxiPaymentRoute
-  '/taxi-reservation-complete': typeof TaxiReservationCompleteRoute
-  '/taxi-reserve': typeof TaxiReserveRoute
-  '/user-preference': typeof UserPreferenceRoute
-  '/account-settings/password': typeof AccountSettingsPasswordRoute
-  '/account-settings/phone': typeof AccountSettingsPhoneRoute
-  '/account-settings/profile': typeof AccountSettingsProfileRoute
-  '/payment/portone-redirect': typeof PaymentPortoneRedirectRoute
-  '/route/': typeof RouteIndexRoute
-  '/auth/google/callback': typeof AuthGoogleCallbackRoute
-  '/auth/kakao/callback': typeof AuthKakaoCallbackRoute
-  '/auth/naver/callback': typeof AuthNaverCallbackRoute
+  __root__: typeof rootRouteImport;
+  "/": typeof IndexRoute;
+  "/account-settings": typeof AccountSettingsRouteWithChildren;
+  "/ai-course-generating": typeof AiCourseGeneratingRoute;
+  "/ai-search-result": typeof AiSearchResultRoute;
+  "/bbangteo": typeof BbangteoRoute;
+  "/bbangteo-article-board": typeof BbangteoArticleBoardRoute;
+  "/bbangteo-bakery-detail": typeof BbangteoBakeryDetailRoute;
+  "/bbangteo-bakery-list": typeof BbangteoBakeryListRoute;
+  "/bbangteo-bakery-review-write": typeof BbangteoBakeryReviewWriteRoute;
+  "/bbangteo-bbangticle-post-detail": typeof BbangteoBbangticlePostDetailRoute;
+  "/bbangteo-board": typeof BbangteoBoardRoute;
+  "/bbangteo-board-post-detail": typeof BbangteoBoardPostDetailRoute;
+  "/bbangteo-board-write": typeof BbangteoBoardWriteRoute;
+  "/bbangteo-editor-pick-courses": typeof BbangteoEditorPickCoursesRoute;
+  "/bbangteo-region-courses": typeof BbangteoRegionCoursesRoute;
+  "/bbangteo-theme-courses": typeof BbangteoThemeCoursesRoute;
+  "/bbangteo-type-courses": typeof BbangteoTypeCoursesRoute;
+  "/find-id": typeof FindIdRoute;
+  "/find-id-failure": typeof FindIdFailureRoute;
+  "/find-id-result": typeof FindIdResultRoute;
+  "/find-password": typeof FindPasswordRoute;
+  "/home": typeof HomeRoute;
+  "/login": typeof LoginRoute;
+  "/login-entry": typeof LoginEntryRoute;
+  "/my": typeof MyRoute;
+  "/my-liked-bakeries": typeof MyLikedBakeriesRoute;
+  "/my-liked-courses": typeof MyLikedCoursesRoute;
+  "/my-reservation-detail": typeof MyReservationDetailRoute;
+  "/my-reservations": typeof MyReservationsRoute;
+  "/my-reviews": typeof MyReviewsRoute;
+  "/password-reset-success": typeof PasswordResetSuccessRoute;
+  "/preference": typeof PreferenceRoute;
+  "/recommendation": typeof RecommendationRoute;
+  "/reset-password": typeof ResetPasswordRoute;
+  "/signup": typeof SignupRoute;
+  "/signup-result": typeof SignupResultRoute;
+  "/taxi-payment": typeof TaxiPaymentRoute;
+  "/taxi-reservation-complete": typeof TaxiReservationCompleteRoute;
+  "/taxi-reserve": typeof TaxiReserveRoute;
+  "/user-preference": typeof UserPreferenceRoute;
+  "/account-settings/password": typeof AccountSettingsPasswordRoute;
+  "/account-settings/phone": typeof AccountSettingsPhoneRoute;
+  "/account-settings/profile": typeof AccountSettingsProfileRoute;
+  "/payment/portone-redirect": typeof PaymentPortoneRedirectRoute;
+  "/route/": typeof RouteIndexRoute;
+  "/auth/google/callback": typeof AuthGoogleCallbackRoute;
+  "/auth/kakao/callback": typeof AuthKakaoCallbackRoute;
+  "/auth/naver/callback": typeof AuthNaverCallbackRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
+  fileRoutesByFullPath: FileRoutesByFullPath;
   fullPaths:
-    | '/'
-    | '/account-settings'
-    | '/ai-course-generating'
-    | '/ai-search-result'
-    | '/bbangteo'
-    | '/bbangteo-article-board'
-    | '/bbangteo-bakery-detail'
-    | '/bbangteo-bakery-list'
-    | '/bbangteo-bakery-review-write'
-    | '/bbangteo-bbangticle-post-detail'
-    | '/bbangteo-board'
-    | '/bbangteo-board-post-detail'
-    | '/bbangteo-board-write'
-    | '/bbangteo-editor-pick-courses'
-    | '/bbangteo-region-courses'
-    | '/bbangteo-theme-courses'
-    | '/bbangteo-type-courses'
-    | '/find-id'
-    | '/find-id-failure'
-    | '/find-id-result'
-    | '/find-password'
-    | '/home'
-    | '/login'
-    | '/login-entry'
-    | '/my'
-    | '/my-liked-bakeries'
-    | '/my-liked-courses'
-    | '/my-reservation-detail'
-    | '/my-reservations'
-    | '/my-reviews'
-    | '/password-reset-success'
-    | '/preference'
-    | '/recommendation'
-    | '/reset-password'
-    | '/signup'
-    | '/signup-result'
-    | '/taxi-payment'
-    | '/taxi-reservation-complete'
-    | '/taxi-reserve'
-    | '/user-preference'
-    | '/account-settings/password'
-    | '/account-settings/phone'
-    | '/account-settings/profile'
-    | '/payment/portone-redirect'
-    | '/route/'
-    | '/auth/google/callback'
-    | '/auth/kakao/callback'
-    | '/auth/naver/callback'
-  fileRoutesByTo: FileRoutesByTo
+    | "/"
+    | "/account-settings"
+    | "/ai-course-generating"
+    | "/ai-search-result"
+    | "/bbangteo"
+    | "/bbangteo-article-board"
+    | "/bbangteo-bakery-detail"
+    | "/bbangteo-bakery-list"
+    | "/bbangteo-bakery-review-write"
+    | "/bbangteo-bbangticle-post-detail"
+    | "/bbangteo-board"
+    | "/bbangteo-board-post-detail"
+    | "/bbangteo-board-write"
+    | "/bbangteo-editor-pick-courses"
+    | "/bbangteo-region-courses"
+    | "/bbangteo-theme-courses"
+    | "/bbangteo-type-courses"
+    | "/find-id"
+    | "/find-id-failure"
+    | "/find-id-result"
+    | "/find-password"
+    | "/home"
+    | "/login"
+    | "/login-entry"
+    | "/my"
+    | "/my-liked-bakeries"
+    | "/my-liked-courses"
+    | "/my-reservation-detail"
+    | "/my-reservations"
+    | "/my-reviews"
+    | "/password-reset-success"
+    | "/preference"
+    | "/recommendation"
+    | "/reset-password"
+    | "/signup"
+    | "/signup-result"
+    | "/taxi-payment"
+    | "/taxi-reservation-complete"
+    | "/taxi-reserve"
+    | "/user-preference"
+    | "/account-settings/password"
+    | "/account-settings/phone"
+    | "/account-settings/profile"
+    | "/payment/portone-redirect"
+    | "/route/"
+    | "/auth/google/callback"
+    | "/auth/kakao/callback"
+    | "/auth/naver/callback";
+  fileRoutesByTo: FileRoutesByTo;
   to:
-    | '/'
-    | '/account-settings'
-    | '/ai-course-generating'
-    | '/ai-search-result'
-    | '/bbangteo'
-    | '/bbangteo-article-board'
-    | '/bbangteo-bakery-detail'
-    | '/bbangteo-bakery-list'
-    | '/bbangteo-bakery-review-write'
-    | '/bbangteo-bbangticle-post-detail'
-    | '/bbangteo-board'
-    | '/bbangteo-board-post-detail'
-    | '/bbangteo-board-write'
-    | '/bbangteo-editor-pick-courses'
-    | '/bbangteo-region-courses'
-    | '/bbangteo-theme-courses'
-    | '/bbangteo-type-courses'
-    | '/find-id'
-    | '/find-id-failure'
-    | '/find-id-result'
-    | '/find-password'
-    | '/home'
-    | '/login'
-    | '/login-entry'
-    | '/my'
-    | '/my-liked-bakeries'
-    | '/my-liked-courses'
-    | '/my-reservation-detail'
-    | '/my-reservations'
-    | '/my-reviews'
-    | '/password-reset-success'
-    | '/preference'
-    | '/recommendation'
-    | '/reset-password'
-    | '/signup'
-    | '/signup-result'
-    | '/taxi-payment'
-    | '/taxi-reservation-complete'
-    | '/taxi-reserve'
-    | '/user-preference'
-    | '/account-settings/password'
-    | '/account-settings/phone'
-    | '/account-settings/profile'
-    | '/payment/portone-redirect'
-    | '/route'
-    | '/auth/google/callback'
-    | '/auth/kakao/callback'
-    | '/auth/naver/callback'
+    | "/"
+    | "/account-settings"
+    | "/ai-course-generating"
+    | "/ai-search-result"
+    | "/bbangteo"
+    | "/bbangteo-article-board"
+    | "/bbangteo-bakery-detail"
+    | "/bbangteo-bakery-list"
+    | "/bbangteo-bakery-review-write"
+    | "/bbangteo-bbangticle-post-detail"
+    | "/bbangteo-board"
+    | "/bbangteo-board-post-detail"
+    | "/bbangteo-board-write"
+    | "/bbangteo-editor-pick-courses"
+    | "/bbangteo-region-courses"
+    | "/bbangteo-theme-courses"
+    | "/bbangteo-type-courses"
+    | "/find-id"
+    | "/find-id-failure"
+    | "/find-id-result"
+    | "/find-password"
+    | "/home"
+    | "/login"
+    | "/login-entry"
+    | "/my"
+    | "/my-liked-bakeries"
+    | "/my-liked-courses"
+    | "/my-reservation-detail"
+    | "/my-reservations"
+    | "/my-reviews"
+    | "/password-reset-success"
+    | "/preference"
+    | "/recommendation"
+    | "/reset-password"
+    | "/signup"
+    | "/signup-result"
+    | "/taxi-payment"
+    | "/taxi-reservation-complete"
+    | "/taxi-reserve"
+    | "/user-preference"
+    | "/account-settings/password"
+    | "/account-settings/phone"
+    | "/account-settings/profile"
+    | "/payment/portone-redirect"
+    | "/route"
+    | "/auth/google/callback"
+    | "/auth/kakao/callback"
+    | "/auth/naver/callback";
   id:
-    | '__root__'
-    | '/'
-    | '/account-settings'
-    | '/ai-course-generating'
-    | '/ai-search-result'
-    | '/bbangteo'
-    | '/bbangteo-article-board'
-    | '/bbangteo-bakery-detail'
-    | '/bbangteo-bakery-list'
-    | '/bbangteo-bakery-review-write'
-    | '/bbangteo-bbangticle-post-detail'
-    | '/bbangteo-board'
-    | '/bbangteo-board-post-detail'
-    | '/bbangteo-board-write'
-    | '/bbangteo-editor-pick-courses'
-    | '/bbangteo-region-courses'
-    | '/bbangteo-theme-courses'
-    | '/bbangteo-type-courses'
-    | '/find-id'
-    | '/find-id-failure'
-    | '/find-id-result'
-    | '/find-password'
-    | '/home'
-    | '/login'
-    | '/login-entry'
-    | '/my'
-    | '/my-liked-bakeries'
-    | '/my-liked-courses'
-    | '/my-reservation-detail'
-    | '/my-reservations'
-    | '/my-reviews'
-    | '/password-reset-success'
-    | '/preference'
-    | '/recommendation'
-    | '/reset-password'
-    | '/signup'
-    | '/signup-result'
-    | '/taxi-payment'
-    | '/taxi-reservation-complete'
-    | '/taxi-reserve'
-    | '/user-preference'
-    | '/account-settings/password'
-    | '/account-settings/phone'
-    | '/account-settings/profile'
-    | '/payment/portone-redirect'
-    | '/route/'
-    | '/auth/google/callback'
-    | '/auth/kakao/callback'
-    | '/auth/naver/callback'
-  fileRoutesById: FileRoutesById
+    | "__root__"
+    | "/"
+    | "/account-settings"
+    | "/ai-course-generating"
+    | "/ai-search-result"
+    | "/bbangteo"
+    | "/bbangteo-article-board"
+    | "/bbangteo-bakery-detail"
+    | "/bbangteo-bakery-list"
+    | "/bbangteo-bakery-review-write"
+    | "/bbangteo-bbangticle-post-detail"
+    | "/bbangteo-board"
+    | "/bbangteo-board-post-detail"
+    | "/bbangteo-board-write"
+    | "/bbangteo-editor-pick-courses"
+    | "/bbangteo-region-courses"
+    | "/bbangteo-theme-courses"
+    | "/bbangteo-type-courses"
+    | "/find-id"
+    | "/find-id-failure"
+    | "/find-id-result"
+    | "/find-password"
+    | "/home"
+    | "/login"
+    | "/login-entry"
+    | "/my"
+    | "/my-liked-bakeries"
+    | "/my-liked-courses"
+    | "/my-reservation-detail"
+    | "/my-reservations"
+    | "/my-reviews"
+    | "/password-reset-success"
+    | "/preference"
+    | "/recommendation"
+    | "/reset-password"
+    | "/signup"
+    | "/signup-result"
+    | "/taxi-payment"
+    | "/taxi-reservation-complete"
+    | "/taxi-reserve"
+    | "/user-preference"
+    | "/account-settings/password"
+    | "/account-settings/phone"
+    | "/account-settings/profile"
+    | "/payment/portone-redirect"
+    | "/route/"
+    | "/auth/google/callback"
+    | "/auth/kakao/callback"
+    | "/auth/naver/callback";
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AccountSettingsRoute: typeof AccountSettingsRouteWithChildren
-  AiCourseGeneratingRoute: typeof AiCourseGeneratingRoute
-  AiSearchResultRoute: typeof AiSearchResultRoute
-  BbangteoRoute: typeof BbangteoRoute
-  BbangteoArticleBoardRoute: typeof BbangteoArticleBoardRoute
-  BbangteoBakeryDetailRoute: typeof BbangteoBakeryDetailRoute
-  BbangteoBakeryListRoute: typeof BbangteoBakeryListRoute
-  BbangteoBakeryReviewWriteRoute: typeof BbangteoBakeryReviewWriteRoute
-  BbangteoBbangticlePostDetailRoute: typeof BbangteoBbangticlePostDetailRoute
-  BbangteoBoardRoute: typeof BbangteoBoardRoute
-  BbangteoBoardPostDetailRoute: typeof BbangteoBoardPostDetailRoute
-  BbangteoBoardWriteRoute: typeof BbangteoBoardWriteRoute
-  BbangteoEditorPickCoursesRoute: typeof BbangteoEditorPickCoursesRoute
-  BbangteoRegionCoursesRoute: typeof BbangteoRegionCoursesRoute
-  BbangteoThemeCoursesRoute: typeof BbangteoThemeCoursesRoute
-  BbangteoTypeCoursesRoute: typeof BbangteoTypeCoursesRoute
-  FindIdRoute: typeof FindIdRoute
-  FindIdFailureRoute: typeof FindIdFailureRoute
-  FindIdResultRoute: typeof FindIdResultRoute
-  FindPasswordRoute: typeof FindPasswordRoute
-  HomeRoute: typeof HomeRoute
-  LoginRoute: typeof LoginRoute
-  LoginEntryRoute: typeof LoginEntryRoute
-  MyRoute: typeof MyRoute
-  MyLikedBakeriesRoute: typeof MyLikedBakeriesRoute
-  MyLikedCoursesRoute: typeof MyLikedCoursesRoute
-  MyReservationDetailRoute: typeof MyReservationDetailRoute
-  MyReservationsRoute: typeof MyReservationsRoute
-  MyReviewsRoute: typeof MyReviewsRoute
-  PasswordResetSuccessRoute: typeof PasswordResetSuccessRoute
-  PreferenceRoute: typeof PreferenceRoute
-  RecommendationRoute: typeof RecommendationRoute
-  ResetPasswordRoute: typeof ResetPasswordRoute
-  SignupRoute: typeof SignupRoute
-  SignupResultRoute: typeof SignupResultRoute
-  TaxiPaymentRoute: typeof TaxiPaymentRoute
-  TaxiReservationCompleteRoute: typeof TaxiReservationCompleteRoute
-  TaxiReserveRoute: typeof TaxiReserveRoute
-  UserPreferenceRoute: typeof UserPreferenceRoute
-  PaymentPortoneRedirectRoute: typeof PaymentPortoneRedirectRoute
-  RouteIndexRoute: typeof RouteIndexRoute
-  AuthGoogleCallbackRoute: typeof AuthGoogleCallbackRoute
-  AuthKakaoCallbackRoute: typeof AuthKakaoCallbackRoute
-  AuthNaverCallbackRoute: typeof AuthNaverCallbackRoute
+  IndexRoute: typeof IndexRoute;
+  AccountSettingsRoute: typeof AccountSettingsRouteWithChildren;
+  AiCourseGeneratingRoute: typeof AiCourseGeneratingRoute;
+  AiSearchResultRoute: typeof AiSearchResultRoute;
+  BbangteoRoute: typeof BbangteoRoute;
+  BbangteoArticleBoardRoute: typeof BbangteoArticleBoardRoute;
+  BbangteoBakeryDetailRoute: typeof BbangteoBakeryDetailRoute;
+  BbangteoBakeryListRoute: typeof BbangteoBakeryListRoute;
+  BbangteoBakeryReviewWriteRoute: typeof BbangteoBakeryReviewWriteRoute;
+  BbangteoBbangticlePostDetailRoute: typeof BbangteoBbangticlePostDetailRoute;
+  BbangteoBoardRoute: typeof BbangteoBoardRoute;
+  BbangteoBoardPostDetailRoute: typeof BbangteoBoardPostDetailRoute;
+  BbangteoBoardWriteRoute: typeof BbangteoBoardWriteRoute;
+  BbangteoEditorPickCoursesRoute: typeof BbangteoEditorPickCoursesRoute;
+  BbangteoRegionCoursesRoute: typeof BbangteoRegionCoursesRoute;
+  BbangteoThemeCoursesRoute: typeof BbangteoThemeCoursesRoute;
+  BbangteoTypeCoursesRoute: typeof BbangteoTypeCoursesRoute;
+  FindIdRoute: typeof FindIdRoute;
+  FindIdFailureRoute: typeof FindIdFailureRoute;
+  FindIdResultRoute: typeof FindIdResultRoute;
+  FindPasswordRoute: typeof FindPasswordRoute;
+  HomeRoute: typeof HomeRoute;
+  LoginRoute: typeof LoginRoute;
+  LoginEntryRoute: typeof LoginEntryRoute;
+  MyRoute: typeof MyRoute;
+  MyLikedBakeriesRoute: typeof MyLikedBakeriesRoute;
+  MyLikedCoursesRoute: typeof MyLikedCoursesRoute;
+  MyReservationDetailRoute: typeof MyReservationDetailRoute;
+  MyReservationsRoute: typeof MyReservationsRoute;
+  MyReviewsRoute: typeof MyReviewsRoute;
+  PasswordResetSuccessRoute: typeof PasswordResetSuccessRoute;
+  PreferenceRoute: typeof PreferenceRoute;
+  RecommendationRoute: typeof RecommendationRoute;
+  ResetPasswordRoute: typeof ResetPasswordRoute;
+  SignupRoute: typeof SignupRoute;
+  SignupResultRoute: typeof SignupResultRoute;
+  TaxiPaymentRoute: typeof TaxiPaymentRoute;
+  TaxiReservationCompleteRoute: typeof TaxiReservationCompleteRoute;
+  TaxiReserveRoute: typeof TaxiReserveRoute;
+  UserPreferenceRoute: typeof UserPreferenceRoute;
+  PaymentPortoneRedirectRoute: typeof PaymentPortoneRedirectRoute;
+  RouteIndexRoute: typeof RouteIndexRoute;
+  AuthGoogleCallbackRoute: typeof AuthGoogleCallbackRoute;
+  AuthKakaoCallbackRoute: typeof AuthKakaoCallbackRoute;
+  AuthNaverCallbackRoute: typeof AuthNaverCallbackRoute;
 }
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    '/user-preference': {
-      id: '/user-preference'
-      path: '/user-preference'
-      fullPath: '/user-preference'
-      preLoaderRoute: typeof UserPreferenceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/taxi-reserve': {
-      id: '/taxi-reserve'
-      path: '/taxi-reserve'
-      fullPath: '/taxi-reserve'
-      preLoaderRoute: typeof TaxiReserveRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/taxi-reservation-complete': {
-      id: '/taxi-reservation-complete'
-      path: '/taxi-reservation-complete'
-      fullPath: '/taxi-reservation-complete'
-      preLoaderRoute: typeof TaxiReservationCompleteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/taxi-payment': {
-      id: '/taxi-payment'
-      path: '/taxi-payment'
-      fullPath: '/taxi-payment'
-      preLoaderRoute: typeof TaxiPaymentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/signup-result': {
-      id: '/signup-result'
-      path: '/signup-result'
-      fullPath: '/signup-result'
-      preLoaderRoute: typeof SignupResultRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/recommendation': {
-      id: '/recommendation'
-      path: '/recommendation'
-      fullPath: '/recommendation'
-      preLoaderRoute: typeof RecommendationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/preference': {
-      id: '/preference'
-      path: '/preference'
-      fullPath: '/preference'
-      preLoaderRoute: typeof PreferenceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/password-reset-success': {
-      id: '/password-reset-success'
-      path: '/password-reset-success'
-      fullPath: '/password-reset-success'
-      preLoaderRoute: typeof PasswordResetSuccessRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/my-reviews': {
-      id: '/my-reviews'
-      path: '/my-reviews'
-      fullPath: '/my-reviews'
-      preLoaderRoute: typeof MyReviewsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/my-reservations': {
-      id: '/my-reservations'
-      path: '/my-reservations'
-      fullPath: '/my-reservations'
-      preLoaderRoute: typeof MyReservationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/my-reservation-detail': {
-      id: '/my-reservation-detail'
-      path: '/my-reservation-detail'
-      fullPath: '/my-reservation-detail'
-      preLoaderRoute: typeof MyReservationDetailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/my-liked-courses': {
-      id: '/my-liked-courses'
-      path: '/my-liked-courses'
-      fullPath: '/my-liked-courses'
-      preLoaderRoute: typeof MyLikedCoursesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/my-liked-bakeries': {
-      id: '/my-liked-bakeries'
-      path: '/my-liked-bakeries'
-      fullPath: '/my-liked-bakeries'
-      preLoaderRoute: typeof MyLikedBakeriesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/my': {
-      id: '/my'
-      path: '/my'
-      fullPath: '/my'
-      preLoaderRoute: typeof MyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login-entry': {
-      id: '/login-entry'
-      path: '/login-entry'
-      fullPath: '/login-entry'
-      preLoaderRoute: typeof LoginEntryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/home': {
-      id: '/home'
-      path: '/home'
-      fullPath: '/home'
-      preLoaderRoute: typeof HomeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/find-password': {
-      id: '/find-password'
-      path: '/find-password'
-      fullPath: '/find-password'
-      preLoaderRoute: typeof FindPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/find-id-result': {
-      id: '/find-id-result'
-      path: '/find-id-result'
-      fullPath: '/find-id-result'
-      preLoaderRoute: typeof FindIdResultRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/find-id-failure': {
-      id: '/find-id-failure'
-      path: '/find-id-failure'
-      fullPath: '/find-id-failure'
-      preLoaderRoute: typeof FindIdFailureRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/find-id': {
-      id: '/find-id'
-      path: '/find-id'
-      fullPath: '/find-id'
-      preLoaderRoute: typeof FindIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bbangteo-type-courses': {
-      id: '/bbangteo-type-courses'
-      path: '/bbangteo-type-courses'
-      fullPath: '/bbangteo-type-courses'
-      preLoaderRoute: typeof BbangteoTypeCoursesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bbangteo-theme-courses': {
-      id: '/bbangteo-theme-courses'
-      path: '/bbangteo-theme-courses'
-      fullPath: '/bbangteo-theme-courses'
-      preLoaderRoute: typeof BbangteoThemeCoursesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bbangteo-region-courses': {
-      id: '/bbangteo-region-courses'
-      path: '/bbangteo-region-courses'
-      fullPath: '/bbangteo-region-courses'
-      preLoaderRoute: typeof BbangteoRegionCoursesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bbangteo-editor-pick-courses': {
-      id: '/bbangteo-editor-pick-courses'
-      path: '/bbangteo-editor-pick-courses'
-      fullPath: '/bbangteo-editor-pick-courses'
-      preLoaderRoute: typeof BbangteoEditorPickCoursesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bbangteo-board-write': {
-      id: '/bbangteo-board-write'
-      path: '/bbangteo-board-write'
-      fullPath: '/bbangteo-board-write'
-      preLoaderRoute: typeof BbangteoBoardWriteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bbangteo-board-post-detail': {
-      id: '/bbangteo-board-post-detail'
-      path: '/bbangteo-board-post-detail'
-      fullPath: '/bbangteo-board-post-detail'
-      preLoaderRoute: typeof BbangteoBoardPostDetailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bbangteo-board': {
-      id: '/bbangteo-board'
-      path: '/bbangteo-board'
-      fullPath: '/bbangteo-board'
-      preLoaderRoute: typeof BbangteoBoardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bbangteo-bbangticle-post-detail': {
-      id: '/bbangteo-bbangticle-post-detail'
-      path: '/bbangteo-bbangticle-post-detail'
-      fullPath: '/bbangteo-bbangticle-post-detail'
-      preLoaderRoute: typeof BbangteoBbangticlePostDetailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bbangteo-bakery-review-write': {
-      id: '/bbangteo-bakery-review-write'
-      path: '/bbangteo-bakery-review-write'
-      fullPath: '/bbangteo-bakery-review-write'
-      preLoaderRoute: typeof BbangteoBakeryReviewWriteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bbangteo-bakery-list': {
-      id: '/bbangteo-bakery-list'
-      path: '/bbangteo-bakery-list'
-      fullPath: '/bbangteo-bakery-list'
-      preLoaderRoute: typeof BbangteoBakeryListRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bbangteo-bakery-detail': {
-      id: '/bbangteo-bakery-detail'
-      path: '/bbangteo-bakery-detail'
-      fullPath: '/bbangteo-bakery-detail'
-      preLoaderRoute: typeof BbangteoBakeryDetailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bbangteo-article-board': {
-      id: '/bbangteo-article-board'
-      path: '/bbangteo-article-board'
-      fullPath: '/bbangteo-article-board'
-      preLoaderRoute: typeof BbangteoArticleBoardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bbangteo': {
-      id: '/bbangteo'
-      path: '/bbangteo'
-      fullPath: '/bbangteo'
-      preLoaderRoute: typeof BbangteoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ai-search-result': {
-      id: '/ai-search-result'
-      path: '/ai-search-result'
-      fullPath: '/ai-search-result'
-      preLoaderRoute: typeof AiSearchResultRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ai-course-generating': {
-      id: '/ai-course-generating'
-      path: '/ai-course-generating'
-      fullPath: '/ai-course-generating'
-      preLoaderRoute: typeof AiCourseGeneratingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/account-settings': {
-      id: '/account-settings'
-      path: '/account-settings'
-      fullPath: '/account-settings'
-      preLoaderRoute: typeof AccountSettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/route/': {
-      id: '/route/'
-      path: '/route'
-      fullPath: '/route/'
-      preLoaderRoute: typeof RouteIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/payment/portone-redirect': {
-      id: '/payment/portone-redirect'
-      path: '/payment/portone-redirect'
-      fullPath: '/payment/portone-redirect'
-      preLoaderRoute: typeof PaymentPortoneRedirectRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/account-settings/profile': {
-      id: '/account-settings/profile'
-      path: '/profile'
-      fullPath: '/account-settings/profile'
-      preLoaderRoute: typeof AccountSettingsProfileRouteImport
-      parentRoute: typeof AccountSettingsRoute
-    }
-    '/account-settings/phone': {
-      id: '/account-settings/phone'
-      path: '/phone'
-      fullPath: '/account-settings/phone'
-      preLoaderRoute: typeof AccountSettingsPhoneRouteImport
-      parentRoute: typeof AccountSettingsRoute
-    }
-    '/account-settings/password': {
-      id: '/account-settings/password'
-      path: '/password'
-      fullPath: '/account-settings/password'
-      preLoaderRoute: typeof AccountSettingsPasswordRouteImport
-      parentRoute: typeof AccountSettingsRoute
-    }
-    '/auth/naver/callback': {
-      id: '/auth/naver/callback'
-      path: '/auth/naver/callback'
-      fullPath: '/auth/naver/callback'
-      preLoaderRoute: typeof AuthNaverCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/kakao/callback': {
-      id: '/auth/kakao/callback'
-      path: '/auth/kakao/callback'
-      fullPath: '/auth/kakao/callback'
-      preLoaderRoute: typeof AuthKakaoCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/google/callback': {
-      id: '/auth/google/callback'
-      path: '/auth/google/callback'
-      fullPath: '/auth/google/callback'
-      preLoaderRoute: typeof AuthGoogleCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+    "/user-preference": {
+      id: "/user-preference";
+      path: "/user-preference";
+      fullPath: "/user-preference";
+      preLoaderRoute: typeof UserPreferenceRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/taxi-reserve": {
+      id: "/taxi-reserve";
+      path: "/taxi-reserve";
+      fullPath: "/taxi-reserve";
+      preLoaderRoute: typeof TaxiReserveRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/taxi-reservation-complete": {
+      id: "/taxi-reservation-complete";
+      path: "/taxi-reservation-complete";
+      fullPath: "/taxi-reservation-complete";
+      preLoaderRoute: typeof TaxiReservationCompleteRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/taxi-payment": {
+      id: "/taxi-payment";
+      path: "/taxi-payment";
+      fullPath: "/taxi-payment";
+      preLoaderRoute: typeof TaxiPaymentRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/signup-result": {
+      id: "/signup-result";
+      path: "/signup-result";
+      fullPath: "/signup-result";
+      preLoaderRoute: typeof SignupResultRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/signup": {
+      id: "/signup";
+      path: "/signup";
+      fullPath: "/signup";
+      preLoaderRoute: typeof SignupRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/reset-password": {
+      id: "/reset-password";
+      path: "/reset-password";
+      fullPath: "/reset-password";
+      preLoaderRoute: typeof ResetPasswordRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/recommendation": {
+      id: "/recommendation";
+      path: "/recommendation";
+      fullPath: "/recommendation";
+      preLoaderRoute: typeof RecommendationRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/preference": {
+      id: "/preference";
+      path: "/preference";
+      fullPath: "/preference";
+      preLoaderRoute: typeof PreferenceRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/password-reset-success": {
+      id: "/password-reset-success";
+      path: "/password-reset-success";
+      fullPath: "/password-reset-success";
+      preLoaderRoute: typeof PasswordResetSuccessRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/my-reviews": {
+      id: "/my-reviews";
+      path: "/my-reviews";
+      fullPath: "/my-reviews";
+      preLoaderRoute: typeof MyReviewsRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/my-reservations": {
+      id: "/my-reservations";
+      path: "/my-reservations";
+      fullPath: "/my-reservations";
+      preLoaderRoute: typeof MyReservationsRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/my-reservation-detail": {
+      id: "/my-reservation-detail";
+      path: "/my-reservation-detail";
+      fullPath: "/my-reservation-detail";
+      preLoaderRoute: typeof MyReservationDetailRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/my-liked-courses": {
+      id: "/my-liked-courses";
+      path: "/my-liked-courses";
+      fullPath: "/my-liked-courses";
+      preLoaderRoute: typeof MyLikedCoursesRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/my-liked-bakeries": {
+      id: "/my-liked-bakeries";
+      path: "/my-liked-bakeries";
+      fullPath: "/my-liked-bakeries";
+      preLoaderRoute: typeof MyLikedBakeriesRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/my": {
+      id: "/my";
+      path: "/my";
+      fullPath: "/my";
+      preLoaderRoute: typeof MyRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/login-entry": {
+      id: "/login-entry";
+      path: "/login-entry";
+      fullPath: "/login-entry";
+      preLoaderRoute: typeof LoginEntryRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/login": {
+      id: "/login";
+      path: "/login";
+      fullPath: "/login";
+      preLoaderRoute: typeof LoginRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/home": {
+      id: "/home";
+      path: "/home";
+      fullPath: "/home";
+      preLoaderRoute: typeof HomeRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/find-password": {
+      id: "/find-password";
+      path: "/find-password";
+      fullPath: "/find-password";
+      preLoaderRoute: typeof FindPasswordRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/find-id-result": {
+      id: "/find-id-result";
+      path: "/find-id-result";
+      fullPath: "/find-id-result";
+      preLoaderRoute: typeof FindIdResultRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/find-id-failure": {
+      id: "/find-id-failure";
+      path: "/find-id-failure";
+      fullPath: "/find-id-failure";
+      preLoaderRoute: typeof FindIdFailureRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/find-id": {
+      id: "/find-id";
+      path: "/find-id";
+      fullPath: "/find-id";
+      preLoaderRoute: typeof FindIdRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/bbangteo-type-courses": {
+      id: "/bbangteo-type-courses";
+      path: "/bbangteo-type-courses";
+      fullPath: "/bbangteo-type-courses";
+      preLoaderRoute: typeof BbangteoTypeCoursesRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/bbangteo-theme-courses": {
+      id: "/bbangteo-theme-courses";
+      path: "/bbangteo-theme-courses";
+      fullPath: "/bbangteo-theme-courses";
+      preLoaderRoute: typeof BbangteoThemeCoursesRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/bbangteo-region-courses": {
+      id: "/bbangteo-region-courses";
+      path: "/bbangteo-region-courses";
+      fullPath: "/bbangteo-region-courses";
+      preLoaderRoute: typeof BbangteoRegionCoursesRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/bbangteo-editor-pick-courses": {
+      id: "/bbangteo-editor-pick-courses";
+      path: "/bbangteo-editor-pick-courses";
+      fullPath: "/bbangteo-editor-pick-courses";
+      preLoaderRoute: typeof BbangteoEditorPickCoursesRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/bbangteo-board-write": {
+      id: "/bbangteo-board-write";
+      path: "/bbangteo-board-write";
+      fullPath: "/bbangteo-board-write";
+      preLoaderRoute: typeof BbangteoBoardWriteRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/bbangteo-board-post-detail": {
+      id: "/bbangteo-board-post-detail";
+      path: "/bbangteo-board-post-detail";
+      fullPath: "/bbangteo-board-post-detail";
+      preLoaderRoute: typeof BbangteoBoardPostDetailRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/bbangteo-board": {
+      id: "/bbangteo-board";
+      path: "/bbangteo-board";
+      fullPath: "/bbangteo-board";
+      preLoaderRoute: typeof BbangteoBoardRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/bbangteo-bbangticle-post-detail": {
+      id: "/bbangteo-bbangticle-post-detail";
+      path: "/bbangteo-bbangticle-post-detail";
+      fullPath: "/bbangteo-bbangticle-post-detail";
+      preLoaderRoute: typeof BbangteoBbangticlePostDetailRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/bbangteo-bakery-review-write": {
+      id: "/bbangteo-bakery-review-write";
+      path: "/bbangteo-bakery-review-write";
+      fullPath: "/bbangteo-bakery-review-write";
+      preLoaderRoute: typeof BbangteoBakeryReviewWriteRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/bbangteo-bakery-list": {
+      id: "/bbangteo-bakery-list";
+      path: "/bbangteo-bakery-list";
+      fullPath: "/bbangteo-bakery-list";
+      preLoaderRoute: typeof BbangteoBakeryListRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/bbangteo-bakery-detail": {
+      id: "/bbangteo-bakery-detail";
+      path: "/bbangteo-bakery-detail";
+      fullPath: "/bbangteo-bakery-detail";
+      preLoaderRoute: typeof BbangteoBakeryDetailRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/bbangteo-article-board": {
+      id: "/bbangteo-article-board";
+      path: "/bbangteo-article-board";
+      fullPath: "/bbangteo-article-board";
+      preLoaderRoute: typeof BbangteoArticleBoardRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/bbangteo": {
+      id: "/bbangteo";
+      path: "/bbangteo";
+      fullPath: "/bbangteo";
+      preLoaderRoute: typeof BbangteoRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/ai-search-result": {
+      id: "/ai-search-result";
+      path: "/ai-search-result";
+      fullPath: "/ai-search-result";
+      preLoaderRoute: typeof AiSearchResultRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/ai-course-generating": {
+      id: "/ai-course-generating";
+      path: "/ai-course-generating";
+      fullPath: "/ai-course-generating";
+      preLoaderRoute: typeof AiCourseGeneratingRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/account-settings": {
+      id: "/account-settings";
+      path: "/account-settings";
+      fullPath: "/account-settings";
+      preLoaderRoute: typeof AccountSettingsRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/": {
+      id: "/";
+      path: "/";
+      fullPath: "/";
+      preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/route/": {
+      id: "/route/";
+      path: "/route";
+      fullPath: "/route/";
+      preLoaderRoute: typeof RouteIndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/payment/portone-redirect": {
+      id: "/payment/portone-redirect";
+      path: "/payment/portone-redirect";
+      fullPath: "/payment/portone-redirect";
+      preLoaderRoute: typeof PaymentPortoneRedirectRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/account-settings/profile": {
+      id: "/account-settings/profile";
+      path: "/profile";
+      fullPath: "/account-settings/profile";
+      preLoaderRoute: typeof AccountSettingsProfileRouteImport;
+      parentRoute: typeof AccountSettingsRoute;
+    };
+    "/account-settings/phone": {
+      id: "/account-settings/phone";
+      path: "/phone";
+      fullPath: "/account-settings/phone";
+      preLoaderRoute: typeof AccountSettingsPhoneRouteImport;
+      parentRoute: typeof AccountSettingsRoute;
+    };
+    "/account-settings/password": {
+      id: "/account-settings/password";
+      path: "/password";
+      fullPath: "/account-settings/password";
+      preLoaderRoute: typeof AccountSettingsPasswordRouteImport;
+      parentRoute: typeof AccountSettingsRoute;
+    };
+    "/auth/naver/callback": {
+      id: "/auth/naver/callback";
+      path: "/auth/naver/callback";
+      fullPath: "/auth/naver/callback";
+      preLoaderRoute: typeof AuthNaverCallbackRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/auth/kakao/callback": {
+      id: "/auth/kakao/callback";
+      path: "/auth/kakao/callback";
+      fullPath: "/auth/kakao/callback";
+      preLoaderRoute: typeof AuthKakaoCallbackRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/auth/google/callback": {
+      id: "/auth/google/callback";
+      path: "/auth/google/callback";
+      fullPath: "/auth/google/callback";
+      preLoaderRoute: typeof AuthGoogleCallbackRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
 interface AccountSettingsRouteChildren {
-  AccountSettingsPasswordRoute: typeof AccountSettingsPasswordRoute
-  AccountSettingsPhoneRoute: typeof AccountSettingsPhoneRoute
-  AccountSettingsProfileRoute: typeof AccountSettingsProfileRoute
+  AccountSettingsPasswordRoute: typeof AccountSettingsPasswordRoute;
+  AccountSettingsPhoneRoute: typeof AccountSettingsPhoneRoute;
+  AccountSettingsProfileRoute: typeof AccountSettingsProfileRoute;
 }
 
 const AccountSettingsRouteChildren: AccountSettingsRouteChildren = {
   AccountSettingsPasswordRoute: AccountSettingsPasswordRoute,
   AccountSettingsPhoneRoute: AccountSettingsPhoneRoute,
   AccountSettingsProfileRoute: AccountSettingsProfileRoute,
-}
+};
 
 const AccountSettingsRouteWithChildren = AccountSettingsRoute._addFileChildren(
   AccountSettingsRouteChildren,
-)
+);
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -1057,7 +1054,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthGoogleCallbackRoute: AuthGoogleCallbackRoute,
   AuthKakaoCallbackRoute: AuthKakaoCallbackRoute,
   AuthNaverCallbackRoute: AuthNaverCallbackRoute,
-}
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();

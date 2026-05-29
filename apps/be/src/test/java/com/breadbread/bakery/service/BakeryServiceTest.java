@@ -74,6 +74,8 @@ class BakeryServiceTest {
     @Mock private GcsService gcsService;
     @Mock private CourseBakeryRepository courseBakeryRepository;
     @Mock private CourseDrivingRouteRepository courseDrivingRouteRepository;
+    @Mock private BakeryImageUrlResolver bakeryImageUrlResolver;
+    @Mock private GooglePlacesUpdateService googlePlacesUpdateService;
 
     @InjectMocks private BakeryService bakeryService;
 
@@ -299,10 +301,9 @@ class BakeryServiceTest {
                 .thenReturn(new PageImpl<>(List.of(b), pageable, 1));
         BakeryImage thumb =
                 BakeryImage.builder().imageUrl("thumb.jpg").displayOrder(1).bakery(b).build();
-        when(bakeryImageRepository.findAllByBakeryIdInAndDisplayOrder(List.of(10L), 1))
-                .thenReturn(List.of(thumb));
         when(bakeryImageRepository.findAllByBakeryIdInOrderByDisplayOrderAsc(List.of(10L)))
-                .thenReturn(List.of());
+                .thenReturn(List.of(thumb));
+        when(bakeryImageUrlResolver.resolve(thumb)).thenReturn("thumb.jpg");
         when(bakeryLikeRepository.countByBakeryIdIn(List.of(10L)))
                 .thenReturn(Collections.singletonList(new Object[] {10L, 7L}));
         when(bakeryLikeRepository.findLikedBakeryIdsByUserId(List.of(10L), 5L))
@@ -324,14 +325,14 @@ class BakeryServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         when(bakeryRepository.search(any(BakerySearch.class), eq(pageable)))
                 .thenReturn(new PageImpl<>(List.of(b), pageable, 1));
-        when(bakeryImageRepository.findAllByBakeryIdInAndDisplayOrder(List.of(2L), 1))
-                .thenReturn(List.of());
         List<BakeryImage> gallery = new ArrayList<>();
         for (int i = 1; i <= 6; i++) {
             gallery.add(BakeryImage.builder().imageUrl("u" + i).displayOrder(i).bakery(b).build());
         }
         when(bakeryImageRepository.findAllByBakeryIdInOrderByDisplayOrderAsc(List.of(2L)))
                 .thenReturn(gallery);
+        when(bakeryImageUrlResolver.resolve(any(BakeryImage.class)))
+                .thenAnswer(inv -> ((BakeryImage) inv.getArgument(0)).getImageUrl());
         when(bakeryLikeRepository.countByBakeryIdIn(List.of(2L))).thenReturn(List.of());
 
         var result = bakeryService.search(BakerySearch.builder().build(), pageable, null);

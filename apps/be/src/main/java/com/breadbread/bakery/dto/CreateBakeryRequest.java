@@ -26,10 +26,12 @@ public class CreateBakeryRequest {
     @Schema(description = "지역구 (예: 대전 중구)")
     private String region;
 
+    @NotNull
     @DecimalMin("-90.0")
     @DecimalMax("90.0")
     private Double lat;
 
+    @NotNull
     @DecimalMin("-180.0")
     @DecimalMax("180.0")
     private Double lng;

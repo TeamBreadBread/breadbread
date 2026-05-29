@@ -16,6 +16,7 @@ import com.breadbread.bakery.entity.BakeryImage;
 import com.breadbread.bakery.entity.BreadType;
 import com.breadbread.bakery.repository.BakeryImageRepository;
 import com.breadbread.bakery.repository.BakeryRepository;
+import com.breadbread.bakery.service.BakeryImageUrlResolver;
 import com.breadbread.course.client.DrivingRouteClient;
 import com.breadbread.course.dto.Coordinate;
 import com.breadbread.course.dto.CourseListResponse;
@@ -85,6 +86,7 @@ class CourseServiceTest {
     @Mock private AiCourseRedisService aiCourseRedisService;
     @Mock private DrivingRouteClient drivingRouteClient;
     @Mock private CourseDrivingRouteSaver courseDrivingRouteSaver;
+    @Mock private BakeryImageUrlResolver bakeryImageUrlResolver;
 
     @InjectMocks private CourseService courseService;
 
@@ -106,6 +108,8 @@ class CourseServiceTest {
                                         .displayOrder(1)
                                         .bakery(bakery)
                                         .build()));
+        when(bakeryImageUrlResolver.resolve(any(BakeryImage.class)))
+                .thenAnswer(inv -> ((BakeryImage) inv.getArgument(0)).getImageUrl());
         when(courseLikeRepository.countByCourseIdIn(List.of(1L)))
                 .thenReturn(Collections.singletonList(new Object[] {1L, 3L}));
         when(courseLikeRepository.findLikedCourseIdsByUserId(List.of(1L), 99L))
@@ -849,23 +853,6 @@ class CourseServiceTest {
     }
 
     @Test
-    void getDrivingRoute_throws_whenBakeryMissingCoordinates() {
-        Course course = manualCourse(1L, "공유코스");
-        Bakery b1 = bakeryAt(10L, "A빵집", 36.0, 127.0);
-        Bakery b2 = nullCoordBakery(20L, "B빵집");
-        course.addCourseBakery(CourseBakery.builder().visitOrder(1).bakery(b1).build());
-        course.addCourseBakery(CourseBakery.builder().visitOrder(2).bakery(b2).build());
-
-        when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
-        when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> courseService.getDrivingRoute(1L, null, null))
-                .isInstanceOf(CustomException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.ROUTE_NOT_FOUND);
-    }
-
-    @Test
     void getDrivingRoute_throws_whenAiCourseHasNoAiInfo() {
         User owner = owner(1L);
         Course course = aiPrivateCourse(1L, owner);
@@ -1159,28 +1146,6 @@ class CourseServiceTest {
                         .note("")
                         .build();
         ReflectionTestUtils.setField(b, "id", id);
-        return b;
-    }
-
-    private static Bakery nullCoordBakery(long id, String name) {
-        Bakery b =
-                Bakery.builder()
-                        .name(name)
-                        .address("addr")
-                        .region("서울")
-                        .latitude(0.0)
-                        .longitude(0.0)
-                        .phone("010")
-                        .rating(4.0)
-                        .mapLink("m")
-                        .dineInAvailable(true)
-                        .parkingAvailable(false)
-                        .drinkAvailable(true)
-                        .note("")
-                        .build();
-        ReflectionTestUtils.setField(b, "id", id);
-        ReflectionTestUtils.setField(b, "latitude", null);
-        ReflectionTestUtils.setField(b, "longitude", null);
         return b;
     }
 

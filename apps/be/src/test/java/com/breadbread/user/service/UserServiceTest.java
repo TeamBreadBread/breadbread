@@ -24,6 +24,7 @@ import com.breadbread.bakery.entity.Review;
 import com.breadbread.bakery.repository.BakeryImageRepository;
 import com.breadbread.bakery.repository.BakeryLikeRepository;
 import com.breadbread.bakery.repository.ReviewRepository;
+import com.breadbread.bakery.service.BakeryImageUrlResolver;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseBakery;
 import com.breadbread.course.entity.CourseLike;
@@ -74,6 +75,7 @@ class UserServiceTest {
     @Mock private CourseLikeRepository courseLikeRepository;
     @Mock private CourseRepository courseRepository;
     @Mock private RouteRepository routeRepository;
+    @Mock private BakeryImageUrlResolver bakeryImageUrlResolver;
 
     @InjectMocks private UserService userService;
 
@@ -734,6 +736,7 @@ class UserServiceTest {
                 BakeryImage.builder().imageUrl("thumb.jpg").displayOrder(1).bakery(bakery).build();
         when(bakeryImageRepository.findAllByBakeryIdInAndDisplayOrder(List.of(10L), 1))
                 .thenReturn(List.of(thumb));
+        when(bakeryImageUrlResolver.resolve(thumb)).thenReturn("thumb.jpg");
         when(bakeryLikeRepository.countByBakeryIdIn(List.of(10L)))
                 .thenReturn(Collections.singletonList(new Object[] {10L, 5L}));
 
@@ -820,6 +823,8 @@ class UserServiceTest {
                                         .displayOrder(1)
                                         .bakery(bakery)
                                         .build()));
+        when(bakeryImageUrlResolver.resolve(any(BakeryImage.class)))
+                .thenAnswer(inv -> ((BakeryImage) inv.getArgument(0)).getImageUrl());
         when(courseLikeRepository.countByCourseIdIn(List.of(1L)))
                 .thenReturn(Collections.singletonList(new Object[] {1L, 4L}));
         when(routeRepository.findLikedCourseIdsByUserId(List.of(1L), 3L)).thenReturn(List.of(1L));
