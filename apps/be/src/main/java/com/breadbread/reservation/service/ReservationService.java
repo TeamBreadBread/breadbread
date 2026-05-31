@@ -25,7 +25,6 @@ import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,11 +43,8 @@ public class ReservationService {
     private final PaymentRepository paymentRepository;
     private final BakeryImageUrlResolver bakeryImageUrlResolver;
 
-    private static final Set<ReservationStatus> ACTIVE_STATUSES =
+    static final Set<ReservationStatus> ACTIVE_STATUSES =
             Set.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED);
-
-    private static final Set<ReservationStatus> CONFIRMED_ONLY =
-            Set.of(ReservationStatus.CONFIRMED);
 
     @Transactional(readOnly = true)
     public List<ReservationSummaryResponse> getMyReservations(
@@ -87,31 +83,10 @@ public class ReservationService {
         validateDepartureDateTime(request.getDepartureDate(), request.getDepartureTime());
         validateDepartureLocation(request.getDeparture(), request.getLat(), request.getLng());
 
-        // 확정된 예약은 같은 출발 일시에 중복 불가 (코스 무관)
+        // 같은 출발 일시에 PENDING·CONFIRMED 예약 모두 중복 불가
         if (reservationRepository.existsByUserIdAndDepartureDateAndDepartureTimeAndStatusIn(
-                userId, request.getDepartureDate(), request.getDepartureTime(), CONFIRMED_ONLY)) {
+                userId, request.getDepartureDate(), request.getDepartureTime(), ACTIVE_STATUSES)) {
             throw new CustomException(ErrorCode.ALREADY_RESERVED);
-        }
-
-        // 결제 전 PENDING만 있는 경우: 결제 창을 닫고 다시 누르면 동일 요청이 반복되므로 기존 예약 ID 재사용
-        Optional<Reservation> pendingSameSlot =
-                reservationRepository
-                        .findFirstByUserIdAndDepartureDateAndDepartureTimeAndStatusOrderByIdDesc(
-                                userId,
-                                request.getDepartureDate(),
-                                request.getDepartureTime(),
-                                ReservationStatus.PENDING);
-        if (pendingSameSlot.isPresent()) {
-            Reservation pending = pendingSameSlot.get();
-            if (!pending.getCourse().getId().equals(request.getCourseId())) {
-                throw new CustomException(ErrorCode.ALREADY_RESERVED);
-            }
-            if (paymentRepository.existsByReservationIdAndStatus(
-                    pending.getId(), PaymentStatus.PAID)) {
-                throw new CustomException(ErrorCode.ALREADY_RESERVED);
-            }
-            log.info("예약 재사용(동일 일시·코스, 미결제): reservationId={}, userId={}", pending.getId(), userId);
-            return pending.getId();
         }
 
         Course course =
@@ -230,6 +205,18 @@ public class ReservationService {
         if (departureDateTime.isBefore(LocalDateTime.now())) {
             throw new CustomException(ErrorCode.INVALID_RESERVATION_TIME);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public UnavailableTimesResponse getUnavailableTimes(Long userId, LocalDate date) {
+        List<String> unavailableTimes =
+                reservationRepository
+                        .findBookedTimesByUserAndDate(userId, date, ACTIVE_STATUSES)
+                        .stream()
+                        .sorted()
+                        .map(t -> t.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")))
+                        .toList();
+        return new UnavailableTimesResponse(unavailableTimes);
     }
 
     private void validateDepartureLocation(String departure, Double lat, Double lng) {
