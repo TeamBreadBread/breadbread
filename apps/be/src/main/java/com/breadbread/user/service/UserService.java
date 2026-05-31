@@ -280,6 +280,7 @@ public class UserService {
                                                         b,
                                                         thumbnailMap.get(b.getId()),
                                                         likeCountMap.getOrDefault(b.getId(), 0L),
+                                                        0L,
                                                         true))
                                 .toList())
                 .total((int) likes.getTotalElements())

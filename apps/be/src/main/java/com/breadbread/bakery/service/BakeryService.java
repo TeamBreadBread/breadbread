@@ -135,6 +135,13 @@ public class BakeryService {
         Map<Long, Long> likeCountMap =
                 bakeryLikeRepository.countByBakeryIdIn(ids).stream()
                         .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+        Map<Long, Long> reviewCountMap =
+                ids.isEmpty()
+                        ? Collections.emptyMap()
+                        : reviewRepository.countByBakeryIdInAndActiveTrue(ids).stream()
+                                .collect(
+                                        Collectors.toMap(
+                                                row -> (Long) row[0], row -> (Long) row[1]));
         Set<Long> likeIds =
                 userId != null
                         ? new HashSet<>(
@@ -153,11 +160,50 @@ public class BakeryService {
                                                     b,
                                                     previews.isEmpty() ? null : previews.get(0),
                                                     likeCountMap.getOrDefault(b.getId(), 0L),
+                                                    reviewCountMap.getOrDefault(b.getId(), 0L),
                                                     likeIds.contains(b.getId()),
                                                     previews,
                                                     remainingPreviewByBakery.getOrDefault(
                                                             b.getId(), 0));
                                         })
+                                .toList())
+                .total((int) result.getTotalElements())
+                .page(pageable.getPageNumber())
+                .size(pageable.getPageSize())
+                .hasNext(result.hasNext())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public BakerySimpleListResponse searchSimple(BakerySearch search, Pageable pageable) {
+        Page<Bakery> result = bakeryRepository.search(search, pageable);
+        List<Bakery> bakeries = result.getContent();
+        List<Long> ids = bakeries.stream().map(Bakery::getId).toList();
+
+        Map<Long, String> thumbnailByBakery = new HashMap<>();
+        if (!ids.isEmpty()) {
+            List<BakeryImage> allImages =
+                    bakeryImageRepository.findAllByBakeryIdInOrderByDisplayOrderAsc(ids);
+            allImages.stream()
+                    .collect(Collectors.groupingBy(img -> img.getBakery().getId()))
+                    .forEach(
+                            (bakeryId, images) ->
+                                    images.stream()
+                                            .min(
+                                                    Comparator.comparingInt(
+                                                            BakeryImage::getDisplayOrder))
+                                            .map(bakeryImageUrlResolver::resolve)
+                                            .ifPresent(
+                                                    url -> thumbnailByBakery.put(bakeryId, url)));
+        }
+
+        return BakerySimpleListResponse.builder()
+                .bakeries(
+                        bakeries.stream()
+                                .map(
+                                        b ->
+                                                BakerySummarySimpleResponse.from(
+                                                        b, thumbnailByBakery.get(b.getId())))
                                 .toList())
                 .total((int) result.getTotalElements())
                 .page(pageable.getPageNumber())

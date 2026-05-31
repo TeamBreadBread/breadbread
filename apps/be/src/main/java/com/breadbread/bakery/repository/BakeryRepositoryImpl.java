@@ -36,6 +36,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
 
         BooleanExpression keyword = containKeyword(bakery, search.getKeyword());
         BooleanExpression region = eqRegion(bakery, search.getRegion());
+        BooleanExpression dong = eqDong(bakery, search.getDong());
         BooleanExpression active = bakery.active.isTrue();
         OrderSpecifier<Integer> openFirst = openFirstOrder(bakery, search.isOpen());
 
@@ -48,6 +49,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
                         active,
                         keyword,
                         region,
+                        dong,
                         openFirst,
                         pageable);
 
@@ -55,7 +57,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
                 queryFactory
                         .select(bakery.count())
                         .from(bakery)
-                        .where(active, keyword, region)
+                        .where(active, keyword, region, dong)
                         .fetchOne();
 
         return new PageImpl<>(content, pageable, total != null ? total : 0L);
@@ -70,6 +72,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
             BooleanExpression active,
             BooleanExpression keyword,
             BooleanExpression region,
+            BooleanExpression dong,
             OrderSpecifier<Integer> openFirst,
             Pageable pageable) {
 
@@ -79,7 +82,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
                             .selectFrom(bakery)
                             .leftJoin(review)
                             .on(review.bakery.eq(bakery).and(review.active.isTrue()))
-                            .where(active, keyword, region)
+                            .where(active, keyword, region, dong)
                             .groupBy(bakery.id)
                             .orderBy(openFirst, review.count().desc(), bakery.id.desc()),
                     pageable);
@@ -90,7 +93,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
                             .selectFrom(bakery)
                             .leftJoin(like)
                             .on(like.bakery.eq(bakery))
-                            .where(active, keyword, region)
+                            .where(active, keyword, region, dong)
                             .groupBy(bakery.id)
                             .orderBy(openFirst, like.count().desc(), bakery.id.desc()),
                     pageable);
@@ -98,7 +101,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
         return applyPaging(
                 queryFactory
                         .selectFrom(bakery)
-                        .where(active, keyword, region)
+                        .where(active, keyword, region, dong)
                         .orderBy(openFirst, defaultOrder(sort, bakery)[0], bakery.id.desc()),
                 pageable);
     }
@@ -172,6 +175,10 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
 
     private BooleanExpression eqRegion(QBakery bakery, String region) {
         return StringUtils.hasText(region) ? bakery.region.eq(region) : null;
+    }
+
+    private BooleanExpression eqDong(QBakery bakery, String dong) {
+        return StringUtils.hasText(dong) ? bakery.dong.eq(dong) : null;
     }
 
     @Override
