@@ -15,6 +15,12 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     long countByBakeryIdAndActiveTrue(Long bakeryId);
 
+    @Query(
+            "SELECT r.bakery.id, COUNT(r) FROM Review r "
+                    + "WHERE r.bakery.id IN :bakeryIds AND r.active = true "
+                    + "GROUP BY r.bakery.id")
+    List<Object[]> countByBakeryIdInAndActiveTrue(@Param("bakeryIds") List<Long> bakeryIds);
+
     Optional<Review> findByIdAndBakeryIdAndActiveTrue(Long id, Long bakeryId);
 
     @Query("SELECT AVG(r.rating) FROM Review r WHERE r.bakery.id = :bakeryId AND r.active = true")

@@ -11,4 +11,5 @@ public class BakerySearch {
     private BakerySortType sort;
     private boolean open;
     private String region;
+    private String dong;
 }

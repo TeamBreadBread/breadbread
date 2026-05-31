@@ -88,6 +88,7 @@ public class BakeryController {
                 description = "정렬 기준 (RATING: 별점순 / REVIEW_COUNT: 리뷰순 / LIKE_COUNT: 하트순)"),
         @Parameter(name = "open", description = "true 시 영업 중인 빵집을 상단에 우선 배치 (기본값: false)"),
         @Parameter(name = "region", description = "지역구 필터", example = "대전 중구"),
+        @Parameter(name = "dong", description = "행정동 필터", example = "은행동"),
         @Parameter(name = "page", description = "페이지 번호 (0부터 시작, 기본값: 0)"),
         @Parameter(name = "size", description = "페이지 크기 (기본값: 10)")
     })
@@ -98,6 +99,7 @@ public class BakeryController {
             @RequestParam(required = false) BakerySortType sort,
             @RequestParam(defaultValue = "false") boolean open,
             @RequestParam(required = false) String region,
+            @RequestParam(required = false) String dong,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Long userId = userDetails != null ? userDetails.getId() : null;
@@ -107,8 +109,41 @@ public class BakeryController {
                         .sort(sort)
                         .open(open)
                         .region(region)
+                        .dong(dong)
                         .build();
         return ApiResponse.ok(bakeryService.search(search, PageRequest.of(page, size), userId));
+    }
+
+    @Operation(summary = "빵집 목록 간략 조회", description = "id·이름·주소·별점·썸네일만 반환. 필터·정렬은 목록 조회와 동일하게 지원")
+    @Parameters({
+        @Parameter(name = "keyword", description = "빵집 이름 검색어", example = "성심당"),
+        @Parameter(
+                name = "sort",
+                description = "정렬 기준 (RATING: 별점순 / REVIEW_COUNT: 리뷰순 / LIKE_COUNT: 하트순)"),
+        @Parameter(name = "open", description = "true 시 영업 중인 빵집을 상단에 우선 배치 (기본값: false)"),
+        @Parameter(name = "region", description = "지역구 필터", example = "대전 중구"),
+        @Parameter(name = "dong", description = "행정동 필터", example = "은행동"),
+        @Parameter(name = "page", description = "페이지 번호 (0부터 시작, 기본값: 0)"),
+        @Parameter(name = "size", description = "페이지 크기 (기본값: 10)")
+    })
+    @GetMapping("/summary")
+    public ApiResponse<BakerySimpleListResponse> searchSimple(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) BakerySortType sort,
+            @RequestParam(defaultValue = "false") boolean open,
+            @RequestParam(required = false) String region,
+            @RequestParam(required = false) String dong,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        BakerySearch search =
+                BakerySearch.builder()
+                        .keyword(keyword)
+                        .sort(sort)
+                        .open(open)
+                        .region(region)
+                        .dong(dong)
+                        .build();
+        return ApiResponse.ok(bakeryService.searchSimple(search, PageRequest.of(page, size)));
     }
 
     @Operation(summary = "AI용 빵집 상세 조회", description = "평일/주말 혼잡도·영업시간 전체 반환, null 필드 제외")

@@ -91,25 +91,27 @@ public class GooglePlacesUpdateService {
             }
         }
 
-        log.info(
-                "[Places 동기화] 완료: bakeryId={}, dong={}, photoCount={}", bakeryId, dong, photoCount);
         return true;
     }
 
     public void syncAllBakeries() {
         List<Bakery> bakeries = bakeryRepository.findAllByActiveTrue();
-        log.info("[Places 동기화] 전체 동기화 시작: count={}", bakeries.size());
+        log.debug("[Places 동기화] 전체 동기화 시작: count={}", bakeries.size());
         int success = 0, skip = 0, fail = 0;
         for (Bakery bakery : bakeries) {
             try {
-                if (self.syncBakery(bakery.getId())) success++; // 프록시 경유로 REQUIRES_NEW 적용
+                if (self.syncBakery(bakery.getId())) success++;
                 else skip++;
             } catch (Exception e) {
                 log.error("[Places 동기화] 실패: bakeryId={}", bakery.getId(), e);
                 fail++;
             }
         }
-        log.info("[Places 동기화] 전체 동기화 완료: success={}, skip={}, fail={}", success, skip, fail);
+        if (fail > 0) {
+            log.warn("[Places 동기화] 전체 동기화 완료: success={}, skip={}, fail={}", success, skip, fail);
+        } else {
+            log.debug("[Places 동기화] 전체 동기화 완료: success={}, skip={}", success, skip);
+        }
     }
 
     @Scheduled(cron = "0 0 4 * * *", zone = "Asia/Seoul")
@@ -118,7 +120,7 @@ public class GooglePlacesUpdateService {
                 bakeryRepository.findAllByActiveTrue().stream().map(Bakery::getId).toList();
         if (bakeryIds.isEmpty()) return;
 
-        log.info("[Places 캐시 워밍] 시작: count={}", bakeryIds.size());
+        log.debug("[Places 캐시 워밍] 시작: count={}", bakeryIds.size());
         int success = 0, skip = 0, fail = 0;
 
         List<BakeryImage> allImages =
@@ -173,7 +175,11 @@ public class GooglePlacesUpdateService {
                 fail++;
             }
         }
-        log.info("[Places 캐시 워밍] 완료: success={}, skip={}, fail={}", success, skip, fail);
+        if (fail > 0) {
+            log.warn("[Places 캐시 워밍] 완료: success={}, skip={}, fail={}", success, skip, fail);
+        } else {
+            log.debug("[Places 캐시 워밍] 완료: success={}, skip={}", success, skip);
+        }
     }
 
     private String extractDong(PlaceResult place) {

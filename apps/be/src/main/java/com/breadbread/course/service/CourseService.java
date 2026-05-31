@@ -166,6 +166,7 @@ public class CourseService {
                                                 cb.getBakery(),
                                                 thumbnailMap.get(cb.getBakery().getId()),
                                                 0L,
+                                                0L,
                                                 false))
                         .toList();
 

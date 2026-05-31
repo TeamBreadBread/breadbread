@@ -63,8 +63,8 @@ public class GooglePlacesClient {
 
         var requestBodyWithBias =
                 new TextSearchRequest(
-                        name, new LocationBias(new Circle(new LatLng(lat, lng), 200.0)), 1);
-        var requestBodyWithoutBias = new TextSearchRequestWithoutBias(name, 1);
+                        name, new LocationBias(new Circle(new LatLng(lat, lng), 200.0)), 1, "ko");
+        var requestBodyWithoutBias = new TextSearchRequestWithoutBias(name, 1, "ko");
 
         try {
             PlacesSearchResponse response = doSearchText(requestBodyWithBias);
@@ -72,21 +72,16 @@ public class GooglePlacesClient {
         } catch (WebClientResponseException.BadRequest e) {
             // locationBias가 데이터와 맞지 않아 400이 발생하는 케이스가 있어, 바이어스 없이 1회 재시도한다.
             log.warn(
-                    "[구글 Places] 검색 400(locationBias 포함): name={}, lat={}, lng={}, body={}",
+                    "[구글 Places] 검색 400(locationBias 포함), bias 제거 후 재시도: name={}, lat={}, lng={}",
                     name,
                     lat,
-                    lng,
-                    e.getResponseBodyAsString());
+                    lng);
             try {
                 PlacesSearchResponse fallback = doSearchText(requestBodyWithoutBias);
                 return firstPlace(fallback, name);
             } catch (WebClientResponseException ex) {
                 log.error(
-                        "[구글 Places] 검색 재시도 실패: name={}, status={}, body={}",
-                        name,
-                        ex.getStatusCode(),
-                        ex.getResponseBodyAsString(),
-                        ex);
+                        "[구글 Places] 검색 재시도 실패: name={}, status={}", name, ex.getStatusCode(), ex);
                 return Optional.empty();
             } catch (Exception ex) {
                 log.error("[구글 Places] 검색 재시도 실패: name={}", name, ex);
@@ -182,9 +177,11 @@ public class GooglePlacesClient {
         return false;
     }
 
-    record TextSearchRequest(String textQuery, LocationBias locationBias, int maxResultCount) {}
+    record TextSearchRequest(
+            String textQuery, LocationBias locationBias, int maxResultCount, String languageCode) {}
 
-    record TextSearchRequestWithoutBias(String textQuery, int maxResultCount) {}
+    record TextSearchRequestWithoutBias(
+            String textQuery, int maxResultCount, String languageCode) {}
 
     record LocationBias(Circle circle) {}
 

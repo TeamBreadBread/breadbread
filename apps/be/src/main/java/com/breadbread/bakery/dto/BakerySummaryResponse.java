@@ -27,18 +27,20 @@ public class BakerySummaryResponse {
     private LocalTime openTime;
     private LocalTime closeTime;
     private Long likeCount;
+    private Long reviewCount;
     private boolean liked;
 
     public static BakerySummaryResponse from(
-            Bakery bakery, String thumbnailUrl, Long likeCount, boolean liked) {
+            Bakery bakery, String thumbnailUrl, Long likeCount, Long reviewCount, boolean liked) {
         List<String> previews = thumbnailUrl == null ? List.of() : List.of(thumbnailUrl);
-        return from(bakery, thumbnailUrl, likeCount, liked, previews, 0);
+        return from(bakery, thumbnailUrl, likeCount, reviewCount, liked, previews, 0);
     }
 
     public static BakerySummaryResponse from(
             Bakery bakery,
             String thumbnailUrl,
             Long likeCount,
+            Long reviewCount,
             boolean liked,
             List<String> previewImageUrls,
             int remainingPreviewImageCount) {
@@ -57,6 +59,7 @@ public class BakerySummaryResponse {
                 .openTime(bh != null ? bh.getTodayOpen() : null)
                 .closeTime(bh != null ? bh.getTodayClose() : null)
                 .likeCount(likeCount)
+                .reviewCount(reviewCount != null ? reviewCount : 0L)
                 .liked(liked)
                 .build();
     }
