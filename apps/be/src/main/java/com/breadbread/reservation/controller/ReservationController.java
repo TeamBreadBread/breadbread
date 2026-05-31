@@ -5,6 +5,7 @@ import com.breadbread.global.dto.ApiResponse;
 import com.breadbread.reservation.dto.CreateReservationRequest;
 import com.breadbread.reservation.dto.ReservationDetailResponse;
 import com.breadbread.reservation.dto.ReservationSummaryResponse;
+import com.breadbread.reservation.dto.UnavailableTimesResponse;
 import com.breadbread.reservation.dto.UpdateReservationRequest;
 import com.breadbread.reservation.entity.ReservationStatus;
 import com.breadbread.reservation.service.ReservationService;
@@ -12,8 +13,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -42,6 +45,19 @@ public class ReservationController {
     public ApiResponse<ReservationDetailResponse> getReservation(
             @PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ApiResponse.ok(reservationService.getReservation(userDetails.getId(), id));
+    }
+
+    @Operation(
+            summary = "예약 불가능한 시간 조회",
+            description = "해당 날짜에 본인이 이미 예약한 시간 목록을 반환합니다. (HH:mm 형식)")
+    @GetMapping("/unavailable-times")
+    public ApiResponse<UnavailableTimesResponse> getUnavailableTimes(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Parameter(description = "조회할 날짜 (yyyy-MM-dd)", example = "2025-07-01")
+                    @RequestParam
+                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                    LocalDate date) {
+        return ApiResponse.ok(reservationService.getUnavailableTimes(userDetails.getId(), date));
     }
 
     @Operation(summary = "예약 생성")

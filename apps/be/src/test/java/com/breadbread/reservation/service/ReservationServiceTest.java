@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -39,7 +38,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -156,79 +154,13 @@ class ReservationServiceTest {
     }
 
     @Test
-    void createReservation_throws_whenConfirmedReservationAlreadyExists() {
+    void createReservation_throws_whenActiveReservationAlreadyExists() {
         CreateReservationRequest request = createReservationRequest(3L);
         when(reservationRepository.existsByUserIdAndDepartureDateAndDepartureTimeAndStatusIn(
                         eq(10L),
                         eq(request.getDepartureDate()),
                         eq(request.getDepartureTime()),
-                        eq(Set.of(ReservationStatus.CONFIRMED))))
-                .thenReturn(true);
-
-        assertThatThrownBy(() -> reservationService.createReservation(10L, request))
-                .isInstanceOf(CustomException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.ALREADY_RESERVED);
-    }
-
-    @Test
-    void createReservation_reuses_pending_when_same_slot_and_course() {
-        CreateReservationRequest request = createReservationRequest(3L);
-        User owner = user(10L);
-        Course course = manualCourse(3L, "course");
-        Reservation pending = reservation(5L, owner, course);
-
-        stubNoConfirmedConflict(request);
-        when(reservationRepository
-                        .findFirstByUserIdAndDepartureDateAndDepartureTimeAndStatusOrderByIdDesc(
-                                10L,
-                                request.getDepartureDate(),
-                                request.getDepartureTime(),
-                                ReservationStatus.PENDING))
-                .thenReturn(Optional.of(pending));
-        when(paymentRepository.existsByReservationIdAndStatus(5L, PaymentStatus.PAID))
-                .thenReturn(false);
-
-        Long result = reservationService.createReservation(10L, request);
-
-        assertThat(result).isEqualTo(5L);
-        verify(reservationRepository, never()).save(any(Reservation.class));
-    }
-
-    @Test
-    void createReservation_throws_whenPendingReservationExistsForDifferentCourse() {
-        CreateReservationRequest request = createReservationRequest(3L);
-        Reservation pending = reservation(5L, user(10L), manualCourse(99L, "other-course"));
-
-        stubNoConfirmedConflict(request);
-        when(reservationRepository
-                        .findFirstByUserIdAndDepartureDateAndDepartureTimeAndStatusOrderByIdDesc(
-                                10L,
-                                request.getDepartureDate(),
-                                request.getDepartureTime(),
-                                ReservationStatus.PENDING))
-                .thenReturn(Optional.of(pending));
-
-        assertThatThrownBy(() -> reservationService.createReservation(10L, request))
-                .isInstanceOf(CustomException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.ALREADY_RESERVED);
-    }
-
-    @Test
-    void createReservation_throws_whenPendingReservationAlreadyHasPaidPayment() {
-        CreateReservationRequest request = createReservationRequest(3L);
-        Reservation pending = reservation(5L, user(10L), manualCourse(3L, "same-course"));
-
-        stubNoConfirmedConflict(request);
-        when(reservationRepository
-                        .findFirstByUserIdAndDepartureDateAndDepartureTimeAndStatusOrderByIdDesc(
-                                10L,
-                                request.getDepartureDate(),
-                                request.getDepartureTime(),
-                                ReservationStatus.PENDING))
-                .thenReturn(Optional.of(pending));
-        when(paymentRepository.existsByReservationIdAndStatus(5L, PaymentStatus.PAID))
+                        eq(ReservationService.ACTIVE_STATUSES)))
                 .thenReturn(true);
 
         assertThatThrownBy(() -> reservationService.createReservation(10L, request))
@@ -241,14 +173,7 @@ class ReservationServiceTest {
     void createReservation_throws_whenCourseMissing() {
         CreateReservationRequest request = createReservationRequest(3L);
 
-        stubNoConfirmedConflict(request);
-        when(reservationRepository
-                        .findFirstByUserIdAndDepartureDateAndDepartureTimeAndStatusOrderByIdDesc(
-                                10L,
-                                request.getDepartureDate(),
-                                request.getDepartureTime(),
-                                ReservationStatus.PENDING))
-                .thenReturn(Optional.empty());
+        stubNoActiveConflict(request);
         when(courseRepository.findByIdAndActiveTrue(3L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> reservationService.createReservation(10L, request))
@@ -262,14 +187,7 @@ class ReservationServiceTest {
         CreateReservationRequest request = createReservationRequest(3L);
         Course course = manualCourse(3L, "course");
 
-        stubNoConfirmedConflict(request);
-        when(reservationRepository
-                        .findFirstByUserIdAndDepartureDateAndDepartureTimeAndStatusOrderByIdDesc(
-                                10L,
-                                request.getDepartureDate(),
-                                request.getDepartureTime(),
-                                ReservationStatus.PENDING))
-                .thenReturn(Optional.empty());
+        stubNoActiveConflict(request);
         when(courseRepository.findByIdAndActiveTrue(3L)).thenReturn(Optional.of(course));
         when(userRepository.findById(10L)).thenReturn(Optional.empty());
 
@@ -285,14 +203,7 @@ class ReservationServiceTest {
         User owner = user(10L);
         Course course = manualCourse(3L, "course");
 
-        stubNoConfirmedConflict(request);
-        when(reservationRepository
-                        .findFirstByUserIdAndDepartureDateAndDepartureTimeAndStatusOrderByIdDesc(
-                                10L,
-                                request.getDepartureDate(),
-                                request.getDepartureTime(),
-                                ReservationStatus.PENDING))
-                .thenReturn(Optional.empty());
+        stubNoActiveConflict(request);
         when(courseRepository.findByIdAndActiveTrue(3L)).thenReturn(Optional.of(course));
         when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
         when(reservationRepository.save(any(Reservation.class)))
@@ -354,6 +265,28 @@ class ReservationServiceTest {
     }
 
     @Test
+    void getUnavailableTimes_예약없으면_빈리스트_반환() {
+        when(reservationRepository.findBookedTimesByUserAndDate(
+                        eq(10L), eq(NEXT_DATE), eq(ReservationService.ACTIVE_STATUSES)))
+                .thenReturn(List.of());
+
+        var result = reservationService.getUnavailableTimes(10L, NEXT_DATE);
+
+        assertThat(result.getUnavailableTimes()).isEmpty();
+    }
+
+    @Test
+    void getUnavailableTimes_PENDING과CONFIRMED_모두포함하여_정렬된_HHmm_반환() {
+        when(reservationRepository.findBookedTimesByUserAndDate(
+                        eq(10L), eq(NEXT_DATE), eq(ReservationService.ACTIVE_STATUSES)))
+                .thenReturn(List.of(LocalTime.of(13, 30), LocalTime.of(9, 0)));
+
+        var result = reservationService.getUnavailableTimes(10L, NEXT_DATE);
+
+        assertThat(result.getUnavailableTimes()).containsExactly("09:00", "13:30");
+    }
+
+    @Test
     void updateReservation_throws_whenReservationMissing() {
         when(reservationRepository.findById(1L)).thenReturn(Optional.empty());
 
@@ -407,7 +340,7 @@ class ReservationServiceTest {
                                 10L,
                                 UPDATED_DATE,
                                 UPDATED_TIME,
-                                Set.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED),
+                                ReservationService.ACTIVE_STATUSES,
                                 1L))
                 .thenReturn(true);
 
@@ -434,7 +367,7 @@ class ReservationServiceTest {
                                 10L,
                                 UPDATED_DATE,
                                 UPDATED_HALF_HOUR_TIME,
-                                Set.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED),
+                                ReservationService.ACTIVE_STATUSES,
                                 1L))
                 .thenReturn(false);
 
@@ -458,7 +391,7 @@ class ReservationServiceTest {
                                 10L,
                                 reservation.getDepartureDate(),
                                 reservation.getDepartureTime(),
-                                Set.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED),
+                                ReservationService.ACTIVE_STATUSES,
                                 1L))
                 .thenReturn(false);
 
@@ -480,7 +413,7 @@ class ReservationServiceTest {
                                 10L,
                                 reservation.getDepartureDate(),
                                 reservation.getDepartureTime(),
-                                Set.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED),
+                                ReservationService.ACTIVE_STATUSES,
                                 1L))
                 .thenReturn(false);
 
@@ -546,12 +479,14 @@ class ReservationServiceTest {
                 .isEqualTo(ErrorCode.RESERVATION_CANCEL_FAILED);
     }
 
-    private void stubNoConfirmedConflict(CreateReservationRequest request) {
+    // ───────────────────────────── helpers ─────────────────────────────
+
+    private void stubNoActiveConflict(CreateReservationRequest request) {
         when(reservationRepository.existsByUserIdAndDepartureDateAndDepartureTimeAndStatusIn(
                         eq(10L),
                         eq(request.getDepartureDate()),
                         eq(request.getDepartureTime()),
-                        eq(Set.of(ReservationStatus.CONFIRMED))))
+                        eq(ReservationService.ACTIVE_STATUSES)))
                 .thenReturn(false);
     }
 

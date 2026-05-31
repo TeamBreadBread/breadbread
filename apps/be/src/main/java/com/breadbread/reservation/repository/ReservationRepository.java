@@ -30,12 +30,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             Collection<ReservationStatus> statuses,
             Long id);
 
-    Optional<Reservation> findFirstByUserIdAndDepartureDateAndDepartureTimeAndStatusOrderByIdDesc(
-            Long userId,
-            LocalDate departureDate,
-            LocalTime departureTime,
-            ReservationStatus status);
-
     @Query(
             "SELECT DISTINCT r FROM Reservation r "
                     + "JOIN FETCH r.course c "
@@ -53,4 +47,19 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                     + "WHERE r.departureDate = :date AND r.status = :status")
     List<Reservation> findTodayConfirmedWithCourse(
             @Param("date") LocalDate date, @Param("status") ReservationStatus status);
+
+    @Query(
+            "SELECT r FROM Reservation r "
+                    + "JOIN FETCH r.user "
+                    + "WHERE r.departureDate < :today AND r.status = :status")
+    List<Reservation> findExpiredPending(
+            @Param("today") LocalDate today, @Param("status") ReservationStatus status);
+
+    @Query(
+            "SELECT DISTINCT r.departureTime FROM Reservation r "
+                    + "WHERE r.user.id = :userId AND r.departureDate = :date AND r.status IN :statuses")
+    List<LocalTime> findBookedTimesByUserAndDate(
+            @Param("userId") Long userId,
+            @Param("date") LocalDate date,
+            @Param("statuses") Collection<ReservationStatus> statuses);
 }
