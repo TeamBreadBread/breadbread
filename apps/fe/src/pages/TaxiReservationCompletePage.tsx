@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { getCourseDetail } from "@/api/courses";
 import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
 import { cn } from "@/utils/cn";
+import ImgCelebrate from "@/assets/icons/Img_Celebrate.svg";
 
 export interface TaxiReservationCompletePageProps {
   departureDate: string;
@@ -33,7 +34,14 @@ function formatDisplayDate(iso: string) {
 }
 
 function SuccessIllustration() {
-  return <div className="h-[100px] w-[100px] shrink-0 bg-[#eeeff1]" aria-hidden />;
+  return (
+    <img
+      src={ImgCelebrate}
+      alt=""
+      aria-hidden
+      className="h-[100px] w-[100px] shrink-0 object-contain"
+    />
+  );
 }
 
 const FALLBACK_AMOUNT = 30_000;
@@ -206,7 +214,7 @@ export default function TaxiReservationCompletePage({
           <button
             type="button"
             onClick={() => navigate({ to: "/home" })}
-            className="flex h-[56px] flex-1 flex-row items-center justify-center overflow-hidden rounded-[12px] bg-[#555d6d] px-[20px] py-[16px] font-['Pretendard',sans-serif] text-[18px] font-bold leading-[24px] tracking-normal text-white"
+            className="flex h-[56px] flex-1 flex-row items-center justify-center overflow-hidden rounded-[12px] bg-gray-900 px-[20px] py-[16px] font-['Pretendard',sans-serif] text-[18px] font-bold leading-[24px] tracking-normal text-white"
           >
             홈으로 돌아가기
           </button>

@@ -259,8 +259,8 @@ export default function TaxiPaymentPage({
                   type="button"
                   onClick={() => setSelectedMethod(label)}
                   className={cn(
-                    "flex min-h-[64px] w-full flex-col items-center justify-center rounded-[8px] border border-solid px-[20px] pt-[10px] pb-[12px] text-center transition-colors",
-                    selected ? "border-[#b0b3ba] bg-[#eeeff1]" : "border-[#f3f4f5] bg-[#f7f8f9]",
+                    "flex min-h-[64px] w-full flex-col items-center justify-center rounded-[8px] border border-solid bg-white px-[20px] pt-[10px] pb-[12px] text-center transition-colors",
+                    selected ? "border-[#2a3038]" : "border-[#dcdee3]",
                   )}
                 >
                   <span className="w-full font-['Pretendard',sans-serif] text-[16px] font-medium leading-[22px] tracking-normal text-[#2a3038]">
@@ -454,7 +454,7 @@ export default function TaxiPaymentPage({
             className={cn(
               "flex h-[56px] flex-1 flex-row items-center justify-center gap-[8px] overflow-hidden rounded-[12px] px-[20px] py-[16px] font-['Pretendard',sans-serif] text-[18px] leading-[24px] tracking-normal transition-colors",
               isPayEnabled
-                ? "cursor-pointer bg-gray-800 text-gray-00"
+                ? "cursor-pointer bg-orange-600 text-gray-00"
                 : "cursor-not-allowed bg-[#f3f4f5] text-[#d1d3d8]",
             )}
           >

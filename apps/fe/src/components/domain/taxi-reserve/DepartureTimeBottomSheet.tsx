@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
 import { cn } from "@/utils/cn";
@@ -40,9 +40,10 @@ function startOfLocalDay(d: Date) {
 
 const AM_SLOTS = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30"] as const;
 
+/** 오후는 16:30까지만 제공 */
 const PM_SLOTS: string[] = (() => {
   const list: string[] = [];
-  for (let h = 12; h <= 23; h++) {
+  for (let h = 12; h <= 16; h++) {
     list.push(`${String(h).padStart(2, "0")}:00`);
     list.push(`${String(h).padStart(2, "0")}:30`);
   }
@@ -79,8 +80,8 @@ function TimeChip({
       disabled={disabled}
       onClick={onPick}
       className={cn(
-        "flex min-h-0 min-w-0 flex-1 flex-row items-center justify-center overflow-hidden rounded-[8px] border border-solid border-[#dcdee3] px-[10px] py-[12px]",
-        selected && "border-transparent bg-[#555d6d]",
+        "flex min-h-0 w-full min-w-0 flex-row items-center justify-center overflow-hidden rounded-[8px] border border-solid border-[#dcdee3] px-[10px] py-[12px]",
+        selected && "border-transparent bg-orange-600",
         disabled && "cursor-not-allowed",
       )}
     >
@@ -98,7 +99,7 @@ function TimeChip({
   );
 }
 
-function SlotRow({
+function SlotGrid({
   slots,
   departureDate,
   pending,
@@ -110,7 +111,7 @@ function SlotRow({
   setPending: (v: string) => void;
 }) {
   return (
-    <div className="flex w-full flex-row items-center justify-start gap-[8px] overflow-hidden">
+    <div className="grid w-full grid-cols-4 gap-[8px]">
       {slots.map((slot) => (
         <TimeChip
           key={slot}
@@ -149,15 +150,6 @@ export default function DepartureTimeBottomSheet({
     }
     wasOpenRef.current = open;
   }, [open, value, departureDate]);
-
-  const pmRows = useMemo(() => {
-    const chunk = 6;
-    const rows: string[][] = [];
-    for (let i = 0; i < PM_SLOTS.length; i += chunk) {
-      rows.push(PM_SLOTS.slice(i, i + chunk));
-    }
-    return rows;
-  }, []);
 
   const handleConfirm = () => {
     if (!pending) return;
@@ -223,7 +215,7 @@ export default function DepartureTimeBottomSheet({
                   <div className="w-full font-['Pretendard',sans-serif] text-[14px] font-medium leading-[19px] tracking-normal text-[#555d6d]">
                     오전
                   </div>
-                  <SlotRow
+                  <SlotGrid
                     slots={AM_SLOTS}
                     departureDate={departureDate}
                     pending={pending}
@@ -235,17 +227,12 @@ export default function DepartureTimeBottomSheet({
                   <div className="w-full font-['Pretendard',sans-serif] text-[14px] font-medium leading-[19px] tracking-normal text-[#555d6d]">
                     오후
                   </div>
-                  <div className="flex w-full flex-col items-start justify-start gap-[8px]">
-                    {pmRows.map((row) => (
-                      <SlotRow
-                        key={row.join("-")}
-                        slots={row}
-                        departureDate={departureDate}
-                        pending={pending}
-                        setPending={setPending}
-                      />
-                    ))}
-                  </div>
+                  <SlotGrid
+                    slots={PM_SLOTS}
+                    departureDate={departureDate}
+                    pending={pending}
+                    setPending={setPending}
+                  />
                 </div>
               </div>
             </div>
@@ -260,7 +247,7 @@ export default function DepartureTimeBottomSheet({
                 className={cn(
                   "flex h-[56px] flex-1 flex-row items-center justify-center overflow-hidden rounded-[12px] px-[20px] py-[16px]",
                   pending
-                    ? "cursor-pointer bg-[#555d6d]"
+                    ? "cursor-pointer bg-orange-600"
                     : "cursor-not-allowed bg-[#dcdee3] opacity-60",
                 )}
               >
