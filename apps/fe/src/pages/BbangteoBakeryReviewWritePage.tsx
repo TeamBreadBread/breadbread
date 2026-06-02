@@ -253,7 +253,7 @@ export default function BbangteoBakeryReviewWritePage({
         </main>
       </div>
 
-      <div className="fixed bottom-0 left-1/2 z-40 flex h-[44px] w-full max-w-[402px] -translate-x-1/2 items-center border-t border-[#eeeff1] bg-white px-[14px] md:max-w-[744px]">
+      <div className="fixed bottom-0 left-1/2 z-40 flex h-[44px] w-full max-w-[402px] -translate-x-1/2 items-center border-t border-[#eeeff1] bg-white px-[14px]">
         <button
           type="button"
           className="flex h-[28px] items-center gap-[6px] rounded-[8px] border border-[#dcdee3] px-[8px]"

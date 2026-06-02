@@ -329,7 +329,7 @@ const BbangteoBoardWritePage = ({ editPostId }: BbangteoBoardWritePageProps) => 
             </div>
           ) : null}
         </main>
-        <div className="fixed bottom-[56px] left-1/2 z-40 flex w-full max-w-[402px] -translate-x-1/2 flex-col bg-white pb-[env(safe-area-inset-bottom,0)] sm:bottom-[60px] md:max-w-[744px]">
+        <div className="fixed bottom-[56px] left-1/2 z-40 flex w-full max-w-[402px] -translate-x-1/2 flex-col bg-white pb-[env(safe-area-inset-bottom,0)] sm:bottom-[60px]">
           <div className="flex items-center justify-start border-t border-[#eeeff1] bg-white px-[14px] py-[8px]">
             <button
               type="button"

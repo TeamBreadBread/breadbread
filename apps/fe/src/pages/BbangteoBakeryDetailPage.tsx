@@ -768,7 +768,7 @@ const BbangteoBakeryDetailPage = ({
         </main>
       </div>
       {showToast ? (
-        <div className="fixed bottom-[68px] left-1/2 z-50 w-full max-w-[402px] -translate-x-1/2 sm:bottom-[72px] md:max-w-[744px]">
+        <div className="fixed bottom-[68px] left-1/2 z-50 w-full max-w-[402px] -translate-x-1/2 sm:bottom-[72px]">
           <ToastBanner message="후기가 업로드 되었습니다." />
         </div>
       ) : null}

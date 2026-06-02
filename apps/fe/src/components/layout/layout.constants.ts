@@ -1,7 +1,7 @@
-export const APP_SHELL_MAX_WIDTH = "max-w-[744px]";
+export const APP_SHELL_MAX_WIDTH = "max-w-[402px]";
 export const MOBILE_BASE_MAX_WIDTH = "max-w-[402px]";
 export const MOBILE_BASE_MIN_HEIGHT = "min-h-[874px]";
-export const RESPONSIVE_FRAME_WIDTH = "w-full max-w-[402px] md:max-w-[744px]";
+export const RESPONSIVE_FRAME_WIDTH = "w-full max-w-[402px]";
 
 /** `globals.css` body safe-top 과 맞춰 노치 아래에 고정 */
 export const FIXED_TOP_BAR_TOP_CLASS = "top-[max(env(safe-area-inset-top),0px)]";

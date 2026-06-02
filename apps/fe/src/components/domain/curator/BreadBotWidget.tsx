@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { sendCuratorChat } from "@/api/curator";
+import { getMyReservations, getReservationById, type ReservationSummary } from "@/api/reservation";
+import { getCurrentTour, startTour } from "@/api/tours";
 import { getErrorMessage } from "@/api/types/common";
+import { isLoggedIn } from "@/lib/auth/isLoggedIn";
 import type { BotBubble } from "@/lib/auth/LoginRequiredContext";
 import { cn } from "@/utils/cn";
 import BreadDefaultLogo from "@/assets/icons/BreadDefaultLogo.svg";
@@ -62,6 +66,68 @@ type ChatMessage = {
   actions?: ChatAction[];
 };
 
+/** 예약 알림 / 진행 중 투어 이어가기 안내 말풍선 */
+type TourBubble = {
+  courseId: number;
+  courseName: string;
+  mode: "start" | "resume";
+  /** 단계별 안내 문구(없으면 mode 기본 문구) */
+  text?: string;
+  dismissKey: string;
+};
+
+/** "YYYY-MM-DD" + "HH:mm" → epoch ms (파싱 실패 시 null) */
+function reservationStartMs(date: string, time: string): number | null {
+  if (!date) return null;
+  const hhmm = (time || "00:00").slice(0, 5);
+  const ms = new Date(`${date}T${hhmm}:00`).getTime();
+  return Number.isNaN(ms) ? null : ms;
+}
+
+/** "HH:mm" 형태로 출발 시간 표기 */
+function formatHhmm(time: string): string {
+  return (time || "").slice(0, 5);
+}
+
+/** 두 시각이 같은 로컬 날짜인지 */
+function isSameLocalDay(a: number, b: number): boolean {
+  const d1 = new Date(a);
+  const d2 = new Date(b);
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
+}
+
+/** 출발 시간 도달 후 안내/자동 시작을 유지할 시간(이 시간을 넘기면 동작하지 않음) */
+const TOUR_REMINDER_WINDOW_MS = 3 * 60 * 60 * 1000;
+const MINUTE_MS = 60 * 1000;
+
+/** 단계별 알림을 1회만 띄우기 위한 sessionStorage 기반 dedup */
+const TOUR_FIRED_KEY = "bbang_tour_reminders_fired";
+function hasFiredReminder(key: string): boolean {
+  try {
+    const raw = sessionStorage.getItem(TOUR_FIRED_KEY);
+    if (!raw) return false;
+    return (JSON.parse(raw) as string[]).includes(key);
+  } catch {
+    return false;
+  }
+}
+function markFiredReminder(key: string): void {
+  try {
+    const raw = sessionStorage.getItem(TOUR_FIRED_KEY);
+    const list = raw ? (JSON.parse(raw) as string[]) : [];
+    if (!list.includes(key)) {
+      list.push(key);
+      sessionStorage.setItem(TOUR_FIRED_KEY, JSON.stringify(list));
+    }
+  } catch {
+    // 저장 실패 시 무시 (중복 알림이 한 번 더 뜰 수 있음)
+  }
+}
+
 type PersistedChat = { messages: ChatMessage[]; conversationId?: string };
 
 /** localStorage에서 저장된 대화를 복원한다(없거나 깨지면 빈 값). */
@@ -99,6 +165,8 @@ export default function BreadBotWidget({
   onGoLogin,
   onCloseBubble,
 }: BreadBotWidgetProps) {
+  const navigate = useNavigate();
+  const onTourPage = useRouterState({ select: (s) => s.location.pathname.startsWith("/tour") });
   const [open, setOpen] = useState(false);
   // 팝업 내부 화면: 챗봇 홈 / 채팅
   const [view, setView] = useState<"home" | "chat">("home");
@@ -113,11 +181,119 @@ export default function BreadBotWidget({
   const [changeBubble, setChangeBubble] = useState<{ text: string; actions: ChatAction[] } | null>(
     null,
   );
+  // 예약 출발 시간 알림 / 진행 중 투어 이어가기 말풍선
+  const [tourBubble, setTourBubble] = useState<TourBubble | null>(null);
+  const dismissedTourRef = useRef<Set<string>>(new Set());
+  const navigateRef = useRef(navigate);
   const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    navigateRef.current = navigate;
+  });
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading, open]);
+
+  // 진행 중 투어 / 예약 단계별 알림 / 예약 시간 도달 시 자동 시작
+  useEffect(() => {
+    if (!isLoggedIn()) return;
+    let cancelled = false;
+
+    const check = async () => {
+      try {
+        // 1) 진행 중 투어가 있으면 "이어서 진행하기"
+        const current = await getCurrentTour();
+        if (cancelled) return;
+        if (current && current.status === "IN_PROGRESS") {
+          const key = `resume:${current.courseId}`;
+          if (!dismissedTourRef.current.has(key)) {
+            setTourBubble({
+              courseId: current.courseId,
+              courseName: "",
+              mode: "resume",
+              dismissKey: key,
+            });
+          }
+          return;
+        }
+
+        // 2) 당일 가장 임박한 확정/대기 예약 찾기 (출발 후 3시간 이내까지)
+        const reservations = await getMyReservations();
+        if (cancelled) return;
+        const now = Date.now();
+        let candidate: { r: ReservationSummary; start: number } | null = null;
+        for (const r of reservations) {
+          if (r.status !== "CONFIRMED" && r.status !== "PENDING") continue;
+          const start = reservationStartMs(r.departureDate, r.departureTime);
+          if (start == null) continue;
+          if (now > start + TOUR_REMINDER_WINDOW_MS) continue;
+          if (!isSameLocalDay(now, start)) continue;
+          if (!candidate || start < candidate.start) candidate = { r, start };
+        }
+        if (!candidate) {
+          setTourBubble(null);
+          return;
+        }
+
+        const { r, start } = candidate;
+        const id = r.id;
+        const minutesUntil = (start - now) / MINUTE_MS;
+
+        // 3) 예약 시간 도달 → 투어 자동 시작 후 투어 화면으로 이동 (1회)
+        if (now >= start) {
+          const autoKey = `autostart:${id}`;
+          if (!hasFiredReminder(autoKey)) {
+            markFiredReminder(autoKey);
+            const detail = await getReservationById(id);
+            if (cancelled) return;
+            await startTour(detail.course.id).catch(() => undefined);
+            navigateRef.current({ to: "/tour", search: { courseId: detail.course.id } });
+          }
+          return;
+        }
+
+        // 4) 출발 전 단계별 알림 (10분 전 > 1시간 전 > 당일 오전 8시)
+        let stageKey: string | null = null;
+        let buildText: ((courseName: string) => string) | null = null;
+        if (minutesUntil <= 10) {
+          stageKey = `t10:${id}`;
+          buildText = (name) =>
+            `'${name || "코스"}' 출발 10분 전이에요! ⏰\n예약 시간이 되면 빵 투어가 자동으로 시작돼요.`;
+        } else if (minutesUntil <= 60) {
+          stageKey = `t60:${id}`;
+          buildText = (name) => `'${name || "코스"}' 출발 1시간 전이에요! 🚕\n슬슬 준비해 주세요.`;
+        } else if (new Date(now).getHours() >= 8) {
+          stageKey = `morning:${id}`;
+          buildText = (name) =>
+            `오늘 '${name || "코스"}' 빵 투어가 있어요! 🍞\n출발 시간: ${formatHhmm(r.departureTime)}`;
+        }
+
+        if (!stageKey || !buildText) return; // 아직 오전 8시 전 등 — 알림 단계 아님
+        if (hasFiredReminder(stageKey) || dismissedTourRef.current.has(stageKey)) return;
+
+        const detail = await getReservationById(id);
+        if (cancelled) return;
+        markFiredReminder(stageKey);
+        setTourBubble({
+          courseId: detail.course.id,
+          courseName: detail.course.name,
+          mode: "start",
+          text: buildText(detail.course.name),
+          dismissKey: stageKey,
+        });
+      } catch {
+        // 네트워크/권한 등 오류는 조용히 무시
+      }
+    };
+
+    void check();
+    const timer = setInterval(() => void check(), 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, []);
 
   // 대화 내용을 localStorage에 영속화(새로고침/재방문 시 복원)
   useEffect(() => {
@@ -201,15 +377,33 @@ export default function BreadBotWidget({
     sendMessage(reply);
   };
 
-  // 로그인/안내 말풍선이 우선. 그 외에는 변경 알림 말풍선을 노출(채팅 닫혀 있을 때).
+  // 예약/투어 말풍선의 버튼 클릭 → (필요 시) 투어 시작 후 투어 화면으로 이동
+  const handleTourStart = async () => {
+    if (!tourBubble) return;
+    const { courseId: tourCourseId, mode } = tourBubble;
+    setTourBubble(null);
+    if (mode === "start") {
+      // 이미 진행 중(409)이면 무시하고 그대로 투어 화면으로 이동
+      await startTour(tourCourseId).catch(() => undefined);
+    }
+    void navigate({ to: "/tour", search: { courseId: tourCourseId } });
+  };
+
+  const dismissTourBubble = () => {
+    if (tourBubble) dismissedTourRef.current.add(tourBubble.dismissKey);
+    setTourBubble(null);
+  };
+
+  // 로그인/안내 말풍선이 우선, 그다음 예약/투어 알림, 마지막으로 변경 알림 (채팅 닫혀 있을 때).
   const showBubble = bubble !== null && !open;
-  const showChangeBubble = bubble === null && changeBubble !== null && !open;
+  const showTourBubble = bubble === null && tourBubble !== null && !open && !onTourPage;
+  const showChangeBubble = bubble === null && tourBubble === null && changeBubble !== null && !open;
 
   return (
     <>
       {open ? (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[71] mx-auto flex w-full max-w-[744px] justify-end">
-          <div className="pointer-events-auto fixed right-[20px] bottom-[172px] flex h-[60vh] max-h-[520px] w-[min(360px,calc(100%-40px))] flex-col overflow-hidden rounded-r4 bg-white shadow-[0_8px_32px_rgba(0,0,0,0.18)] md:right-[calc((100vw-744px)/2+20px)]">
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[71] mx-auto flex w-full max-w-[402px] justify-end">
+          <div className="pointer-events-auto fixed right-[20px] bottom-[172px] flex h-[60vh] max-h-[520px] w-[min(360px,calc(100%-40px))] flex-col overflow-hidden rounded-r4 bg-white shadow-[0_8px_32px_rgba(0,0,0,0.18)] md:right-[calc((100vw-402px)/2+20px)]">
             <div className="flex items-center gap-x2 border-b border-gray-200 px-x4 py-x3">
               {view === "chat" ? (
                 <button
@@ -402,8 +596,8 @@ export default function BreadBotWidget({
 
       {/* 말풍선 (채팅이 닫혀 있을 때만) */}
       {showBubble ? (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[72] mx-auto w-full max-w-[744px]">
-          <div className="pointer-events-auto fixed right-[20px] bottom-[170px] w-[min(280px,calc(100%-40px))] rounded-r4 bg-white p-x4 shadow-[0_8px_28px_rgba(0,0,0,0.2)] md:right-[calc((100vw-744px)/2+20px)]">
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[72] mx-auto w-full max-w-[402px]">
+          <div className="pointer-events-auto fixed right-[20px] bottom-[170px] w-[min(280px,calc(100%-40px))] rounded-r4 bg-white p-x4 shadow-[0_8px_28px_rgba(0,0,0,0.2)] md:right-[calc((100vw-402px)/2+20px)]">
             <button
               type="button"
               aria-label="안내 닫기"
@@ -442,10 +636,46 @@ export default function BreadBotWidget({
         </div>
       ) : null}
 
+      {/* 예약 출발 시간 알림 / 진행 중 투어 이어가기 말풍선 */}
+      {showTourBubble && tourBubble ? (
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[72] mx-auto w-full max-w-[402px]">
+          <div className="pointer-events-auto fixed right-[20px] bottom-[170px] w-[min(280px,calc(100%-40px))] rounded-r4 bg-white p-x4 shadow-[0_8px_28px_rgba(0,0,0,0.2)] md:right-[calc((100vw-402px)/2+20px)]">
+            <button
+              type="button"
+              aria-label="알림 닫기"
+              onClick={dismissTourBubble}
+              className="absolute right-x2 top-x2 flex h-x6 w-x6 items-center justify-center rounded-full text-size-3 text-gray-400 hover:bg-gray-100"
+            >
+              ✕
+            </button>
+
+            <p className="whitespace-pre-wrap pr-x4 font-pretendard text-size-3 leading-t5 text-gray-1000">
+              {tourBubble.text ??
+                (tourBubble.mode === "start"
+                  ? `예약하신 '${tourBubble.courseName || "코스"}' 출발 시간이에요!\n지금 빵 투어를 시작할까요? 🍞`
+                  : "진행 중인 빵 투어가 있어요.\n이어서 진행할까요?")}
+            </p>
+
+            <div className="mt-x3 flex flex-col gap-x2">
+              <button
+                type="button"
+                onClick={() => void handleTourStart()}
+                className="h-[40px] w-full rounded-r2 bg-orange-600 font-pretendard text-size-3 font-bold text-gray-00"
+              >
+                {tourBubble.mode === "start" ? "코스 시작" : "이어서 진행하기"}
+              </button>
+            </div>
+
+            {/* 봇을 가리키는 꼬리 */}
+            <div className="absolute -bottom-[7px] right-[28px] h-[14px] w-[14px] rotate-45 bg-white shadow-[3px_3px_6px_rgba(0,0,0,0.06)]" />
+          </div>
+        </div>
+      ) : null}
+
       {/* 코스 변경/혼잡 알림 말풍선 (채팅이 닫혀 있을 때) */}
       {showChangeBubble && changeBubble ? (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[72] mx-auto w-full max-w-[744px]">
-          <div className="pointer-events-auto fixed right-[20px] bottom-[170px] w-[min(280px,calc(100%-40px))] rounded-r4 bg-white p-x4 shadow-[0_8px_28px_rgba(0,0,0,0.2)] md:right-[calc((100vw-744px)/2+20px)]">
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[72] mx-auto w-full max-w-[402px]">
+          <div className="pointer-events-auto fixed right-[20px] bottom-[170px] w-[min(280px,calc(100%-40px))] rounded-r4 bg-white p-x4 shadow-[0_8px_28px_rgba(0,0,0,0.2)] md:right-[calc((100vw-402px)/2+20px)]">
             <button
               type="button"
               aria-label="알림 닫기"
@@ -482,12 +712,12 @@ export default function BreadBotWidget({
         </div>
       ) : null}
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[70] mx-auto w-full max-w-[744px]">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[70] mx-auto w-full max-w-[402px]">
         <button
           type="button"
           aria-label={open ? "AI 큐레이터 닫기" : "AI 큐레이터 채팅 열기"}
           onClick={() => (open ? setOpen(false) : openChat())}
-          className="pointer-events-auto fixed right-[20px] bottom-[104px] z-[70] flex h-[56px] w-[56px] items-center justify-center rounded-full bg-orange-200 shadow-[0_4px_12px_rgba(0,0,0,0.18)] md:right-[calc((100vw-744px)/2+20px)]"
+          className="pointer-events-auto fixed right-[20px] bottom-[104px] z-[70] flex h-[56px] w-[56px] items-center justify-center rounded-full bg-orange-200 shadow-[0_4px_12px_rgba(0,0,0,0.18)] md:right-[calc((100vw-402px)/2+20px)]"
         >
           <img
             src={BreadDefaultLogo}

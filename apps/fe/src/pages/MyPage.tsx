@@ -125,6 +125,7 @@ export default function MyPage() {
             <MyProfileCard
               nickname={displayName}
               email={isProfileLoading ? "불러오는 중..." : displayEmail || "—"}
+              profileImageUrl={profile?.profileImageUrl?.trim() || undefined}
               onClick={goToAccountSettings}
             />
 
