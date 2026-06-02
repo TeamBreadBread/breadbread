@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
 import { cn } from "@/utils/cn";
@@ -9,6 +9,8 @@ export interface DepartureTimeBottomSheetProps {
   value: string;
   /** `yyyy-mm-dd` — when today, past 30분 단위 슬롯 비활성 */
   departureDate: string;
+  /** 본인이 이미 예약한 시간(`HH:mm`) — 중복 예약 방지로 비활성 */
+  unavailableTimes?: string[];
   onClose: () => void;
   onConfirm: (hhmm: string) => void;
 }
@@ -50,7 +52,13 @@ const PM_SLOTS: string[] = (() => {
   return list;
 })();
 
-function isSlotDisabled(departureDate: string, slot: string): boolean {
+function normalizeHhmm(value: string): string {
+  const [h, m] = value.split(":");
+  if (h == null || m == null) return value.trim();
+  return `${h.trim().padStart(2, "0")}:${m.trim().padStart(2, "0")}`;
+}
+
+function isPastSlot(departureDate: string, slot: string): boolean {
   if (!departureDate) return false;
   const day = parseIsoLocal(departureDate);
   if (!day) return false;
@@ -61,6 +69,15 @@ function isSlotDisabled(departureDate: string, slot: string): boolean {
   const at = new Date(day);
   at.setHours(hh, mm, 0, 0);
   return at.getTime() < Date.now();
+}
+
+function isSlotDisabled(
+  departureDate: string,
+  slot: string,
+  unavailableSet?: Set<string>,
+): boolean {
+  if (unavailableSet?.has(normalizeHhmm(slot))) return true;
+  return isPastSlot(departureDate, slot);
 }
 
 function TimeChip({
@@ -102,11 +119,13 @@ function TimeChip({
 function SlotGrid({
   slots,
   departureDate,
+  unavailableSet,
   pending,
   setPending,
 }: {
   slots: readonly string[] | string[];
   departureDate: string;
+  unavailableSet: Set<string>;
   pending: string;
   setPending: (v: string) => void;
 }) {
@@ -117,7 +136,7 @@ function SlotGrid({
           key={slot}
           slot={slot}
           selected={pending === slot}
-          disabled={isSlotDisabled(departureDate, slot)}
+          disabled={isSlotDisabled(departureDate, slot, unavailableSet)}
           onPick={() => setPending(slot)}
         />
       ))}
@@ -129,27 +148,33 @@ export default function DepartureTimeBottomSheet({
   open,
   value,
   departureDate,
+  unavailableTimes,
   onClose,
   onConfirm,
 }: DepartureTimeBottomSheetProps) {
   const [pending, setPending] = useState("");
   const wasOpenRef = useRef(false);
 
+  const unavailableSet = useMemo(
+    () => new Set((unavailableTimes ?? []).map(normalizeHhmm)),
+    [unavailableTimes],
+  );
+
   useEffect(() => {
     if (open && !wasOpenRef.current) {
       queueMicrotask(() => {
         let next = value && value.length > 0 ? value : "";
-        if (next && isSlotDisabled(departureDate, next)) next = "";
+        if (next && isSlotDisabled(departureDate, next, unavailableSet)) next = "";
         setPending(next);
       });
     }
     if (open && wasOpenRef.current) {
       queueMicrotask(() => {
-        setPending((p) => (p && isSlotDisabled(departureDate, p) ? "" : p));
+        setPending((p) => (p && isSlotDisabled(departureDate, p, unavailableSet) ? "" : p));
       });
     }
     wasOpenRef.current = open;
-  }, [open, value, departureDate]);
+  }, [open, value, departureDate, unavailableSet]);
 
   const handleConfirm = () => {
     if (!pending) return;
@@ -218,6 +243,7 @@ export default function DepartureTimeBottomSheet({
                   <SlotGrid
                     slots={AM_SLOTS}
                     departureDate={departureDate}
+                    unavailableSet={unavailableSet}
                     pending={pending}
                     setPending={setPending}
                   />
@@ -230,6 +256,7 @@ export default function DepartureTimeBottomSheet({
                   <SlotGrid
                     slots={PM_SLOTS}
                     departureDate={departureDate}
+                    unavailableSet={unavailableSet}
                     pending={pending}
                     setPending={setPending}
                   />

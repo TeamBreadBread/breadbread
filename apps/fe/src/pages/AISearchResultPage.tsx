@@ -9,21 +9,13 @@ import CourseTimeline from "@/components/domain/ai-course/CourseTimeline";
 import ResultSummaryCard from "@/components/domain/ai-course/ResultSummaryCard";
 import type { CoursePlace, CourseSummary } from "@/components/domain/ai-course/types";
 import { getDevFallbackCourseId } from "@/lib/courseIdFallback";
-import {
-  getAiCourseDepartureMarkerLabel,
-  getLatestAiCourseDepartureCoords,
-} from "@/lib/aiCourseDepartureCoords";
+import { getLatestAiCourseDepartureCoords } from "@/lib/aiCourseDepartureCoords";
 import CourseKakaoMap from "@/components/domain/ai-course/CourseKakaoMap";
 import { courseBakeriesToMapPoints } from "@/components/domain/ai-course/courseMapPoints";
 import handleArrow from "@/assets/icons/handle_arrowup.png";
 import { useAiSearchBottomSheet } from "@/hooks/useAiSearchBottomSheet";
 import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
-import {
-  getCourseDirections,
-  saveCourseRoute,
-  type CourseDetail,
-  type CourseDirectionPoint,
-} from "@/api/courses";
+import { getCourseDetail, saveCourseRoute, type CourseDetail } from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import ResultCTASection from "@/components/domain/ai-course/ResultCTASection";
@@ -63,10 +55,6 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
   const navigate = useNavigate();
   const { requireLogin, setBotCourseId } = useLoginRequired();
   const effectiveCourseId = courseId ?? getDevFallbackCourseId();
-  const [roadPathResult, setRoadPathResult] = useState<{
-    courseId: number;
-    path: CourseDirectionPoint[] | null;
-  } | null>(null);
   const storedCourseDetail = useMemo((): CourseDetail | null => {
     if (typeof window === "undefined") return null;
     const raw = sessionStorage.getItem(AI_COURSE_RESULT_STORAGE_KEY);
@@ -78,23 +66,52 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     }
   }, []);
 
+  const [apiCourseDetail, setApiCourseDetail] = useState<{
+    courseId: number;
+    detail: CourseDetail;
+  } | null>(null);
+
+  // 루트 목록 등 sessionStorage에 코스 정보가 없는 경로로 진입한 경우 courseId로 직접 조회
+  useEffect(() => {
+    if (!effectiveCourseId) return undefined;
+    if (storedCourseDetail?.id === effectiveCourseId) return undefined;
+
+    let cancelled = false;
+    void getCourseDetail(effectiveCourseId)
+      .then((detail) => {
+        if (!cancelled) setApiCourseDetail({ courseId: effectiveCourseId, detail });
+      })
+      .catch(() => {
+        /* 조회 실패 시 sessionStorage/하드코딩 폴백 사용 */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveCourseId, storedCourseDetail]);
+
+  const courseDetail: CourseDetail | null = useMemo(() => {
+    if (storedCourseDetail?.id === effectiveCourseId) return storedCourseDetail;
+    if (apiCourseDetail?.courseId === effectiveCourseId) return apiCourseDetail.detail;
+    return storedCourseDetail;
+  }, [storedCourseDetail, apiCourseDetail, effectiveCourseId]);
+
   const dynamicSummary: CourseSummary | null = useMemo(() => {
-    if (!storedCourseDetail) return null;
+    if (!courseDetail) return null;
     const costLabel =
-      Number.isFinite(storedCourseDetail.estimatedCost) && storedCourseDetail.estimatedCost > 0
-        ? `${storedCourseDetail.estimatedCost.toLocaleString("ko-KR")}원`
+      Number.isFinite(courseDetail.estimatedCost) && courseDetail.estimatedCost > 0
+        ? `${courseDetail.estimatedCost.toLocaleString("ko-KR")}원`
         : summary.price;
     return {
-      title: storedCourseDetail.name || summary.title,
-      duration: storedCourseDetail.estimatedTime || summary.duration,
+      title: courseDetail.name || summary.title,
+      duration: courseDetail.estimatedTime || summary.duration,
       price: costLabel,
     };
-  }, [storedCourseDetail]);
+  }, [courseDetail]);
 
   const mapBakeries = useMemo(() => {
-    if (!storedCourseDetail?.bakeries?.length) return [];
-    return courseBakeriesToMapPoints(storedCourseDetail.bakeries);
-  }, [storedCourseDetail]);
+    if (!courseDetail?.bakeries?.length) return [];
+    return courseBakeriesToMapPoints(courseDetail.bakeries);
+  }, [courseDetail]);
 
   const departurePoint = useMemo(() => {
     const departure = getLatestAiCourseDepartureCoords();
@@ -106,50 +123,8 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     };
   }, []);
 
-  const roadPath = useMemo(() => {
-    if (!effectiveCourseId) return null;
-    if (roadPathResult?.courseId !== effectiveCourseId) return undefined;
-    return roadPathResult.path;
-  }, [effectiveCourseId, roadPathResult]);
-
-  const visibleDeparturePoint = useMemo(() => {
-    if (departurePoint) return departurePoint;
-    const fallback = roadPath?.[0];
-    if (!fallback) return null;
-    return {
-      lat: fallback.lat,
-      lng: fallback.lng,
-      label: getAiCourseDepartureMarkerLabel()?.trim() || "출발지",
-    };
-  }, [departurePoint, roadPath]);
-
-  useEffect(() => {
-    if (!effectiveCourseId) return;
-
-    let cancelled = false;
-
-    void (async () => {
-      try {
-        const directions = await getCourseDirections(effectiveCourseId);
-        if (cancelled) return;
-        const path = (directions.path ?? []).filter(
-          (point) => Number.isFinite(point.lat) && Number.isFinite(point.lng),
-        );
-        setRoadPathResult({
-          courseId: effectiveCourseId,
-          path: path.length > 1 ? path : null,
-        });
-      } catch {
-        if (!cancelled) {
-          setRoadPathResult({ courseId: effectiveCourseId, path: null });
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [effectiveCourseId]);
+  // 출발지 좌표가 없으면 출발지 마커 없이 빵집들만 직선으로 연결한다.
+  const visibleDeparturePoint = departurePoint;
 
   useEffect(() => {
     setBotCourseId(effectiveCourseId ?? null);
@@ -157,9 +132,9 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
   }, [effectiveCourseId, setBotCourseId]);
 
   const dynamicPlaces: CoursePlace[] | null = useMemo(() => {
-    if (!storedCourseDetail) return null;
-    if (!Array.isArray(storedCourseDetail.bakeries)) return null;
-    return storedCourseDetail.bakeries.map((bakery, index) => {
+    if (!courseDetail) return null;
+    if (!Array.isArray(courseDetail.bakeries)) return null;
+    return courseDetail.bakeries.map((bakery, index) => {
       return {
         id: String(bakery.id ?? index + 1),
         name: bakery.name || `빵집 ${index + 1}`,
@@ -167,7 +142,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
         menu: Number.isFinite(bakery.rating) ? `평점 ${bakery.rating}` : "빵집 정보",
       };
     });
-  }, [storedCourseDetail]);
+  }, [courseDetail]);
 
   const [showSavedBanner, setShowSavedBanner] = useState(false);
 
@@ -243,7 +218,6 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
         <CourseKakaoMap
           bakeries={mapBakeries}
           departurePoint={visibleDeparturePoint}
-          routePath={roadPath}
           className="h-full w-full"
         />
       </div>
@@ -307,7 +281,9 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
         </div>
       </aside>
 
-      <ResultCTASection onRetry={handleRetryRecommendation} onSave={handleSaveCourse} />
+      {from === "route" ? null : (
+        <ResultCTASection onRetry={handleRetryRecommendation} onSave={handleSaveCourse} />
+      )}
       {showSavedBanner ? (
         <div
           className={cn(

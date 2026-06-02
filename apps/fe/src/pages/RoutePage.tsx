@@ -14,15 +14,21 @@ import {
   unlikeCourse,
 } from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
+import { isLoggedIn } from "@/lib/auth/isLoggedIn";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 
 export default function RoutePage() {
   const navigate = useNavigate();
-  const { requireLogin } = useLoginRequired();
+  const { requireLogin, promptLoginOnEnter } = useLoginRequired();
+  const loggedIn = isLoggedIn();
   const [courses, setCourses] = useState<RouteCourse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    if (!loggedIn) {
+      promptLoginOnEnter("/route");
+      return;
+    }
     let mounted = true;
     const fetchRoutes = async () => {
       try {
@@ -66,7 +72,7 @@ export default function RoutePage() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [loggedIn, promptLoginOnEnter]);
 
   const handleDeleteCourse = async (courseId: string) => {
     const parsed = Number.parseInt(courseId, 10);
@@ -124,24 +130,35 @@ export default function RoutePage() {
       <div className="flex flex-1 flex-col bg-white">
         <AppTopBar title="루트" hideBack />
 
-        <div className="flex flex-col items-center gap-[10px] px-x5 py-x4">
-          <RouteHeroCard
-            title="코스 추천받기"
-            description="description"
-            onClick={() => navigate({ to: AI_COURSE_FLOW_START })}
-          />
-          {isLoading ? (
-            <p className="w-full py-x4 text-center text-size-4 text-gray-700">
-              루트 목록 불러오는 중...
+        {loggedIn ? (
+          <div className="flex flex-col items-center gap-[10px] px-x5 py-x4">
+            <RouteHeroCard
+              title="코스 추천받기"
+              description="description"
+              onClick={() => navigate({ to: AI_COURSE_FLOW_START })}
+            />
+            {isLoading ? (
+              <p className="w-full py-x4 text-center text-size-4 text-gray-700">
+                루트 목록 불러오는 중...
+              </p>
+            ) : null}
+            <RouteListSection
+              courses={courses}
+              onOpenCourse={handleOpenCourse}
+              onDeleteCourse={handleDeleteCourse}
+              onToggleCourseLike={handleToggleCourseLike}
+            />
+          </div>
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center gap-x2 px-x5 py-x10 text-center">
+            <p className="font-pretendard text-size-5 font-bold leading-t6 text-gray-1000">
+              로그인이 필요해요
             </p>
-          ) : null}
-          <RouteListSection
-            courses={courses}
-            onOpenCourse={handleOpenCourse}
-            onDeleteCourse={handleDeleteCourse}
-            onToggleCourseLike={handleToggleCourseLike}
-          />
-        </div>
+            <p className="font-pretendard text-size-3 leading-t4 text-gray-700">
+              내 루트는 로그인 후 이용할 수 있어요.
+            </p>
+          </div>
+        )}
       </div>
 
       <BottomNav />

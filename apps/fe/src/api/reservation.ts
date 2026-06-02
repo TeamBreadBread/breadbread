@@ -102,3 +102,19 @@ export async function cancelReservation(id: number): Promise<void> {
   );
   extractData(data);
 }
+
+export type UnavailableTimesResponse = {
+  unavailableTimes: string[];
+};
+
+/**
+ * `GET /reservations/unavailable-times` — 해당 날짜에 본인이 이미 예약한 시간 목록(HH:mm)을 반환.
+ * 중복 예약 방지를 위해 출발 시간 선택에서 비활성화한다.
+ */
+export async function getUnavailableTimes(date: string): Promise<string[]> {
+  const { data } = await apiClient.get<ApiEnvelope<UnavailableTimesResponse>>(
+    `${PATH}/unavailable-times`,
+    { params: { date } },
+  );
+  return extractData(data).unavailableTimes ?? [];
+}

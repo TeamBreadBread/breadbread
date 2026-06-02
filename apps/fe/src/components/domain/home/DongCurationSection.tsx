@@ -8,6 +8,26 @@ import { CurationBakeryContent } from "./CurationBakeryContent";
 
 const DONG_OPTIONS = ["소제동", "은행동"] as const;
 
+/** 직전에 노출한 동과는 다른 동을 골라, 새로고침/재진입 시 동이 바뀌도록 한다. */
+const LAST_DONG_KEY = "bbang_home_dong";
+function pickNextDong(): (typeof DONG_OPTIONS)[number] {
+  let last: string | null = null;
+  try {
+    last = sessionStorage.getItem(LAST_DONG_KEY);
+  } catch {
+    last = null;
+  }
+  const candidates = DONG_OPTIONS.filter((d) => d !== last);
+  const pool = candidates.length > 0 ? candidates : DONG_OPTIONS;
+  const next = pool[Math.floor(Math.random() * pool.length)]!;
+  try {
+    sessionStorage.setItem(LAST_DONG_KEY, next);
+  } catch {
+    // 저장 불가 시 무시 (동 선택은 정상 동작)
+  }
+  return next;
+}
+
 type DongCurationSectionProps = {
   excludeBakeryIds?: number[];
   /** 1번 큐레이션 노출 확정 후 true */
@@ -20,9 +40,7 @@ const DongCurationSection = ({
 }: DongCurationSectionProps) => {
   const navigate = useNavigate();
   const [displayedPinIds, setDisplayedPinIds] = useState<number[]>([]);
-  const [selectedDong] = useState(
-    () => DONG_OPTIONS[Math.floor(Math.random() * DONG_OPTIONS.length)]!,
-  );
+  const [selectedDong] = useState(pickNextDong);
 
   const handleMoreClick = () => {
     void navigate({
@@ -59,6 +77,7 @@ const DongCurationSection = ({
             listParamsOverride={{ size: 60 }}
             excludeBakeryIds={excludeBakeryIds}
             localKeywordFilter={selectedDong}
+            addressDongFallback={selectedDong}
             lockSelectionOnMount
             readyToPick={readyToPick}
             onDisplayedBakeryIdsChange={setDisplayedPinIds}

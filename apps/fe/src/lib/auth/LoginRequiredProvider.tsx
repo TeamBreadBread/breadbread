@@ -8,8 +8,9 @@ import { LoginRequiredContext, type BotBubble } from "@/lib/auth/LoginRequiredCo
 const DEFAULT_LOGIN_BUBBLE_TEXT =
   "이 기능은 로그인이 필요해요.\n로그인하면 더 많은 기능을 사용할 수 있어요!";
 
-/** 챗봇을 숨길 인증 관련 경로 prefix */
+/** 챗봇이 등장하면 어색한 경로 prefix (인증/온보딩/코스 생성/결제 등) */
 const BOT_HIDDEN_PATH_PREFIXES = [
+  // 로그인 / 회원가입 / 계정 인증
   "/login",
   "/signup",
   "/find-id",
@@ -17,6 +18,15 @@ const BOT_HIDDEN_PATH_PREFIXES = [
   "/reset-password",
   "/password-reset-success",
   "/auth",
+  // 코스 생성 로딩 · 에러 페이지 (AI 응답 대기/실패)
+  "/ai-course-generating",
+  // 온보딩(취향 선택) · 코스 생성 조건 입력 (지역/빵 종류/예산)
+  "/user-preference",
+  "/preference",
+  "/recommendation",
+  // 결제 페이지
+  "/taxi-payment",
+  "/payment",
 ];
 
 export function LoginRequiredProvider({ children }: { children: ReactNode }) {

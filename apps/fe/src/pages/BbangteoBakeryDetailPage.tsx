@@ -685,7 +685,10 @@ type BbangteoBakeryDetailPageProps = {
   bakeryId?: number;
   listEntryFrom?: BakeryListEntryFrom;
   returnCourseId?: number;
+  /** 후기 등록 성공 시에만 true — "후기 업로드됨" 토스트 노출 */
   reviewUploaded?: boolean;
+  /** 후기 탭을 기본 선택 상태로 열지 여부 (나가기 등 토스트와 무관) */
+  reviewTab?: boolean;
 };
 
 const BbangteoBakeryDetailPage = ({
@@ -693,6 +696,7 @@ const BbangteoBakeryDetailPage = ({
   listEntryFrom,
   returnCourseId,
   reviewUploaded = false,
+  reviewTab = false,
 }: BbangteoBakeryDetailPageProps) => {
   const navigate = useNavigate();
   const { data, loading, error } = useBakeryDetail(bakeryId);
@@ -755,7 +759,7 @@ const BbangteoBakeryDetailPage = ({
               <BakeryHero detail={data} />
               <BakeryTabSection
                 menus={breadsToMenus(data.breads ?? [], data.name)}
-                showReviewTab={reviewUploaded}
+                showReviewTab={reviewTab || reviewUploaded}
                 bakeryId={bakeryId}
                 listEntryFrom={listEntryFrom}
               />

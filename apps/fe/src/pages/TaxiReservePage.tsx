@@ -11,6 +11,7 @@ import {
 } from "@/components/layout/layout.constants";
 import type { CourseDetail } from "@/api/courses";
 import { getCourseDetail } from "@/api/courses";
+import { getUnavailableTimes } from "@/api/reservation";
 import { getDevFallbackCourseId } from "@/lib/courseIdFallback";
 import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
 import { cn } from "@/utils/cn";
@@ -113,6 +114,31 @@ export default function TaxiReservePage({ courseId }: TaxiReservePageProps) {
   const [isDateSheetOpen, setIsDateSheetOpen] = useState(false);
   const [isTimeSheetOpen, setIsTimeSheetOpen] = useState(false);
   const [isPlaceSheetOpen, setIsPlaceSheetOpen] = useState(false);
+  // 조회 결과를 날짜와 함께 보관 → 날짜가 바뀌면 동기 초기화 없이 파생값이 자동으로 비워짐
+  const [unavailableState, setUnavailableState] = useState<{ date: string; times: string[] }>({
+    date: "",
+    times: [],
+  });
+  const unavailableTimes = unavailableState.date === departureDate ? unavailableState.times : [];
+
+  // 선택한 날짜에 본인이 이미 예약한 시간 조회 → 중복 예약 방지(해당 시간 비활성화)
+  useEffect(() => {
+    if (!departureDate) return;
+    let cancelled = false;
+    void getUnavailableTimes(departureDate)
+      .then((times) => {
+        if (cancelled) return;
+        setUnavailableState({ date: departureDate, times });
+        // 이미 선택한 시간이 예약 불가로 바뀌면 선택 해제
+        setDepartureTime((prev) => (prev && times.includes(prev) ? "" : prev));
+      })
+      .catch(() => {
+        if (!cancelled) setUnavailableState({ date: departureDate, times: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [departureDate]);
 
   const isCheckoutEnabled =
     departureDate.length > 0 && departureTime.length > 0 && departurePlace.trim().length > 0;
@@ -436,6 +462,7 @@ export default function TaxiReservePage({ courseId }: TaxiReservePageProps) {
         open={isTimeSheetOpen}
         value={departureTime}
         departureDate={departureDate}
+        unavailableTimes={unavailableTimes}
         onClose={() => setIsTimeSheetOpen(false)}
         onConfirm={setDepartureTime}
       />

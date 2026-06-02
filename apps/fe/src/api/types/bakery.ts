@@ -92,8 +92,28 @@ export type GetBakeriesParams = {
   sort?: BakerySortType;
   open?: boolean;
   region?: string;
+  /** 행정동 필터 (예: 은행동) */
+  dong?: string;
   page?: number;
   size?: number;
+};
+
+/** GET /bakeries/summary — 간략 항목 (id·이름·주소·별점·썸네일) */
+export type BakerySummaryItem = {
+  id: number;
+  name: string;
+  address: string;
+  rating?: number | null;
+  thumbnailUrl?: string | null;
+};
+
+/** GET /bakeries/summary 응답 */
+export type BakerySummaryListResponse = {
+  bakeries: BakerySummaryItem[];
+  total: number;
+  page: number;
+  size: number;
+  hasNext: boolean;
 };
 
 /** GET /bakeries/{bakeryId}/reviews — sort */
