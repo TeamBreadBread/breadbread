@@ -9,6 +9,8 @@ export interface DepartureTimeBottomSheetProps {
   value: string;
   /** `yyyy-mm-dd` — when today, past 30분 단위 슬롯 비활성 */
   departureDate: string;
+  /** 본인이 이미 예약한 시간(`HH:mm`) — 중복 예약 방지로 비활성 */
+  unavailableTimes?: string[];
   onClose: () => void;
   onConfirm: (hhmm: string) => void;
 }
@@ -40,16 +42,23 @@ function startOfLocalDay(d: Date) {
 
 const AM_SLOTS = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30"] as const;
 
+/** 오후는 16:30까지만 제공 */
 const PM_SLOTS: string[] = (() => {
   const list: string[] = [];
-  for (let h = 12; h <= 23; h++) {
+  for (let h = 12; h <= 16; h++) {
     list.push(`${String(h).padStart(2, "0")}:00`);
     list.push(`${String(h).padStart(2, "0")}:30`);
   }
   return list;
 })();
 
-function isSlotDisabled(departureDate: string, slot: string): boolean {
+function normalizeHhmm(value: string): string {
+  const [h, m] = value.split(":");
+  if (h == null || m == null) return value.trim();
+  return `${h.trim().padStart(2, "0")}:${m.trim().padStart(2, "0")}`;
+}
+
+function isPastSlot(departureDate: string, slot: string): boolean {
   if (!departureDate) return false;
   const day = parseIsoLocal(departureDate);
   if (!day) return false;
@@ -60,6 +69,15 @@ function isSlotDisabled(departureDate: string, slot: string): boolean {
   const at = new Date(day);
   at.setHours(hh, mm, 0, 0);
   return at.getTime() < Date.now();
+}
+
+function isSlotDisabled(
+  departureDate: string,
+  slot: string,
+  unavailableSet?: Set<string>,
+): boolean {
+  if (unavailableSet?.has(normalizeHhmm(slot))) return true;
+  return isPastSlot(departureDate, slot);
 }
 
 function TimeChip({
@@ -79,8 +97,8 @@ function TimeChip({
       disabled={disabled}
       onClick={onPick}
       className={cn(
-        "flex min-h-0 min-w-0 flex-1 flex-row items-center justify-center overflow-hidden rounded-[8px] border border-solid border-[#dcdee3] px-[10px] py-[12px]",
-        selected && "border-transparent bg-[#555d6d]",
+        "flex min-h-0 w-full min-w-0 flex-row items-center justify-center overflow-hidden rounded-[8px] border border-solid border-[#dcdee3] px-[10px] py-[12px]",
+        selected && "border-transparent bg-orange-600",
         disabled && "cursor-not-allowed",
       )}
     >
@@ -98,25 +116,27 @@ function TimeChip({
   );
 }
 
-function SlotRow({
+function SlotGrid({
   slots,
   departureDate,
+  unavailableSet,
   pending,
   setPending,
 }: {
   slots: readonly string[] | string[];
   departureDate: string;
+  unavailableSet: Set<string>;
   pending: string;
   setPending: (v: string) => void;
 }) {
   return (
-    <div className="flex w-full flex-row items-center justify-start gap-[8px] overflow-hidden">
+    <div className="grid w-full grid-cols-4 gap-[8px]">
       {slots.map((slot) => (
         <TimeChip
           key={slot}
           slot={slot}
           selected={pending === slot}
-          disabled={isSlotDisabled(departureDate, slot)}
+          disabled={isSlotDisabled(departureDate, slot, unavailableSet)}
           onPick={() => setPending(slot)}
         />
       ))}
@@ -128,36 +148,33 @@ export default function DepartureTimeBottomSheet({
   open,
   value,
   departureDate,
+  unavailableTimes,
   onClose,
   onConfirm,
 }: DepartureTimeBottomSheetProps) {
   const [pending, setPending] = useState("");
   const wasOpenRef = useRef(false);
 
+  const unavailableSet = useMemo(
+    () => new Set((unavailableTimes ?? []).map(normalizeHhmm)),
+    [unavailableTimes],
+  );
+
   useEffect(() => {
     if (open && !wasOpenRef.current) {
       queueMicrotask(() => {
         let next = value && value.length > 0 ? value : "";
-        if (next && isSlotDisabled(departureDate, next)) next = "";
+        if (next && isSlotDisabled(departureDate, next, unavailableSet)) next = "";
         setPending(next);
       });
     }
     if (open && wasOpenRef.current) {
       queueMicrotask(() => {
-        setPending((p) => (p && isSlotDisabled(departureDate, p) ? "" : p));
+        setPending((p) => (p && isSlotDisabled(departureDate, p, unavailableSet) ? "" : p));
       });
     }
     wasOpenRef.current = open;
-  }, [open, value, departureDate]);
-
-  const pmRows = useMemo(() => {
-    const chunk = 6;
-    const rows: string[][] = [];
-    for (let i = 0; i < PM_SLOTS.length; i += chunk) {
-      rows.push(PM_SLOTS.slice(i, i + chunk));
-    }
-    return rows;
-  }, []);
+  }, [open, value, departureDate, unavailableSet]);
 
   const handleConfirm = () => {
     if (!pending) return;
@@ -223,9 +240,10 @@ export default function DepartureTimeBottomSheet({
                   <div className="w-full font-['Pretendard',sans-serif] text-[14px] font-medium leading-[19px] tracking-normal text-[#555d6d]">
                     오전
                   </div>
-                  <SlotRow
+                  <SlotGrid
                     slots={AM_SLOTS}
                     departureDate={departureDate}
+                    unavailableSet={unavailableSet}
                     pending={pending}
                     setPending={setPending}
                   />
@@ -235,17 +253,13 @@ export default function DepartureTimeBottomSheet({
                   <div className="w-full font-['Pretendard',sans-serif] text-[14px] font-medium leading-[19px] tracking-normal text-[#555d6d]">
                     오후
                   </div>
-                  <div className="flex w-full flex-col items-start justify-start gap-[8px]">
-                    {pmRows.map((row) => (
-                      <SlotRow
-                        key={row.join("-")}
-                        slots={row}
-                        departureDate={departureDate}
-                        pending={pending}
-                        setPending={setPending}
-                      />
-                    ))}
-                  </div>
+                  <SlotGrid
+                    slots={PM_SLOTS}
+                    departureDate={departureDate}
+                    unavailableSet={unavailableSet}
+                    pending={pending}
+                    setPending={setPending}
+                  />
                 </div>
               </div>
             </div>
@@ -260,7 +274,7 @@ export default function DepartureTimeBottomSheet({
                 className={cn(
                   "flex h-[56px] flex-1 flex-row items-center justify-center overflow-hidden rounded-[12px] px-[20px] py-[16px]",
                   pending
-                    ? "cursor-pointer bg-[#555d6d]"
+                    ? "cursor-pointer bg-orange-600"
                     : "cursor-not-allowed bg-[#dcdee3] opacity-60",
                 )}
               >

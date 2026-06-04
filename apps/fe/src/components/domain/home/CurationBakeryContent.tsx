@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { GetBakeriesParams } from "@/api/types/bakery";
 import { useNavigate } from "@tanstack/react-router";
 import Skeleton from "@/components/common/skeleton/Skeleton";
 import { useBakeries } from "@/hooks/useBakeries";
-import { formatCurationAddress } from "@/utils/formatCurationAddress";
+import { extractDong, formatCurationAddress } from "@/utils/formatCurationAddress";
 import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import {
   CURATION_BAKERY_LIST_PARAMS,
@@ -30,6 +30,8 @@ type CurationBakeryContentProps = {
   excludeBakeryIds?: number[];
   /** 주소/이름에 포함되는 키워드로 클라이언트 필터링 */
   localKeywordFilter?: string;
+  /** 주소에서 동을 못 찾았을 때 카드에 표시할 동(예: 동네 큐레이션 섹션의 선택 동) */
+  addressDongFallback?: string;
   /** true면 마운트(새로고침) 후 첫 픽만 사용하고 이후 재섞지 않음 */
   lockSelectionOnMount?: boolean;
   /** lock 사용 시 false면 스켈레톤 유지 (위 큐레이션 id 대기 등) */
@@ -45,6 +47,7 @@ export function CurationBakeryContent({
   listParamsOverride,
   excludeBakeryIds,
   localKeywordFilter,
+  addressDongFallback,
   lockSelectionOnMount = false,
   readyToPick = true,
 }: CurationBakeryContentProps) {
@@ -76,19 +79,26 @@ export function CurationBakeryContent({
     const source = filtered.length > 0 ? filtered : scopedByKeyword;
     const picked = shuffleArray(source).slice(0, displayCount);
     const addressMaxTokens = compact ? 2 : 4;
-    return picked.map((b) => ({
-      bakeryId: b.id,
-      title: b.name,
-      address: b.address?.trim()
-        ? formatCurationAddress(b.address.trim(), addressMaxTokens)
-        : "주소 정보 없음",
-      rate: b.rating != null ? Number(b.rating) : 0,
-    }));
+    return picked.map((b) => {
+      const full = b.address?.trim();
+      const dong = full ? extractDong(full) : null;
+      const address =
+        dong ??
+        addressDongFallback ??
+        (full ? formatCurationAddress(full, addressMaxTokens) : "주소 정보 없음");
+      return {
+        bakeryId: b.id,
+        title: b.name,
+        address,
+        rate: b.rating != null ? Number(b.rating) : 0,
+      };
+    });
   }, [
     data,
     displayCount,
     excludeBakeryIds,
     localKeywordFilter,
+    addressDongFallback,
     compact,
     lockSelectionOnMount,
     readyToPick,
@@ -97,19 +107,30 @@ export function CurationBakeryContent({
   // 첫 픽만 state에 고정 (리프레시마다 재섞임 방지)
   useEffect(() => {
     if (!lockSelectionOnMount || !readyToPick || pickedItems.length === 0) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- lock-on-mount one-time snapshot
     setLockedItems((prev) => prev ?? pickedItems);
   }, [lockSelectionOnMount, readyToPick, pickedItems]);
 
   const items = lockSelectionOnMount && lockedItems ? lockedItems : pickedItems;
 
+  const displayedBakeryIds = useMemo(
+    () =>
+      items.map((i) => i.bakeryId).filter((id): id is number => typeof id === "number" && id > 0),
+    [items],
+  );
+  const displayedIdsKey = displayedBakeryIds.join(",");
+
+  // 콜백 참조가 매 렌더 새로 생겨도 effect가 무한 반복되지 않도록 ref로 보관
+  const onDisplayedChangeRef = useRef(onDisplayedBakeryIdsChange);
   useEffect(() => {
-    if (!onDisplayedBakeryIdsChange) return;
-    const ids = items
-      .map((i) => i.bakeryId)
-      .filter((id): id is number => typeof id === "number" && id > 0);
-    onDisplayedBakeryIdsChange(ids);
-  }, [items, onDisplayedBakeryIdsChange]);
+    onDisplayedChangeRef.current = onDisplayedBakeryIdsChange;
+  });
+
+  // 실제 노출 빵집 id가 바뀔 때만 부모에 통지
+  useEffect(() => {
+    onDisplayedChangeRef.current?.(displayedBakeryIds);
+    // displayedIdsKey가 동일하면 displayedBakeryIds 참조도 동일하므로 key만 의존
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayedIdsKey]);
 
   const handleItemClick = (item: CurationItem, index: number) => {
     if (onCardClick) {

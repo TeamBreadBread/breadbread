@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from "./routes/__root";
 import { Route as UserPreferenceRouteImport } from "./routes/user-preference";
+import { Route as TourRouteImport } from "./routes/tour";
 import { Route as TaxiReserveRouteImport } from "./routes/taxi-reserve";
 import { Route as TaxiReservationCompleteRouteImport } from "./routes/taxi-reservation-complete";
 import { Route as TaxiPaymentRouteImport } from "./routes/taxi-payment";
@@ -50,6 +51,7 @@ import { Route as AiCourseGeneratingRouteImport } from "./routes/ai-course-gener
 import { Route as AccountSettingsRouteImport } from "./routes/account-settings";
 import { Route as IndexRouteImport } from "./routes/index";
 import { Route as RouteIndexRouteImport } from "./routes/route.index";
+import { Route as AccountSettingsIndexRouteImport } from "./routes/account-settings.index";
 import { Route as PaymentPortoneRedirectRouteImport } from "./routes/payment.portone-redirect";
 import { Route as AccountSettingsProfileRouteImport } from "./routes/account-settings.profile";
 import { Route as AccountSettingsPhoneRouteImport } from "./routes/account-settings.phone";
@@ -61,6 +63,11 @@ import { Route as AuthGoogleCallbackRouteImport } from "./routes/auth.google.cal
 const UserPreferenceRoute = UserPreferenceRouteImport.update({
   id: "/user-preference",
   path: "/user-preference",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const TourRoute = TourRouteImport.update({
+  id: "/tour",
+  path: "/tour",
   getParentRoute: () => rootRouteImport,
 } as any);
 const TaxiReserveRoute = TaxiReserveRouteImport.update({
@@ -263,6 +270,11 @@ const RouteIndexRoute = RouteIndexRouteImport.update({
   path: "/route/",
   getParentRoute: () => rootRouteImport,
 } as any);
+const AccountSettingsIndexRoute = AccountSettingsIndexRouteImport.update({
+  id: "/",
+  path: "/",
+  getParentRoute: () => AccountSettingsRoute,
+} as any);
 const PaymentPortoneRedirectRoute = PaymentPortoneRedirectRouteImport.update({
   id: "/payment/portone-redirect",
   path: "/payment/portone-redirect",
@@ -339,11 +351,13 @@ export interface FileRoutesByFullPath {
   "/taxi-payment": typeof TaxiPaymentRoute;
   "/taxi-reservation-complete": typeof TaxiReservationCompleteRoute;
   "/taxi-reserve": typeof TaxiReserveRoute;
+  "/tour": typeof TourRoute;
   "/user-preference": typeof UserPreferenceRoute;
   "/account-settings/password": typeof AccountSettingsPasswordRoute;
   "/account-settings/phone": typeof AccountSettingsPhoneRoute;
   "/account-settings/profile": typeof AccountSettingsProfileRoute;
   "/payment/portone-redirect": typeof PaymentPortoneRedirectRoute;
+  "/account-settings/": typeof AccountSettingsIndexRoute;
   "/route/": typeof RouteIndexRoute;
   "/auth/google/callback": typeof AuthGoogleCallbackRoute;
   "/auth/kakao/callback": typeof AuthKakaoCallbackRoute;
@@ -351,7 +365,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
-  "/account-settings": typeof AccountSettingsRouteWithChildren;
   "/ai-course-generating": typeof AiCourseGeneratingRoute;
   "/ai-search-result": typeof AiSearchResultRoute;
   "/bbangteo": typeof BbangteoRoute;
@@ -389,11 +402,13 @@ export interface FileRoutesByTo {
   "/taxi-payment": typeof TaxiPaymentRoute;
   "/taxi-reservation-complete": typeof TaxiReservationCompleteRoute;
   "/taxi-reserve": typeof TaxiReserveRoute;
+  "/tour": typeof TourRoute;
   "/user-preference": typeof UserPreferenceRoute;
   "/account-settings/password": typeof AccountSettingsPasswordRoute;
   "/account-settings/phone": typeof AccountSettingsPhoneRoute;
   "/account-settings/profile": typeof AccountSettingsProfileRoute;
   "/payment/portone-redirect": typeof PaymentPortoneRedirectRoute;
+  "/account-settings": typeof AccountSettingsIndexRoute;
   "/route": typeof RouteIndexRoute;
   "/auth/google/callback": typeof AuthGoogleCallbackRoute;
   "/auth/kakao/callback": typeof AuthKakaoCallbackRoute;
@@ -440,11 +455,13 @@ export interface FileRoutesById {
   "/taxi-payment": typeof TaxiPaymentRoute;
   "/taxi-reservation-complete": typeof TaxiReservationCompleteRoute;
   "/taxi-reserve": typeof TaxiReserveRoute;
+  "/tour": typeof TourRoute;
   "/user-preference": typeof UserPreferenceRoute;
   "/account-settings/password": typeof AccountSettingsPasswordRoute;
   "/account-settings/phone": typeof AccountSettingsPhoneRoute;
   "/account-settings/profile": typeof AccountSettingsProfileRoute;
   "/payment/portone-redirect": typeof PaymentPortoneRedirectRoute;
+  "/account-settings/": typeof AccountSettingsIndexRoute;
   "/route/": typeof RouteIndexRoute;
   "/auth/google/callback": typeof AuthGoogleCallbackRoute;
   "/auth/kakao/callback": typeof AuthKakaoCallbackRoute;
@@ -492,11 +509,13 @@ export interface FileRouteTypes {
     | "/taxi-payment"
     | "/taxi-reservation-complete"
     | "/taxi-reserve"
+    | "/tour"
     | "/user-preference"
     | "/account-settings/password"
     | "/account-settings/phone"
     | "/account-settings/profile"
     | "/payment/portone-redirect"
+    | "/account-settings/"
     | "/route/"
     | "/auth/google/callback"
     | "/auth/kakao/callback"
@@ -504,7 +523,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo;
   to:
     | "/"
-    | "/account-settings"
     | "/ai-course-generating"
     | "/ai-search-result"
     | "/bbangteo"
@@ -542,11 +560,13 @@ export interface FileRouteTypes {
     | "/taxi-payment"
     | "/taxi-reservation-complete"
     | "/taxi-reserve"
+    | "/tour"
     | "/user-preference"
     | "/account-settings/password"
     | "/account-settings/phone"
     | "/account-settings/profile"
     | "/payment/portone-redirect"
+    | "/account-settings"
     | "/route"
     | "/auth/google/callback"
     | "/auth/kakao/callback"
@@ -592,11 +612,13 @@ export interface FileRouteTypes {
     | "/taxi-payment"
     | "/taxi-reservation-complete"
     | "/taxi-reserve"
+    | "/tour"
     | "/user-preference"
     | "/account-settings/password"
     | "/account-settings/phone"
     | "/account-settings/profile"
     | "/payment/portone-redirect"
+    | "/account-settings/"
     | "/route/"
     | "/auth/google/callback"
     | "/auth/kakao/callback"
@@ -643,6 +665,7 @@ export interface RootRouteChildren {
   TaxiPaymentRoute: typeof TaxiPaymentRoute;
   TaxiReservationCompleteRoute: typeof TaxiReservationCompleteRoute;
   TaxiReserveRoute: typeof TaxiReserveRoute;
+  TourRoute: typeof TourRoute;
   UserPreferenceRoute: typeof UserPreferenceRoute;
   PaymentPortoneRedirectRoute: typeof PaymentPortoneRedirectRoute;
   RouteIndexRoute: typeof RouteIndexRoute;
@@ -658,6 +681,13 @@ declare module "@tanstack/react-router" {
       path: "/user-preference";
       fullPath: "/user-preference";
       preLoaderRoute: typeof UserPreferenceRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/tour": {
+      id: "/tour";
+      path: "/tour";
+      fullPath: "/tour";
+      preLoaderRoute: typeof TourRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/taxi-reserve": {
@@ -940,6 +970,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof RouteIndexRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/account-settings/": {
+      id: "/account-settings/";
+      path: "/";
+      fullPath: "/account-settings/";
+      preLoaderRoute: typeof AccountSettingsIndexRouteImport;
+      parentRoute: typeof AccountSettingsRoute;
+    };
     "/payment/portone-redirect": {
       id: "/payment/portone-redirect";
       path: "/payment/portone-redirect";
@@ -996,12 +1033,14 @@ interface AccountSettingsRouteChildren {
   AccountSettingsPasswordRoute: typeof AccountSettingsPasswordRoute;
   AccountSettingsPhoneRoute: typeof AccountSettingsPhoneRoute;
   AccountSettingsProfileRoute: typeof AccountSettingsProfileRoute;
+  AccountSettingsIndexRoute: typeof AccountSettingsIndexRoute;
 }
 
 const AccountSettingsRouteChildren: AccountSettingsRouteChildren = {
   AccountSettingsPasswordRoute: AccountSettingsPasswordRoute,
   AccountSettingsPhoneRoute: AccountSettingsPhoneRoute,
   AccountSettingsProfileRoute: AccountSettingsProfileRoute,
+  AccountSettingsIndexRoute: AccountSettingsIndexRoute,
 };
 
 const AccountSettingsRouteWithChildren = AccountSettingsRoute._addFileChildren(
@@ -1048,6 +1087,7 @@ const rootRouteChildren: RootRouteChildren = {
   TaxiPaymentRoute: TaxiPaymentRoute,
   TaxiReservationCompleteRoute: TaxiReservationCompleteRoute,
   TaxiReserveRoute: TaxiReserveRoute,
+  TourRoute: TourRoute,
   UserPreferenceRoute: UserPreferenceRoute,
   PaymentPortoneRedirectRoute: PaymentPortoneRedirectRoute,
   RouteIndexRoute: RouteIndexRoute,

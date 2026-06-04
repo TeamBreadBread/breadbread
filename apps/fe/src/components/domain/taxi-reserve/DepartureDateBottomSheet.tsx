@@ -261,7 +261,7 @@ export default function DepartureDateBottomSheet({
                             onClick={() => handleSelectDay(date)}
                             className={cn(
                               "flex h-[50px] w-[50px] shrink-0 flex-col items-center justify-center rounded-[8px] px-[18px] py-[14px]",
-                              isSelected && "bg-[#555d6d]",
+                              isSelected && "bg-orange-600",
                               !isSelected && !isPast && "hover:bg-[#f7f8f9]",
                             )}
                           >
@@ -295,7 +295,7 @@ export default function DepartureDateBottomSheet({
                 className={cn(
                   "flex h-[56px] flex-1 flex-row items-center justify-center overflow-hidden rounded-[12px] px-[20px] py-[16px]",
                   pending
-                    ? "cursor-pointer bg-[#555d6d]"
+                    ? "cursor-pointer bg-orange-600"
                     : "cursor-not-allowed bg-[#dcdee3] opacity-60",
                 )}
               >

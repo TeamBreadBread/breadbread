@@ -6,6 +6,7 @@ import type {
   BakeryListResponse,
   BakeryReviewListResponse,
   BakeryReviewWritePayload,
+  BakerySummaryListResponse,
   GetBakeriesParams,
   GetBakeryReviewsParams,
   UpdateBakeryReviewPayload,
@@ -19,6 +20,8 @@ export type {
   BakeryListItem,
   BakeryListResponse,
   BakerySortType,
+  BakerySummaryItem,
+  BakerySummaryListResponse,
   GetBakeriesParams,
   BakeryReview,
   BakeryReviewListResponse,
@@ -51,6 +54,9 @@ function buildSearchQuery(params: GetBakeriesParams): string {
   if (params.region !== undefined && params.region !== "") {
     q.set("region", params.region);
   }
+  if (params.dong !== undefined && params.dong !== "") {
+    q.set("dong", params.dong);
+  }
   q.set("page", String(params.page ?? 0));
   q.set("size", String(params.size ?? 10));
   const s = q.toString();
@@ -63,6 +69,21 @@ export async function getBakeries(
 ): Promise<BakeryListResponse> {
   const { data } = await apiClient.get<ApiEnvelope<BakeryListResponse>>(
     `${PATH}${buildSearchQuery(params)}`,
+    { signal },
+  );
+  return extractData(data);
+}
+
+/**
+ * Swagger `GET /bakeries/summary` — id·이름·주소·별점·썸네일만 반환.
+ * 필터·정렬은 목록 조회(`getBakeries`)와 동일하게 지원.
+ */
+export async function getBakeriesSummary(
+  params: GetBakeriesParams = {},
+  signal?: AbortSignal,
+): Promise<BakerySummaryListResponse> {
+  const { data } = await apiClient.get<ApiEnvelope<BakerySummaryListResponse>>(
+    `${PATH}/summary${buildSearchQuery(params)}`,
     { signal },
   );
   return extractData(data);

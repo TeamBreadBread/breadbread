@@ -6,7 +6,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { getStoredAccessToken } from "@/api/auth";
 import { getMyProfile } from "@/api/user";
 import { isLoggedIn } from "@/lib/auth/isLoggedIn";
-import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
 import leadingLogo from "@/assets/icons/Leading.svg";
 import RecommendationHeroCard from "./RecommendationHeroCard";
@@ -16,7 +15,6 @@ import { getDisplayNameForLoginId, getUserProfile, saveUserProfile } from "@/lib
 
 const HomeHeroSection = () => {
   const navigate = useNavigate();
-  const { requireLogin } = useLoginRequired();
   const loggedIn = isLoggedIn();
   const [greetingBread] = useState(() => pickRandomHomeGreetingBread());
   const [displayName, setDisplayName] = useState(() => {
@@ -52,9 +50,8 @@ const HomeHeroSection = () => {
   }, []);
 
   const goAiCoursePreferenceFlow = () => {
-    requireLogin(() => {
-      void navigate({ to: AI_COURSE_FLOW_START });
-    }, "/preference");
+    // 게스트도 취향/조건 입력 화면까지는 자유롭게 진입 (로그인은 마지막 "추천 받기" 단계에서 유도)
+    void navigate({ to: AI_COURSE_FLOW_START });
   };
 
   return (

@@ -49,7 +49,8 @@ function BbangteoBakeryDetailRoute() {
       bakeryId={bakeryId}
       listEntryFrom={from}
       returnCourseId={courseId}
-      reviewUploaded={Boolean(reviewUploaded || reviewTab)}
+      reviewUploaded={Boolean(reviewUploaded)}
+      reviewTab={Boolean(reviewTab || reviewUploaded)}
     />
   );
 }

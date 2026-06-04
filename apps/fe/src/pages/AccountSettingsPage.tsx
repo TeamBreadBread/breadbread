@@ -83,7 +83,14 @@ export default function AccountSettingsPage() {
 
         <div className="flex flex-1 flex-col gap-[10px] pb-[calc(56px+8px)] sm:pb-[calc(60px+8px)]">
           <div className="bg-white">
-            <AccountProfileSection />
+            <AccountProfileSection
+              profileImageUrl={
+                profile?.profileImageUrl?.trim() ||
+                cachedProfile?.profileImageUrl?.trim() ||
+                undefined
+              }
+              onEdit={() => navigate({ to: "/account-settings/profile" })}
+            />
             <AccountInfoSection items={profileItems} />
           </div>
 

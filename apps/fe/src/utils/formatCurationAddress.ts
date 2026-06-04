@@ -20,3 +20,22 @@ export function formatCurationAddress(full: string, maxTokens = 4): string {
   sliced[0] = normalizeCityToken(sliced[0] ?? "");
   return sliced.join(" ");
 }
+
+/**
+ * 주소에서 행정동(읍/면/동) 토큰만 추출합니다.
+ * 예: "대전 동구 소제동 100-1" -> "소제동", "대전 중구 은행동123" -> "은행동".
+ * 도로명 주소처럼 동 정보가 없으면 null을 반환합니다.
+ * ("구"로 끝나는 자치구 토큰은 동이 아니므로 제외)
+ */
+export function extractDong(full: string): string | null {
+  const t = full?.trim();
+  if (!t) return null;
+  for (const raw of t.split(/\s+/).filter(Boolean)) {
+    // "은행동123-4"처럼 붙은 지번은 숫자 이후를 제거
+    const token = raw.replace(/[0-9].*$/, "");
+    if (token.length >= 2 && /(동|읍|면)$/.test(token)) {
+      return token;
+    }
+  }
+  return null;
+}

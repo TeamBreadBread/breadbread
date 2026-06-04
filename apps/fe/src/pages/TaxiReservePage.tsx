@@ -11,6 +11,7 @@ import {
 } from "@/components/layout/layout.constants";
 import type { CourseDetail } from "@/api/courses";
 import { getCourseDetail } from "@/api/courses";
+import { getUnavailableTimes } from "@/api/reservation";
 import { getDevFallbackCourseId } from "@/lib/courseIdFallback";
 import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
 import { cn } from "@/utils/cn";
@@ -47,8 +48,11 @@ function parseLatLngFromPlace(value: string): { lat: number; lng: number } {
 function CalendarGlyph({ className }: { className?: string }) {
   return (
     <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect x="3" y="5" width="18" height="16" rx="2" stroke="#555D6D" strokeWidth="1.5" />
-      <path d="M3 9h18M8 3v4M16 3v4" stroke="#555D6D" strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        fill="#d1d3d8"
+        d="M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a2 2 0 0 1 2 2v3H3V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1Z"
+      />
+      <path fill="#d1d3d8" d="M3 11h18v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7Z" />
     </svg>
   );
 }
@@ -56,8 +60,14 @@ function CalendarGlyph({ className }: { className?: string }) {
 function ClockGlyph({ className }: { className?: string }) {
   return (
     <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="8.25" stroke="#555D6D" strokeWidth="1.5" />
-      <path d="M12 8v4l2.5 2" stroke="#555D6D" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="12" cy="12" r="9" fill="#d1d3d8" />
+      <path
+        d="M12 7v5l3 2"
+        stroke="#ffffff"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -66,12 +76,10 @@ function PinGlyph({ className }: { className?: string }) {
   return (
     <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
-        d="M12 21s7-4.35 7-10a7 7 0 1 0-14 0c0 5.65 7 10 7 10Z"
-        stroke="#555D6D"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
+        fill="#d1d3d8"
+        d="M12 2c-3.87 0-7 3.04-7 6.8 0 4.9 5.6 11 6.3 11.78a.95.95 0 0 0 1.4 0C13.4 19.8 19 13.7 19 8.8 19 5.04 15.87 2 12 2Z"
       />
-      <circle cx="12" cy="11" r="2" fill="#555D6D" />
+      <circle cx="12" cy="8.7" r="2.4" fill="#ffffff" />
     </svg>
   );
 }
@@ -106,6 +114,31 @@ export default function TaxiReservePage({ courseId }: TaxiReservePageProps) {
   const [isDateSheetOpen, setIsDateSheetOpen] = useState(false);
   const [isTimeSheetOpen, setIsTimeSheetOpen] = useState(false);
   const [isPlaceSheetOpen, setIsPlaceSheetOpen] = useState(false);
+  // 조회 결과를 날짜와 함께 보관 → 날짜가 바뀌면 동기 초기화 없이 파생값이 자동으로 비워짐
+  const [unavailableState, setUnavailableState] = useState<{ date: string; times: string[] }>({
+    date: "",
+    times: [],
+  });
+  const unavailableTimes = unavailableState.date === departureDate ? unavailableState.times : [];
+
+  // 선택한 날짜에 본인이 이미 예약한 시간 조회 → 중복 예약 방지(해당 시간 비활성화)
+  useEffect(() => {
+    if (!departureDate) return;
+    let cancelled = false;
+    void getUnavailableTimes(departureDate)
+      .then((times) => {
+        if (cancelled) return;
+        setUnavailableState({ date: departureDate, times });
+        // 이미 선택한 시간이 예약 불가로 바뀌면 선택 해제
+        setDepartureTime((prev) => (prev && times.includes(prev) ? "" : prev));
+      })
+      .catch(() => {
+        if (!cancelled) setUnavailableState({ date: departureDate, times: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [departureDate]);
 
   const isCheckoutEnabled =
     departureDate.length > 0 && departureTime.length > 0 && departurePlace.trim().length > 0;
@@ -429,6 +462,7 @@ export default function TaxiReservePage({ courseId }: TaxiReservePageProps) {
         open={isTimeSheetOpen}
         value={departureTime}
         departureDate={departureDate}
+        unavailableTimes={unavailableTimes}
         onClose={() => setIsTimeSheetOpen(false)}
         onConfirm={setDepartureTime}
       />

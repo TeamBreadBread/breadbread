@@ -500,7 +500,7 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
 
       {detail && commentsEnabled ? (
         <div
-          className="fixed bottom-[56px] left-1/2 z-[49] w-full max-w-[402px] -translate-x-1/2 border-t border-[#eeeff1] bg-white px-[20px] py-[10px] md:bottom-[60px] md:max-w-[744px]"
+          className="fixed bottom-[56px] left-1/2 z-[49] w-full max-w-[402px] -translate-x-1/2 border-t border-[#eeeff1] bg-white px-[20px] py-[10px] md:bottom-[60px]"
           style={{ touchAction: "manipulation" as const }}
         >
           <div className="flex h-[44px] items-center gap-[8px] rounded-[9999px] bg-[#f3f4f5] px-[14px]">

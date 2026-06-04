@@ -34,7 +34,7 @@ export default function BottomSheet({
       <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center">
         <section
           className={cn(
-            "max-h-[500px] w-full max-w-[744px] overflow-hidden rounded-t-r6 bg-gray-00",
+            "max-h-[500px] w-full max-w-[402px] overflow-hidden rounded-t-r6 bg-gray-00",
             className,
           )}
           role="dialog"

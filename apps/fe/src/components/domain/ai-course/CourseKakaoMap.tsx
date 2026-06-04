@@ -196,47 +196,49 @@ function CourseKakaoMapView({
 
         if (markerPositions.length > 1) {
           const routeCoords = orderedPoints.map((p) => ({ lat: p.lat, lng: p.lng }));
-          let basePathPositions = markerPositions;
-          let shouldDrawPolyline = false;
-
-          if (routePath && routePath.length > 1) {
-            basePathPositions = routePath.map((p) => new maps.LatLng(p.lat, p.lng));
-            shouldDrawPolyline = true;
-          } else if (routePath === null) {
-            const walkingPath = await fetchKakaoWalkingRoutePath(routeCoords);
-            if (cancelled) return;
-            basePathPositions =
-              walkingPath?.map((p) => new maps.LatLng(p.lat, p.lng)) ?? markerPositions;
-            shouldDrawPolyline = true;
-          }
-          const pathPositions = basePathPositions;
-
-          if (shouldDrawPolyline) {
-            mapObjects.push(
-              new maps.Polyline({
-                map,
-                path: pathPositions,
-                strokeWeight: 10,
-                strokeColor: "#ffffff",
-                strokeOpacity: 0.95,
-                strokeStyle: "solid",
-              }),
-            );
-            mapObjects.push(
-              new maps.Polyline({
-                map,
-                path: pathPositions,
-                strokeWeight: 6,
-                strokeColor: "#2563eb",
-                strokeOpacity: 0.95,
-                strokeStyle: "solid",
-              }),
-            );
-          }
 
           const departureOverlayPosition = departurePoint
             ? new maps.LatLng(departurePoint.lat, departurePoint.lng)
             : null;
+
+          // 기본: 출발지 → 빵집을 순서대로 단순 직선(대각선)으로 연결.
+          // 도로 경로(길찾기)는 추후 택시 기사 페이지에서 routePath로 주입해 사용한다.
+          let basePathPositions = [
+            ...(departureOverlayPosition ? [departureOverlayPosition] : []),
+            ...markerPositions,
+          ];
+
+          if (routePath && routePath.length > 1) {
+            basePathPositions = routePath.map((p) => new maps.LatLng(p.lat, p.lng));
+          } else if (routePath === null) {
+            const walkingPath = await fetchKakaoWalkingRoutePath(routeCoords);
+            if (cancelled) return;
+            if (walkingPath && walkingPath.length > 1) {
+              basePathPositions = walkingPath.map((p) => new maps.LatLng(p.lat, p.lng));
+            }
+          }
+          const pathPositions = basePathPositions;
+
+          mapObjects.push(
+            new maps.Polyline({
+              map,
+              path: pathPositions,
+              strokeWeight: 10,
+              strokeColor: "#ffffff",
+              strokeOpacity: 0.95,
+              strokeStyle: "solid",
+            }),
+          );
+          mapObjects.push(
+            new maps.Polyline({
+              map,
+              path: pathPositions,
+              strokeWeight: 6,
+              strokeColor: "#2563eb",
+              strokeOpacity: 0.95,
+              strokeStyle: "solid",
+            }),
+          );
 
           if (departurePoint && departureOverlayPosition) {
             mapObjects.push(

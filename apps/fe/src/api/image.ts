@@ -4,7 +4,7 @@ import type { ApiEnvelope } from "@/api/types/common";
 const PATH = "/images";
 
 /** `GET /images` 선업로드 쿼리 `folder` — 백엔드 `UploadFolder`와 동일 */
-export type ImageFolder = "reviews" | "posts";
+export type ImageFolder = "bakeries" | "breads" | "reviews" | "posts" | "profiles";
 
 export async function uploadImages(
   images: File[],

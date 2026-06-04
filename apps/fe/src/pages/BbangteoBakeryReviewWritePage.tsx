@@ -220,7 +220,7 @@ export default function BbangteoBakeryReviewWritePage({
                     key={idx}
                     type="button"
                     aria-label={`${idx + 1}점`}
-                    className={filled ? "blue_700 text-blue-700" : "text-[#d1d3d8]"}
+                    className={filled ? "text-orange-600" : "text-gray-300"}
                     style={{
                       width: "33.66px",
                       height: "33.66px",
@@ -253,7 +253,7 @@ export default function BbangteoBakeryReviewWritePage({
         </main>
       </div>
 
-      <div className="fixed bottom-0 left-1/2 z-40 flex h-[44px] w-full max-w-[402px] -translate-x-1/2 items-center border-t border-[#eeeff1] bg-white px-[14px] md:max-w-[744px]">
+      <div className="fixed bottom-0 left-1/2 z-40 flex h-[44px] w-full max-w-[402px] -translate-x-1/2 items-center border-t border-[#eeeff1] bg-white px-[14px]">
         <button
           type="button"
           className="flex h-[28px] items-center gap-[6px] rounded-[8px] border border-[#dcdee3] px-[8px]"
@@ -261,15 +261,7 @@ export default function BbangteoBakeryReviewWritePage({
           disabled={isUploadingImages}
           aria-label="이미지 업로드"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path
-              d="M4 7.5C4 6.11929 5.11929 5 6.5 5H17.5C18.8807 5 20 6.11929 20 7.5V16.5C20 17.8807 18.8807 19 17.5 19H6.5C5.11929 19 4 17.8807 4 16.5V7.5Z"
-              stroke="#1a1c20"
-              strokeWidth="1.7"
-            />
-            <circle cx="8.5" cy="9" r="1.5" fill="#1a1c20" />
-            <path d="M7 16L11 12L14 15L16.5 12.5L19 16" stroke="#1a1c20" strokeWidth="1.7" />
-          </svg>
+          <AppIcon src={IconAssets.IcImageLine} size={16} />
           <span className="text-[13px] leading-[18px] font-medium text-[#1a1c20]">
             {isUploadingImages
               ? "업로드 중..."

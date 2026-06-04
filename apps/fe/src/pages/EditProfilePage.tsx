@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getErrorMessage } from "@/api/types/common";
+import { uploadImages } from "@/api/image";
 import {
   checkNicknameAvailable,
   getMyProfile,
@@ -7,6 +8,7 @@ import {
   type UpdateMyProfileRequest,
 } from "@/api/user";
 import { AppTopBar, BottomCTA, FieldLabel, TextField } from "@/components/common";
+import { AppIcon, IconAssets } from "@/components/icons";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { refreshProfileCacheFromServer } from "@/lib/userProfileCache";
 import { useNavigate } from "@tanstack/react-router";
@@ -39,6 +41,8 @@ export default function EditProfilePage() {
   });
   const [original, setOriginal] = useState<ProfileFormState | null>(null);
   const [nicknameCheckState, setNicknameCheckState] = useState<NicknameCheckState>("idle");
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -115,6 +119,25 @@ export default function EditProfilePage() {
       } catch (error) {
         setNicknameCheckState("idle");
         window.alert(getErrorMessage(error));
+      }
+    })();
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // 같은 파일 재선택 허용
+    if (!file) return;
+    void (async () => {
+      try {
+        setIsUploadingImage(true);
+        const [url] = await uploadImages([file], "profiles");
+        if (url) {
+          setForm((prev) => ({ ...prev, profileImageUrl: url }));
+        }
+      } catch (error) {
+        window.alert(getErrorMessage(error));
+      } finally {
+        setIsUploadingImage(false);
       }
     })();
   };
@@ -204,23 +227,60 @@ export default function EditProfilePage() {
         </section>
 
         <section className="flex flex-col gap-[6px] rounded-r4 bg-white p-x5">
-          <FieldLabel>프로필 이미지 URL</FieldLabel>
-          <TextField
-            placeholder="https://..."
-            value={form.profileImageUrl}
-            onChange={(value) => setForm((prev) => ({ ...prev, profileImageUrl: value }))}
-            disabled={isLoading || isSaving}
-            type="url"
+          <FieldLabel>프로필 이미지</FieldLabel>
+          <div className="flex items-center gap-x4">
+            <div className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-full bg-gray-200">
+              {form.profileImageUrl ? (
+                <img
+                  src={form.profileImageUrl}
+                  alt="프로필 이미지 미리보기"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center">
+                  <AppIcon src={IconAssets.IcPerson} size={40} className="opacity-50" />
+                </div>
+              )}
+            </div>
+            <div className="flex flex-1 flex-col gap-x2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading || isSaving || isUploadingImage}
+                className="h-x12 rounded-r3 border border-gray-300 px-x4 typo-t4bold text-gray-1000 disabled:opacity-50"
+              >
+                {isUploadingImage ? "업로드 중…" : "이미지 변경"}
+              </button>
+              {form.profileImageUrl ? (
+                <button
+                  type="button"
+                  onClick={() => setForm((prev) => ({ ...prev, profileImageUrl: "" }))}
+                  disabled={isLoading || isSaving || isUploadingImage}
+                  className="typo-t3regular text-gray-600 underline disabled:opacity-50"
+                >
+                  기본 이미지로 변경
+                </button>
+              ) : null}
+            </div>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageSelect}
           />
           <p className="px-x2 typo-t3regular text-gray-700">
-            이미지 업로드 기능이 아니라 URL 값만 수정합니다.
+            JPG, PNG, WebP 이미지를 올릴 수 있어요.
           </p>
         </section>
       </main>
 
       <BottomCTA
         text={isSaving ? "저장 중…" : "저장하기"}
-        disabled={isLoading || isSaving || !isDirty || !nicknameReady || !emailValid}
+        disabled={
+          isLoading || isSaving || isUploadingImage || !isDirty || !nicknameReady || !emailValid
+        }
         onClick={handleSave}
       />
     </MobileFrame>

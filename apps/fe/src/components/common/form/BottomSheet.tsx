@@ -13,7 +13,7 @@ export default function BottomSheet({ isOpen, onClose, onSelect }: BottomSheetPr
     <>
       <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
       <div className="fixed bottom-0 left-0 right-0 z-50">
-        <div className="mx-auto flex max-h-[500px] w-full max-w-[744px] flex-col items-start justify-start gap-x3 overflow-hidden rounded-tl-r6 rounded-tr-r6 bg-gray-00">
+        <div className="mx-auto flex max-h-[500px] w-full max-w-[402px] flex-col items-start justify-start gap-x3 overflow-hidden rounded-tl-r6 rounded-tr-r6 bg-gray-00">
           <button
             type="button"
             onClick={onClose}

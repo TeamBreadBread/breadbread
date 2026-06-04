@@ -31,7 +31,7 @@ export const Route = createRootRoute({
     <>
       <FcmNotificationListener />
       <div className="flex min-h-screen w-full items-center justify-center bg-gray-100">
-        <div className="w-full max-w-[744px] bg-gray-00">
+        <div className="w-full max-w-[402px] bg-gray-00">
           <LoginRequiredProvider>
             <Outlet />
           </LoginRequiredProvider>

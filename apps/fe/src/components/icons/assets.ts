@@ -20,6 +20,7 @@ export { default as IcHeart } from "@/assets/icons/Ic_Heart.svg";
 export { default as IcHelpCircle } from "@/assets/icons/Ic_HelpCircle.svg";
 export { default as IcHome } from "@/assets/icons/Ic_Home.svg";
 export { default as IcImage } from "@/assets/icons/Ic_Image.svg";
+export { default as IcImageLine } from "@/assets/icons/Ic_ImageLine.svg";
 export { default as IcInfoCircle } from "@/assets/icons/Ic_InfoCircle.svg";
 export { default as IcKeyboardClose } from "@/assets/icons/Ic_KeyboardClose.svg";
 export { default as IcKeyboardOpen } from "@/assets/icons/Ic_KeyboardOpen.svg";
