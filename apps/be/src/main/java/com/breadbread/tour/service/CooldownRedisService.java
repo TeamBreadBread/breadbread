@@ -21,6 +21,11 @@ public class CooldownRedisService {
     private static final String PRE_DEPARTURE_PREFIX = "tour:pre_departure:";
     private static final Duration PRE_DEPARTURE_TTL = Duration.ofHours(3);
 
+    private static final String ONE_HOUR_BEFORE_PREFIX = "reservation:notify:1h:";
+    private static final String TEN_MIN_BEFORE_PREFIX = "reservation:notify:10min:";
+    private static final String TOUR_START_PREFIX = "reservation:notify:start:";
+    private static final Duration NOTIFY_TTL = Duration.ofHours(6);
+
     private static final String CONGESTION_PRE_DEPARTURE_PREFIX = "tour:congestion_pre_dep:";
     private static final Duration CONGESTION_PRE_DEPARTURE_TTL = Duration.ofHours(3);
 
@@ -43,15 +48,37 @@ public class CooldownRedisService {
         return Boolean.TRUE.equals(acquired);
     }
 
-    // 출발 전 알림
-    public boolean isPreDepartureNotified(Long userId, Long reservationId) {
-        return stringRedisTemplate.hasKey(PRE_DEPARTURE_PREFIX + userId + ":" + reservationId);
+    // 예약 실시간 알림 (1시간 전 / 10분 전 / 투어 시작)
+    public boolean tryMarkOneHourBeforeNotified(Long userId, Long reservationId) {
+        return Boolean.TRUE.equals(
+                stringRedisTemplate
+                        .opsForValue()
+                        .setIfAbsent(
+                                ONE_HOUR_BEFORE_PREFIX + userId + ":" + reservationId,
+                                "1",
+                                NOTIFY_TTL));
     }
 
-    public void markPreDepartureNotified(Long userId, Long reservationId) {
-        stringRedisTemplate
-                .opsForValue()
-                .set(PRE_DEPARTURE_PREFIX + userId + ":" + reservationId, "1", PRE_DEPARTURE_TTL);
+    public boolean tryMarkTenMinBeforeNotified(Long userId, Long reservationId) {
+        return Boolean.TRUE.equals(
+                stringRedisTemplate
+                        .opsForValue()
+                        .setIfAbsent(
+                                TEN_MIN_BEFORE_PREFIX + userId + ":" + reservationId,
+                                "1",
+                                NOTIFY_TTL));
+    }
+
+    public boolean tryMarkTourStartNotified(Long userId, Long reservationId) {
+        return Boolean.TRUE.equals(
+                stringRedisTemplate
+                        .opsForValue()
+                        .setIfAbsent(
+                                TOUR_START_PREFIX + userId + ":" + reservationId, "1", NOTIFY_TTL));
+    }
+
+    public void deleteTourStartMark(Long userId, Long reservationId) {
+        stringRedisTemplate.delete(TOUR_START_PREFIX + userId + ":" + reservationId);
     }
 
     // 출발 전 혼잡도 체크
