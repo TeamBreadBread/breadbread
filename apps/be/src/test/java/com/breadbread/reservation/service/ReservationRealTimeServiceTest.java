@@ -234,15 +234,13 @@ class ReservationRealTimeServiceTest {
     }
 
     /**
-     * now() + minutes 가 자정을 넘으면 LocalDateTime 기반 minutesUntil 계산이 음수가 됩니다.
-     * 해당 케이스는 자정 근처 실행 시 스킵합니다.
+     * now() + minutes 가 자정을 넘으면 LocalDateTime 기반 minutesUntil 계산이 음수가 됩니다. 해당 케이스는 자정 근처 실행 시
+     * 스킵합니다.
      */
     private static LocalTime nowPlusMinutes(int minutes) {
         LocalTime now = now();
         LocalTime result = now.plusMinutes(minutes);
-        Assumptions.assumeTrue(
-                result.isAfter(now),
-                "자정 근처 실행으로 인해 스킵 (departure time이 날짜를 넘어감)");
+        Assumptions.assumeTrue(result.isAfter(now), "자정 근처 실행으로 인해 스킵 (departure time이 날짜를 넘어감)");
         return result;
     }
 }
