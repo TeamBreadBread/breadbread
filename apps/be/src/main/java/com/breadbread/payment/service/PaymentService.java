@@ -58,6 +58,9 @@ public class PaymentService {
         if (!reservation.getUser().getId().equals(userId)) {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
+        if (!reservation.isActive()) {
+            throw new CustomException(ErrorCode.RESERVATION_ALREADY_DELETED);
+        }
         String paymentId = UUID.randomUUID().toString();
 
         Payment payment =

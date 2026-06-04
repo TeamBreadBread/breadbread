@@ -54,9 +54,11 @@ public class ReservationService {
             Long userId, ReservationStatus status) {
         List<Reservation> reservations =
                 status != null
-                        ? reservationRepository.findAllByUserIdAndStatusOrderByCreatedAtDesc(
-                                userId, status)
-                        : reservationRepository.findAllByUserIdOrderByCreatedAtDesc(userId);
+                        ? reservationRepository
+                                .findAllByUserIdAndStatusAndActiveOrderByCreatedAtDesc(
+                                        userId, status, true)
+                        : reservationRepository.findAllByUserIdAndActiveOrderByCreatedAtDesc(
+                                userId, true);
         return reservations.stream().map(ReservationSummaryResponse::from).toList();
     }
 
@@ -87,8 +89,12 @@ public class ReservationService {
         validateDepartureLocation(request.getDeparture(), request.getLat(), request.getLng());
 
         // 같은 출발 일시에 PENDING·CONFIRMED 예약 모두 중복 불가
-        if (reservationRepository.existsByUserIdAndDepartureDateAndDepartureTimeAndStatusIn(
-                userId, request.getDepartureDate(), request.getDepartureTime(), ACTIVE_STATUSES)) {
+        if (reservationRepository
+                .existsByUserIdAndDepartureDateAndDepartureTimeAndStatusInAndActiveTrue(
+                        userId,
+                        request.getDepartureDate(),
+                        request.getDepartureTime(),
+                        ACTIVE_STATUSES)) {
             throw new CustomException(ErrorCode.ALREADY_RESERVED);
         }
 
@@ -144,8 +150,9 @@ public class ReservationService {
         validateDepartureLocation(request.getDeparture(), request.getLat(), request.getLng());
 
         // 같은 날짜·시간에 다른 활성 예약 중복 방지
-        if (reservationRepository.existsByUserIdAndDepartureDateAndDepartureTimeAndStatusInAndIdNot(
-                userId, newDate, newTime, ACTIVE_STATUSES, reservationId)) {
+        if (reservationRepository
+                .existsByUserIdAndDepartureDateAndDepartureTimeAndStatusInAndIdNotAndActiveTrue(
+                        userId, newDate, newTime, ACTIVE_STATUSES, reservationId)) {
             throw new CustomException(ErrorCode.ALREADY_RESERVED);
         }
 
@@ -162,6 +169,17 @@ public class ReservationService {
         validateOwner(reservation, userId);
         reservation.cancel();
         log.info("예약 취소: reservationId={}", reservationId);
+    }
+
+    @Transactional
+    public void deleteReservation(Long userId, Long reservationId) {
+        Reservation reservation =
+                reservationRepository
+                        .findById(reservationId)
+                        .orElseThrow(() -> new CustomException(ErrorCode.RESERVATION_NOT_FOUND));
+        validateOwner(reservation, userId);
+        reservation.deactivate();
+        log.info("예약 삭제: reservationId={}", reservationId);
     }
 
     private void validateOwner(Reservation reservation, Long userId) {

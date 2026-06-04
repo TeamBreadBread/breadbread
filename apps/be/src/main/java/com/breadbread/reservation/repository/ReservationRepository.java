@@ -12,18 +12,19 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
-    List<Reservation> findAllByUserIdOrderByCreatedAtDesc(Long userId);
 
-    List<Reservation> findAllByUserIdAndStatusOrderByCreatedAtDesc(
-            Long userId, ReservationStatus status);
+    List<Reservation> findAllByUserIdAndActiveOrderByCreatedAtDesc(Long userId, boolean active);
 
-    boolean existsByUserIdAndDepartureDateAndDepartureTimeAndStatusIn(
+    List<Reservation> findAllByUserIdAndStatusAndActiveOrderByCreatedAtDesc(
+            Long userId, ReservationStatus status, boolean active);
+
+    boolean existsByUserIdAndDepartureDateAndDepartureTimeAndStatusInAndActiveTrue(
             Long userId,
             LocalDate departureDate,
             LocalTime departureTime,
             Collection<ReservationStatus> statuses);
 
-    boolean existsByUserIdAndDepartureDateAndDepartureTimeAndStatusInAndIdNot(
+    boolean existsByUserIdAndDepartureDateAndDepartureTimeAndStatusInAndIdNotAndActiveTrue(
             Long userId,
             LocalDate departureDate,
             LocalTime departureTime,
@@ -35,7 +36,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                     + "JOIN FETCH r.course c "
                     + "JOIN FETCH c.courseBakeries cb "
                     + "JOIN FETCH cb.bakery "
-                    + "WHERE r.id = :id")
+                    + "WHERE r.id = :id AND r.active = true")
     Optional<Reservation> findWithCourseById(@Param("id") Long id);
 
     @Query(
@@ -44,14 +45,14 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                     + "JOIN FETCH r.course c "
                     + "JOIN FETCH c.courseBakeries cb "
                     + "JOIN FETCH cb.bakery "
-                    + "WHERE r.departureDate = :date AND r.status = :status")
+                    + "WHERE r.departureDate = :date AND r.status = :status AND r.active = true")
     List<Reservation> findTodayConfirmedWithCourse(
             @Param("date") LocalDate date, @Param("status") ReservationStatus status);
 
     @Query(
             "SELECT r FROM Reservation r "
                     + "JOIN FETCH r.user "
-                    + "WHERE r.departureDate < :today AND r.status IN :statuses")
+                    + "WHERE r.departureDate < :today AND r.status IN :statuses AND r.active = true")
     List<Reservation> findExpiredByStatuses(
             @Param("today") LocalDate today,
             @Param("statuses") Collection<ReservationStatus> statuses);
@@ -61,7 +62,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     @Query(
             "SELECT DISTINCT r.departureTime FROM Reservation r "
-                    + "WHERE r.user.id = :userId AND r.departureDate = :date AND r.status IN :statuses")
+                    + "WHERE r.user.id = :userId AND r.departureDate = :date "
+                    + "AND r.status IN :statuses AND r.active = true")
     List<LocalTime> findBookedTimesByUserAndDate(
             @Param("userId") Long userId,
             @Param("date") LocalDate date,

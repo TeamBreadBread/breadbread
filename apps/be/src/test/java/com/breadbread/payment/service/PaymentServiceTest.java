@@ -113,6 +113,20 @@ class PaymentServiceTest {
     }
 
     @Test
+    void preparePayment_throws_whenReservationAlreadyDeleted() {
+        PreparePaymentRequest request = prepareRequest(1L);
+        Reservation reservation = reservation(1L, user(10L), manualCourse("코스"));
+        reservation.cancel();
+        ReflectionTestUtils.setField(reservation, "active", false);
+        when(reservationRepository.findById(1L)).thenReturn(Optional.of(reservation));
+
+        assertThatThrownBy(() -> paymentService.preparePayment(10L, request))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.RESERVATION_ALREADY_DELETED);
+    }
+
+    @Test
     void preparePayment_saves_whenReservationOwned() {
         PreparePaymentRequest request = prepareRequest(1L);
         User owner = user(10L);

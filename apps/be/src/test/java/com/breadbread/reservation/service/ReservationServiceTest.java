@@ -69,8 +69,8 @@ class ReservationServiceTest {
     @Test
     void getMyReservations_filtersByStatus_whenProvided() {
         Reservation reservation = reservation(1L, user(10L), manualCourse(3L, "course"));
-        when(reservationRepository.findAllByUserIdAndStatusOrderByCreatedAtDesc(
-                        10L, ReservationStatus.PENDING))
+        when(reservationRepository.findAllByUserIdAndStatusAndActiveOrderByCreatedAtDesc(
+                        10L, ReservationStatus.PENDING, true))
                 .thenReturn(List.of(reservation));
 
         var result = reservationService.getMyReservations(10L, ReservationStatus.PENDING);
@@ -83,14 +83,14 @@ class ReservationServiceTest {
     @Test
     void getMyReservations_usesUnfilteredQuery_whenStatusIsNull() {
         Reservation reservation = reservation(1L, user(10L), manualCourse(3L, "course"));
-        when(reservationRepository.findAllByUserIdOrderByCreatedAtDesc(10L))
+        when(reservationRepository.findAllByUserIdAndActiveOrderByCreatedAtDesc(10L, true))
                 .thenReturn(List.of(reservation));
 
         var result = reservationService.getMyReservations(10L, null);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getId()).isEqualTo(1L);
-        verify(reservationRepository).findAllByUserIdOrderByCreatedAtDesc(10L);
+        verify(reservationRepository).findAllByUserIdAndActiveOrderByCreatedAtDesc(10L, true);
     }
 
     @Test
@@ -156,11 +156,12 @@ class ReservationServiceTest {
     @Test
     void createReservation_throws_whenActiveReservationAlreadyExists() {
         CreateReservationRequest request = createReservationRequest(3L);
-        when(reservationRepository.existsByUserIdAndDepartureDateAndDepartureTimeAndStatusIn(
-                        eq(10L),
-                        eq(request.getDepartureDate()),
-                        eq(request.getDepartureTime()),
-                        eq(ReservationService.ACTIVE_STATUSES)))
+        when(reservationRepository
+                        .existsByUserIdAndDepartureDateAndDepartureTimeAndStatusInAndActiveTrue(
+                                eq(10L),
+                                eq(request.getDepartureDate()),
+                                eq(request.getDepartureTime()),
+                                eq(ReservationService.ACTIVE_STATUSES)))
                 .thenReturn(true);
 
         assertThatThrownBy(() -> reservationService.createReservation(10L, request))
@@ -336,7 +337,7 @@ class ReservationServiceTest {
 
         when(reservationRepository.findById(1L)).thenReturn(Optional.of(reservation));
         when(reservationRepository
-                        .existsByUserIdAndDepartureDateAndDepartureTimeAndStatusInAndIdNot(
+                        .existsByUserIdAndDepartureDateAndDepartureTimeAndStatusInAndIdNotAndActiveTrue(
                                 10L,
                                 UPDATED_DATE,
                                 UPDATED_TIME,
@@ -363,7 +364,7 @@ class ReservationServiceTest {
 
         when(reservationRepository.findById(1L)).thenReturn(Optional.of(reservation));
         when(reservationRepository
-                        .existsByUserIdAndDepartureDateAndDepartureTimeAndStatusInAndIdNot(
+                        .existsByUserIdAndDepartureDateAndDepartureTimeAndStatusInAndIdNotAndActiveTrue(
                                 10L,
                                 UPDATED_DATE,
                                 UPDATED_HALF_HOUR_TIME,
@@ -387,7 +388,7 @@ class ReservationServiceTest {
         ReflectionTestUtils.setField(request, "headCount", 4);
         when(reservationRepository.findById(1L)).thenReturn(Optional.of(reservation));
         when(reservationRepository
-                        .existsByUserIdAndDepartureDateAndDepartureTimeAndStatusInAndIdNot(
+                        .existsByUserIdAndDepartureDateAndDepartureTimeAndStatusInAndIdNotAndActiveTrue(
                                 10L,
                                 reservation.getDepartureDate(),
                                 reservation.getDepartureTime(),
@@ -409,7 +410,7 @@ class ReservationServiceTest {
         ReflectionTestUtils.setField(request, "headCount", 4);
         when(reservationRepository.findById(1L)).thenReturn(Optional.of(reservation));
         when(reservationRepository
-                        .existsByUserIdAndDepartureDateAndDepartureTimeAndStatusInAndIdNot(
+                        .existsByUserIdAndDepartureDateAndDepartureTimeAndStatusInAndIdNotAndActiveTrue(
                                 10L,
                                 reservation.getDepartureDate(),
                                 reservation.getDepartureTime(),
@@ -431,7 +432,7 @@ class ReservationServiceTest {
         ReflectionTestUtils.setField(request, "headCount", 4);
         when(reservationRepository.findById(1L)).thenReturn(Optional.of(reservation));
         when(reservationRepository
-                        .existsByUserIdAndDepartureDateAndDepartureTimeAndStatusInAndIdNot(
+                        .existsByUserIdAndDepartureDateAndDepartureTimeAndStatusInAndIdNotAndActiveTrue(
                                 10L,
                                 reservation.getDepartureDate(),
                                 reservation.getDepartureTime(),
@@ -513,14 +514,82 @@ class ReservationServiceTest {
                 .isEqualTo(ErrorCode.RESERVATION_CANCEL_FAILED);
     }
 
+    @Test
+    void deleteReservation_throws_whenReservationMissing() {
+        when(reservationRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> reservationService.deleteReservation(10L, 1L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.RESERVATION_NOT_FOUND);
+    }
+
+    @Test
+    void deleteReservation_throws_whenRequesterIsNotOwner() {
+        Reservation reservation = reservation(1L, user(10L), manualCourse(3L, "course"));
+        when(reservationRepository.findById(1L)).thenReturn(Optional.of(reservation));
+
+        assertThatThrownBy(() -> reservationService.deleteReservation(99L, 1L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.FORBIDDEN);
+    }
+
+    @Test
+    void deleteReservation_throws_whenReservationIsConfirmed() {
+        Reservation reservation = reservation(1L, user(10L), manualCourse(3L, "course"));
+        ReflectionTestUtils.setField(reservation, "status", ReservationStatus.CONFIRMED);
+        when(reservationRepository.findById(1L)).thenReturn(Optional.of(reservation));
+
+        assertThatThrownBy(() -> reservationService.deleteReservation(10L, 1L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.RESERVATION_DELETE_FAILED);
+    }
+
+    @Test
+    void deleteReservation_deactivates_whenPendingReservation() {
+        Reservation reservation = reservation(1L, user(10L), manualCourse(3L, "course"));
+        when(reservationRepository.findById(1L)).thenReturn(Optional.of(reservation));
+
+        reservationService.deleteReservation(10L, 1L);
+
+        assertThat(reservation.isActive()).isFalse();
+    }
+
+    @Test
+    void deleteReservation_throws_whenAlreadyDeleted() {
+        Reservation reservation = reservation(1L, user(10L), manualCourse(3L, "course"));
+        reservation.cancel();
+        ReflectionTestUtils.setField(reservation, "active", false);
+        when(reservationRepository.findById(1L)).thenReturn(Optional.of(reservation));
+
+        assertThatThrownBy(() -> reservationService.deleteReservation(10L, 1L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.RESERVATION_ALREADY_DELETED);
+    }
+
+    @Test
+    void deleteReservation_deactivates_whenCancelledReservation() {
+        Reservation reservation = reservation(1L, user(10L), manualCourse(3L, "course"));
+        reservation.cancel();
+        when(reservationRepository.findById(1L)).thenReturn(Optional.of(reservation));
+
+        reservationService.deleteReservation(10L, 1L);
+
+        assertThat(reservation.isActive()).isFalse();
+    }
+
     // ───────────────────────────── helpers ─────────────────────────────
 
     private void stubNoActiveConflict(CreateReservationRequest request) {
-        when(reservationRepository.existsByUserIdAndDepartureDateAndDepartureTimeAndStatusIn(
-                        eq(10L),
-                        eq(request.getDepartureDate()),
-                        eq(request.getDepartureTime()),
-                        eq(ReservationService.ACTIVE_STATUSES)))
+        when(reservationRepository
+                        .existsByUserIdAndDepartureDateAndDepartureTimeAndStatusInAndActiveTrue(
+                                eq(10L),
+                                eq(request.getDepartureDate()),
+                                eq(request.getDepartureTime()),
+                                eq(ReservationService.ACTIVE_STATUSES)))
                 .thenReturn(false);
     }
 
