@@ -39,3 +39,12 @@ export function extractDong(full: string): string | null {
   }
   return null;
 }
+
+/** 큐레이션 카드에 표시할 짧은 주소 (행정동 우선, 없으면 시·구 등 앞 토큰만) */
+export function resolveCurationCardAddress(full: string | undefined | null, maxTokens = 4): string {
+  const trimmed = full?.trim();
+  if (!trimmed) return "주소 정보 없음";
+  const dong = extractDong(trimmed);
+  if (dong) return dong;
+  return formatCurationAddress(trimmed, maxTokens);
+}

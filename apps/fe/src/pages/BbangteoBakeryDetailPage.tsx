@@ -1,8 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { BAKERY_REVIEWS_DEFAULT_SIZE, deleteBakeryReview, getBakeryReviews } from "@/api/bakery";
+import {
+  BAKERY_REVIEWS_DEFAULT_SIZE,
+  deleteBakeryReview,
+  getBakeryById,
+  getBakeryReviews,
+  likeBakery,
+  unlikeBakery,
+} from "@/api/bakery";
 import { isBakeryReviewAuthor, type BakeryReview } from "@/api/types/bakery";
-import { getErrorMessage } from "@/api/types/common";
+import { ApiBusinessError, getErrorMessage } from "@/api/types/common";
 import { AppIcon, IconAssets } from "@/components/icons";
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
 import soboroImg from "@/assets/images/soboro.png";
@@ -15,6 +22,8 @@ import MobileFrame from "@/components/layout/MobileFrame";
 import { ToastBanner } from "@/components/common";
 import FloatingPlusButton from "@/components/common/FloatingPlusButton";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
+import { setBakeryLikeOverlay } from "@/lib/bakeryLikeLocalCache";
+import { patchBakeryInListCaches } from "@/hooks/useBakeries";
 import { useBakeryDetail } from "@/hooks/useBakeryDetail";
 import { getUserProfile } from "@/lib/userProfileCache";
 import type { BakeryDetail, BakeryDetailBread } from "@/api/types/bakery";
@@ -24,6 +33,9 @@ import { buildWeeklyHoursRows, getBakeryHoursStatusLabel } from "@/utils/bakeryB
 import BakeryKakaoMapPreview from "@/components/domain/bbangteo/BakeryKakaoMapPreview";
 import { formatPhoneDisplay } from "@/utils/formatPhoneNumber";
 import { cn } from "@/utils/cn";
+
+/** 빵집 상세 제목 줄(`22px` / `leading 30px`)과 맞춘 하트 아이콘 */
+const BAKERY_TITLE_LIKE_ICON_SIZE = 22;
 
 type MenuRow = {
   id: number;
@@ -87,6 +99,38 @@ const BackHeader = ({
   );
 };
 
+const BakeryLikeButton = ({
+  liked,
+  busy,
+  onClick,
+}: {
+  liked: boolean;
+  busy: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    type="button"
+    aria-label={liked ? "좋아요 취소" : "좋아요"}
+    aria-pressed={liked}
+    onClick={onClick}
+    className={cn(
+      "flex h-[30px] w-[30px] shrink-0 items-center justify-center",
+      busy && "pointer-events-none",
+    )}
+  >
+    <svg
+      width={BAKERY_TITLE_LIKE_ICON_SIZE}
+      height={BAKERY_TITLE_LIKE_ICON_SIZE}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden
+      className={cn("shrink-0", liked ? "text-orange-600" : "text-gray-1000 opacity-45")}
+    >
+      <path d="M8.22857 4.5C5.28857 4.5 3 6.93435 3 9.90673C3 11.3141 3.50877 12.4992 4.30354 13.5992C5.08361 14.6789 6.16878 15.7152 7.3608 16.8235L7.36444 16.8269L10.5698 19.7688C10.7179 19.9048 10.8601 20.0352 10.9893 20.1364C11.1311 20.2474 11.304 20.3614 11.5237 20.4287C11.8342 20.5238 12.1658 20.5238 12.4763 20.4287C12.696 20.3614 12.8689 20.2474 13.0107 20.1364C13.1399 20.0352 13.282 19.9048 13.4302 19.7688L16.6356 16.8269L16.6392 16.8235C17.8312 15.7152 18.9164 14.6789 19.6965 13.5992C20.4912 12.4992 21 11.3141 21 9.90673C21 6.93435 18.7114 4.5 15.7714 4.5C14.2779 4.5 12.9451 5.13261 12 6.14668C11.0549 5.13261 9.72212 4.5 8.22857 4.5Z" />
+    </svg>
+  </button>
+);
+
 const BakeryImageGallery = ({
   imageUrls,
   bakeryName,
@@ -132,13 +176,22 @@ const BakeryTitleInfo = ({
   name,
   rating,
   reviewCount,
+  liked,
+  likeBusy,
+  onToggleLike,
 }: {
   name: string;
   rating: number;
   reviewCount: number;
+  liked: boolean;
+  likeBusy: boolean;
+  onToggleLike: () => void;
 }) => (
   <div className="flex flex-col gap-[10px]">
-    <h1 className="text-[22px] leading-[30px] font-bold text-[#1a1c20]">{name}</h1>
+    <div className="flex items-center justify-between gap-x2">
+      <h1 className="min-w-0 flex-1 text-[22px] leading-[30px] font-bold text-[#1a1c20]">{name}</h1>
+      <BakeryLikeButton liked={liked} busy={likeBusy} onClick={onToggleLike} />
+    </div>
     <div className="flex items-center gap-x1 text-[14px] leading-[19px] font-medium text-gray-600">
       <AppIcon src={IconAssets.IcStar} size={18} className="icon-orange-600 shrink-0" alt="" />
       <span>{rating.toFixed(1)}</span>
@@ -235,7 +288,17 @@ const BakeryInfoList = ({ detail }: { detail: BakeryDetail }) => {
   );
 };
 
-const BakeryHero = ({ detail }: { detail: BakeryDetail }) => {
+const BakeryHero = ({
+  detail,
+  liked,
+  likeBusy,
+  onToggleLike,
+}: {
+  detail: BakeryDetail;
+  liked: boolean;
+  likeBusy: boolean;
+  onToggleLike: () => void;
+}) => {
   const rating = detail.rating != null ? Number(detail.rating) : 0;
   const reviewCount = detail.reviewCount != null ? Number(detail.reviewCount) : 0;
   const images = detail.imageUrls ?? [];
@@ -244,7 +307,14 @@ const BakeryHero = ({ detail }: { detail: BakeryDetail }) => {
     <section className="flex flex-col">
       <BakeryImageGallery imageUrls={images} bakeryName={detail.name} />
       <div className="flex flex-col gap-[16px] px-[20px] py-[16px]">
-        <BakeryTitleInfo name={detail.name} rating={rating} reviewCount={reviewCount} />
+        <BakeryTitleInfo
+          name={detail.name}
+          rating={rating}
+          reviewCount={reviewCount}
+          liked={liked}
+          likeBusy={likeBusy}
+          onToggleLike={onToggleLike}
+        />
         <BakeryInfoList detail={detail} />
       </div>
     </section>
@@ -385,7 +455,10 @@ const ReviewCard = ({
                         key={idx}
                         src={IconAssets.IcStar}
                         size={12}
-                        className={idx < review.rating ? "opacity-100" : "opacity-25"}
+                        className={cn(
+                          "icon-orange-600 shrink-0",
+                          idx < review.rating ? "opacity-100" : "opacity-25",
+                        )}
                       />
                     ))}
                   </div>
@@ -699,8 +772,106 @@ const BbangteoBakeryDetailPage = ({
   reviewTab = false,
 }: BbangteoBakeryDetailPageProps) => {
   const navigate = useNavigate();
+  const { requireLogin } = useLoginRequired();
   const { data, loading, error } = useBakeryDetail(bakeryId);
   const [isToastClosed, setIsToastClosed] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [likeBusy, setLikeBusy] = useState(false);
+  const likePendingRef = useRef(false);
+
+  useEffect(() => {
+    if (!data || likePendingRef.current) return;
+    setLiked(Boolean(data.liked));
+    setLikeCount(data.likeCount != null ? Number(data.likeCount) : 0);
+  }, [data]);
+
+  const syncLikeToList = (entry: { liked: boolean; likeCount: number }) => {
+    if (bakeryId === undefined) return;
+    setBakeryLikeOverlay(bakeryId, entry);
+    patchBakeryInListCaches(bakeryId, entry);
+  };
+
+  const performToggleLike = async () => {
+    if (bakeryId === undefined || likeBusy || likePendingRef.current) return;
+    const wasLiked = liked;
+    const prevCount = likeCount;
+    likePendingRef.current = true;
+    const nextLiked = !wasLiked;
+    const optimisticCount = wasLiked ? Math.max(0, prevCount - 1) : prevCount + 1;
+    setLiked(nextLiked);
+    setLikeCount(optimisticCount);
+    syncLikeToList({ liked: nextLiked, likeCount: optimisticCount });
+    setLikeBusy(true);
+    try {
+      if (wasLiked) {
+        await unlikeBakery(bakeryId);
+      } else {
+        await likeBakery(bakeryId);
+      }
+      setLiked(nextLiked);
+      let resolvedCount = optimisticCount;
+      try {
+        const fresh = await getBakeryById(bakeryId);
+        resolvedCount = fresh.likeCount != null ? Number(fresh.likeCount) : optimisticCount;
+        setLikeCount(resolvedCount);
+      } catch {
+        /* 카운트 동기화 실패 시 UI liked 상태는 유지 */
+      }
+      syncLikeToList({ liked: nextLiked, likeCount: resolvedCount });
+    } catch (e) {
+      setLiked(wasLiked);
+      setLikeCount(prevCount);
+      syncLikeToList({ liked: wasLiked, likeCount: prevCount });
+      if (e instanceof ApiBusinessError) {
+        if (e.status === 409 && !wasLiked) {
+          try {
+            const fresh = await getBakeryById(bakeryId);
+            const resolved = {
+              liked: true,
+              likeCount: fresh.likeCount != null ? Number(fresh.likeCount) : prevCount + 1,
+            };
+            setLiked(resolved.liked);
+            setLikeCount(resolved.likeCount);
+            syncLikeToList(resolved);
+          } catch {
+            setLiked(true);
+            syncLikeToList({ liked: true, likeCount: prevCount + 1 });
+          }
+          return;
+        }
+        if (e.status === 400 && wasLiked) {
+          try {
+            const fresh = await getBakeryById(bakeryId);
+            const resolved = {
+              liked: false,
+              likeCount:
+                fresh.likeCount != null ? Number(fresh.likeCount) : Math.max(0, prevCount - 1),
+            };
+            setLiked(resolved.liked);
+            setLikeCount(resolved.likeCount);
+            syncLikeToList(resolved);
+          } catch {
+            setLiked(false);
+            syncLikeToList({ liked: false, likeCount: Math.max(0, prevCount - 1) });
+          }
+          return;
+        }
+      }
+      window.alert(getErrorMessage(e));
+    } finally {
+      likePendingRef.current = false;
+      setLikeBusy(false);
+    }
+  };
+
+  const handleToggleLike = () => {
+    if (bakeryId === undefined) return;
+    const returnPath = `/bbangteo-bakery-detail?bakeryId=${bakeryId}`;
+    requireLogin(() => {
+      void performToggleLike();
+    }, returnPath);
+  };
 
   useEffect(() => {
     if (!reviewUploaded || isToastClosed) return;
@@ -756,7 +927,12 @@ const BbangteoBakeryDetailPage = ({
             </div>
           ) : data ? (
             <>
-              <BakeryHero detail={data} />
+              <BakeryHero
+                detail={data}
+                liked={liked}
+                likeBusy={likeBusy}
+                onToggleLike={handleToggleLike}
+              />
               <BakeryTabSection
                 menus={breadsToMenus(data.breads ?? [], data.name)}
                 showReviewTab={reviewTab || reviewUploaded}

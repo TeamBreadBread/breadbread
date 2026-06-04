@@ -59,6 +59,23 @@ export function ensureBakeriesListLoaded(
   return pending;
 }
 
+/** 상세에서 좋아요 토글 시 목록 캐시의 해당 빵집 liked/likeCount 동기화 */
+export function patchBakeryInListCaches(
+  bakeryId: number,
+  patch: { liked: boolean; likeCount: number },
+): void {
+  for (const [key, response] of bakeryListCache.entries()) {
+    const hasTarget = response.bakeries.some((b) => b.id === bakeryId);
+    if (!hasTarget) continue;
+    bakeryListCache.set(key, {
+      ...response,
+      bakeries: response.bakeries.map((b) =>
+        b.id === bakeryId ? { ...b, liked: patch.liked, likeCount: patch.likeCount } : b,
+      ),
+    });
+  }
+}
+
 export function useBakeries(params: GetBakeriesParams = {}, options?: UseBakeriesOptions) {
   const enabled = options?.enabled ?? true;
   const serialized = useMemo(() => JSON.stringify(params), [params]);

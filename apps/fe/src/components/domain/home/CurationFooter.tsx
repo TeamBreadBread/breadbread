@@ -6,6 +6,8 @@ export type CurationItem = {
   title: string;
   address: string;
   rate: number;
+  /** GET /bakeries 썸네일·미리보기 URL */
+  imageUrl?: string | null;
 };
 
 type CurationFooterProps = {
@@ -13,7 +15,6 @@ type CurationFooterProps = {
   itemClassName?: string;
   cardImageClassName?: string;
   breadIconClassName?: string;
-  metaIconClassName?: string;
   onItemClick?: (item: CurationItem, index: number) => void;
 };
 
@@ -22,7 +23,6 @@ const CurationFooter = ({
   itemClassName,
   cardImageClassName,
   breadIconClassName,
-  metaIconClassName,
   onItemClick,
 }: CurationFooterProps) => {
   if (items.length === 0) {
@@ -51,9 +51,9 @@ const CurationFooter = ({
                   title={item.title}
                   address={item.address}
                   rate={item.rate}
+                  imageUrl={item.imageUrl}
                   imageClassName={cardImageClassName}
                   breadIconClassName={breadIconClassName}
-                  metaIconClassName={metaIconClassName}
                 />
               </button>
             ) : (
@@ -61,9 +61,9 @@ const CurationFooter = ({
                 title={item.title}
                 address={item.address}
                 rate={item.rate}
+                imageUrl={item.imageUrl}
                 imageClassName={cardImageClassName}
                 breadIconClassName={breadIconClassName}
-                metaIconClassName={metaIconClassName}
               />
             )}
           </div>

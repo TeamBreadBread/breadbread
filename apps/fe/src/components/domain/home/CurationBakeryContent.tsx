@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { GetBakeriesParams } from "@/api/types/bakery";
+import type { BakeryListItem, BakerySummaryItem, GetBakeriesParams } from "@/api/types/bakery";
 import { useNavigate } from "@tanstack/react-router";
 import Skeleton from "@/components/common/skeleton/Skeleton";
 import { useBakeries } from "@/hooks/useBakeries";
-import { extractDong, formatCurationAddress } from "@/utils/formatCurationAddress";
+import { useBakeriesSummary } from "@/hooks/useBakeriesSummary";
+import { resolveCurationCardAddress } from "@/utils/formatCurationAddress";
+import { getSafeImageUrl } from "@/utils/safeImageUrl";
 import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import {
   CURATION_BAKERY_LIST_PARAMS,
   CURATION_DISPLAY_COUNT,
   shuffleArray,
 } from "./curationBakeryContentParams";
-import { bakeryMatchesDong } from "./matchBakeryByDong";
+import { DONG_REGION_FALLBACK } from "./dongCurationParams";
 import CurationFooter, { type CurationItem } from "./CurationFooter";
 
 type CurationBakeryContentProps = {
@@ -28,15 +30,47 @@ type CurationBakeryContentProps = {
   listParamsOverride?: Partial<GetBakeriesParams>;
   /** 이미 다른 섹션에서 사용한 빵집 id를 제외 */
   excludeBakeryIds?: number[];
-  /** 주소/이름에 포함되는 키워드로 클라이언트 필터링 */
-  localKeywordFilter?: string;
-  /** 주소에서 동을 못 찾았을 때 카드에 표시할 동(예: 동네 큐레이션 섹션의 선택 동) */
-  addressDongFallback?: string;
+  /** true면 GET /bakeries/summary (동 큐레이션·`dong` 필터 등) */
+  useSummary?: boolean;
+  /** summary 모드에서 카드 주소에 우선 표시할 행정동 라벨 */
+  dongCardLabel?: string;
   /** true면 마운트(새로고침) 후 첫 픽만 사용하고 이후 재섞지 않음 */
   lockSelectionOnMount?: boolean;
   /** lock 사용 시 false면 스켈레톤 유지 (위 큐레이션 id 대기 등) */
   readyToPick?: boolean;
 };
+
+function mapListItemToCurationItem(
+  b: BakeryListItem,
+  addressMaxTokens: number,
+  dongCardLabel?: string,
+): CurationItem {
+  const address = dongCardLabel?.trim() || resolveCurationCardAddress(b.address, addressMaxTokens);
+  const rawImage = b.previewImageUrls?.[0]?.trim() || b.thumbnailUrl?.trim() || null;
+  return {
+    bakeryId: b.id,
+    title: b.name,
+    address,
+    rate: b.rating != null ? Number(b.rating) : 0,
+    imageUrl: getSafeImageUrl(rawImage ?? undefined) ?? null,
+  };
+}
+
+function mapSummaryItemToCurationItem(
+  b: BakerySummaryItem,
+  addressMaxTokens: number,
+  dongCardLabel?: string,
+): CurationItem {
+  const address = dongCardLabel?.trim() || resolveCurationCardAddress(b.address, addressMaxTokens);
+  const rawImage = b.thumbnailUrl?.trim() || null;
+  return {
+    bakeryId: b.id,
+    title: b.name,
+    address,
+    rate: b.rating != null ? Number(b.rating) : 0,
+    imageUrl: getSafeImageUrl(rawImage ?? undefined) ?? null,
+  };
+}
 
 export function CurationBakeryContent({
   compact,
@@ -46,14 +80,17 @@ export function CurationBakeryContent({
   displayCount: displayCountProp,
   listParamsOverride,
   excludeBakeryIds,
-  localKeywordFilter,
-  addressDongFallback,
+  useSummary = false,
+  dongCardLabel,
   lockSelectionOnMount = false,
   readyToPick = true,
 }: CurationBakeryContentProps) {
   const navigate = useNavigate();
   const [lockedItems, setLockedItems] = useState<CurationItem[] | null>(null);
   const displayCount = displayCountProp ?? CURATION_DISPLAY_COUNT;
+  const dongFilter = listParamsOverride?.dong?.trim() ?? "";
+  const regionFallback = dongFilter ? DONG_REGION_FALLBACK[dongFilter] : undefined;
+
   const listParams: GetBakeriesParams = useMemo(() => {
     const requestedSize = listParamsOverride?.size ?? CURATION_BAKERY_LIST_PARAMS.size;
     return {
@@ -62,7 +99,57 @@ export function CurationBakeryContent({
       size: Math.max(requestedSize, displayCount),
     };
   }, [displayCount, listParamsOverride]);
-  const { data, loading, error } = useBakeries(listParams);
+
+  const dongSummaryParams = useMemo(
+    () => ({ ...listParams, dong: dongFilter || undefined, region: undefined }),
+    [listParams, dongFilter],
+  );
+  const regionSummaryParams = useMemo(
+    () => ({ ...listParams, dong: undefined, region: regionFallback }),
+    [listParams, regionFallback],
+  );
+
+  const fullQuery = useBakeries(listParams, { enabled: !useSummary });
+  const dongSummaryQuery = useBakeriesSummary(dongSummaryParams, {
+    enabled: useSummary && Boolean(dongFilter),
+  });
+  const dongSummaryEmpty =
+    useSummary &&
+    Boolean(dongFilter) &&
+    !dongSummaryQuery.loading &&
+    dongSummaryQuery.data != null &&
+    dongSummaryQuery.data.bakeries.length === 0;
+  const regionSummaryQuery = useBakeriesSummary(regionSummaryParams, {
+    enabled: useSummary && dongSummaryEmpty && Boolean(regionFallback),
+  });
+  const plainSummaryQuery = useBakeriesSummary(listParams, {
+    enabled: useSummary && !dongFilter,
+  });
+
+  const summaryData =
+    dongFilter && dongSummaryQuery.data?.bakeries.length
+      ? dongSummaryQuery.data
+      : dongSummaryEmpty && regionSummaryQuery.data?.bakeries.length
+        ? regionSummaryQuery.data
+        : dongFilter
+          ? dongSummaryQuery.data
+          : plainSummaryQuery.data;
+
+  const summaryLoading =
+    (dongFilter && dongSummaryQuery.loading) ||
+    (dongSummaryEmpty && regionFallback && regionSummaryQuery.loading) ||
+    (!dongFilter && plainSummaryQuery.loading);
+
+  const summaryError =
+    dongFilter && regionFallback
+      ? (dongSummaryQuery.error ?? (dongSummaryEmpty ? regionSummaryQuery.error : null))
+      : dongFilter
+        ? dongSummaryQuery.error
+        : plainSummaryQuery.error;
+
+  const { data, loading, error } = useSummary
+    ? { data: summaryData, loading: summaryLoading, error: summaryError }
+    : fullQuery;
 
   const pickedItems: CurationItem[] = useMemo(() => {
     if (lockSelectionOnMount && !readyToPick) {
@@ -70,39 +157,36 @@ export function CurationBakeryContent({
     }
     if (!data?.bakeries?.length) return [];
 
-    const keyword = localKeywordFilter?.trim();
-    const scopedByKeyword = keyword
-      ? data.bakeries.filter((bakery) => bakeryMatchesDong(bakery, keyword))
-      : data.bakeries;
     const excluded = new Set(excludeBakeryIds ?? []);
-    const filtered = scopedByKeyword.filter((bakery) => !excluded.has(bakery.id));
-    const source = filtered.length > 0 ? filtered : scopedByKeyword;
+    const filtered = data.bakeries.filter((bakery) => !excluded.has(bakery.id));
+    const source = filtered.length > 0 ? filtered : data.bakeries;
     const picked = shuffleArray(source).slice(0, displayCount);
     const addressMaxTokens = compact ? 2 : 4;
-    return picked.map((b) => {
-      const full = b.address?.trim();
-      const dong = full ? extractDong(full) : null;
-      const address =
-        dong ??
-        addressDongFallback ??
-        (full ? formatCurationAddress(full, addressMaxTokens) : "주소 정보 없음");
-      return {
-        bakeryId: b.id,
-        title: b.name,
-        address,
-        rate: b.rating != null ? Number(b.rating) : 0,
-      };
-    });
+
+    if (useSummary) {
+      return (picked as BakerySummaryItem[]).map((b) =>
+        mapSummaryItemToCurationItem(b, addressMaxTokens, dongCardLabel),
+      );
+    }
+    return (picked as BakeryListItem[]).map((b) =>
+      mapListItemToCurationItem(b, addressMaxTokens, dongCardLabel),
+    );
   }, [
     data,
     displayCount,
     excludeBakeryIds,
-    localKeywordFilter,
-    addressDongFallback,
     compact,
+    useSummary,
+    dongCardLabel,
     lockSelectionOnMount,
     readyToPick,
   ]);
+
+  // 동·필터가 바뀌면 고정 픽 초기화
+  useEffect(() => {
+    if (!lockSelectionOnMount) return;
+    setLockedItems(null);
+  }, [lockSelectionOnMount, dongFilter, regionFallback]);
 
   // 첫 픽만 state에 고정 (리프레시마다 재섞임 방지)
   useEffect(() => {
@@ -119,16 +203,13 @@ export function CurationBakeryContent({
   );
   const displayedIdsKey = displayedBakeryIds.join(",");
 
-  // 콜백 참조가 매 렌더 새로 생겨도 effect가 무한 반복되지 않도록 ref로 보관
   const onDisplayedChangeRef = useRef(onDisplayedBakeryIdsChange);
   useEffect(() => {
     onDisplayedChangeRef.current = onDisplayedBakeryIdsChange;
   });
 
-  // 실제 노출 빵집 id가 바뀔 때만 부모에 통지
   useEffect(() => {
     onDisplayedChangeRef.current?.(displayedBakeryIds);
-    // displayedIdsKey가 동일하면 displayedBakeryIds 참조도 동일하므로 key만 의존
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayedIdsKey]);
 
@@ -179,7 +260,6 @@ export function CurationBakeryContent({
       itemClassName={compact ? "!w-[118px] shrink-0" : undefined}
       cardImageClassName={compact ? "!w-[118px] !h-[92px]" : undefined}
       breadIconClassName={compact ? "!w-[28px] !h-[28px]" : undefined}
-      metaIconClassName={compact ? "icon-gray-600" : undefined}
       onItemClick={handleItemClick}
     />
   );

@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouterState } from "@tanstack/react-router";
 import BottomNav from "@/components/layout/BottomNav";
 import AppShell from "@/components/layout/AppShell";
 import HomeHeroSection from "@/components/domain/home/HomeHeroSection";
 import CurationSection from "@/components/domain/home/CurationSection";
 import DongCurationSection from "@/components/domain/home/DongCurationSection";
+import { pickRandomDong, type DongOption } from "@/components/domain/home/dongCurationParams";
 import { isLoggedIn } from "@/lib/auth/isLoggedIn";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 
@@ -12,8 +14,23 @@ const HOME_GUEST_PROMO_SHOWN_KEY = "bbang_home_guest_promo_shown";
 
 const HomePage = () => {
   const { showInfoBubble } = useLoginRequired();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [firstCurationBakeryIds, setFirstCurationBakeryIds] = useState<number[]>([]);
   const [firstCurationReady, setFirstCurationReady] = useState(false);
+  const [selectedDong, setSelectedDong] = useState<DongOption>(() => pickRandomDong());
+  const prevPathRef = useRef(pathname);
+
+  /** 다른 화면에서 홈으로 돌아올 때마다 동을 새로 랜덤 선택 */
+  useEffect(() => {
+    if (pathname !== "/home") {
+      prevPathRef.current = pathname;
+      return;
+    }
+    if (prevPathRef.current !== "/home") {
+      queueMicrotask(() => setSelectedDong(pickRandomDong()));
+    }
+    prevPathRef.current = pathname;
+  }, [pathname]);
 
   useEffect(() => {
     if (isLoggedIn()) return;
@@ -36,6 +53,7 @@ const HomePage = () => {
           }}
         />
         <DongCurationSection
+          selectedDong={selectedDong}
           excludeBakeryIds={firstCurationBakeryIds}
           readyToPick={firstCurationReady}
         />
