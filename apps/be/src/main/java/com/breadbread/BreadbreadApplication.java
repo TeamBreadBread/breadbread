@@ -1,6 +1,5 @@
 package com.breadbread;
 
-import java.util.TimeZone;
 import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
