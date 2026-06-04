@@ -85,7 +85,8 @@ public class Reservation extends BaseEntity {
 
     public void update(UpdateReservationRequest request) {
         if (this.status == ReservationStatus.CANCELLED
-                || this.status == ReservationStatus.COMPLETED) {
+                || this.status == ReservationStatus.COMPLETED
+                || this.status == ReservationStatus.IN_PROGRESS) {
             throw new CustomException(ErrorCode.RESERVATION_NOT_MODIFIABLE);
         }
         if (request.getDepartureDate() != null) this.departureDate = request.getDepartureDate();
@@ -96,11 +97,27 @@ public class Reservation extends BaseEntity {
         if (request.getHeadCount() != null) this.headCount = request.getHeadCount();
     }
 
+    public void startTour() {
+        if (this.status != ReservationStatus.CONFIRMED) {
+            throw new CustomException(ErrorCode.RESERVATION_NOT_MODIFIABLE);
+        }
+        this.status = ReservationStatus.IN_PROGRESS;
+    }
+
+    public void complete() {
+        if (this.status != ReservationStatus.IN_PROGRESS) {
+            throw new CustomException(ErrorCode.RESERVATION_NOT_MODIFIABLE);
+        }
+        this.status = ReservationStatus.COMPLETED;
+    }
+
+    /** 사용자 요청 취소 — IN_PROGRESS·COMPLETED 상태에서는 불가 */
     public void cancel() {
         if (this.status == ReservationStatus.CANCELLED) {
             throw new CustomException(ErrorCode.RESERVATION_ALREADY_CANCELLED);
         }
-        if (this.status == ReservationStatus.COMPLETED) {
+        if (this.status == ReservationStatus.COMPLETED
+                || this.status == ReservationStatus.IN_PROGRESS) {
             throw new CustomException(ErrorCode.RESERVATION_CANCEL_FAILED);
         }
         this.status = ReservationStatus.CANCELLED;

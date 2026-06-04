@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -53,7 +54,8 @@ public class ReservationDailyService {
     public void cancelExpiredPending() {
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
         List<Reservation> expired =
-                reservationRepository.findExpiredPending(today, ReservationStatus.PENDING);
+                reservationRepository.findExpiredByStatuses(
+                        today, Set.of(ReservationStatus.PENDING));
         if (expired.isEmpty()) return;
 
         log.info("[만료 예약 취소] 대상 수: {}", expired.size());

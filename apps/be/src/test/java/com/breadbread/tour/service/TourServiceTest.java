@@ -2,6 +2,8 @@ package com.breadbread.tour.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -13,6 +15,9 @@ import com.breadbread.course.repository.CourseBakeryRepository;
 import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.reservation.entity.Reservation;
+import com.breadbread.reservation.entity.ReservationStatus;
+import com.breadbread.reservation.repository.ReservationRepository;
 import com.breadbread.tour.dto.TourCurrentResponse;
 import com.breadbread.tour.dto.TourStartResponse;
 import com.breadbread.tour.dto.TourVisitResponse;
@@ -20,6 +25,8 @@ import com.breadbread.tour.redis.TourStateCache;
 import com.breadbread.tour.redis.TourStatus;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
+import com.breadbread.user.repository.UserRepository;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -38,6 +45,8 @@ class TourServiceTest {
     @Mock private TourRedisService tourRedisService;
     @Mock private CourseRepository courseRepository;
     @Mock private CourseBakeryRepository courseBakeryRepository;
+    @Mock private ReservationRepository reservationRepository;
+    @Mock private UserRepository userRepository;
 
     // ── startTour ──────────────────────────────────────────────────────────────
 
@@ -101,6 +110,9 @@ class TourServiceTest {
                                 mock(CourseBakery.class),
                                 mock(CourseBakery.class)));
         when(tourRedisService.startTour(1L, 10L, 3)).thenReturn(state);
+        when(reservationRepository.findFirstByUserIdAndCourseIdAndDepartureDateAndStatus(
+                        eq(1L), eq(10L), any(LocalDate.class), eq(ReservationStatus.CONFIRMED)))
+                .thenReturn(Optional.empty());
 
         TourStartResponse response = tourService.startTour(1L, UserRole.ROLE_USER, 10L);
 
@@ -117,6 +129,9 @@ class TourServiceTest {
         when(courseBakeryRepository.findAllByCourseId(10L))
                 .thenReturn(List.of(mock(CourseBakery.class), mock(CourseBakery.class)));
         when(tourRedisService.startTour(5L, 10L, 2)).thenReturn(state);
+        when(reservationRepository.findFirstByUserIdAndCourseIdAndDepartureDateAndStatus(
+                        eq(5L), eq(10L), any(LocalDate.class), eq(ReservationStatus.CONFIRMED)))
+                .thenReturn(Optional.empty());
 
         TourStartResponse response = tourService.startTour(5L, UserRole.ROLE_ADMIN, 10L);
 
@@ -214,12 +229,34 @@ class TourServiceTest {
         when(tourRedisService.getTourState(1L))
                 .thenReturn(Optional.of(tourState(1L, 10L, 3, 2, TourStatus.IN_PROGRESS)));
         when(tourRedisService.updateVisitOrder(1L, 3)).thenReturn(updated);
+        when(reservationRepository.findFirstByUserIdAndCourseIdAndDepartureDateAndStatus(
+                        eq(1L), eq(10L), any(LocalDate.class), eq(ReservationStatus.IN_PROGRESS)))
+                .thenReturn(Optional.empty());
 
         TourVisitResponse response = tourService.visitBakery(1L, 10L, 3);
 
         assertThat(response.getCurrentVisitOrder()).isEqualTo(3);
         assertThat(response.getRemainingCount()).isEqualTo(0);
         assertThat(response.getStatus()).isEqualTo(TourStatus.COMPLETED);
+    }
+
+    @Test
+    void visitBakery_completes_reservation_and_increments_usage_when_last_bakery() {
+        TourStateCache updated = tourState(1L, 10L, 3, 3, TourStatus.COMPLETED);
+        Reservation reservation = mock(Reservation.class);
+        User user = mock(User.class);
+        when(tourRedisService.getTourState(1L))
+                .thenReturn(Optional.of(tourState(1L, 10L, 3, 2, TourStatus.IN_PROGRESS)));
+        when(tourRedisService.updateVisitOrder(1L, 3)).thenReturn(updated);
+        when(reservationRepository.findFirstByUserIdAndCourseIdAndDepartureDateAndStatus(
+                        eq(1L), eq(10L), any(LocalDate.class), eq(ReservationStatus.IN_PROGRESS)))
+                .thenReturn(Optional.of(reservation));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        tourService.visitBakery(1L, 10L, 3);
+
+        verify(reservation).complete();
+        verify(user).incrementUsage();
     }
 
     // ── getCurrentTour ─────────────────────────────────────────────────────────
@@ -288,12 +325,35 @@ class TourServiceTest {
         when(tourRedisService.getTourState(1L))
                 .thenReturn(Optional.of(tourState(1L, 10L, 3, 1, TourStatus.IN_PROGRESS)));
         when(tourRedisService.completeTour(1L)).thenReturn(afterComplete);
+        when(reservationRepository.findFirstByUserIdAndCourseIdAndDepartureDateAndStatus(
+                        eq(1L), eq(10L), any(LocalDate.class), eq(ReservationStatus.IN_PROGRESS)))
+                .thenReturn(Optional.empty());
 
         TourCurrentResponse response = tourService.completeTour(1L, 10L);
 
         assertThat(response.getStatus()).isEqualTo(TourStatus.COMPLETED);
         assertThat(response.getRemainingCount()).isEqualTo(0);
         assertThat(response.getCurrentVisitOrder()).isEqualTo(3);
+    }
+
+    @Test
+    void
+            completeTour_completes_reservation_and_increments_usage_when_in_progress_reservation_exists() {
+        TourStateCache afterComplete = tourState(1L, 10L, 3, 3, TourStatus.COMPLETED);
+        Reservation reservation = mock(Reservation.class);
+        User user = mock(User.class);
+        when(tourRedisService.getTourState(1L))
+                .thenReturn(Optional.of(tourState(1L, 10L, 3, 3, TourStatus.IN_PROGRESS)));
+        when(tourRedisService.completeTour(1L)).thenReturn(afterComplete);
+        when(reservationRepository.findFirstByUserIdAndCourseIdAndDepartureDateAndStatus(
+                        eq(1L), eq(10L), any(LocalDate.class), eq(ReservationStatus.IN_PROGRESS)))
+                .thenReturn(Optional.of(reservation));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        tourService.completeTour(1L, 10L);
+
+        verify(reservation).complete();
+        verify(user).incrementUsage();
     }
 
     // ── helpers ────────────────────────────────────────────────────────────────
@@ -336,9 +396,5 @@ class TourServiceTest {
         when(course.getUser()).thenReturn(null);
         when(course.getId()).thenReturn(courseId);
         return course;
-    }
-
-    private static <T> T any() {
-        return org.mockito.ArgumentMatchers.any();
     }
 }

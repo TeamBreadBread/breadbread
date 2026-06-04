@@ -104,7 +104,7 @@ public class ReservationRealTimeService {
     }
 
     private void startTourAtDeparture(Reservation reservation, long minutesUntil) {
-        if (minutesUntil < -2 || minutesUntil > 2) return;
+        if (minutesUntil < -5 || minutesUntil > 5) return;
 
         Long userId = reservation.getUser().getId();
         Long reservationId = reservation.getId();

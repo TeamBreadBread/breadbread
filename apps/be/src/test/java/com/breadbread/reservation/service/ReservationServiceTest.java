@@ -424,6 +424,40 @@ class ReservationServiceTest {
     }
 
     @Test
+    void updateReservation_throws_whenReservationIsInProgress() {
+        Reservation reservation = reservation(1L, user(10L), manualCourse(3L, "course"));
+        ReflectionTestUtils.setField(reservation, "status", ReservationStatus.IN_PROGRESS);
+        UpdateReservationRequest request = new UpdateReservationRequest();
+        ReflectionTestUtils.setField(request, "headCount", 4);
+        when(reservationRepository.findById(1L)).thenReturn(Optional.of(reservation));
+        when(reservationRepository
+                        .existsByUserIdAndDepartureDateAndDepartureTimeAndStatusInAndIdNot(
+                                10L,
+                                reservation.getDepartureDate(),
+                                reservation.getDepartureTime(),
+                                ReservationService.ACTIVE_STATUSES,
+                                1L))
+                .thenReturn(false);
+
+        assertThatThrownBy(() -> reservationService.updateReservation(10L, 1L, request))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.RESERVATION_NOT_MODIFIABLE);
+    }
+
+    @Test
+    void cancelReservation_throws_whenReservationIsInProgress() {
+        Reservation reservation = reservation(1L, user(10L), manualCourse(3L, "course"));
+        ReflectionTestUtils.setField(reservation, "status", ReservationStatus.IN_PROGRESS);
+        when(reservationRepository.findById(1L)).thenReturn(Optional.of(reservation));
+
+        assertThatThrownBy(() -> reservationService.cancelReservation(10L, 1L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.RESERVATION_CANCEL_FAILED);
+    }
+
+    @Test
     void cancelReservation_throws_whenReservationMissing() {
         when(reservationRepository.findById(1L)).thenReturn(Optional.empty());
 
