@@ -87,7 +87,9 @@ public class ReservationController {
         return ApiResponse.ok();
     }
 
-    @Operation(summary = "예약 삭제", description = "결제 전(PENDING) 또는 취소된(CANCELLED) 예약만 삭제할 수 있습니다. 삭제된 예약은 목록에서 보이지 않습니다.")
+    @Operation(
+            summary = "예약 삭제",
+            description = "결제 전(PENDING) 또는 취소된(CANCELLED) 예약만 삭제할 수 있습니다. 삭제된 예약은 목록에서 보이지 않습니다.")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteReservation(

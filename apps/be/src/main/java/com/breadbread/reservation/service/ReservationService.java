@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -119,13 +120,17 @@ public class ReservationService {
                         .user(user)
                         .build();
 
-        Long savedId = reservationRepository.save(reservation).getId();
-        log.info(
-                "예약 생성: reservationId={}, userId={}, courseId={}",
-                savedId,
-                userId,
-                request.getCourseId());
-        return savedId;
+        try {
+            Long savedId = reservationRepository.saveAndFlush(reservation).getId();
+            log.info(
+                    "예약 생성: reservationId={}, userId={}, courseId={}",
+                    savedId,
+                    userId,
+                    request.getCourseId());
+            return savedId;
+        } catch (DataIntegrityViolationException e) {
+            throw new CustomException(ErrorCode.ALREADY_RESERVED);
+        }
     }
 
     @Transactional

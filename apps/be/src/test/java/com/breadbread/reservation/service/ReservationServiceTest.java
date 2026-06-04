@@ -207,7 +207,7 @@ class ReservationServiceTest {
         stubNoActiveConflict(request);
         when(courseRepository.findByIdAndActiveTrue(3L)).thenReturn(Optional.of(course));
         when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
-        when(reservationRepository.save(any(Reservation.class)))
+        when(reservationRepository.saveAndFlush(any(Reservation.class)))
                 .thenAnswer(
                         invocation -> {
                             Reservation saved = invocation.getArgument(0);
@@ -219,7 +219,7 @@ class ReservationServiceTest {
 
         assertThat(result).isEqualTo(77L);
         ArgumentCaptor<Reservation> captor = ArgumentCaptor.forClass(Reservation.class);
-        verify(reservationRepository).save(captor.capture());
+        verify(reservationRepository).saveAndFlush(captor.capture());
         assertThat(captor.getValue().getDeparture()).isEqualTo("daejeon-station");
         assertThat(captor.getValue().getQuotedAmount()).isEqualTo(12000L);
     }

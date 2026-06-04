@@ -81,6 +81,10 @@ dependencies {
 
     // FCM
     implementation 'com.google.firebase:firebase-admin:9.8.0'
+
+    // ShedLock
+    implementation 'net.javacrumbs.shedlock:shedlock-spring:6.9.0'
+    implementation 'net.javacrumbs.shedlock:shedlock-provider-redis-spring:6.9.0'
 }
 
 tasks.named('test') {
