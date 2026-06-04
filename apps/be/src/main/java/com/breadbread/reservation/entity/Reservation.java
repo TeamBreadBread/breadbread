@@ -45,6 +45,8 @@ public class Reservation extends BaseEntity {
 
     private LocalDateTime confirmedAt;
 
+    private boolean active = true;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
@@ -122,6 +124,18 @@ public class Reservation extends BaseEntity {
         }
         this.status = ReservationStatus.CANCELLED;
         this.cancelledAt = LocalDateTime.now();
+    }
+
+    /** 소프트 삭제 — PENDING·CANCELLED 상태에서만 허용 */
+    public void deactivate() {
+        if (!this.active) {
+            throw new CustomException(ErrorCode.RESERVATION_ALREADY_DELETED);
+        }
+        if (this.status != ReservationStatus.CANCELLED
+                && this.status != ReservationStatus.PENDING) {
+            throw new CustomException(ErrorCode.RESERVATION_DELETE_FAILED);
+        }
+        this.active = false;
     }
 
     public void confirm() {

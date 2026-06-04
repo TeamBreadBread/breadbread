@@ -85,6 +85,8 @@ public enum ErrorCode {
     RESERVATION_NOT_MODIFIABLE(HttpStatus.CONFLICT, "E0506", "현재 상태에서는 예약을 변경할 수 없습니다."),
     RESERVATION_ALREADY_CONFIRMED(HttpStatus.BAD_REQUEST, "E0507", "이미 확정된 예약입니다."),
     RESERVATION_CONFIRM_FAILED(HttpStatus.BAD_REQUEST, "E0508", "예약 확정이 불가능합니다."),
+    RESERVATION_DELETE_FAILED(HttpStatus.BAD_REQUEST, "E0509", "결제 전 또는 취소된 예약만 삭제할 수 있습니다."),
+    RESERVATION_ALREADY_DELETED(HttpStatus.BAD_REQUEST, "E0510", "이미 삭제된 예약입니다."),
 
     // 결제 E06xx
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "E0601", "존재하지 않는 결제 내역입니다."),
