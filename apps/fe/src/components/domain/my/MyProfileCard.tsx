@@ -1,3 +1,5 @@
+import { getSafeImageUrl } from "@/utils/safeImageUrl";
+
 interface MyProfileCardProps {
   nickname: string;
   email: string;
@@ -11,6 +13,8 @@ export default function MyProfileCard({
   profileImageUrl,
   onClick,
 }: MyProfileCardProps) {
+  const safeProfileImageUrl = getSafeImageUrl(profileImageUrl);
+
   return (
     <section className="bg-white px-x5 py-x6">
       <div className="flex items-center gap-x4">
@@ -20,9 +24,9 @@ export default function MyProfileCard({
           className="flex w-full items-center gap-x4 text-left"
         >
           <div className="h-[64px] w-[64px] shrink-0 overflow-hidden rounded-full border border-[#eeeff1] bg-[#f7f8f9]">
-            {profileImageUrl ? (
+            {safeProfileImageUrl ? (
               <img
-                src={profileImageUrl}
+                src={safeProfileImageUrl}
                 alt="프로필 이미지"
                 className="h-full w-full object-cover"
               />
