@@ -17,6 +17,7 @@ import com.breadbread.reservation.entity.ReservationStatus;
 import com.breadbread.reservation.repository.ReservationRepository;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Answers;
@@ -61,8 +62,8 @@ class ReservationDailyServiceTest {
 
     @Test
     void cancelExpiredPending_만료예약없으면_취소처리없음() {
-        when(reservationRepository.findExpiredPending(
-                        any(LocalDate.class), eq(ReservationStatus.PENDING)))
+        when(reservationRepository.findExpiredByStatuses(
+                        any(LocalDate.class), eq(Set.of(ReservationStatus.PENDING))))
                 .thenReturn(List.of());
 
         reservationDailyService.cancelExpiredPending();
@@ -74,8 +75,8 @@ class ReservationDailyServiceTest {
     void cancelExpiredPending_만료PENDING_cancel호출() {
         Reservation reservation = mock(Reservation.class);
         lenient().when(reservation.getId()).thenReturn(1L);
-        when(reservationRepository.findExpiredPending(
-                        any(LocalDate.class), eq(ReservationStatus.PENDING)))
+        when(reservationRepository.findExpiredByStatuses(
+                        any(LocalDate.class), eq(Set.of(ReservationStatus.PENDING))))
                 .thenReturn(List.of(reservation));
 
         reservationDailyService.cancelExpiredPending();

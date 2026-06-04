@@ -51,9 +51,13 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     @Query(
             "SELECT r FROM Reservation r "
                     + "JOIN FETCH r.user "
-                    + "WHERE r.departureDate < :today AND r.status = :status")
-    List<Reservation> findExpiredPending(
-            @Param("today") LocalDate today, @Param("status") ReservationStatus status);
+                    + "WHERE r.departureDate < :today AND r.status IN :statuses")
+    List<Reservation> findExpiredByStatuses(
+            @Param("today") LocalDate today,
+            @Param("statuses") Collection<ReservationStatus> statuses);
+
+    Optional<Reservation> findFirstByUserIdAndCourseIdAndDepartureDateAndStatus(
+            Long userId, Long courseId, LocalDate departureDate, ReservationStatus status);
 
     @Query(
             "SELECT DISTINCT r.departureTime FROM Reservation r "

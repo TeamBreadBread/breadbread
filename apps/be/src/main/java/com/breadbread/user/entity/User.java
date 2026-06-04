@@ -77,6 +77,14 @@ public class User extends BaseEntity {
         this.privacyAgreed = privacyAgreed;
     }
 
+    public void incrementUsage() {
+        this.usageCount++;
+        UserGrade nextGrade = this.grade.next();
+        if (nextGrade != null && this.usageCount >= nextGrade.getRequiredCount()) {
+            this.grade = nextGrade;
+        }
+    }
+
     public void updateProfile(UpdateProfileRequest req) {
         if (req.getNickname() != null) this.nickname = req.getNickname();
         if (req.getEmail() != null) this.email = req.getEmail();

@@ -44,7 +44,10 @@ public class ReservationService {
     private final BakeryImageUrlResolver bakeryImageUrlResolver;
 
     static final Set<ReservationStatus> ACTIVE_STATUSES =
-            Set.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED);
+            Set.of(
+                    ReservationStatus.PENDING,
+                    ReservationStatus.CONFIRMED,
+                    ReservationStatus.IN_PROGRESS);
 
     @Transactional(readOnly = true)
     public List<ReservationSummaryResponse> getMyReservations(

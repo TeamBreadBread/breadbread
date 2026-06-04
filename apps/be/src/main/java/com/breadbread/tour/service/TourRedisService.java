@@ -65,7 +65,6 @@ public class TourRedisService {
 
         if (isCompleted) {
             stringRedisTemplate.opsForSet().remove(ACTIVE_SET_KEY, String.valueOf(userId));
-            log.info("[투어] 완료: userId={}, courseId={}", userId, current.getCourseId());
         }
         return updated;
     }
@@ -104,7 +103,6 @@ public class TourRedisService {
 
         save(userId, completed, Duration.ofHours(1));
         stringRedisTemplate.opsForSet().remove(ACTIVE_SET_KEY, String.valueOf(userId));
-        log.info("[투어] 수동 완료: userId={}, courseId={}", userId, current.getCourseId());
         return completed;
     }
 

@@ -19,6 +19,7 @@ import com.breadbread.course.service.ai.AiCourseAsyncService;
 import com.breadbread.course.service.ai.AiCourseRedisService;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.tour.service.TourRedisService;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
@@ -52,6 +53,7 @@ public class CourseService {
     private final CourseDrivingRouteRepository courseDrivingRouteRepository;
     private final CourseDrivingRouteSaver courseDrivingRouteSaver;
     private final BakeryImageUrlResolver bakeryImageUrlResolver;
+    private final TourRedisService tourRedisService;
 
     @Transactional(readOnly = true)
     public CourseListResponse search(CourseSearch courseSearch, Pageable pageable, Long userId) {
@@ -631,6 +633,35 @@ public class CourseService {
         if (!new HashSet<>(activeBakeryOrder).equals(currentBakeryIds)) {
             throw new CustomException(ErrorCode.BAKERY_ORDER_COUNT_MISMATCH);
         }
+
+        // 투어 진행 중이면 이미 방문한 빵집 순서는 변경 불가
+        tourRedisService
+                .getTourState(userId)
+                .filter(
+                        state ->
+                                state.getCourseId().equals(courseId)
+                                        && state.getStatus()
+                                                == com.breadbread.tour.redis.TourStatus.IN_PROGRESS)
+                .ifPresent(
+                        state -> {
+                            int visitedCount = state.getCurrentVisitOrder();
+                            if (visitedCount == 0) return;
+
+                            List<Long> visitedOrder =
+                                    courseBakeries.stream()
+                                            .filter(cb -> cb.getVisitOrder() <= visitedCount)
+                                            .sorted(
+                                                    Comparator.comparingInt(
+                                                            CourseBakery::getVisitOrder))
+                                            .map(cb -> cb.getBakery().getId())
+                                            .toList();
+
+                            for (int i = 0; i < visitedOrder.size(); i++) {
+                                if (!activeBakeryOrder.get(i).equals(visitedOrder.get(i))) {
+                                    throw new CustomException(ErrorCode.TOUR_INVALID_VISIT_ORDER);
+                                }
+                            }
+                        });
 
         // visitOrder 업데이트
         Map<Long, CourseBakery> bakeryMap =

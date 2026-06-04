@@ -16,6 +16,7 @@ import com.breadbread.payment.entity.PaymentStatus;
 import com.breadbread.payment.entity.PgProvider;
 import com.breadbread.payment.repository.PaymentRepository;
 import com.breadbread.reservation.entity.Reservation;
+import com.breadbread.reservation.entity.ReservationStatus;
 import com.breadbread.reservation.repository.ReservationRepository;
 import com.breadbread.user.repository.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -227,7 +228,9 @@ public class PaymentService {
                             String.valueOf(payment.getReservation().getId())));
         } catch (CustomException e) {
             if (e.getErrorCode() == ErrorCode.PAYMENT_ALREADY_DONE
-                    || e.getErrorCode() == ErrorCode.RESERVATION_ALREADY_CONFIRMED) {
+                    || e.getErrorCode() == ErrorCode.RESERVATION_ALREADY_CONFIRMED
+                    || e.getErrorCode() == ErrorCode.RESERVATION_CONFIRM_FAILED) {
+                // 이미 CONFIRMED 이상 상태(IN_PROGRESS 등)인 경우 멱등 처리
                 return;
             }
             throw e;
@@ -268,8 +271,8 @@ public class PaymentService {
         try {
             payment.markCancelled();
             Reservation reservation = payment.getReservation();
-            if (reservation.getStatus()
-                    == com.breadbread.reservation.entity.ReservationStatus.CONFIRMED) {
+            if (reservation.getStatus() == ReservationStatus.PENDING
+                    || reservation.getStatus() == ReservationStatus.CONFIRMED) {
                 reservation.cancel();
             }
             log.info("[포트원 웹훅] 결제 취소 처리: paymentId={}", paymentId);

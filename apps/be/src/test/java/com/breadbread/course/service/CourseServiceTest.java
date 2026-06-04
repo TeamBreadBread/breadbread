@@ -87,6 +87,7 @@ class CourseServiceTest {
     @Mock private DrivingRouteClient drivingRouteClient;
     @Mock private CourseDrivingRouteSaver courseDrivingRouteSaver;
     @Mock private BakeryImageUrlResolver bakeryImageUrlResolver;
+    @Mock private com.breadbread.tour.service.TourRedisService tourRedisService;
 
     @InjectMocks private CourseService courseService;
 
