@@ -12,6 +12,11 @@ import {
 import MobileFrame from "@/components/layout/MobileFrame";
 import { CURATION_BBANGTEO_DISPLAY_COUNT } from "@/components/domain/home/curationBakeryContentParams";
 import { useBakeries } from "@/hooks/useBakeries";
+import {
+  getBakeryLikeOverlay,
+  mergeBakeryListItemWithLikeOverlay,
+  subscribeBakeryLikeOverlayChange,
+} from "@/lib/bakeryLikeLocalCache";
 import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import { cn } from "@/utils/cn";
 
@@ -24,6 +29,7 @@ type BakeryRow = {
   rating: number;
   reviewCount: number;
   bookmarkCount: number;
+  liked: boolean;
   /** 최대 4개 미리보기 URL */
   images: string[];
   /** 4장 초과분 — 4번째 타일에 더보기 오버레이 */
@@ -33,26 +39,34 @@ type BakeryRow = {
 const PREVIEW_SLOTS = 4 as const;
 
 function mapListItemToBakeryRow(b: BakeryListItem): BakeryRow {
+  const item = mergeBakeryListItemWithLikeOverlay(b);
   const previews =
-    b.previewImageUrls != null && b.previewImageUrls.length > 0
-      ? b.previewImageUrls.slice(0, PREVIEW_SLOTS)
-      : b.thumbnailUrl
-        ? [b.thumbnailUrl]
+    item.previewImageUrls != null && item.previewImageUrls.length > 0
+      ? item.previewImageUrls.slice(0, PREVIEW_SLOTS)
+      : item.thumbnailUrl
+        ? [item.thumbnailUrl]
         : [];
   const remaining =
-    b.remainingPreviewImageCount != null && Number.isFinite(b.remainingPreviewImageCount)
-      ? Math.max(0, Math.floor(b.remainingPreviewImageCount))
+    item.remainingPreviewImageCount != null && Number.isFinite(item.remainingPreviewImageCount)
+      ? Math.max(0, Math.floor(item.remainingPreviewImageCount))
       : 0;
   return {
-    id: b.id,
-    name: b.name,
-    address: b.address,
-    rating: b.rating != null ? Number(b.rating) : 0,
+    id: item.id,
+    name: item.name,
+    address: item.address,
+    rating: item.rating != null ? Number(item.rating) : 0,
     reviewCount: 0,
-    bookmarkCount: b.likeCount ?? 0,
+    bookmarkCount: item.likeCount ?? 0,
+    liked: Boolean(item.liked),
     images: previews,
     remainingPreviewImageCount: remaining,
   };
+}
+
+function applyLikeOverlayToBakeryRow(row: BakeryRow): BakeryRow {
+  const o = getBakeryLikeOverlay(row.id);
+  if (!o) return row;
+  return { ...row, liked: o.liked, bookmarkCount: Math.max(row.bookmarkCount, o.likeCount) };
 }
 
 function mapDetailToBakeryRow(detail: BakeryDetail): BakeryRow {
@@ -66,14 +80,11 @@ function mapDetailToBakeryRow(detail: BakeryDetail): BakeryRow {
     rating: detail.rating != null ? Number(detail.rating) : 0,
     reviewCount: 0,
     bookmarkCount: detail.likeCount ?? 0,
+    liked: Boolean(detail.liked),
     images: previews,
     remainingPreviewImageCount: remaining,
   };
 }
-
-const CircleIcon = ({ size = 18, color = "#dcdee3" }: { size?: number; color?: string }) => (
-  <div className="rounded-full" style={{ width: size, height: size, backgroundColor: color }} />
-);
 
 const PageHeader = ({
   title,
@@ -123,7 +134,7 @@ const FilterChip = ({ label, withIcon = false }: { label: string; withIcon?: boo
     className="flex max-h-[34px] items-center rounded-[9999px] bg-[#f3f4f5] p-[8px]"
   >
     <span className="px-[4px] text-[14px] leading-[19px] text-[#1a1c20]">{label}</span>
-    {withIcon ? <CircleIcon size={18} /> : null}
+    {withIcon ? <AppIcon src={IconAssets.IcChevronDown} size={18} alt="" /> : null}
   </button>
 );
 
@@ -151,7 +162,7 @@ const SearchFilterSection = ({
         className="flex max-h-[34px] items-center justify-center rounded-[9999px] bg-[#f3f4f5] p-[8px]"
         aria-label="필터"
       >
-        <AppIcon src={IconAssets.IcChevronDown} size={18} />
+        <AppIcon src={IconAssets.IcTune} size={18} alt="" />
       </button>
       <FilterChip label="정렬" withIcon />
       <FilterChip label="영업 중" />
@@ -163,10 +174,11 @@ const BakeryMeta = ({
   rating,
   reviewCount,
   bookmarkCount,
-}: Pick<BakeryRow, "rating" | "reviewCount" | "bookmarkCount">) => (
+  liked,
+}: Pick<BakeryRow, "rating" | "reviewCount" | "bookmarkCount" | "liked">) => (
   <div className="flex h-[18px] items-center gap-[4px]">
     <div className="flex items-center gap-[2px]">
-      <AppIcon src={IconAssets.IcStar} size={14} />
+      <AppIcon src={IconAssets.IcStar} size={14} className="icon-orange-600 shrink-0" alt="" />
       <span className="text-[13px] leading-[18px] text-[#868b94]">{rating}</span>
       <span className="text-[13px] leading-[18px] text-[#868b94]">
         ({reviewCount.toLocaleString()})
@@ -174,7 +186,12 @@ const BakeryMeta = ({
     </div>
     <span className="text-[13px] leading-[18px] text-[#868b94]">·</span>
     <div className="flex items-center gap-[2px]">
-      <CircleIcon size={14} />
+      <AppIcon
+        src={IconAssets.IcHeart}
+        size={14}
+        className={cn("shrink-0", liked ? "icon-orange-600" : "icon-gray-600 opacity-60")}
+        alt=""
+      />
       <span className="text-[13px] leading-[18px] text-[#868b94]">{bookmarkCount}</span>
     </div>
   </div>
@@ -258,6 +275,7 @@ const BakeryCard = ({ bakery, onClick }: { bakery: BakeryRow; onClick?: () => vo
           rating={bakery.rating}
           reviewCount={bakery.reviewCount}
           bookmarkCount={bakery.bookmarkCount}
+          liked={bakery.liked}
         />
       </div>
     </div>
@@ -339,6 +357,9 @@ const BbangteoBakeryListPage = ({ listEntryFrom, curationPinIds }: BbangteoBaker
   const [fetchedPinRowsById, setFetchedPinRowsById] = useState<Map<number, BakeryRow>>(
     () => new Map(),
   );
+  const [likeOverlayTick, setLikeOverlayTick] = useState(0);
+
+  useEffect(() => subscribeBakeryLikeOverlayChange(() => setLikeOverlayTick((t) => t + 1)), []);
 
   const pinIdsKey = (curationPinIds ?? []).join(",");
   const pins = useMemo(() => {
@@ -394,12 +415,12 @@ const BbangteoBakeryListPage = ({ listEntryFrom, curationPinIds }: BbangteoBaker
     const next = new Map<number, BakeryRow>();
     for (const id of pinIdsToFetch) {
       const row = fetchedPinRowsById.get(id);
-      if (row) {
-        next.set(id, row);
+      if (row && likeOverlayTick >= 0) {
+        next.set(id, applyLikeOverlayToBakeryRow(row));
       }
     }
     return next;
-  }, [pinResolutionActive, pinIdsToFetch, fetchedPinRowsById]);
+  }, [pinResolutionActive, pinIdsToFetch, fetchedPinRowsById, likeOverlayTick]);
 
   useEffect(() => {
     if (!pinResolutionActive || !pinIdsToFetchKey) {
@@ -451,8 +472,11 @@ const BbangteoBakeryListPage = ({ listEntryFrom, curationPinIds }: BbangteoBaker
 
   const apiRows: BakeryRow[] = useMemo(() => {
     if (!data?.bakeries?.length) return [];
-    return data.bakeries.map(mapListItemToBakeryRow);
-  }, [data]);
+    return data.bakeries.map((b) => {
+      const row = mapListItemToBakeryRow(b);
+      return likeOverlayTick >= 0 ? applyLikeOverlayToBakeryRow(row) : row;
+    });
+  }, [data, likeOverlayTick]);
 
   const rows: BakeryRow[] = useMemo(() => {
     const applyPins = page === 0 && !queryKeyword && pins.length > 0;

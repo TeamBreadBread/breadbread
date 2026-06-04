@@ -8,31 +8,13 @@ import { LoginRequiredContext, type BotBubble } from "@/lib/auth/LoginRequiredCo
 const DEFAULT_LOGIN_BUBBLE_TEXT =
   "이 기능은 로그인이 필요해요.\n로그인하면 더 많은 기능을 사용할 수 있어요!";
 
-/** 챗봇이 등장하면 어색한 경로 prefix (인증/온보딩/코스 생성/결제 등) */
-const BOT_HIDDEN_PATH_PREFIXES = [
-  // 로그인 / 회원가입 / 계정 인증
-  "/login",
-  "/signup",
-  "/find-id",
-  "/find-password",
-  "/reset-password",
-  "/password-reset-success",
-  "/auth",
-  // 코스 생성 로딩 · 에러 페이지 (AI 응답 대기/실패)
-  "/ai-course-generating",
-  // 온보딩(취향 선택) · 코스 생성 조건 입력 (지역/빵 종류/예산)
-  "/user-preference",
-  "/preference",
-  "/recommendation",
-  // 결제 페이지
-  "/taxi-payment",
-  "/payment",
-];
+/** 챗봇은 홈(루트) 페이지에서만 노출한다. (`/` 는 `/home` 으로 리다이렉트됨) */
+const BOT_VISIBLE_PATHS = ["/home"];
 
 export function LoginRequiredProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const botHidden = BOT_HIDDEN_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  const botVisible = BOT_VISIBLE_PATHS.includes(pathname);
   const [bubble, setBubble] = useState<BotBubble | null>(null);
   const [redirectPath, setRedirectPath] = useState<string | undefined>();
   const [botCourseId, setBotCourseIdState] = useState<number | null>(null);
@@ -82,7 +64,7 @@ export function LoginRequiredProvider({ children }: { children: ReactNode }) {
   return (
     <LoginRequiredContext.Provider value={value}>
       {children}
-      {botHidden ? null : (
+      {botVisible ? (
         <BreadBotWidget
           bubble={bubble}
           courseId={botCourseId}
@@ -90,7 +72,7 @@ export function LoginRequiredProvider({ children }: { children: ReactNode }) {
           onGoLogin={goLogin}
           onCloseBubble={hideBubble}
         />
-      )}
+      ) : null}
     </LoginRequiredContext.Provider>
   );
 }

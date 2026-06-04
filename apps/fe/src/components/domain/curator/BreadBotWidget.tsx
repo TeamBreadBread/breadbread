@@ -8,13 +8,15 @@ import { isLoggedIn } from "@/lib/auth/isLoggedIn";
 import type { BotBubble } from "@/lib/auth/LoginRequiredContext";
 import { cn } from "@/utils/cn";
 import BreadDefaultLogo from "@/assets/icons/BreadDefaultLogo.svg";
-
 const QUICK_REPLIES = [
   "현재 코스 설명해줘",
   "다음 빵집 추천해줘",
   "코스 순서 바꿀까?",
   "혼잡하면 어디가 좋아?",
 ] as const;
+
+const WELCOME_MESSAGE =
+  "안녕하세요! 🍞 BreadBread AI 큐레이터입니다.\n현재 코스 설명, 다음 빵집 추천, 순서 변경 등 궁금한 점을 자유롭게 물어보세요!";
 
 /** 챗봇 대화 영속화 키 */
 const CHAT_STORAGE_KEY = "breadbot:chat:v1";
@@ -168,8 +170,6 @@ export default function BreadBotWidget({
   const navigate = useNavigate();
   const onTourPage = useRouterState({ select: (s) => s.location.pathname.startsWith("/tour") });
   const [open, setOpen] = useState(false);
-  // 팝업 내부 화면: 챗봇 홈 / 채팅
-  const [view, setView] = useState<"home" | "chat">("home");
   const [persisted] = useState(loadPersistedChat);
   const [messages, setMessages] = useState<ChatMessage[]>(persisted.messages);
   const [input, setInput] = useState("");
@@ -307,7 +307,6 @@ export default function BreadBotWidget({
   const openChat = () => {
     onCloseBubble();
     setChangeBubble(null);
-    setView("home");
     setOpen(true);
   };
 
@@ -315,7 +314,6 @@ export default function BreadBotWidget({
     const text = raw.trim();
     if (!text || loading) return;
 
-    setView("chat");
     setMessages((prev) => [...prev, { id: `u-${Date.now()}`, role: "user", text }]);
     setInput("");
     setLoading(true);
@@ -355,9 +353,12 @@ export default function BreadBotWidget({
 
   const handleSend = () => sendMessage(input);
 
+  const handleQuickReply = (label: string) => {
+    sendMessage(label);
+  };
+
   // 대화 도중 추천 질문(가이드) 버튼을 다시 띄운다.
   const showGuide = () => {
-    setView("chat");
     setMessages((prev) => [
       ...prev,
       {
@@ -405,191 +406,129 @@ export default function BreadBotWidget({
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[71] mx-auto flex w-full max-w-[402px] justify-end">
           <div className="pointer-events-auto fixed right-[20px] bottom-[172px] flex h-[60vh] max-h-[520px] w-[min(360px,calc(100%-40px))] flex-col overflow-hidden rounded-r4 bg-white shadow-[0_8px_32px_rgba(0,0,0,0.18)] md:right-[calc((100vw-402px)/2+20px)]">
             <div className="flex items-center gap-x2 border-b border-gray-200 px-x4 py-x3">
-              {view === "chat" ? (
-                <button
-                  type="button"
-                  aria-label="챗봇 홈으로"
-                  onClick={() => setView("home")}
-                  className="-ml-x1 flex h-x8 w-x8 shrink-0 items-center justify-center rounded-full text-size-5 text-gray-700 hover:bg-gray-100"
-                >
-                  ‹
-                </button>
-              ) : (
-                <img
-                  src={BreadDefaultLogo}
-                  alt=""
-                  aria-hidden
-                  className="h-x8 w-x8 object-contain"
-                />
-              )}
+              <img src={BreadDefaultLogo} alt="" aria-hidden className="h-x8 w-x8 object-contain" />
               <div className="flex min-w-0 flex-col">
                 <span className="font-pretendard text-size-4 font-bold leading-t5 text-gray-1000">
                   빵빵 큐레이터
                 </span>
                 <span className="font-pretendard text-size-2 leading-t3 text-gray-600">
-                  {view === "chat" ? "AI 큐레이터와 대화 중" : "무엇이든 물어보세요"}
+                  무엇이든 물어보세요
                 </span>
               </div>
               <button
                 type="button"
-                aria-label={view === "chat" ? "챗봇 홈으로" : "닫기"}
-                onClick={() => (view === "chat" ? setView("home") : setOpen(false))}
+                aria-label="닫기"
+                onClick={() => setOpen(false)}
                 className="ml-auto flex h-x8 w-x8 shrink-0 items-center justify-center rounded-full text-size-5 text-gray-500 hover:bg-gray-100"
               >
                 ✕
               </button>
             </div>
 
-            {view === "home" ? (
-              <div className="flex-1 overflow-y-auto px-x4 py-x4">
-                <div className="flex flex-col items-center gap-x2 pb-x4 pt-x2 text-center">
-                  <img
-                    src={BreadDefaultLogo}
-                    alt=""
-                    aria-hidden
-                    className="h-[56px] w-[56px] object-contain"
-                  />
-                  <p className="whitespace-pre-line font-pretendard text-size-4 font-bold leading-t5 text-gray-1000">
-                    {"안녕하세요! 🍞\nBreadBread AI 큐레이터입니다."}
-                  </p>
-                  <p className="font-pretendard text-size-3 leading-t5 text-gray-600">
-                    현재 코스 설명, 다음 빵집 추천, 순서 변경 등 궁금한 점을 자유롭게 물어보세요!
-                  </p>
+            <div ref={listRef} className="flex-1 space-y-x2 overflow-y-auto px-x4 py-x3">
+              {messages.length === 0 && !loading ? (
+                <div className="flex flex-col items-start gap-x2">
+                  <div className="max-w-[85%] rounded-r3 bg-gray-100 px-x3 py-x2">
+                    <p className="whitespace-pre-line font-pretendard text-size-3 leading-t5 text-gray-1000">
+                      {WELCOME_MESSAGE}
+                    </p>
+                  </div>
+                  <div className="grid w-full grid-cols-2 gap-x1-5 gap-y-x1-5">
+                    {QUICK_REPLIES.map((q) => (
+                      <button
+                        key={q}
+                        type="button"
+                        onClick={() => handleQuickReply(q)}
+                        disabled={loading}
+                        className="rounded-r2 border border-orange-200 bg-orange-50 px-x2 py-x1-5 text-center font-pretendard text-size-2 leading-t3 text-orange-700 transition-colors hover:bg-orange-100 disabled:opacity-50"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+              ) : null}
 
-                <div className="flex flex-col gap-x2">
-                  <span className="font-pretendard text-size-2 font-bold leading-t3 text-gray-500">
-                    추천 질문
-                  </span>
-                  {QUICK_REPLIES.map((q) => (
-                    <button
-                      key={q}
-                      type="button"
-                      onClick={() => sendMessage(q)}
-                      className="w-full rounded-r3 border border-orange-300 bg-orange-100 px-x3 py-x2-5 text-left font-pretendard text-size-3 leading-t4 text-orange-700 transition-colors hover:bg-orange-200"
-                    >
-                      {q}
-                    </button>
-                  ))}
+              {messages.map((m) => (
+                <div
+                  key={m.id}
+                  className={cn(
+                    "flex flex-col gap-x1-5",
+                    m.role === "user" ? "items-end" : "items-start",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "max-w-[80%] whitespace-pre-wrap rounded-r3 px-x3 py-x2 font-pretendard text-size-3 leading-t4",
+                      m.role === "user"
+                        ? "bg-orange-600 text-gray-00"
+                        : "bg-gray-100 text-gray-1000",
+                    )}
+                  >
+                    {m.text}
+                  </div>
+
+                  {m.role === "bot" && m.actions && m.actions.length > 0 ? (
+                    <div className="grid w-full max-w-[85%] grid-cols-2 gap-x1-5 gap-y-x1-5">
+                      {m.actions.map((action) => (
+                        <button
+                          key={action.label}
+                          type="button"
+                          disabled={loading}
+                          onClick={() => handleQuickReply(action.label)}
+                          className="rounded-r2 border border-orange-200 bg-orange-50 px-x2 py-x1-5 text-center font-pretendard text-size-2 leading-t3 text-orange-700 transition-colors hover:bg-orange-100 disabled:opacity-50"
+                        >
+                          {action.label}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
+              ))}
 
+              {loading ? (
+                <div className="flex justify-start">
+                  <div className="rounded-r3 bg-gray-100 px-x3 py-x2 font-pretendard text-size-3 leading-t4 text-gray-500">
+                    답변 작성 중…
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            {messages.length > 0 ? (
+              <div className="flex justify-center border-t border-gray-100 px-x3 pt-x2">
                 <button
                   type="button"
-                  onClick={() => setView("chat")}
-                  className="mt-x4 h-[44px] w-full rounded-r3 bg-orange-600 font-pretendard text-size-3 font-bold leading-t4 text-gray-00"
+                  onClick={showGuide}
+                  className="rounded-full border border-orange-200 bg-orange-50 px-x2-5 py-x1 font-pretendard text-size-2 leading-t3 text-orange-700 transition-colors hover:bg-orange-100"
                 >
-                  직접 질문하기
+                  💡 추천 질문 다시 보기
                 </button>
               </div>
-            ) : (
-              <>
-                <div ref={listRef} className="flex-1 space-y-x2 overflow-y-auto px-x4 py-x3">
-                  {messages.length === 0 && !loading ? (
-                    <div className="space-y-x3">
-                      <div className="rounded-r3 bg-gray-100 px-x3 py-x2-5">
-                        <p className="whitespace-pre-line font-pretendard text-size-3 leading-t5 text-gray-1000">
-                          {
-                            "안녕하세요! 🍞\nBreadBread AI 큐레이터입니다.\n\n현재 코스 설명, 다음 빵집 추천, 순서 변경 등 궁금한 점을 자유롭게 물어보세요!"
-                          }
-                        </p>
-                      </div>
-                      <div className="flex flex-col gap-x2">
-                        {QUICK_REPLIES.map((q) => (
-                          <button
-                            key={q}
-                            type="button"
-                            onClick={() => sendMessage(q)}
-                            className="w-full rounded-r3 border border-orange-300 bg-orange-100 px-x3 py-x2 text-left font-pretendard text-size-3 leading-t4 text-orange-700 transition-colors hover:bg-orange-200"
-                          >
-                            {q}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
+            ) : null}
 
-                  {messages.map((m) => (
-                    <div
-                      key={m.id}
-                      className={cn(
-                        "flex flex-col gap-x2",
-                        m.role === "user" ? "items-end" : "items-start",
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          "max-w-[80%] whitespace-pre-wrap rounded-r3 px-x3 py-x2 font-pretendard text-size-3 leading-t4",
-                          m.role === "user"
-                            ? "bg-orange-600 text-gray-00"
-                            : "bg-gray-100 text-gray-1000",
-                        )}
-                      >
-                        {m.text}
-                      </div>
-
-                      {m.role === "bot" && m.actions && m.actions.length > 0 ? (
-                        <div className="flex flex-wrap gap-x2">
-                          {m.actions.map((action) => (
-                            <button
-                              key={action.label}
-                              type="button"
-                              disabled={loading}
-                              onClick={() => sendMessage(action.reply)}
-                              className="rounded-r3 border border-orange-300 bg-orange-100 px-x3 py-x2 font-pretendard text-size-3 font-bold leading-t4 text-orange-700 transition-colors hover:bg-orange-200 disabled:opacity-50"
-                            >
-                              {action.label}
-                            </button>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  ))}
-
-                  {loading ? (
-                    <div className="flex justify-start">
-                      <div className="rounded-r3 bg-gray-100 px-x3 py-x2 font-pretendard text-size-3 leading-t4 text-gray-500">
-                        답변 작성 중…
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-
-                {messages.length > 0 ? (
-                  <div className="flex justify-center border-t border-gray-100 px-x3 pt-x2">
-                    <button
-                      type="button"
-                      onClick={showGuide}
-                      className="rounded-full border border-orange-300 bg-orange-100 px-x3 py-x1-5 font-pretendard text-size-2 font-bold leading-t3 text-orange-700 transition-colors hover:bg-orange-200"
-                    >
-                      💡 추천 질문 다시 보기
-                    </button>
-                  </div>
-                ) : null}
-
-                <div className="flex items-center gap-x2 border-t border-gray-200 px-x3 py-x2">
-                  <input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-                        e.preventDefault();
-                        handleSend();
-                      }
-                    }}
-                    placeholder="메시지를 입력하세요"
-                    className="min-w-0 flex-1 rounded-r3 border border-gray-300 bg-gray-00 px-x3 py-x2 font-pretendard text-size-3 leading-t4 text-gray-1000 outline-none placeholder:text-gray-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSend}
-                    disabled={!input.trim() || loading}
-                    className="shrink-0 rounded-r3 bg-orange-600 px-x4 py-x2 font-pretendard text-size-3 font-bold leading-t4 text-gray-00 disabled:bg-gray-300"
-                  >
-                    전송
-                  </button>
-                </div>
-              </>
-            )}
+            <div className="flex items-center gap-x2 border-t border-gray-200 px-x3 py-x2">
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                placeholder="메시지를 입력하세요"
+                className="min-w-0 flex-1 rounded-r3 border border-gray-300 bg-gray-00 px-x3 py-x2 font-pretendard text-size-3 leading-t4 text-gray-1000 outline-none placeholder:text-gray-400"
+              />
+              <button
+                type="button"
+                onClick={handleSend}
+                disabled={!input.trim() || loading}
+                className="shrink-0 rounded-r3 bg-orange-600 px-x4 py-x2 font-pretendard text-size-3 font-bold leading-t4 text-gray-00 disabled:bg-gray-300"
+              >
+                전송
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
