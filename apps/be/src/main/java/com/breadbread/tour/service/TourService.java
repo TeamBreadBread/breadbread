@@ -8,6 +8,9 @@ import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.reservation.entity.Reservation;
 import com.breadbread.reservation.entity.ReservationStatus;
 import com.breadbread.reservation.repository.ReservationRepository;
+import com.breadbread.tour.client.CongestionInstantCheckClient;
+import com.breadbread.tour.dto.CongestionInstantCheckRequest;
+import com.breadbread.tour.dto.CongestionInstantCheckResponse;
 import com.breadbread.tour.dto.TourCurrentResponse;
 import com.breadbread.tour.dto.TourStartResponse;
 import com.breadbread.tour.dto.TourVisitResponse;
@@ -18,6 +21,8 @@ import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,6 +38,7 @@ public class TourService {
     private final CourseBakeryRepository courseBakeryRepository;
     private final ReservationRepository reservationRepository;
     private final UserRepository userRepository;
+    private final CongestionInstantCheckClient congestionInstantCheckClient;
 
     @Transactional
     public TourStartResponse startTour(Long userId, UserRole role, Long courseId) {
@@ -135,6 +141,18 @@ public class TourService {
         completeReservationIfExists(userId, courseId);
 
         return response;
+    }
+
+    public CongestionInstantCheckResponse checkCongestionInstant(
+            Long userId, CongestionInstantCheckRequest request) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("userId", userId);
+        body.put("courseId", request.getCourseId());
+        body.put("bakeryIds", request.getBakeryIds());
+        if (request.getTargetBakeryId() != null) {
+            body.put("targetBakeryId", request.getTargetBakeryId());
+        }
+        return congestionInstantCheckClient.check(body);
     }
 
     private void completeReservationIfExists(Long userId, Long courseId) {

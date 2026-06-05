@@ -1,6 +1,7 @@
 package com.breadbread.global.config;
 
 import com.breadbread.auth.service.CustomUserDetailsService;
+import com.breadbread.global.filter.AiApiKeyFilter;
 import com.breadbread.global.filter.JwtAuthenticationFilter;
 import com.breadbread.global.jwt.JwtProvider;
 import jakarta.servlet.http.HttpServletResponse;
@@ -29,6 +30,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
     private final JwtProvider jwtProvider;
     private final CustomUserDetailsService customUserDetailsService;
+    private final AiApiKeyFilter aiApiKeyFilter;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -101,6 +103,8 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/bakeries/**")
                                         .permitAll()
+                                        .requestMatchers(HttpMethod.GET, "/trends/**")
+                                        .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/courses/**")
                                         .permitAll()
                                         .requestMatchers(HttpMethod.POST, "/payments/webhook")
@@ -111,9 +115,10 @@ public class SecurityConfig {
                                         .hasRole("ADMIN")
                                         .anyRequest()
                                         .authenticated())
+                .addFilterBefore(aiApiKeyFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(
                         new JwtAuthenticationFilter(jwtProvider, customUserDetailsService),
-                        UsernamePasswordAuthenticationFilter.class);
+                        AiApiKeyFilter.class);
         return http.build();
     }
 

@@ -15,4 +15,5 @@ public class AiProperties {
     private String congestionWebhookUrl;
     private long webhookTimeoutSeconds;
     private long jobTtlHours;
+    private String apiKey;
 }

@@ -1,6 +1,6 @@
 package com.breadbread.ai.dto;
 
-import com.breadbread.tour.dto.CongestionAlertWebhookRequest.CourseInfo;
+import com.breadbread.tour.dto.CourseInfo;
 import com.breadbread.tour.redis.TourStateCache;
 import com.breadbread.tour.redis.TourStatus;
 import com.fasterxml.jackson.annotation.JsonInclude;

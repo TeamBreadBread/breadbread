@@ -52,8 +52,6 @@ public class AiChatWebhookClient {
                             .timeout(Duration.ofSeconds(aiProperties.getWebhookTimeoutSeconds()))
                             .block();
 
-            log.debug("[AI 채팅 웹훅] 응답 수신: elapsed={}ms ", System.currentTimeMillis() - start);
-
             if (rawBody == null || rawBody.isBlank()) {
                 log.error("[AI 채팅 웹훅] 응답 body 비어있음");
                 throw new CustomException(ErrorCode.AI_WEBHOOK_EMPTY_RESPONSE);
@@ -84,7 +82,6 @@ public class AiChatWebhookClient {
                 log.warn("[AI 채팅 웹훅] 실패 응답 수신: type={}", response.getType());
                 throw new CustomException(ErrorCode.AI_SERVER_ERROR);
             }
-            log.debug("[AI 채팅 웹훅] 응답 파싱 완료: type={}", response.getType());
             return response;
         } catch (CustomException e) {
             throw e;

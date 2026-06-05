@@ -5,7 +5,7 @@ import com.breadbread.ai.dto.AiChatRequest;
 import com.breadbread.ai.dto.AiChatResponse;
 import com.breadbread.ai.dto.AiChatWebhookRequest;
 import com.breadbread.ai.dto.AiChatWebhookRequest.TourStateInfo;
-import com.breadbread.tour.dto.CongestionAlertWebhookRequest.CourseInfo;
+import com.breadbread.tour.dto.CourseInfo;
 import com.breadbread.tour.redis.TourStateCache;
 import com.breadbread.tour.service.CourseContextService;
 import com.breadbread.tour.service.TourRedisService;

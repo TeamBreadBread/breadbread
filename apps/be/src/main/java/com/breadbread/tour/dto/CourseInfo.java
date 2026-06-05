@@ -11,102 +11,57 @@ import com.breadbread.course.entity.CourseBakery;
 import com.breadbread.course.entity.FlexibilityLevel;
 import com.breadbread.course.entity.ManualCourseInfo;
 import com.breadbread.course.entity.TravelType;
-import com.breadbread.tour.redis.TourStateCache;
-import com.breadbread.tour.redis.TourStatus;
 import com.breadbread.user.entity.UserPreference;
 import com.breadbread.user.entity.WaitingTolerance;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.ToString;
 
 @Getter
 @Builder
-@ToString(onlyExplicitlyIncluded = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CongestionAlertWebhookRequest {
+public class CourseInfo {
 
-    private Long userId;
-    private TourInfo tourState;
-    private CourseInfo course;
+    private Long courseId;
+    private String name;
+    private String courseType;
+    private String region;
+    private String theme;
+    private String summary;
+    private Long estimatedCost;
+    private String estimatedTime;
+    private Integer totalMinutes;
+    private List<Long> bakeries;
+    private ManualInfo manualCourseInfo;
+    private AiInfo aiCourseInfo;
 
-    public static CongestionAlertWebhookRequest from(
-            TourStateCache state, Course course, List<CourseBakery> courseBakeries) {
-        return CongestionAlertWebhookRequest.builder()
-                .userId(state.getUserId())
-                .tourState(TourInfo.from(state))
-                .course(CourseInfo.from(course, courseBakeries))
+    public static CourseInfo from(Course course, List<CourseBakery> courseBakeries) {
+        ManualCourseInfo manual = course.getManualCourseInfo();
+        AiCourseInfo ai = course.getAiCourseInfo();
+
+        List<Long> bakeryIds =
+                courseBakeries.stream()
+                        .sorted(Comparator.comparingInt(CourseBakery::getVisitOrder))
+                        .map(cb -> cb.getBakery().getId())
+                        .toList();
+
+        return CourseInfo.builder()
+                .courseId(course.getId())
+                .name(course.getName())
+                .courseType(course.getCourseType().name())
+                .region(course.getRegion())
+                .theme(course.getTheme())
+                .summary(course.getSummary())
+                .estimatedCost(course.getEstimatedCost())
+                .estimatedTime(course.getEstimatedTime())
+                .totalMinutes(course.getTotalMinutes())
+                .bakeries(bakeryIds)
+                .manualCourseInfo(manual != null ? ManualInfo.from(manual) : null)
+                .aiCourseInfo(ai != null ? AiInfo.from(course) : null)
                 .build();
-    }
-
-    @Getter
-    @Builder
-    public static class TourInfo {
-        private Long courseId;
-        private int totalBakeryCount;
-        private int currentVisitOrder; // 0 = 시작 전, n = n번째 빵집까지 방문 완료
-        private TourStatus status;
-
-        public static TourInfo from(TourStateCache state) {
-            return TourInfo.builder()
-                    .courseId(state.getCourseId())
-                    .totalBakeryCount(state.getTotalBakeryCount())
-                    .currentVisitOrder(state.getCurrentVisitOrder())
-                    .status(state.getStatus())
-                    .build();
-        }
-    }
-
-    @Getter
-    @Builder
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class CourseInfo {
-        private Long courseId;
-        private String name;
-        private String courseType;
-        private String region;
-        private String theme;
-        private String summary;
-        private Long estimatedCost;
-        private String estimatedTime;
-        private Integer totalMinutes;
-
-        /** visitOrder 오름차순으로 정렬된 bakeryId 목록 */
-        private List<Long> bakeries;
-
-        // MANUAL 코스인 경우에만 채워짐 (AI 코스는 null → 직렬화 제외)
-        private ManualInfo manualCourseInfo;
-
-        // AI 코스인 경우에만 채워짐 (MANUAL 코스는 null → 직렬화 제외)
-        private AiInfo aiCourseInfo;
-
-        public static CourseInfo from(Course course, List<CourseBakery> courseBakeries) {
-            ManualCourseInfo manual = course.getManualCourseInfo();
-            AiCourseInfo ai = course.getAiCourseInfo();
-
-            List<Long> bakeryIds =
-                    courseBakeries.stream()
-                            .sorted(java.util.Comparator.comparingInt(CourseBakery::getVisitOrder))
-                            .map(cb -> cb.getBakery().getId())
-                            .toList();
-
-            return CourseInfo.builder()
-                    .courseId(course.getId())
-                    .name(course.getName())
-                    .courseType(course.getCourseType().name())
-                    .region(course.getRegion())
-                    .theme(course.getTheme())
-                    .summary(course.getSummary())
-                    .estimatedCost(course.getEstimatedCost())
-                    .estimatedTime(course.getEstimatedTime())
-                    .totalMinutes(course.getTotalMinutes())
-                    .bakeries(bakeryIds)
-                    .manualCourseInfo(manual != null ? ManualInfo.from(manual) : null)
-                    .aiCourseInfo(ai != null ? AiInfo.from(course) : null)
-                    .build();
-        }
     }
 
     @Getter

@@ -11,8 +11,10 @@ import static org.mockito.Mockito.when;
 
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.notification.dto.CuratorNotificationRequest;
 import com.breadbread.notification.entity.FcmToken;
 import com.breadbread.notification.repository.FcmTokenRepository;
+import com.breadbread.tour.service.CooldownRedisService;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
@@ -30,13 +32,17 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class FcmServiceTest {
 
     @Mock private FcmTokenRepository fcmTokenRepository;
     @Mock private UserRepository userRepository;
+    @Mock private CooldownRedisService cooldownRedisService;
 
     @InjectMocks private FcmService fcmService;
 
@@ -257,6 +263,55 @@ class FcmServiceTest {
         }
     }
 
+    // ───────────────────────────── sendCuratorAlert ─────────────────────────────
+
+    @Test
+    void sendCuratorAlert_skips_whenOnCooldown() {
+        when(cooldownRedisService.isOnCooldown(1L, 30L)).thenReturn(true);
+
+        CuratorNotificationRequest request = curatorRequest(1L, 30L, 5L);
+        fcmService.sendCuratorAlert(request);
+
+        verify(fcmTokenRepository, never()).findAllByUserId(any());
+    }
+
+    @Test
+    void sendCuratorAlert_sendsFcm_andMarksCooldown_whenNotOnCooldown() throws Exception {
+        FcmToken token = fcmToken("device-token");
+        when(cooldownRedisService.isOnCooldown(1L, 30L)).thenReturn(false);
+        when(fcmTokenRepository.findAllByUserId(1L)).thenReturn(List.of(token));
+
+        FirebaseMessaging mockMessaging = mock(FirebaseMessaging.class);
+        when(mockMessaging.send(any(Message.class))).thenReturn("msg-id");
+
+        try (MockedStatic<FirebaseMessaging> mocked = mockStatic(FirebaseMessaging.class)) {
+            mocked.when(FirebaseMessaging::getInstance).thenReturn(mockMessaging);
+
+            fcmService.sendCuratorAlert(curatorRequest(1L, 30L, 5L));
+
+            verify(cooldownRedisService).markAttempted(1L, 30L);
+        }
+    }
+
+    @Test
+    void sendCuratorAlert_doesNotMarkCooldown_whenFcmFails() throws Exception {
+        FcmToken token = fcmToken("device-token");
+        when(cooldownRedisService.isOnCooldown(1L, 30L)).thenReturn(false);
+        when(fcmTokenRepository.findAllByUserId(1L)).thenReturn(List.of(token));
+
+        FirebaseMessagingException exception = mockFirebaseException(MessagingErrorCode.INTERNAL);
+        FirebaseMessaging mockMessaging = mock(FirebaseMessaging.class);
+        when(mockMessaging.send(any(Message.class))).thenThrow(exception);
+
+        try (MockedStatic<FirebaseMessaging> mocked = mockStatic(FirebaseMessaging.class)) {
+            mocked.when(FirebaseMessaging::getInstance).thenReturn(mockMessaging);
+
+            fcmService.sendCuratorAlert(curatorRequest(1L, 30L, 5L));
+
+            verify(cooldownRedisService, never()).markAttempted(any(), any());
+        }
+    }
+
     // ───────────────────────────── helpers ─────────────────────────────
 
     private static User user(long id) {
@@ -286,5 +341,16 @@ class FcmServiceTest {
         FirebaseMessagingException exception = mock(FirebaseMessagingException.class);
         when(exception.getMessagingErrorCode()).thenReturn(errorCode);
         return exception;
+    }
+
+    private static CuratorNotificationRequest curatorRequest(
+            Long userId, Long bakeryId, Long courseId) {
+        CuratorNotificationRequest request = mock(CuratorNotificationRequest.class);
+        when(request.getUserId()).thenReturn(userId);
+        when(request.getBakeryId()).thenReturn(bakeryId);
+        when(request.getCourseId()).thenReturn(courseId);
+        when(request.getTitle()).thenReturn("혼잡도 알림");
+        when(request.getMessage()).thenReturn("빵집이 혼잡합니다.");
+        return request;
     }
 }

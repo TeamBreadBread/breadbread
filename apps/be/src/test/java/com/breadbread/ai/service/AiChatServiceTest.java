@@ -11,7 +11,7 @@ import com.breadbread.ai.client.AiChatWebhookClient;
 import com.breadbread.ai.dto.AiChatRequest;
 import com.breadbread.ai.dto.AiChatResponse;
 import com.breadbread.ai.dto.AiChatWebhookRequest;
-import com.breadbread.tour.dto.CongestionAlertWebhookRequest.CourseInfo;
+import com.breadbread.tour.dto.CourseInfo;
 import com.breadbread.tour.redis.TourStateCache;
 import com.breadbread.tour.redis.TourStatus;
 import com.breadbread.tour.service.CourseContextService;
