@@ -3,17 +3,22 @@ import mapImage from "@/assets/images/map.png";
 import type { CourseDirectionPoint } from "@/api/courses";
 import { loadKakaoMapSdk } from "@/lib/kakaoMapSdk";
 import { fetchKakaoWalkingRoutePath } from "@/lib/kakaoWalkingRoute";
-import type { KakaoLatLngBounds, KakaoMap } from "@/types/kakao-maps";
+import type { KakaoLatLng, KakaoLatLngBounds, KakaoMap, KakaoMaps } from "@/types/kakao-maps";
 import { cn } from "@/utils/cn";
 import { getCourseOrderMarkerPalette } from "@/lib/courseOrderMarkerPalette";
 import { filterValidMapPoints, type CourseMapBakery } from "./courseMapPoints";
 
 export type { CourseMapBakery } from "./courseMapPoints";
 
+/** simple: 마커 간 직선(대각선) · walking: 보행 길찾기 API · road: 사전 계산 도로 좌표 */
+export type CourseMapPathMode = "simple" | "walking" | "road";
+
 type Props = {
   bakeries: CourseMapBakery[];
   departurePoint?: { lat: number; lng: number; label: string } | null;
+  /** road 모드에서만 사용 */
   routePath?: CourseDirectionPoint[] | null;
+  pathMode?: CourseMapPathMode;
   className?: string;
 };
 
@@ -150,15 +155,29 @@ function createDepartureMarkerElement(label: string): HTMLDivElement {
   return wrap;
 }
 
+function buildSimplePathPositions(
+  maps: KakaoMaps,
+  departurePoint: { lat: number; lng: number } | null | undefined,
+  markerPositions: KakaoLatLng[],
+): KakaoLatLng[] {
+  const departureOverlayPosition = departurePoint
+    ? new maps.LatLng(departurePoint.lat, departurePoint.lng)
+    : null;
+
+  return [...(departureOverlayPosition ? [departureOverlayPosition] : []), ...markerPositions];
+}
+
 function CourseKakaoMapView({
   mapPoints,
   departurePoint,
   routePath,
+  pathMode = "simple",
   className,
 }: {
   mapPoints: CourseMapBakery[];
   departurePoint?: { lat: number; lng: number; label: string } | null;
   routePath?: CourseDirectionPoint[] | null;
+  pathMode?: CourseMapPathMode;
   className?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -201,44 +220,51 @@ function CourseKakaoMapView({
             ? new maps.LatLng(departurePoint.lat, departurePoint.lng)
             : null;
 
-          // 기본: 출발지 → 빵집을 순서대로 단순 직선(대각선)으로 연결.
-          // 도로 경로(길찾기)는 추후 택시 기사 페이지에서 routePath로 주입해 사용한다.
-          let basePathPositions = [
-            ...(departureOverlayPosition ? [departureOverlayPosition] : []),
-            ...markerPositions,
-          ];
+          let pathPositions = buildSimplePathPositions(maps, departurePoint, markerPositions);
 
-          if (routePath && routePath.length > 1) {
-            basePathPositions = routePath.map((p) => new maps.LatLng(p.lat, p.lng));
-          } else if (routePath === null) {
+          if (pathMode === "road" && routePath && routePath.length > 1) {
+            pathPositions = routePath.map((p) => new maps.LatLng(p.lat, p.lng));
+          } else if (pathMode === "walking") {
             const walkingPath = await fetchKakaoWalkingRoutePath(routeCoords);
             if (cancelled) return;
             if (walkingPath && walkingPath.length > 1) {
-              basePathPositions = walkingPath.map((p) => new maps.LatLng(p.lat, p.lng));
+              pathPositions = walkingPath.map((p) => new maps.LatLng(p.lat, p.lng));
             }
           }
-          const pathPositions = basePathPositions;
 
-          mapObjects.push(
-            new maps.Polyline({
-              map,
-              path: pathPositions,
-              strokeWeight: 10,
-              strokeColor: "#ffffff",
-              strokeOpacity: 0.95,
-              strokeStyle: "solid",
-            }),
-          );
-          mapObjects.push(
-            new maps.Polyline({
-              map,
-              path: pathPositions,
-              strokeWeight: 6,
-              strokeColor: "#2563eb",
-              strokeOpacity: 0.95,
-              strokeStyle: "solid",
-            }),
-          );
+          if (pathMode === "simple") {
+            mapObjects.push(
+              new maps.Polyline({
+                map,
+                path: pathPositions,
+                strokeWeight: 3,
+                strokeColor: "#41454e",
+                strokeOpacity: 0.85,
+                strokeStyle: "shortdash",
+              }),
+            );
+          } else {
+            mapObjects.push(
+              new maps.Polyline({
+                map,
+                path: pathPositions,
+                strokeWeight: 10,
+                strokeColor: "#ffffff",
+                strokeOpacity: 0.95,
+                strokeStyle: "solid",
+              }),
+            );
+            mapObjects.push(
+              new maps.Polyline({
+                map,
+                path: pathPositions,
+                strokeWeight: 6,
+                strokeColor: "#2563eb",
+                strokeOpacity: 0.95,
+                strokeStyle: "solid",
+              }),
+            );
+          }
 
           if (departurePoint && departureOverlayPosition) {
             mapObjects.push(
@@ -333,7 +359,7 @@ function CourseKakaoMapView({
       }
       container.replaceChildren();
     };
-  }, [departurePoint, mapPoints, routePath]);
+  }, [departurePoint, mapPoints, pathMode, routePath]);
 
   useEffect(() => {
     if (status !== "ready") return;
@@ -376,7 +402,13 @@ function CourseKakaoMapView({
   );
 }
 
-export default function CourseKakaoMap({ bakeries, departurePoint, routePath, className }: Props) {
+export default function CourseKakaoMap({
+  bakeries,
+  departurePoint,
+  routePath,
+  pathMode = "simple",
+  className,
+}: Props) {
   const mapPoints = useMemo(() => filterValidMapPoints(bakeries), [bakeries]);
 
   if (mapPoints.length === 0) {
@@ -391,6 +423,7 @@ export default function CourseKakaoMap({ bakeries, departurePoint, routePath, cl
       mapPoints={mapPoints}
       departurePoint={departurePoint}
       routePath={routePath}
+      pathMode={pathMode}
       className={className}
     />
   );

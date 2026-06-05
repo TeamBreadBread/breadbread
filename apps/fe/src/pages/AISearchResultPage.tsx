@@ -228,6 +228,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
         <CourseKakaoMap
           bakeries={mapBakeries}
           departurePoint={visibleDeparturePoint}
+          pathMode="simple"
           className="h-full w-full"
         />
       </div>

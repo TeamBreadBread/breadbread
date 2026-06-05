@@ -3,6 +3,8 @@ export type BakeryListItem = {
   id: number;
   name: string;
   address: string;
+  /** 행정동 (예: 둔산동) */
+  dong?: string | null;
   lat?: number | null;
   lng?: number | null;
   thumbnailUrl?: string | null;
@@ -11,6 +13,7 @@ export type BakeryListItem = {
   /** 4장을 넘는 나머지 이미지 개수 */
   remainingPreviewImageCount?: number | null;
   rating?: number | null;
+  reviewCount?: number | null;
   openTime?: string | null;
   closeTime?: string | null;
   likeCount?: number | null;
@@ -42,6 +45,8 @@ export type BakeryDetail = {
   id: number;
   name: string;
   address: string;
+  /** 행정동 (예: 둔산동) */
+  dong?: string | null;
   lat?: number | null;
   lng?: number | null;
   imageUrls?: string[];
@@ -103,6 +108,7 @@ export type BakerySummaryItem = {
   id: number;
   name: string;
   address: string;
+  dong?: string | null;
   rating?: number | null;
   thumbnailUrl?: string | null;
 };

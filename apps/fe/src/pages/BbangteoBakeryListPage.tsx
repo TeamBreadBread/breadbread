@@ -20,6 +20,11 @@ import {
 import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import { cn } from "@/utils/cn";
 import { resolveThumbnailDongAddress } from "@/utils/formatCurationAddress";
+import {
+  formatBakeryRating,
+  resolveBakeryRating,
+  resolveBakeryReviewCount,
+} from "@/utils/bakeryRating";
 
 const PAGE_SIZE = 6;
 
@@ -54,9 +59,9 @@ function mapListItemToBakeryRow(b: BakeryListItem): BakeryRow {
   return {
     id: item.id,
     name: item.name,
-    address: resolveThumbnailDongAddress(item.address),
-    rating: item.rating != null ? Number(item.rating) : 0,
-    reviewCount: 0,
+    address: resolveThumbnailDongAddress(item.address, item.dong, item.name),
+    rating: resolveBakeryRating(item.rating),
+    reviewCount: resolveBakeryReviewCount(item.reviewCount),
     bookmarkCount: item.likeCount ?? 0,
     liked: Boolean(item.liked),
     images: previews,
@@ -77,9 +82,9 @@ function mapDetailToBakeryRow(detail: BakeryDetail): BakeryRow {
   return {
     id: detail.id,
     name: detail.name,
-    address: resolveThumbnailDongAddress(detail.address),
-    rating: detail.rating != null ? Number(detail.rating) : 0,
-    reviewCount: 0,
+    address: resolveThumbnailDongAddress(detail.address, detail.dong, detail.name),
+    rating: resolveBakeryRating(detail.rating),
+    reviewCount: resolveBakeryReviewCount(detail.reviewCount),
     bookmarkCount: detail.likeCount ?? 0,
     liked: Boolean(detail.liked),
     images: previews,
@@ -180,7 +185,9 @@ const BakeryMeta = ({
   <div className="flex h-[18px] items-center gap-[4px]">
     <div className="flex items-center gap-[2px]">
       <AppIcon src={IconAssets.IcStar} size={14} className="icon-orange-600 shrink-0" alt="" />
-      <span className="text-[13px] leading-[18px] text-[#868b94]">{rating}</span>
+      <span className="text-[13px] leading-[18px] text-[#868b94]">
+        {formatBakeryRating(rating)}
+      </span>
       <span className="text-[13px] leading-[18px] text-[#868b94]">
         ({reviewCount.toLocaleString()})
       </span>

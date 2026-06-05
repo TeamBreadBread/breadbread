@@ -40,7 +40,8 @@ public class BakeryDetailResponse {
             Long likeCount,
             boolean liked,
             Long reviewCount,
-            List<String> resolvedImageUrls) {
+            List<String> resolvedImageUrls,
+            Double rating) {
         BusinessHours bh = bakery.getBusinessHours();
 
         List<BakeryBreadResponse> breads =
@@ -65,7 +66,7 @@ public class BakeryDetailResponse {
                 .lat(bakery.getLatitude())
                 .lng(bakery.getLongitude())
                 .phone(bakery.getPhone())
-                .rating(bakery.getRating())
+                .rating(rating != null ? rating : 0.0)
                 .imageUrls(resolvedImageUrls)
                 .openTime(bh != null ? bh.getTodayOpen() : null)
                 .closeTime(bh != null ? bh.getTodayClose() : null)

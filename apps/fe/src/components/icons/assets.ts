@@ -1,4 +1,5 @@
 /** Figma export icons (`assets/icons/Ic_*.svg`) */
+export { default as ImgAi } from "@/assets/icons/Img_Ai.svg";
 export { default as IcAi } from "@/assets/icons/Ic_Ai.svg";
 export { default as IcBread } from "@/assets/icons/Ic_Bread.svg";
 export { default as IcCalendar } from "@/assets/icons/Ic_Calendar.svg";

@@ -4,7 +4,7 @@ import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { AppTopBar, Button } from "@/components/common";
 import ComingSoonDialog from "@/components/common/dialog/ComingSoonDialog";
 import MobileFrame from "@/components/layout/MobileFrame";
-import breadTaxiImage from "@/assets/images/breadTaxi.png";
+import leadingLogo from "@/assets/icons/Leading.svg";
 import { startGoogleLogin } from "@/lib/googleOAuth";
 import { startKakaoLogin } from "@/lib/kakaoOAuth";
 import { cn } from "@/utils/cn";
@@ -80,16 +80,16 @@ export default function LoginEntryPage() {
 
   return (
     <MobileFrame>
-      <AppTopBar title="로그인" onBack={() => navigate({ to: "/home" })} />
+      <AppTopBar title="로그인" hideBack />
 
       <main className="relative flex flex-1 flex-col items-center py-x8">
         <div className="flex w-full flex-col items-center gap-x4">
           <section className="flex w-full flex-col items-center px-x5 pt-x8 text-center">
             <img
-              src={breadTaxiImage}
+              src={leadingLogo}
               alt=""
               aria-hidden
-              className="mb-x6 h-[64px] w-[64px] object-contain"
+              className="mb-x6 h-[74px] w-[74px] object-contain"
             />
             <div className="flex w-full flex-col items-center gap-x2">
               <p className={heroTitleClassName}>

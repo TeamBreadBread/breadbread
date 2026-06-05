@@ -13,6 +13,8 @@ public class BakerySummaryResponse {
     private Long id;
     private String name;
     private String address;
+    /** 행정동 (구글 Places 동기화 등으로 채워짐) */
+    private String dong;
     private Double lat;
     private Double lng;
     private String thumbnailUrl;
@@ -33,7 +35,7 @@ public class BakerySummaryResponse {
     public static BakerySummaryResponse from(
             Bakery bakery, String thumbnailUrl, Long likeCount, Long reviewCount, boolean liked) {
         List<String> previews = thumbnailUrl == null ? List.of() : List.of(thumbnailUrl);
-        return from(bakery, thumbnailUrl, likeCount, reviewCount, liked, previews, 0);
+        return from(bakery, thumbnailUrl, likeCount, reviewCount, liked, previews, 0, 0.0);
     }
 
     public static BakerySummaryResponse from(
@@ -43,15 +45,17 @@ public class BakerySummaryResponse {
             Long reviewCount,
             boolean liked,
             List<String> previewImageUrls,
-            int remainingPreviewImageCount) {
+            int remainingPreviewImageCount,
+            Double rating) {
         BusinessHours bh = bakery.getBusinessHours();
         return BakerySummaryResponse.builder()
                 .id(bakery.getId())
                 .name(bakery.getName())
                 .address(bakery.getAddress())
+                .dong(bakery.getDong())
                 .lat(bakery.getLatitude())
                 .lng(bakery.getLongitude())
-                .rating(bakery.getRating())
+                .rating(rating != null ? rating : 0.0)
                 .thumbnailUrl(thumbnailUrl)
                 .previewImageUrls(
                         previewImageUrls == null ? List.of() : List.copyOf(previewImageUrls))

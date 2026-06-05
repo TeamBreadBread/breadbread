@@ -44,7 +44,7 @@ export default function MyPage() {
       }
       clearSessionTokens();
       clearUserProfile();
-      void navigate({ to: "/home" });
+      void navigate({ to: "/" });
     })();
   };
 

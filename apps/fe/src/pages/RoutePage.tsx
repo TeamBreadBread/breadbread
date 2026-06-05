@@ -14,26 +14,13 @@ import {
   unlikeCourse,
 } from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
-import { isLoggedIn } from "@/lib/auth/isLoggedIn";
-import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 
 export default function RoutePage() {
   const navigate = useNavigate();
-  const { requireLogin } = useLoginRequired();
-  const loggedIn = isLoggedIn();
   const [courses, setCourses] = useState<RouteCourse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (loggedIn) return;
-    requireLogin(() => {
-      void navigate({ to: "/route", replace: true });
-    }, "/route");
-    void navigate({ to: "/home", replace: true });
-  }, [loggedIn, navigate, requireLogin]);
-
-  useEffect(() => {
-    if (!loggedIn) return;
     let mounted = true;
     const fetchRoutes = async () => {
       try {
@@ -77,7 +64,7 @@ export default function RoutePage() {
     return () => {
       mounted = false;
     };
-  }, [loggedIn]);
+  }, []);
 
   const handleDeleteCourse = async (courseId: string) => {
     const parsed = Number.parseInt(courseId, 10);
@@ -128,10 +115,6 @@ export default function RoutePage() {
     void navigate({ to: "/ai-search-result", search: { courseId: parsed, from: "route" } });
   };
 
-  if (!loggedIn) {
-    return null;
-  }
-
   return (
     <MobileFrame>
       <div className="flex flex-1 flex-col bg-white">
@@ -139,8 +122,8 @@ export default function RoutePage() {
 
         <div className="flex flex-col items-center gap-[10px] px-x5 py-x4">
           <RouteHeroCard
-            title="코스 추천받기"
-            description="description"
+            title="AI 빵집 추천"
+            description="내 취향 빵집 찾아보기"
             onClick={() => navigate({ to: AI_COURSE_FLOW_START })}
           />
           {isLoading ? (

@@ -270,6 +270,20 @@ public class UserService {
                                 .collect(
                                         Collectors.toMap(
                                                 row -> (Long) row[0], row -> (Long) row[1]));
+        Map<Long, Long> reviewCountMap =
+                ids.isEmpty()
+                        ? Map.of()
+                        : reviewRepository.countByBakeryIdInAndActiveTrue(ids).stream()
+                                .collect(
+                                        Collectors.toMap(
+                                                row -> (Long) row[0], row -> (Long) row[1]));
+        Map<Long, Double> avgRatingMap =
+                ids.isEmpty()
+                        ? Map.of()
+                        : reviewRepository.averageRatingByBakeryIdIn(ids).stream()
+                                .collect(
+                                        Collectors.toMap(
+                                                row -> (Long) row[0], row -> (Double) row[1]));
 
         return BakeryListResponse.builder()
                 .bakeries(
@@ -280,8 +294,15 @@ public class UserService {
                                                         b,
                                                         thumbnailMap.get(b.getId()),
                                                         likeCountMap.getOrDefault(b.getId(), 0L),
-                                                        0L,
-                                                        true))
+                                                        reviewCountMap.getOrDefault(b.getId(), 0L),
+                                                        true,
+                                                        thumbnailMap.get(b.getId()) == null
+                                                                ? List.of()
+                                                                : List.of(
+                                                                        thumbnailMap.get(
+                                                                                b.getId())),
+                                                        0,
+                                                        avgRatingMap.getOrDefault(b.getId(), 0.0)))
                                 .toList())
                 .total((int) likes.getTotalElements())
                 .page(page)

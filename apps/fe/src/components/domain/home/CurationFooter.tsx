@@ -1,4 +1,5 @@
 import CurationCard from "@/components/common/cards/CurationCard";
+import HorizontalScrollArea from "@/components/common/HorizontalScrollArea";
 import { cn } from "@/utils/cn";
 
 export type CurationItem = {
@@ -34,7 +35,7 @@ const CurationFooter = ({
   }
 
   return (
-    <div className="scrollbar-hide w-full overflow-x-auto overflow-y-hidden">
+    <HorizontalScrollArea aria-label="큐레이션 빵집 목록">
       <div className="flex w-max gap-[var(--spacing-x4)]">
         {items.map((item, index) => (
           <div
@@ -69,7 +70,7 @@ const CurationFooter = ({
           </div>
         ))}
       </div>
-    </div>
+    </HorizontalScrollArea>
   );
 };
 

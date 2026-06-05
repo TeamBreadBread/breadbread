@@ -210,7 +210,7 @@ export default function RouteListItem({
 
           <div
             className={cn(
-              "absolute bottom-0 left-1/2 flex max-h-[500px] w-full -translate-x-1/2 flex-col items-start justify-start gap-[12px] overflow-hidden rounded-tl-[24px] rounded-tr-[24px] bg-white",
+              "absolute bottom-0 left-1/2 flex max-h-[500px] w-full -translate-x-1/2 flex-col items-start justify-start overflow-hidden rounded-tl-[24px] rounded-tr-[24px] bg-white",
               RESPONSIVE_FRAME_WIDTH,
             )}
           >
@@ -225,7 +225,7 @@ export default function RouteListItem({
               </button>
             </div>
 
-            <div className="flex w-full flex-row items-start justify-start px-[20px] py-0">
+            <div className="flex w-full flex-row items-start justify-start px-[20px] pb-[calc(49px+env(safe-area-inset-bottom,0px))]">
               <div className="flex w-full flex-col items-start justify-start">
                 <div className="flex w-full flex-col items-start justify-start gap-x2">
                   <button
@@ -267,10 +267,6 @@ export default function RouteListItem({
                   </button>
                 </div>
               </div>
-            </div>
-
-            <div className="w-full">
-              <div className="h-[33px] w-full shrink-0" />
             </div>
           </div>
         </div>

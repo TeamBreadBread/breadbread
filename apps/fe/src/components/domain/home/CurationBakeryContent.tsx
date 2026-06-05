@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { BakeryListItem, BakerySummaryItem, GetBakeriesParams } from "@/api/types/bakery";
 import { useNavigate } from "@tanstack/react-router";
+import HorizontalScrollArea from "@/components/common/HorizontalScrollArea";
 import Skeleton from "@/components/common/skeleton/Skeleton";
 import { useBakeries } from "@/hooks/useBakeries";
 import { useBakeriesSummary } from "@/hooks/useBakeriesSummary";
 import { resolveThumbnailDongAddress } from "@/utils/formatCurationAddress";
+import { resolveBakeryRating } from "@/utils/bakeryRating";
 import { getSafeImageUrl } from "@/utils/safeImageUrl";
 import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import {
@@ -41,25 +43,25 @@ type CurationBakeryContentProps = {
 };
 
 function mapListItemToCurationItem(b: BakeryListItem, dongCardLabel?: string): CurationItem {
-  const address = dongCardLabel?.trim() || resolveThumbnailDongAddress(b.address);
+  const address = dongCardLabel?.trim() || resolveThumbnailDongAddress(b.address, b.dong, b.name);
   const rawImage = b.previewImageUrls?.[0]?.trim() || b.thumbnailUrl?.trim() || null;
   return {
     bakeryId: b.id,
     title: b.name,
     address,
-    rate: b.rating != null ? Number(b.rating) : 0,
+    rate: resolveBakeryRating(b.rating),
     imageUrl: getSafeImageUrl(rawImage ?? undefined) ?? null,
   };
 }
 
 function mapSummaryItemToCurationItem(b: BakerySummaryItem, dongCardLabel?: string): CurationItem {
-  const address = dongCardLabel?.trim() || resolveThumbnailDongAddress(b.address);
+  const address = dongCardLabel?.trim() || resolveThumbnailDongAddress(b.address, b.dong, b.name);
   const rawImage = b.thumbnailUrl?.trim() || null;
   return {
     bakeryId: b.id,
     title: b.name,
     address,
-    rate: b.rating != null ? Number(b.rating) : 0,
+    rate: resolveBakeryRating(b.rating),
     imageUrl: getSafeImageUrl(rawImage ?? undefined) ?? null,
   };
 }
@@ -226,11 +228,13 @@ export function CurationBakeryContent({
 
   if (loading || (lockSelectionOnMount && !readyToPick)) {
     return (
-      <div className="scrollbar-hide flex w-full gap-[var(--spacing-x4)] overflow-x-auto overflow-y-hidden">
-        {Array.from({ length: displayCount }).map((_, i) => (
-          <Skeleton key={i} className={skeletonClass} />
-        ))}
-      </div>
+      <HorizontalScrollArea>
+        <div className="flex w-max gap-[var(--spacing-x4)]">
+          {Array.from({ length: displayCount }).map((_, i) => (
+            <Skeleton key={i} className={skeletonClass} />
+          ))}
+        </div>
+      </HorizontalScrollArea>
     );
   }
 

@@ -33,6 +33,11 @@ import { buildWeeklyHoursRows, getBakeryHoursStatusLabel } from "@/utils/bakeryB
 import BakeryKakaoMapPreview from "@/components/domain/bbangteo/BakeryKakaoMapPreview";
 import { formatPhoneDisplay } from "@/utils/formatPhoneNumber";
 import { cn } from "@/utils/cn";
+import {
+  formatBakeryRating,
+  resolveBakeryRating,
+  resolveBakeryReviewCount,
+} from "@/utils/bakeryRating";
 
 /** 빵집 상세 제목 줄(`22px` / `leading 30px`)과 맞춘 하트 아이콘 */
 const BAKERY_TITLE_LIKE_ICON_SIZE = 22;
@@ -194,7 +199,7 @@ const BakeryTitleInfo = ({
     </div>
     <div className="flex items-center gap-x1 text-[14px] leading-[19px] font-medium text-gray-600">
       <AppIcon src={IconAssets.IcStar} size={18} className="icon-orange-600 shrink-0" alt="" />
-      <span>{rating.toFixed(1)}</span>
+      <span>{formatBakeryRating(rating)}</span>
       <span>·</span>
       <span>후기({reviewCount.toLocaleString("ko-KR")})</span>
     </div>
@@ -299,8 +304,8 @@ const BakeryHero = ({
   likeBusy: boolean;
   onToggleLike: () => void;
 }) => {
-  const rating = detail.rating != null ? Number(detail.rating) : 0;
-  const reviewCount = detail.reviewCount != null ? Number(detail.reviewCount) : 0;
+  const rating = resolveBakeryRating(detail.rating);
+  const reviewCount = resolveBakeryReviewCount(detail.reviewCount);
   const images = detail.imageUrls ?? [];
 
   return (
