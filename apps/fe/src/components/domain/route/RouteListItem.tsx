@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AppIcon, IconAssets } from "@/components/icons";
+import { pickCourseBreadIcon } from "@/lib/courseBreadIcons";
 import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
 import { cn } from "@/utils/cn";
 import type { RouteCourse } from "./types";
@@ -28,6 +29,7 @@ export default function RouteListItem({
 }: RouteListItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+  const courseIconSrc = pickCourseBreadIcon(course.id);
 
   const handleItemClick = () => {
     setIsExpanded((prev) => !prev);
@@ -97,7 +99,12 @@ export default function RouteListItem({
         className="flex w-full cursor-pointer items-start gap-[10px] py-x6 text-left"
       >
         <div className="flex h-[46px] w-[46px] items-center justify-center p-[6px]">
-          <AppIcon src={IconAssets.IcCompass} size={35} alt="" />
+          <img
+            src={courseIconSrc}
+            alt=""
+            aria-hidden
+            className="h-[35px] w-[35px] object-contain"
+          />
         </div>
 
         <div className="flex-1">

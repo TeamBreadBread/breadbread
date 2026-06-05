@@ -13,8 +13,10 @@ public class BakerySummaryResponse {
     private Long id;
     private String name;
     private String address;
+
     /** 행정동 (구글 Places 동기화 등으로 채워짐) */
     private String dong;
+
     private Double lat;
     private Double lng;
     private String thumbnailUrl;

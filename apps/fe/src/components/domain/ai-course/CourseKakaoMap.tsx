@@ -6,6 +6,7 @@ import { fetchKakaoWalkingRoutePath } from "@/lib/kakaoWalkingRoute";
 import type { KakaoLatLng, KakaoLatLngBounds, KakaoMap, KakaoMaps } from "@/types/kakao-maps";
 import { cn } from "@/utils/cn";
 import { getCourseOrderMarkerPalette } from "@/lib/courseOrderMarkerPalette";
+import { pickCourseBreadIconForStop } from "@/lib/courseBreadIcons";
 import { filterValidMapPoints, type CourseMapBakery } from "./courseMapPoints";
 
 export type { CourseMapBakery } from "./courseMapPoints";
@@ -19,6 +20,8 @@ type Props = {
   /** road 모드에서만 사용 */
   routePath?: CourseDirectionPoint[] | null;
   pathMode?: CourseMapPathMode;
+  /** 정거장별 빵 아이콘 시드 (코스 ID 등) */
+  courseSeed?: string | number;
   className?: string;
 };
 
@@ -28,7 +31,7 @@ function mapPointsKey(points: CourseMapBakery[]): string {
   return points.map((b) => `${b.order}:${b.id}:${b.lat},${b.lng}`).join("|");
 }
 
-function createOrderMarkerElement(order: number, name: string): HTMLDivElement {
+function createOrderMarkerElement(order: number, name: string, iconSrc: string): HTMLDivElement {
   const palette = getCourseOrderMarkerPalette(order);
   const wrap = document.createElement("div");
   wrap.setAttribute("role", "img");
@@ -42,25 +45,46 @@ function createOrderMarkerElement(order: number, name: string): HTMLDivElement {
     "user-select:none",
   ].join(";");
 
-  const bubble = document.createElement("div");
-  bubble.textContent = String(order);
-  bubble.style.cssText = [
+  const iconWrap = document.createElement("div");
+  iconWrap.style.cssText = ["position:relative", "width:44px", "height:44px", "flex:none"].join(
+    ";",
+  );
+
+  const icon = document.createElement("img");
+  icon.src = iconSrc;
+  icon.alt = "";
+  icon.style.cssText = [
+    "width:44px",
+    "height:44px",
+    "object-fit:contain",
+    "filter:drop-shadow(0 2px 6px rgba(15,23,42,0.22))",
+  ].join(";");
+
+  const badge = document.createElement("div");
+  badge.textContent = String(order);
+  badge.style.cssText = [
+    "position:absolute",
+    "top:-2px",
+    "right:-4px",
     "display:flex",
     "align-items:center",
     "justify-content:center",
-    "width:30px",
-    "height:30px",
+    "width:22px",
+    "height:22px",
     "border-radius:9999px",
     `background:${palette.background}`,
     `color:${palette.text}`,
-    "font-size:14px",
+    "font-size:12px",
     "font-weight:700",
     "line-height:1",
     "font-family:Pretendard,system-ui,sans-serif",
-    `border:3px solid ${palette.border}`,
-    "box-shadow:0 3px 10px rgba(15,23,42,0.28)",
+    `border:2px solid ${palette.border}`,
+    "box-shadow:0 2px 6px rgba(15,23,42,0.24)",
     "box-sizing:border-box",
   ].join(";");
+
+  iconWrap.appendChild(icon);
+  iconWrap.appendChild(badge);
 
   const stem = document.createElement("div");
   stem.style.cssText = [
@@ -82,7 +106,7 @@ function createOrderMarkerElement(order: number, name: string): HTMLDivElement {
     "box-sizing:border-box",
   ].join(";");
 
-  wrap.appendChild(bubble);
+  wrap.appendChild(iconWrap);
   wrap.appendChild(stem);
   wrap.appendChild(anchor);
   return wrap;
@@ -172,12 +196,14 @@ function CourseKakaoMapView({
   departurePoint,
   routePath,
   pathMode = "simple",
+  courseSeed = "course",
   className,
 }: {
   mapPoints: CourseMapBakery[];
   departurePoint?: { lat: number; lng: number; label: string } | null;
   routePath?: CourseDirectionPoint[] | null;
   pathMode?: CourseMapPathMode;
+  courseSeed?: string | number;
   className?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -281,11 +307,12 @@ function CourseKakaoMapView({
 
           for (const point of orderedPoints) {
             const overlayPosition = new maps.LatLng(point.lat, point.lng);
+            const iconSrc = pickCourseBreadIconForStop(courseSeed, point.id);
             mapObjects.push(
               new maps.CustomOverlay({
                 map,
                 position: overlayPosition,
-                content: createOrderMarkerElement(point.order, point.name),
+                content: createOrderMarkerElement(point.order, point.name, iconSrc),
                 xAnchor: 0.5,
                 yAnchor: 1.55,
                 zIndex: 2000 + point.order,
@@ -321,11 +348,12 @@ function CourseKakaoMapView({
 
           for (const point of orderedPoints) {
             const position = new maps.LatLng(point.lat, point.lng);
+            const iconSrc = pickCourseBreadIconForStop(courseSeed, point.id);
             mapObjects.push(
               new maps.CustomOverlay({
                 map,
                 position,
-                content: createOrderMarkerElement(point.order, point.name),
+                content: createOrderMarkerElement(point.order, point.name, iconSrc),
                 xAnchor: 0.5,
                 yAnchor: 1.55,
                 zIndex: 2000 + point.order,
@@ -359,7 +387,7 @@ function CourseKakaoMapView({
       }
       container.replaceChildren();
     };
-  }, [departurePoint, mapPoints, pathMode, routePath]);
+  }, [courseSeed, departurePoint, mapPoints, pathMode, routePath]);
 
   useEffect(() => {
     if (status !== "ready") return;
@@ -407,6 +435,7 @@ export default function CourseKakaoMap({
   departurePoint,
   routePath,
   pathMode = "simple",
+  courseSeed,
   className,
 }: Props) {
   const mapPoints = useMemo(() => filterValidMapPoints(bakeries), [bakeries]);
@@ -424,6 +453,7 @@ export default function CourseKakaoMap({
       departurePoint={departurePoint}
       routePath={routePath}
       pathMode={pathMode}
+      courseSeed={courseSeed}
       className={className}
     />
   );

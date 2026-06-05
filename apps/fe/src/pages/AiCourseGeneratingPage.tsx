@@ -10,6 +10,20 @@ type AiCourseGeneratingPageProps = {
   jobId: string;
 };
 
+/** React StrictMode(dev)에서 동일 jobId 폴링이 두 번 시작되는 것을 막는다. */
+const aiCoursePollStartedJobIds = new Set<string>();
+
+function logAiCourseGenerationFailure(jobId: string, error: unknown): void {
+  const message = getErrorMessage(error);
+  // eslint-disable-next-line no-console
+  console.error(`[AI 코스 생성 실패] ${message}`, {
+    jobId,
+    errorName: error instanceof Error ? error.name : typeof error,
+    errorMessage: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined,
+  });
+}
+
 export default function AiCourseGeneratingPage({ jobId }: AiCourseGeneratingPageProps) {
   const navigate = useNavigate();
   const [secondsLeft, setSecondsLeft] = useState(AI_COURSE_ESTIMATED_WAIT_SECONDS);
@@ -24,6 +38,9 @@ export default function AiCourseGeneratingPage({ jobId }: AiCourseGeneratingPage
   }, [errorMessage]);
 
   useEffect(() => {
+    if (aiCoursePollStartedJobIds.has(jobId)) return undefined;
+    aiCoursePollStartedJobIds.add(jobId);
+
     let cancelled = false;
 
     void (async () => {
@@ -41,10 +58,7 @@ export default function AiCourseGeneratingPage({ jobId }: AiCourseGeneratingPage
         navigate({ to: "/ai-search-result", search: { courseId } });
       } catch (e) {
         if (cancelled) return;
-        // 진단용: 콘솔에 jobId와 원본 에러를 자세히 남긴다.
-        // eslint-disable-next-line no-console
-        console.error("[AI 코스 생성 실패]", { jobId, error: e });
-        // 바로 홈으로 튕기지 않고, 무슨 일이 있었는지 화면에 남겨 둔다.
+        logAiCourseGenerationFailure(jobId, e);
         setErrorMessage(getErrorMessage(e));
       }
     })();

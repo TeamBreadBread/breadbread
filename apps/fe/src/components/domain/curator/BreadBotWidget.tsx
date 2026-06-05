@@ -604,7 +604,7 @@ export default function BreadBotWidget({
             type="button"
             aria-label={open ? "AI 큐레이터 닫기" : "AI 큐레이터 채팅 열기"}
             onClick={() => (open ? setOpen(false) : openChat())}
-            className="pointer-events-auto fixed right-[20px] bottom-[104px] z-[70] flex h-[56px] w-[56px] items-center justify-center rounded-full bg-orange-200 shadow-[0_4px_12px_rgba(0,0,0,0.18)] md:right-[calc((100vw-402px)/2+20px)]"
+            className="pointer-events-auto fixed right-[20px] bottom-[104px] z-[70] flex h-[56px] w-[56px] items-center justify-center rounded-full bg-orange-600 shadow-[0_4px_12px_rgba(0,0,0,0.18)] md:right-[calc((100vw-402px)/2+20px)]"
           >
             <img
               src={BreadDefaultLogo}
