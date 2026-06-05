@@ -75,6 +75,7 @@ public enum ErrorCode {
             HttpStatus.BAD_REQUEST, "E0421", "요청한 빵집 순서 목록이 코스의 활성 빵집 목록과 일치하지 않습니다."),
     ROUTE_TOO_MANY_WAYPOINTS(
             HttpStatus.UNPROCESSABLE_ENTITY, "E0422", "경로에 포함할 수 있는 최대 빵집 수를 초과했습니다."),
+    AI_INVALID_API_KEY(HttpStatus.UNAUTHORIZED, "E0423", "유효하지 않은 API 키입니다."),
 
     // 예약 E05xx
     RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "E0501", "존재하지 않는 예약입니다."),
@@ -119,7 +120,10 @@ public enum ErrorCode {
     TOUR_NOT_FOUND(HttpStatus.NOT_FOUND, "E0901", "진행 중인 투어가 없습니다."),
     TOUR_ALREADY_STARTED(HttpStatus.CONFLICT, "E0902", "이미 시작된 투어가 있습니다."),
     TOUR_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "E0903", "이미 완료된 투어입니다."),
-    TOUR_INVALID_VISIT_ORDER(HttpStatus.BAD_REQUEST, "E0904", "유효하지 않은 방문 순서입니다.");
+    TOUR_INVALID_VISIT_ORDER(HttpStatus.BAD_REQUEST, "E0904", "유효하지 않은 방문 순서입니다."),
+
+    // 혼잡도 E10xx
+    CONGESTION_NOT_FOUND(HttpStatus.NOT_FOUND, "E1001", "혼잡도 데이터가 없습니다.");
 
     private final HttpStatus status;
     private final String code;

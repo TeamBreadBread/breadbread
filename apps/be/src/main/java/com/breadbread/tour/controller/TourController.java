@@ -2,12 +2,15 @@ package com.breadbread.tour.controller;
 
 import com.breadbread.auth.dto.CustomUserDetails;
 import com.breadbread.global.dto.ApiResponse;
+import com.breadbread.tour.dto.CongestionInstantCheckRequest;
+import com.breadbread.tour.dto.CongestionInstantCheckResponse;
 import com.breadbread.tour.dto.TourCurrentResponse;
 import com.breadbread.tour.dto.TourStartResponse;
 import com.breadbread.tour.dto.TourVisitResponse;
 import com.breadbread.tour.service.TourService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -55,5 +58,17 @@ public class TourController {
     public ApiResponse<TourCurrentResponse> completeTour(
             @AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable Long courseId) {
         return ApiResponse.ok(tourService.completeTour(userDetails.getId(), courseId));
+    }
+
+    @Operation(
+            summary = "혼잡도 즉시 체크",
+            description =
+                    "특정 빵집 또는 코스 내 빵집의 혼잡도를 즉시 분석합니다."
+                            + " targetBakeryId를 지정하면 해당 빵집만, 없으면 bakeryIds 전체를 분석합니다.")
+    @PostMapping("/congestion-check")
+    public ApiResponse<CongestionInstantCheckResponse> checkCongestion(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody @Valid CongestionInstantCheckRequest request) {
+        return ApiResponse.ok(tourService.checkCongestionInstant(userDetails.getId(), request));
     }
 }

@@ -9,7 +9,7 @@ import com.breadbread.course.repository.CourseBakeryRepository;
 import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
-import com.breadbread.tour.dto.CongestionAlertWebhookRequest.CourseInfo;
+import com.breadbread.tour.dto.CourseInfo;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import java.util.List;

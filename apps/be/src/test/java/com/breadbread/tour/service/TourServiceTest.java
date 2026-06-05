@@ -18,6 +18,9 @@ import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.reservation.entity.Reservation;
 import com.breadbread.reservation.entity.ReservationStatus;
 import com.breadbread.reservation.repository.ReservationRepository;
+import com.breadbread.tour.client.CongestionInstantCheckClient;
+import com.breadbread.tour.dto.CongestionInstantCheckRequest;
+import com.breadbread.tour.dto.CongestionInstantCheckResponse;
 import com.breadbread.tour.dto.TourCurrentResponse;
 import com.breadbread.tour.dto.TourStartResponse;
 import com.breadbread.tour.dto.TourVisitResponse;
@@ -31,6 +34,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -47,6 +51,7 @@ class TourServiceTest {
     @Mock private CourseBakeryRepository courseBakeryRepository;
     @Mock private ReservationRepository reservationRepository;
     @Mock private UserRepository userRepository;
+    @Mock private CongestionInstantCheckClient congestionInstantCheckClient;
 
     // ── startTour ──────────────────────────────────────────────────────────────
 
@@ -354,6 +359,39 @@ class TourServiceTest {
 
         verify(reservation).complete();
         verify(user).incrementUsage();
+    }
+
+    // ── checkCongestionInstant ─────────────────────────────────────────────────
+
+    @Test
+    void checkCongestionInstant_passes_userId_and_request_to_client() {
+        CongestionInstantCheckRequest request = mock(CongestionInstantCheckRequest.class);
+        CongestionInstantCheckResponse response = mock(CongestionInstantCheckResponse.class);
+        when(request.getCourseId()).thenReturn(10L);
+        when(request.getBakeryIds()).thenReturn(List.of(1L, 2L, 3L));
+        when(request.getTargetBakeryId()).thenReturn(null);
+        when(congestionInstantCheckClient.check(any())).thenReturn(response);
+
+        CongestionInstantCheckResponse result = tourService.checkCongestionInstant(1L, request);
+
+        assertThat(result).isSameAs(response);
+        verify(congestionInstantCheckClient).check(any());
+    }
+
+    @Test
+    void checkCongestionInstant_includes_targetBakeryId_when_present() {
+        CongestionInstantCheckRequest request = mock(CongestionInstantCheckRequest.class);
+        CongestionInstantCheckResponse response = mock(CongestionInstantCheckResponse.class);
+        when(request.getCourseId()).thenReturn(10L);
+        when(request.getBakeryIds()).thenReturn(List.of(1L, 2L));
+        when(request.getTargetBakeryId()).thenReturn(1L);
+        when(congestionInstantCheckClient.check(any())).thenReturn(response);
+
+        tourService.checkCongestionInstant(1L, request);
+
+        ArgumentCaptor<java.util.Map> captor = ArgumentCaptor.forClass(java.util.Map.class);
+        verify(congestionInstantCheckClient).check(captor.capture());
+        assertThat(captor.getValue()).containsKey("targetBakeryId");
     }
 
     // ── helpers ────────────────────────────────────────────────────────────────
