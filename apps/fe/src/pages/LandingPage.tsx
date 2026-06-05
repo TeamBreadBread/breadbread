@@ -8,7 +8,7 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   const handleIntroComplete = useCallback(() => {
-    void navigate({ to: "/login-entry", replace: true });
+    void navigate({ to: "/login-entry", replace: true, search: { redirect: undefined } });
   }, [navigate]);
 
   return <LandingIntro durationMs={LANDING_DURATION_MS} onComplete={handleIntroComplete} />;
