@@ -61,7 +61,7 @@ const CurationCard = ({
         <div
           className={cn(
             "flex w-full min-w-0 items-center gap-[var(--spacing-x0-5)]",
-            "text-[length:var(--font-size-1)] leading-[var(--leading-t2)] font-medium",
+            "text-[length:var(--font-size-1)] leading-[var(--leading-t2)] font-normal",
             "text-[var(--color-gray-700)]",
           )}
         >

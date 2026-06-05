@@ -34,7 +34,7 @@ const CurationFooter = ({
   }
 
   return (
-    <div className="w-full overflow-x-auto overflow-y-hidden">
+    <div className="scrollbar-hide w-full overflow-x-auto overflow-y-hidden">
       <div className="flex w-max gap-[var(--spacing-x4)]">
         {items.map((item, index) => (
           <div

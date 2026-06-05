@@ -4,7 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import Skeleton from "@/components/common/skeleton/Skeleton";
 import { useBakeries } from "@/hooks/useBakeries";
 import { useBakeriesSummary } from "@/hooks/useBakeriesSummary";
-import { resolveCurationCardAddress } from "@/utils/formatCurationAddress";
+import { resolveThumbnailDongAddress } from "@/utils/formatCurationAddress";
 import { getSafeImageUrl } from "@/utils/safeImageUrl";
 import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import {
@@ -40,12 +40,8 @@ type CurationBakeryContentProps = {
   readyToPick?: boolean;
 };
 
-function mapListItemToCurationItem(
-  b: BakeryListItem,
-  addressMaxTokens: number,
-  dongCardLabel?: string,
-): CurationItem {
-  const address = dongCardLabel?.trim() || resolveCurationCardAddress(b.address, addressMaxTokens);
+function mapListItemToCurationItem(b: BakeryListItem, dongCardLabel?: string): CurationItem {
+  const address = dongCardLabel?.trim() || resolveThumbnailDongAddress(b.address);
   const rawImage = b.previewImageUrls?.[0]?.trim() || b.thumbnailUrl?.trim() || null;
   return {
     bakeryId: b.id,
@@ -56,12 +52,8 @@ function mapListItemToCurationItem(
   };
 }
 
-function mapSummaryItemToCurationItem(
-  b: BakerySummaryItem,
-  addressMaxTokens: number,
-  dongCardLabel?: string,
-): CurationItem {
-  const address = dongCardLabel?.trim() || resolveCurationCardAddress(b.address, addressMaxTokens);
+function mapSummaryItemToCurationItem(b: BakerySummaryItem, dongCardLabel?: string): CurationItem {
+  const address = dongCardLabel?.trim() || resolveThumbnailDongAddress(b.address);
   const rawImage = b.thumbnailUrl?.trim() || null;
   return {
     bakeryId: b.id,
@@ -161,21 +153,17 @@ export function CurationBakeryContent({
     const filtered = data.bakeries.filter((bakery) => !excluded.has(bakery.id));
     const source = filtered.length > 0 ? filtered : data.bakeries;
     const picked = shuffleArray(source).slice(0, displayCount);
-    const addressMaxTokens = compact ? 2 : 4;
 
     if (useSummary) {
       return (picked as BakerySummaryItem[]).map((b) =>
-        mapSummaryItemToCurationItem(b, addressMaxTokens, dongCardLabel),
+        mapSummaryItemToCurationItem(b, dongCardLabel),
       );
     }
-    return (picked as BakeryListItem[]).map((b) =>
-      mapListItemToCurationItem(b, addressMaxTokens, dongCardLabel),
-    );
+    return (picked as BakeryListItem[]).map((b) => mapListItemToCurationItem(b, dongCardLabel));
   }, [
     data,
     displayCount,
     excludeBakeryIds,
-    compact,
     useSummary,
     dongCardLabel,
     lockSelectionOnMount,
@@ -238,7 +226,7 @@ export function CurationBakeryContent({
 
   if (loading || (lockSelectionOnMount && !readyToPick)) {
     return (
-      <div className="flex w-full gap-[var(--spacing-x4)] overflow-x-auto overflow-y-hidden pb-1">
+      <div className="scrollbar-hide flex w-full gap-[var(--spacing-x4)] overflow-x-auto overflow-y-hidden">
         {Array.from({ length: displayCount }).map((_, i) => (
           <Skeleton key={i} className={skeletonClass} />
         ))}

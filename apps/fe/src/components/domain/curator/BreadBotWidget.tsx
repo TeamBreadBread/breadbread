@@ -5,7 +5,7 @@ import { getMyReservations, getReservationById, type ReservationSummary } from "
 import { getCurrentTour, startTour } from "@/api/tours";
 import { getErrorMessage } from "@/api/types/common";
 import { isLoggedIn } from "@/lib/auth/isLoggedIn";
-import type { BotBubble } from "@/lib/auth/LoginRequiredContext";
+import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import { cn } from "@/utils/cn";
 import BreadDefaultLogo from "@/assets/icons/BreadDefaultLogo.svg";
 const QUICK_REPLIES = [
@@ -148,25 +148,17 @@ function loadPersistedChat(): PersistedChat {
 }
 
 type BreadBotWidgetProps = {
-  /** 현재 표시할 말풍선(없으면 숨김) */
-  bubble: BotBubble | null;
   /** 큐레이터 채팅에 함께 보낼 코스 컨텍스트 */
   courseId?: number | null;
-  /** "게스트로 이용하기(계속 진행)" — 말풍선만 닫고 현재 화면 유지 */
-  onGuestContinue: () => void;
-  /** "로그인하러가기" */
-  onGoLogin: () => void;
-  /** 말풍선 닫기(X, 또는 채팅 열기 등) */
-  onCloseBubble: () => void;
+  /** 플로팅 버튼 노출 여부 (자유게시판·후기 등에서는 숨김) */
+  showFloatingButton?: boolean;
 };
 
 export default function BreadBotWidget({
-  bubble,
   courseId,
-  onGuestContinue,
-  onGoLogin,
-  onCloseBubble,
+  showFloatingButton = true,
 }: BreadBotWidgetProps) {
+  const { startCourseGuide } = useLoginRequired();
   const navigate = useNavigate();
   const onTourPage = useRouterState({ select: (s) => s.location.pathname.startsWith("/tour") });
   const [open, setOpen] = useState(false);
@@ -305,7 +297,6 @@ export default function BreadBotWidget({
   }, [messages, conversationId]);
 
   const openChat = () => {
-    onCloseBubble();
     setChangeBubble(null);
     setOpen(true);
   };
@@ -373,7 +364,6 @@ export default function BreadBotWidget({
   // 변경 알림 말풍선의 버튼 클릭 → 채팅을 열고 해당 의도를 AI에 전송
   const handleChangeAction = (reply: string) => {
     setChangeBubble(null);
-    onCloseBubble();
     setOpen(true);
     sendMessage(reply);
   };
@@ -383,6 +373,7 @@ export default function BreadBotWidget({
     if (!tourBubble) return;
     const { courseId: tourCourseId, mode } = tourBubble;
     setTourBubble(null);
+    startCourseGuide(tourCourseId);
     if (mode === "start") {
       // 이미 진행 중(409)이면 무시하고 그대로 투어 화면으로 이동
       await startTour(tourCourseId).catch(() => undefined);
@@ -395,10 +386,8 @@ export default function BreadBotWidget({
     setTourBubble(null);
   };
 
-  // 로그인/안내 말풍선이 우선, 그다음 예약/투어 알림, 마지막으로 변경 알림 (채팅 닫혀 있을 때).
-  const showBubble = bubble !== null && !open;
-  const showTourBubble = bubble === null && tourBubble !== null && !open && !onTourPage;
-  const showChangeBubble = bubble === null && tourBubble === null && changeBubble !== null && !open;
+  const showTourBubble = tourBubble !== null && !open && !onTourPage;
+  const showChangeBubble = tourBubble === null && changeBubble !== null && !open;
 
   return (
     <>
@@ -533,48 +522,6 @@ export default function BreadBotWidget({
         </div>
       ) : null}
 
-      {/* 말풍선 (채팅이 닫혀 있을 때만) */}
-      {showBubble ? (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[72] mx-auto w-full max-w-[402px]">
-          <div className="pointer-events-auto fixed right-[20px] bottom-[170px] w-[min(280px,calc(100%-40px))] rounded-r4 bg-white p-x4 shadow-[0_8px_28px_rgba(0,0,0,0.2)] md:right-[calc((100vw-402px)/2+20px)]">
-            <button
-              type="button"
-              aria-label="안내 닫기"
-              onClick={onCloseBubble}
-              className="absolute right-x2 top-x2 flex h-x6 w-x6 items-center justify-center rounded-full text-size-3 text-gray-400 hover:bg-gray-100"
-            >
-              ✕
-            </button>
-
-            <p className="whitespace-pre-wrap pr-x4 font-pretendard text-size-3 leading-t5 text-gray-1000">
-              {bubble.text}
-            </p>
-
-            {bubble.kind === "login" ? (
-              <div className="mt-x3 flex flex-col gap-x2">
-                <button
-                  type="button"
-                  onClick={onGoLogin}
-                  className="h-[40px] w-full rounded-r2 bg-orange-600 font-pretendard text-size-3 font-bold text-gray-00"
-                >
-                  로그인하러가기
-                </button>
-                <button
-                  type="button"
-                  onClick={onGuestContinue}
-                  className="h-[40px] w-full rounded-r2 border border-gray-300 bg-white font-pretendard text-size-3 font-medium text-gray-700"
-                >
-                  게스트로 이용하기
-                </button>
-              </div>
-            ) : null}
-
-            {/* 봇을 가리키는 꼬리 */}
-            <div className="absolute -bottom-[7px] right-[28px] h-[14px] w-[14px] rotate-45 bg-white shadow-[3px_3px_6px_rgba(0,0,0,0.06)]" />
-          </div>
-        </div>
-      ) : null}
-
       {/* 예약 출발 시간 알림 / 진행 중 투어 이어가기 말풍선 */}
       {showTourBubble && tourBubble ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[72] mx-auto w-full max-w-[402px]">
@@ -651,21 +598,23 @@ export default function BreadBotWidget({
         </div>
       ) : null}
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[70] mx-auto w-full max-w-[402px]">
-        <button
-          type="button"
-          aria-label={open ? "AI 큐레이터 닫기" : "AI 큐레이터 채팅 열기"}
-          onClick={() => (open ? setOpen(false) : openChat())}
-          className="pointer-events-auto fixed right-[20px] bottom-[104px] z-[70] flex h-[56px] w-[56px] items-center justify-center rounded-full bg-orange-200 shadow-[0_4px_12px_rgba(0,0,0,0.18)] md:right-[calc((100vw-402px)/2+20px)]"
-        >
-          <img
-            src={BreadDefaultLogo}
-            alt=""
-            aria-hidden
-            className="h-[36px] w-[36px] object-contain"
-          />
-        </button>
-      </div>
+      {showFloatingButton ? (
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[70] mx-auto w-full max-w-[402px]">
+          <button
+            type="button"
+            aria-label={open ? "AI 큐레이터 닫기" : "AI 큐레이터 채팅 열기"}
+            onClick={() => (open ? setOpen(false) : openChat())}
+            className="pointer-events-auto fixed right-[20px] bottom-[104px] z-[70] flex h-[56px] w-[56px] items-center justify-center rounded-full bg-orange-200 shadow-[0_4px_12px_rgba(0,0,0,0.18)] md:right-[calc((100vw-402px)/2+20px)]"
+          >
+            <img
+              src={BreadDefaultLogo}
+              alt=""
+              aria-hidden
+              className="h-[36px] w-[36px] object-contain"
+            />
+          </button>
+        </div>
+      ) : null}
     </>
   );
 }

@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import MobileFrame from "@/components/layout/MobileFrame";
+import { FIXED_BOTTOM_BAR_FRAME_CLASS } from "@/components/layout/layout.constants";
 import { Button } from "@/components/common";
 import RecommendationIconAsset from "@/assets/icons/StarCTA.svg";
 import BreadCategoryImg from "@/assets/icons/Img_Bread.svg";
@@ -69,21 +70,21 @@ const QUESTION_SECTIONS: QuestionItem[] = [
     ],
   },
   {
-    id: "waiting",
-    title: "웨이팅이 있어도 괜찮으신가요?",
-    helperText: "",
-    columns: 1,
-    options: [{ label: "괜찮아요" }, { label: "피하고 싶어요" }],
-  },
-  {
     id: "drink",
     title: "음료수가 필요하시나요?",
     helperText: "",
     columns: 1,
     options: [
-      { label: "네", value: "drink-0" },
-      { label: "아니오", value: "drink-1" },
+      { label: "필요해요", value: "drink-yes" },
+      { label: "필요 없어요", value: "drink-no" },
     ],
+  },
+  {
+    id: "waiting",
+    title: "웨이팅이 있어도 괜찮으신가요?",
+    helperText: "",
+    columns: 1,
+    options: [{ label: "괜찮아요" }, { label: "피하고 싶어요" }],
   },
   {
     id: "count",
@@ -220,7 +221,7 @@ export default function BreadRecommendationPreference() {
       latitude: departure.latitude,
       longitude: departure.longitude,
       waitingPreference: (selectedBySection.waiting?.[0] ?? "") === "괜찮아요",
-      drinkPreference: (selectedBySection.drink?.[0] ?? "") === "drink-0",
+      drinkPreference: (selectedBySection.drink?.[0] ?? "") === "drink-yes",
       bakeryCount: recommendationCount,
       flexibilityLevel: mapFlexibilityLevel(selectedBySection.courseChangePreference?.[0] ?? ""),
     };
@@ -257,7 +258,7 @@ export default function BreadRecommendationPreference() {
           currentStep={2}
           totalStep={2}
           title="원하는 빵집을 선택해주세요"
-          description="설명 문구"
+          description="조건에 맞춰 최적의 이동 동선을 찾아드려요."
         />
 
         <div className="flex flex-col gap-0">
@@ -299,15 +300,11 @@ export default function BreadRecommendationPreference() {
         </div>
       </div>
 
-      <div
-        className={cn("fixed bottom-0 left-1/2 z-20 w-full max-w-x186 -translate-x-1/2 bg-gray-00")}
-      >
-        <div className="h-x12 bg-gradient-to-b from-transparent to-gray-00" />
-
+      <div className={cn(FIXED_BOTTOM_BAR_FRAME_CLASS, "bg-gray-00")}>
         <div
           className={cn(
             "flex items-start justify-center gap-[10px] overflow-hidden",
-            "mt-x3 border-t border-gray-300 bg-gray-00 px-[20px] pb-[max(12px,env(safe-area-inset-bottom))] pt-x3",
+            "border-t border-gray-300 bg-gray-00 px-[20px] pb-[max(12px,env(safe-area-inset-bottom))] pt-x3",
           )}
         >
           <Button

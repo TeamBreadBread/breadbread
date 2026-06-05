@@ -40,11 +40,19 @@ export function extractDong(full: string): string | null {
   return null;
 }
 
-/** 큐레이션 카드에 표시할 짧은 주소 (행정동 우선, 없으면 시·구 등 앞 토큰만) */
-export function resolveCurationCardAddress(full: string | undefined | null, maxTokens = 4): string {
+/** 썸네일·큐레이션 카드용 주소 — 행정동(00동)만 표시 */
+export function resolveThumbnailDongAddress(
+  full: string | undefined | null,
+  apiDong?: string | null,
+): string {
+  const dongFromApi = apiDong?.trim();
+  if (dongFromApi) return dongFromApi;
+
   const trimmed = full?.trim();
   if (!trimmed) return "주소 정보 없음";
+
   const dong = extractDong(trimmed);
   if (dong) return dong;
-  return formatCurationAddress(trimmed, maxTokens);
+
+  return "주소 정보 없음";
 }

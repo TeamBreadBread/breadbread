@@ -45,7 +45,7 @@ const DongCurationSection = ({
       <div className="flex flex-col gap-[var(--spacing-x3)]">
         <SectionHeader
           title={`느좋 빵집이 모여있는 ${selectedDong}`}
-          titleClassName="typo-t6bold text-gray-1000"
+          titleClassName="font-sans typo-t6bold"
           showDefaultIcon={false}
           actionLabel="더보기"
           onActionClick={handleMoreClick}

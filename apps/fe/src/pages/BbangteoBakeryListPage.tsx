@@ -19,6 +19,7 @@ import {
 } from "@/lib/bakeryLikeLocalCache";
 import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import { cn } from "@/utils/cn";
+import { resolveThumbnailDongAddress } from "@/utils/formatCurationAddress";
 
 const PAGE_SIZE = 6;
 
@@ -53,7 +54,7 @@ function mapListItemToBakeryRow(b: BakeryListItem): BakeryRow {
   return {
     id: item.id,
     name: item.name,
-    address: item.address,
+    address: resolveThumbnailDongAddress(item.address),
     rating: item.rating != null ? Number(item.rating) : 0,
     reviewCount: 0,
     bookmarkCount: item.likeCount ?? 0,
@@ -76,7 +77,7 @@ function mapDetailToBakeryRow(detail: BakeryDetail): BakeryRow {
   return {
     id: detail.id,
     name: detail.name,
-    address: detail.address,
+    address: resolveThumbnailDongAddress(detail.address),
     rating: detail.rating != null ? Number(detail.rating) : 0,
     reviewCount: 0,
     bookmarkCount: detail.likeCount ?? 0,

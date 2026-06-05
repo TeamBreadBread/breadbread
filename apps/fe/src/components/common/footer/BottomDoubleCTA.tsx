@@ -1,3 +1,4 @@
+import { FIXED_BOTTOM_BAR_FRAME_CLASS } from "@/components/layout/layout.constants";
 import { cn } from "@/utils/cn";
 
 interface BottomDoubleCTAProps {
@@ -21,10 +22,6 @@ export default function BottomDoubleCTA({
 }: BottomDoubleCTAProps) {
   const inner = (
     <>
-      {placement === "fixed" ? (
-        <div className="h-x12 bg-gradient-to-b from-transparent to-gray-00" />
-      ) : null}
-
       <div className="flex justify-center gap-[10px] border-t border-gray-300 bg-gray-00 px-[20px] pb-[max(12px,env(safe-area-inset-bottom))] pt-x3">
         <button
           type="button"
@@ -54,13 +51,7 @@ export default function BottomDoubleCTA({
   );
 
   if (placement === "fixed") {
-    return (
-      <div
-        className={cn("fixed bottom-0 left-1/2 z-20 w-full max-w-x186 -translate-x-1/2 bg-gray-00")}
-      >
-        {inner}
-      </div>
-    );
+    return <div className={cn(FIXED_BOTTOM_BAR_FRAME_CLASS, "bg-gray-00")}>{inner}</div>;
   }
 
   return <div className="sticky bottom-0 bg-gray-00">{inner}</div>;

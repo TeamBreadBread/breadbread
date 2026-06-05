@@ -39,10 +39,8 @@ export default function SectionHeader({
 
       <h3
         className={cn(
-          "flex-1 text-left",
-          titleClassName
-            ? "text-gray-1000"
-            : "font-sans text-size-6 leading-t6 font-medium tracking-2 text-gray-1000",
+          "flex-1 text-left font-sans text-gray-1000",
+          titleClassName ?? "text-size-6 leading-t6 font-medium tracking-2",
           titleClassName,
         )}
       >
@@ -69,7 +67,7 @@ export default function SectionHeader({
         <button
           type="button"
           onClick={onActionClick}
-          className="font-sans text-size-3 leading-t4 font-medium tracking-1 shrink-0 whitespace-nowrap text-gray-700"
+          className="font-sans text-size-3 leading-t4 font-normal tracking-1 shrink-0 whitespace-nowrap text-gray-700"
         >
           {actionLabel}
         </button>

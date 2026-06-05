@@ -12,6 +12,7 @@ import { ApiBusinessError, getErrorMessage } from "@/api/types/common";
 import { AppTopBar } from "@/components/common";
 import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
+import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import { cn } from "@/utils/cn";
 
 interface TourPageProps {
@@ -25,6 +26,7 @@ function visitedCountOf(tour: TourCurrentResponse | null): number {
 
 export default function TourPage({ courseId }: TourPageProps) {
   const navigate = useNavigate();
+  const { startCourseGuide, endCourseGuide } = useLoginRequired();
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [tour, setTour] = useState<TourCurrentResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,6 +86,10 @@ export default function TourPage({ courseId }: TourPageProps) {
     void init();
   }, [init]);
 
+  useEffect(() => {
+    if (courseId > 0) startCourseGuide(courseId);
+  }, [courseId, startCourseGuide]);
+
   const handleVisit = async (order: number) => {
     if (busyOrder != null || isCompleting) return;
     setBusyOrder(order);
@@ -105,6 +111,9 @@ export default function TourPage({ courseId }: TourPageProps) {
     try {
       const updated = await completeTour(courseId);
       setTour(updated);
+      if (updated.status === "COMPLETED") {
+        endCourseGuide();
+      }
     } catch (e) {
       setError(getErrorMessage(e));
     } finally {
