@@ -5,6 +5,7 @@ import { AppTopBar } from "@/components/common";
 import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { useNavigate } from "@tanstack/react-router";
+import { resolveThumbnailDongAddress } from "@/utils/formatCurationAddress";
 
 const PAGE_SIZE = 10;
 
@@ -89,7 +90,9 @@ export default function LikedBakeriesPage() {
               <div className="flex items-start justify-between gap-x3">
                 <div>
                   <p className="typo-t4bold text-gray-1000">{bakery.name}</p>
-                  <p className="mt-x1 typo-t3regular text-gray-700">{bakery.address}</p>
+                  <p className="mt-x1 typo-t3regular text-gray-700">
+                    {resolveThumbnailDongAddress(bakery.address)}
+                  </p>
                 </div>
                 <span className="rounded-full bg-[#fff4da] px-x3 py-x1 typo-t3medium text-[#9a5a00]">
                   평점 {Number(bakery.rating ?? 0).toFixed(1)}

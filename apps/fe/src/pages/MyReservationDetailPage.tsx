@@ -1,16 +1,25 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   cancelReservation,
   getReservationById,
+  getUnavailableTimes,
   updateReservation,
   type ReservationDetail,
-  type ReservationStatus,
 } from "@/api/reservation";
 import { getErrorMessage } from "@/api/types/common";
 import { AppTopBar } from "@/components/common";
+import DepartureDateBottomSheet from "@/components/domain/taxi-reserve/DepartureDateBottomSheet";
+import DeparturePlaceBottomSheet from "@/components/domain/taxi-reserve/DeparturePlaceBottomSheet";
+import DepartureTimeBottomSheet from "@/components/domain/taxi-reserve/DepartureTimeBottomSheet";
 import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
+import {
+  formatDeparturePlaceLabel,
+  resolveDepartureCoordinates,
+} from "@/utils/parseLatLngFromPlace";
+import { statusToKorean } from "@/utils/reservationStatus";
+import { cn } from "@/utils/cn";
 
 interface MyReservationDetailPageProps {
   reservationId: number;
@@ -21,12 +30,7 @@ type ReservationFormSnapshot = {
   departureTime: string;
   departure: string;
   headCount: string;
-  lat: string;
-  lng: string;
 };
-
-const DEFAULT_LAT = "37.5665";
-const DEFAULT_LNG = "126.9780";
 
 function normalizeDepartureTime(value: string): string {
   const trimmed = value.trim();
@@ -35,17 +39,57 @@ function normalizeDepartureTime(value: string): string {
   return `${matched[1]}:${matched[2]}`;
 }
 
-function statusToKorean(status: ReservationStatus): string {
-  switch (status) {
-    case "PENDING":
-      return "대기";
-    case "CONFIRMED":
-      return "확정";
-    case "COMPLETED":
-      return "완료";
-    case "CANCELLED":
-      return "취소";
-  }
+function formatKoreanDate(iso: string) {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return iso;
+  return `${y}년 ${m}월 ${d}일`;
+}
+
+function formatKoreanTime(value: string) {
+  if (!value) return "";
+  const [h, min] = value.split(":").map(Number);
+  if (Number.isNaN(h) || Number.isNaN(min)) return value;
+  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+}
+
+function CalendarGlyph({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        fill="#d1d3d8"
+        d="M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a2 2 0 0 1 2 2v3H3V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1Z"
+      />
+      <path fill="#d1d3d8" d="M3 11h18v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7Z" />
+    </svg>
+  );
+}
+
+function ClockGlyph({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="9" fill="#d1d3d8" />
+      <path
+        d="M12 7v5l3 2"
+        stroke="#ffffff"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function PinGlyph({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        fill="#d1d3d8"
+        d="M12 2c-3.87 0-7 3.04-7 6.8 0 4.9 5.6 11 6.3 11.78a.95.95 0 0 0 1.4 0C13.4 19.8 19 13.7 19 8.8 19 5.04 15.87 2 12 2Z"
+      />
+      <circle cx="12" cy="8.7" r="2.4" fill="#ffffff" />
+    </svg>
+  );
 }
 
 export default function MyReservationDetailPage({ reservationId }: MyReservationDetailPageProps) {
@@ -57,23 +101,39 @@ export default function MyReservationDetailPage({ reservationId }: MyReservation
 
   const [departureDate, setDepartureDate] = useState("");
   const [departureTime, setDepartureTime] = useState("");
-  const [departure, setDeparture] = useState("");
+  const [departurePlace, setDeparturePlace] = useState("");
   const [headCount, setHeadCount] = useState("1");
-  const [lat, setLat] = useState(DEFAULT_LAT);
-  const [lng, setLng] = useState(DEFAULT_LNG);
   const [initialForm, setInitialForm] = useState<ReservationFormSnapshot | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+
+  const [isDateSheetOpen, setIsDateSheetOpen] = useState(false);
+  const [isTimeSheetOpen, setIsTimeSheetOpen] = useState(false);
+  const [isPlaceSheetOpen, setIsPlaceSheetOpen] = useState(false);
+  const [unavailableState, setUnavailableState] = useState<{ date: string; times: string[] }>({
+    date: "",
+    times: [],
+  });
+
+  /** 수정 중인 예약의 기존 시간은 같은 날짜에서 선택 가능하도록 제외 */
+  const unavailableTimes = useMemo(() => {
+    const unavailableTimesRaw =
+      unavailableState.date === departureDate ? unavailableState.times : [];
+    if (!initialForm || departureDate !== initialForm.departureDate) {
+      return unavailableTimesRaw;
+    }
+    return unavailableTimesRaw.filter((t) => t !== initialForm.departureTime);
+  }, [unavailableState.date, unavailableState.times, departureDate, initialForm]);
 
   const canEditOrCancel = detail?.status === "PENDING" || detail?.status === "CONFIRMED";
   const hasChanges =
     initialForm !== null &&
     (departureDate.trim() !== initialForm.departureDate ||
       departureTime.trim() !== initialForm.departureTime ||
-      departure.trim() !== initialForm.departure ||
-      headCount.trim() !== initialForm.headCount ||
-      lat.trim() !== initialForm.lat ||
-      lng.trim() !== initialForm.lng);
+      departurePlace.trim() !== initialForm.departure ||
+      headCount.trim() !== initialForm.headCount);
+
+  const departurePlaceLabel = formatDeparturePlaceLabel(departurePlace);
 
   const loadDetail = useCallback(async () => {
     try {
@@ -84,15 +144,13 @@ export default function MyReservationDetailPage({ reservationId }: MyReservation
       setDepartureDate(data.departureDate);
       const normalizedTime = normalizeDepartureTime(data.departureTime);
       setDepartureTime(normalizedTime);
-      setDeparture(data.departure);
+      setDeparturePlace(data.departure);
       setHeadCount(String(data.headCount));
       setInitialForm({
         departureDate: data.departureDate.trim(),
         departureTime: normalizedTime,
         departure: data.departure.trim(),
         headCount: String(data.headCount).trim(),
-        lat: DEFAULT_LAT,
-        lng: DEFAULT_LNG,
       });
     } catch (e) {
       setError(getErrorMessage(e));
@@ -105,6 +163,33 @@ export default function MyReservationDetailPage({ reservationId }: MyReservation
     void loadDetail();
   }, [loadDetail]);
 
+  useEffect(() => {
+    if (!departureDate || !canEditOrCancel) return;
+    let cancelled = false;
+    void getUnavailableTimes(departureDate)
+      .then((times) => {
+        if (cancelled) return;
+        setUnavailableState({ date: departureDate, times });
+        setDepartureTime((prev) => {
+          const blocked =
+            prev &&
+            times.includes(prev) &&
+            !(
+              initialForm &&
+              departureDate === initialForm.departureDate &&
+              prev === initialForm.departureTime
+            );
+          return blocked ? "" : prev;
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setUnavailableState({ date: departureDate, times: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [departureDate, canEditOrCancel, initialForm]);
+
   async function onSaveUpdate() {
     try {
       if (!detail) return;
@@ -112,12 +197,14 @@ export default function MyReservationDetailPage({ reservationId }: MyReservation
       setError("");
       setIsSaving(true);
 
+      const { lat, lng } = await resolveDepartureCoordinates(departurePlace);
+
       await updateReservation(detail.id, {
         departureDate: departureDate.trim(),
         departureTime: normalizeDepartureTime(departureTime),
-        departure: departure.trim(),
-        lat: Number.parseFloat(lat),
-        lng: Number.parseFloat(lng),
+        departure: departurePlace.trim(),
+        lat,
+        lng,
         headCount: Number.parseInt(headCount, 10),
       });
       setNotice("예약 정보를 수정했습니다.");
@@ -144,6 +231,10 @@ export default function MyReservationDetailPage({ reservationId }: MyReservation
     } finally {
       setIsCancelling(false);
     }
+  }
+
+  function handlePlaceConfirm(place: string) {
+    setDeparturePlace(place);
   }
 
   return (
@@ -175,60 +266,85 @@ export default function MyReservationDetailPage({ reservationId }: MyReservation
           </div>
 
           {detail ? (
-            <div className="space-y-[10px] bg-white px-[20px] py-[20px]">
-              <label className="block">
-                <span className="mb-[6px] block text-[14px] text-[#555d6d]">출발일</span>
-                <input
-                  className="w-full rounded-[8px] border border-[#dcdee3] px-[12px] py-[10px]"
-                  value={departureDate}
-                  onChange={(e) => setDepartureDate(e.target.value)}
-                />
-              </label>
-              <label className="block">
-                <span className="mb-[6px] block text-[14px] text-[#555d6d]">출발 시간</span>
-                <input
-                  className="w-full rounded-[8px] border border-[#dcdee3] px-[12px] py-[10px]"
-                  value={departureTime}
-                  onChange={(e) => setDepartureTime(e.target.value)}
-                />
-              </label>
-              <label className="block">
-                <span className="mb-[6px] block text-[14px] text-[#555d6d]">출발 장소</span>
-                <input
-                  className="w-full rounded-[8px] border border-[#dcdee3] px-[12px] py-[10px]"
-                  value={departure}
-                  onChange={(e) => setDeparture(e.target.value)}
-                />
-              </label>
+            <div className="space-y-[16px] bg-white px-[20px] py-[20px]">
+              <div className="flex w-full flex-col gap-[6px]">
+                <span className="text-[14px] text-[#555d6d]">출발일</span>
+                <button
+                  type="button"
+                  disabled={!canEditOrCancel}
+                  className={cn(
+                    "flex h-[56px] flex-row items-center gap-[8px] rounded-[12px] border border-[#dcdee3] px-[20px] py-[16px] text-left disabled:opacity-60",
+                  )}
+                  onClick={() => setIsDateSheetOpen(true)}
+                >
+                  <CalendarGlyph />
+                  <span
+                    className={cn(
+                      "flex-1 text-[16px]",
+                      departureDate ? "text-[#1a1c20]" : "text-[#d1d3d8]",
+                    )}
+                  >
+                    {departureDate ? formatKoreanDate(departureDate) : "출발일을 선택해주세요"}
+                  </span>
+                </button>
+              </div>
+
+              <div className="flex w-full flex-col gap-[6px]">
+                <span className="text-[14px] text-[#555d6d]">출발 시간</span>
+                <button
+                  type="button"
+                  disabled={!canEditOrCancel}
+                  className={cn(
+                    "flex h-[56px] flex-row items-center gap-[8px] rounded-[12px] border border-[#dcdee3] px-[20px] py-[16px] text-left disabled:opacity-60",
+                  )}
+                  onClick={() => setIsTimeSheetOpen(true)}
+                >
+                  <ClockGlyph />
+                  <span
+                    className={cn(
+                      "flex-1 text-[16px]",
+                      departureTime ? "text-[#1a1c20]" : "text-[#d1d3d8]",
+                    )}
+                  >
+                    {departureTime ? formatKoreanTime(departureTime) : "출발 시간을 선택해주세요"}
+                  </span>
+                </button>
+              </div>
+
+              <div className="flex w-full flex-col gap-[6px]">
+                <span className="text-[14px] text-[#555d6d]">출발 장소</span>
+                <button
+                  type="button"
+                  disabled={!canEditOrCancel}
+                  className={cn(
+                    "flex h-[56px] flex-row items-center gap-[8px] rounded-[12px] border border-[#dcdee3] px-[20px] py-[16px] text-left disabled:opacity-60",
+                  )}
+                  onClick={() => setIsPlaceSheetOpen(true)}
+                >
+                  <PinGlyph />
+                  <span
+                    className={cn(
+                      "min-w-0 flex-1 truncate text-[16px]",
+                      departurePlaceLabel ? "text-[#1a1c20]" : "text-[#d1d3d8]",
+                    )}
+                  >
+                    {departurePlaceLabel || "출발 장소를 선택해주세요"}
+                  </span>
+                </button>
+              </div>
+
               <label className="block">
                 <span className="mb-[6px] block text-[14px] text-[#555d6d]">탑승 인원</span>
                 <input
-                  className="w-full rounded-[8px] border border-[#dcdee3] px-[12px] py-[10px]"
+                  className="w-full rounded-[8px] border border-[#dcdee3] px-[12px] py-[10px] disabled:opacity-60"
                   type="number"
                   min={1}
                   max={8}
+                  disabled={!canEditOrCancel}
                   value={headCount}
                   onChange={(e) => setHeadCount(e.target.value)}
                 />
               </label>
-              <div className="grid grid-cols-2 gap-[10px]">
-                <label className="block">
-                  <span className="mb-[6px] block text-[14px] text-[#555d6d]">위도(lat)</span>
-                  <input
-                    className="w-full rounded-[8px] border border-[#dcdee3] px-[12px] py-[10px]"
-                    value={lat}
-                    onChange={(e) => setLat(e.target.value)}
-                  />
-                </label>
-                <label className="block">
-                  <span className="mb-[6px] block text-[14px] text-[#555d6d]">경도(lng)</span>
-                  <input
-                    className="w-full rounded-[8px] border border-[#dcdee3] px-[12px] py-[10px]"
-                    value={lng}
-                    onChange={(e) => setLng(e.target.value)}
-                  />
-                </label>
-              </div>
 
               {notice ? <p className="text-[14px] text-[#1f8b4c]">{notice}</p> : null}
 
@@ -252,13 +368,40 @@ export default function MyReservationDetailPage({ reservationId }: MyReservation
               </div>
               {!canEditOrCancel ? (
                 <p className="text-[13px] text-[#868b94]">
-                  완료/취소된 예약은 수정 또는 취소할 수 없습니다.
+                  완료·진행 중·취소된 예약은 수정 또는 취소할 수 없습니다.
                 </p>
               ) : null}
             </div>
           ) : null}
         </div>
       </div>
+
+      <DepartureDateBottomSheet
+        open={isDateSheetOpen}
+        value={departureDate}
+        onClose={() => setIsDateSheetOpen(false)}
+        onConfirm={(iso) => {
+          setDepartureDate(iso);
+          setIsDateSheetOpen(false);
+        }}
+      />
+      <DepartureTimeBottomSheet
+        open={isTimeSheetOpen}
+        value={departureTime}
+        departureDate={departureDate}
+        unavailableTimes={unavailableTimes}
+        onClose={() => setIsTimeSheetOpen(false)}
+        onConfirm={(hhmm) => {
+          setDepartureTime(hhmm);
+          setIsTimeSheetOpen(false);
+        }}
+      />
+      <DeparturePlaceBottomSheet
+        open={isPlaceSheetOpen}
+        value={departurePlace}
+        onClose={() => setIsPlaceSheetOpen(false)}
+        onConfirm={handlePlaceConfirm}
+      />
 
       <BottomNav />
     </MobileFrame>

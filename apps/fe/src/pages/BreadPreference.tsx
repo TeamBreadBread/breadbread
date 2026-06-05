@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "@tanstack/react-router";
 import MobileFrame from "@/components/layout/MobileFrame";
+import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
+import { AppIcon, IconAssets } from "@/components/icons";
 import { OverlayFooter } from "@/components/common";
 import { PreferenceOptionCard } from "@/components/common/cards";
 import PreferenceIntro from "@/components/domain/ai-course/PreferenceIntro";
@@ -230,6 +233,15 @@ export default function BreadPreference() {
     setIsDepartureSheetOpen(false);
   };
 
+  const removeDepartureRecent = (label: string, e: MouseEvent) => {
+    e.stopPropagation();
+    setRecentPlaces((prev) => {
+      const next = prev.filter((item) => item.label !== label);
+      saveDepartureRecents(next);
+      return next;
+    });
+  };
+
   const confirmDeparture = (
     label: string,
     coords: { lat: number; lng: number },
@@ -326,7 +338,7 @@ export default function BreadPreference() {
           currentStep={1}
           totalStep={2}
           title="원하는 투어를 선택해주세요"
-          description="설명 문구"
+          description="조건에 맞춰 최적의 이동 동선을 찾아드려요."
         />
 
         <div className="flex flex-col gap-x2-5">
@@ -385,141 +397,175 @@ export default function BreadPreference() {
         </div>
       </div>
 
-      {isDepartureSheetOpen ? (
-        <>
-          <button
-            type="button"
-            aria-label="출발지 검색 닫기"
-            className="fixed inset-y-0 left-1/2 z-30 w-full max-w-x186 -translate-x-1/2 bg-black/40"
-            onClick={closeDepartureSheet}
-          />
-          <div className="fixed bottom-0 left-1/2 z-40 flex w-full max-w-x186 -translate-x-1/2 flex-col rounded-t-r5 bg-gray-00">
-            <div className="flex justify-center py-[14px]">
+      {isDepartureSheetOpen
+        ? createPortal(
+            <div className="fixed inset-0 z-[100]">
               <button
                 type="button"
-                aria-label="닫기"
-                className="h-[4px] w-[36px] rounded-full bg-gray-300"
+                aria-label="출발지 검색 닫기"
+                className="absolute inset-0 bg-black/40"
                 onClick={closeDepartureSheet}
               />
-            </div>
-
-            <div className="px-x5 pb-x5">
-              <h3 className="font-pretendard text-size-7 font-bold leading-t8 text-gray-1000">
-                출발지 검색
-              </h3>
-              <p className="mt-x1 font-pretendard text-size-3 leading-t4 text-gray-700">
-                선택하신 장소 주변으로 코스를 짜드려요.
-              </p>
-
-              <div className="mt-x4 flex h-x14 items-center gap-x2 rounded-r3 border border-gray-300 px-x5">
-                <input
-                  autoFocus
-                  value={sheetQuery}
-                  onChange={(e) => setSheetQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleManualDepartureConfirm();
-                    }
-                  }}
-                  placeholder="빵집 이름이나 동네를 입력해보세요"
-                  className="min-w-0 flex-1 bg-transparent font-pretendard text-size-5 leading-t6 text-gray-1000 outline-none placeholder:text-gray-400"
-                />
-                <button
-                  type="button"
-                  aria-label="확인"
-                  className="text-size-4 text-gray-700"
-                  onClick={handleManualDepartureConfirm}
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 top-0 flex items-end justify-center">
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="ai-departure-sheet-title"
+                  className={cn(
+                    "pointer-events-auto flex max-h-[min(90vh,780px)] w-full flex-col overflow-hidden rounded-t-r5 bg-gray-00",
+                    RESPONSIVE_FRAME_WIDTH,
+                  )}
                 >
-                  ⌕
-                </button>
-              </div>
-              {sheetQueryTrimmed.length > 0 ? (
-                <p className="mt-x2 px-x1 text-size-3 text-gray-600">
-                  엔터로 바로 확정되지 않습니다. 아래 카카오 장소 검색 결과에서 출발지를 선택해
-                  주세요.
-                </p>
-              ) : null}
+                  <button
+                    type="button"
+                    aria-label="닫기"
+                    className="flex h-x6 w-full shrink-0 items-center justify-center"
+                    onClick={closeDepartureSheet}
+                  >
+                    <span className="h-x1 w-x9 rounded-full bg-gray-400" aria-hidden />
+                  </button>
 
-              <div className="mt-x3 flex items-center justify-between border-b border-gray-200 px-x2_5 pb-x3 pt-x4">
-                <span className="text-[13px] font-bold text-gray-700">최근 검색</span>
-                <button
-                  type="button"
-                  className="flex items-center gap-x1 typo-t3medium text-blue-700 disabled:opacity-50"
-                  disabled={isResolvingLocation}
-                  onClick={useCurrentLocation}
-                >
-                  <GpsIcon className="text-blue-700" />
-                  {isResolvingLocation ? "위치 확인 중…" : "현재 위치"}
-                </button>
-              </div>
-
-              <div className="max-h-[min(50vh,360px)] overflow-y-auto">
-                {filteredRecents.length === 0 && !showKakaoSearch ? (
-                  <p className="px-x2_5 py-x4 text-size-4 text-gray-600">
-                    최근 검색한 출발지가 여기에 표시됩니다.
-                  </p>
-                ) : (
-                  filteredRecents.map((item) => (
-                    <button
-                      key={item.label}
-                      type="button"
-                      className="flex w-full border-b border-gray-100 px-x2_5 py-x3 text-left last:border-b-0 hover:bg-gray-100"
-                      onClick={() =>
-                        confirmDeparture(item.label, { lat: item.lat!, lng: item.lng! })
-                      }
+                  <div className="px-x5 pb-x5">
+                    <h3
+                      id="ai-departure-sheet-title"
+                      className="font-pretendard text-size-7 font-bold leading-t8 text-gray-1000"
                     >
-                      <span className="font-pretendard text-size-5 leading-t6 text-gray-1000 line-clamp-2">
-                        {item.label}
-                      </span>
-                    </button>
-                  ))
-                )}
+                      출발지 검색
+                    </h3>
+                    <p className="mt-x1 font-pretendard text-size-3 leading-t4 text-gray-700">
+                      선택하신 장소 주변으로 코스를 짜드려요.
+                    </p>
 
-                {showKakaoSearch ? (
-                  <>
-                    <div className="sticky top-0 border-b border-gray-200 bg-gray-00 px-x2_5 pb-x2 pt-x3">
-                      <span className="text-[13px] font-bold text-gray-700">장소 검색</span>
+                    <div className="mt-x4 flex h-x14 items-center gap-x2 rounded-r3 border border-gray-300 px-x5">
+                      <input
+                        autoFocus
+                        value={sheetQuery}
+                        onChange={(e) => setSheetQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleManualDepartureConfirm();
+                          }
+                        }}
+                        placeholder="빵집 이름이나 동네를 입력해보세요"
+                        className="min-w-0 flex-1 bg-transparent font-pretendard text-size-5 leading-t6 text-gray-1000 outline-none placeholder:text-gray-400"
+                      />
+                      <button
+                        type="button"
+                        aria-label="검색"
+                        className="flex shrink-0 items-center justify-center self-stretch"
+                        onClick={handleManualDepartureConfirm}
+                      >
+                        <AppIcon src={IconAssets.IcSearch} size="x6" />
+                      </button>
                     </div>
-                    {kakaoSearchLoading ? (
-                      <p className="px-x2_5 py-x3 text-size-4 text-gray-500">검색 중…</p>
-                    ) : null}
-                    {kakaoSearchError ? (
-                      <p className="px-x2_5 py-x3 text-size-4 text-red-500">{kakaoSearchError}</p>
-                    ) : null}
-                    {!kakaoSearchLoading && !kakaoSearchError && kakaoPlaces.length === 0 ? (
-                      <p className="px-x2_5 py-x3 text-size-4 text-gray-500">
-                        검색 결과가 없습니다.
+                    {sheetQueryTrimmed.length > 0 ? (
+                      <p className="mt-x2 px-x1 text-size-3 text-gray-600">
+                        엔터로 바로 확정되지 않습니다. 아래 카카오 장소 검색 결과에서 출발지를
+                        선택해 주세요.
                       </p>
                     ) : null}
-                    {kakaoPlaces.map((place) => (
+
+                    <div className="mt-x3 flex items-center justify-between border-b border-gray-200 px-x2_5 pb-x3 pt-x4">
+                      <span className="text-[13px] font-bold text-gray-700">최근 검색</span>
                       <button
-                        key={place.id}
                         type="button"
-                        className="flex w-full flex-col gap-x0-5 border-b border-gray-100 px-x2_5 py-x3 text-left last:border-b-0 hover:bg-gray-100"
-                        onClick={() => confirmDepartureFromPlace(place)}
+                        className="flex items-center gap-x1 typo-t3medium text-blue-700 disabled:opacity-50"
+                        disabled={isResolvingLocation}
+                        onClick={useCurrentLocation}
                       >
-                        <span className="font-pretendard text-size-5 leading-t6 text-gray-1000">
-                          {place.name}
-                        </span>
-                        {place.address ? (
-                          <span className="font-pretendard text-size-3 leading-t4 text-gray-600">
-                            {place.address}
-                          </span>
-                        ) : null}
+                        <GpsIcon className="text-blue-700" />
+                        {isResolvingLocation ? "위치 확인 중…" : "현재 위치"}
                       </button>
-                    ))}
-                  </>
-                ) : sheetQueryTrimmed.length > 0 ? (
-                  <p className="px-x2_5 py-x3 text-size-4 text-gray-500">
-                    카카오 API 키를 설정하면 장소 검색을 사용할 수 있습니다.
-                  </p>
-                ) : null}
+                    </div>
+
+                    <div className="max-h-[min(50vh,360px)] overflow-y-auto">
+                      {filteredRecents.length === 0 && !showKakaoSearch ? (
+                        <p className="px-x2_5 py-x4 text-size-4 text-gray-600">
+                          최근 검색한 출발지가 여기에 표시됩니다.
+                        </p>
+                      ) : (
+                        filteredRecents.map((item) => (
+                          <div
+                            key={item.label}
+                            className="flex w-full items-center gap-x2 border-b border-gray-100 px-x2_5 py-x3 last:border-b-0 hover:bg-gray-100"
+                          >
+                            <button
+                              type="button"
+                              className="min-w-0 flex-1 text-left"
+                              onClick={() =>
+                                confirmDeparture(item.label, { lat: item.lat!, lng: item.lng! })
+                              }
+                            >
+                              <span className="font-pretendard text-size-5 leading-t6 text-gray-1000 line-clamp-2">
+                                {item.label}
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              className="flex shrink-0 items-center justify-center p-x0-5"
+                              aria-label={`${item.label} 삭제`}
+                              onClick={(e) => removeDepartureRecent(item.label, e)}
+                            >
+                              <AppIcon
+                                src={IconAssets.IcClose}
+                                size="x6"
+                                className="icon-gray-600"
+                              />
+                            </button>
+                          </div>
+                        ))
+                      )}
+
+                      {showKakaoSearch ? (
+                        <>
+                          <div className="sticky top-0 border-b border-gray-200 bg-gray-00 px-x2_5 pb-x2 pt-x3">
+                            <span className="text-[13px] font-bold text-gray-700">장소 검색</span>
+                          </div>
+                          {kakaoSearchLoading ? (
+                            <p className="px-x2_5 py-x3 text-size-4 text-gray-500">검색 중…</p>
+                          ) : null}
+                          {kakaoSearchError ? (
+                            <p className="px-x2_5 py-x3 text-size-4 text-red-500">
+                              {kakaoSearchError}
+                            </p>
+                          ) : null}
+                          {!kakaoSearchLoading && !kakaoSearchError && kakaoPlaces.length === 0 ? (
+                            <p className="px-x2_5 py-x3 text-size-4 text-gray-500">
+                              검색 결과가 없습니다.
+                            </p>
+                          ) : null}
+                          {kakaoPlaces.map((place) => (
+                            <button
+                              key={place.id}
+                              type="button"
+                              className="flex w-full flex-col gap-x0-5 border-b border-gray-100 px-x2_5 py-x3 text-left last:border-b-0 hover:bg-gray-100"
+                              onClick={() => confirmDepartureFromPlace(place)}
+                            >
+                              <span className="font-pretendard text-size-5 leading-t6 text-gray-1000">
+                                {place.name}
+                              </span>
+                              {place.address ? (
+                                <span className="font-pretendard text-size-3 leading-t4 text-gray-600">
+                                  {place.address}
+                                </span>
+                              ) : null}
+                            </button>
+                          ))}
+                        </>
+                      ) : sheetQueryTrimmed.length > 0 ? (
+                        <p className="px-x2_5 py-x3 text-size-4 text-gray-500">
+                          카카오 API 키를 설정하면 장소 검색을 사용할 수 있습니다.
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </>
-      ) : null}
+            </div>,
+            document.body,
+          )
+        : null}
 
       <OverlayFooter
         nextDisabled={!canGoNext}

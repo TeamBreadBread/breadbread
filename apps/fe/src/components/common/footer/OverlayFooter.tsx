@@ -1,4 +1,5 @@
 import { Button } from "@/components/common/Button";
+import { FIXED_BOTTOM_BAR_FRAME_CLASS } from "@/components/layout/layout.constants";
 import { cn } from "@/utils/cn";
 
 interface OverlayFooterProps {
@@ -18,15 +19,11 @@ export default function OverlayFooter({
   nextDisabled = false,
 }: OverlayFooterProps) {
   return (
-    <div
-      className={cn("fixed bottom-0 left-1/2 z-20 w-full max-w-x186 -translate-x-1/2 bg-gray-00")}
-    >
-      <div className="h-x12 bg-gradient-to-b from-transparent to-gray-00" />
-
+    <div className={cn(FIXED_BOTTOM_BAR_FRAME_CLASS, "bg-gray-00")}>
       <div
         className={cn(
           "flex items-start justify-center gap-[10px] overflow-hidden",
-          "mt-x3 border-t border-gray-300 bg-gray-00 px-[20px] pb-[max(12px,env(safe-area-inset-bottom))] pt-x3",
+          "border-t border-gray-300 bg-gray-00 px-[20px] pb-[max(12px,env(safe-area-inset-bottom))] pt-x3",
         )}
       >
         <Button variant="secondary" fullWidth className="max-w-x80" onClick={onLeftClick}>

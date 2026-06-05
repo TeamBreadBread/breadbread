@@ -9,6 +9,9 @@ export const FIXED_TOP_BAR_TOP_CLASS = "top-[max(env(safe-area-inset-top),0px)]"
 /** 프레임 가운데 정렬 고정 상단바 (배경·보더·내부 `h-14` 행은 각 컴포넌트에서) */
 export const FIXED_TOP_BAR_FRAME_CLASS = `fixed left-1/2 z-[45] w-full -translate-x-1/2 ${FIXED_TOP_BAR_TOP_CLASS}`;
 
+/** 프레임 가운데 정렬 고정 하단 CTA — `max-w-x186`(744px) 대신 402px 셸과 동일 너비 */
+export const FIXED_BOTTOM_BAR_FRAME_CLASS = `fixed bottom-0 left-1/2 z-20 w-full -translate-x-1/2 ${APP_SHELL_MAX_WIDTH}`;
+
 /**
  * 고정 상단바(`h-14`) 바로 아래로 스크롤 영역을 밀기 — `AppTopBar` 등이 스페이서로 함께 렌더링합니다.
  */

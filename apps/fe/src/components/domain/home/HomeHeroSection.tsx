@@ -59,7 +59,7 @@ const HomeHeroSection = () => {
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-[18px]">
           <img src={leadingLogo} alt="빵빵" className="h-[41px] w-[63px] object-contain" />
-          <h1 className="text-[20px] leading-[27px] tracking-[-0.02em] text-gray-1000">
+          <h1 className="font-sans text-[20px] leading-[27px] tracking-[-0.02em] text-gray-1000">
             {loggedIn ? (
               <>
                 <span className="font-bold">{displayName}</span>
@@ -68,8 +68,8 @@ const HomeHeroSection = () => {
             ) : (
               <span className="font-medium">오늘은 </span>
             )}
-            <span className="font-bold">{greetingBread.name}</span>
-            <span className="font-medium"> 어떠세요? {greetingBread.emoji}</span>
+            <span className="font-bold">{greetingBread}</span>
+            <span className="font-medium"> 어떠세요?</span>
           </h1>
         </div>
 

@@ -48,7 +48,7 @@ const CurationSection = ({
       <div className="flex flex-col gap-[var(--spacing-x3)]">
         <SectionHeader
           title={title}
-          titleClassName="typo-t6bold text-gray-1000"
+          titleClassName="font-sans typo-t6bold"
           showDefaultIcon={false}
           actionLabel="더보기"
           onActionClick={handleMoreClick}

@@ -17,6 +17,7 @@ import { useAiSearchBottomSheet } from "@/hooks/useAiSearchBottomSheet";
 import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
 import { getCourseDetail, saveCourseRoute, type CourseDetail } from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
+import { startTour } from "@/api/tours";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import ResultCTASection from "@/components/domain/ai-course/ResultCTASection";
 import SaveRouteBanner from "@/components/domain/ai-course/SaveRouteBanner";
@@ -53,7 +54,7 @@ type AISearchResultPageProps = {
 
 export default function AISearchResultPage({ courseId, from }: AISearchResultPageProps) {
   const navigate = useNavigate();
-  const { requireLogin, setBotCourseId } = useLoginRequired();
+  const { requireLogin, startCourseGuide } = useLoginRequired();
   const effectiveCourseId = courseId ?? getDevFallbackCourseId();
   const storedCourseDetail = useMemo((): CourseDetail | null => {
     if (typeof window === "undefined") return null;
@@ -126,11 +127,6 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
   // 출발지 좌표가 없으면 출발지 마커 없이 빵집들만 직선으로 연결한다.
   const visibleDeparturePoint = departurePoint;
 
-  useEffect(() => {
-    setBotCourseId(effectiveCourseId ?? null);
-    return () => setBotCourseId(null);
-  }, [effectiveCourseId, setBotCourseId]);
-
   const dynamicPlaces: CoursePlace[] | null = useMemo(() => {
     if (!courseDetail) return null;
     if (!Array.isArray(courseDetail.bakeries)) return null;
@@ -150,6 +146,20 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     useAiSearchBottomSheet();
 
   const mapHeightPx = useMemo(() => Math.max(160, Math.round(liveSheetTopY)), [liveSheetTopY]);
+
+  const handleCourseGuide = async () => {
+    if (!effectiveCourseId) {
+      window.alert("안내할 코스 정보를 찾지 못했습니다.");
+      return;
+    }
+    startCourseGuide(effectiveCourseId);
+    try {
+      await startTour(effectiveCourseId);
+    } catch {
+      /* 이미 진행 중(409)이면 투어 화면에서 복구 */
+    }
+    void navigate({ to: "/tour", search: { courseId: effectiveCourseId } });
+  };
 
   const goBreadTaxiReserve = () => {
     if (!effectiveCourseId) {
@@ -302,9 +312,19 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
             RESPONSIVE_FRAME_WIDTH,
           )}
         >
-          <Button variant="primary" fullWidth type="button" onClick={goBreadTaxiReserve}>
-            빵택시 예약
-          </Button>
+          <div className="flex flex-col gap-x2">
+            <Button
+              variant="primary"
+              fullWidth
+              type="button"
+              onClick={() => void handleCourseGuide()}
+            >
+              코스 안내하기
+            </Button>
+            <Button variant="secondary" fullWidth type="button" onClick={goBreadTaxiReserve}>
+              빵택시 예약
+            </Button>
+          </div>
         </div>
       ) : null}
     </MobileFrame>

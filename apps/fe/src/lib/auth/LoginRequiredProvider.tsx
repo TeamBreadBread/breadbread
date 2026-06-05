@@ -1,37 +1,36 @@
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
+import LoginRequiredDialog from "@/components/common/dialog/LoginRequiredDialog";
 import BreadBotWidget from "@/components/domain/curator/BreadBotWidget";
+import { getCurrentTour } from "@/api/tours";
+import { isBotFloatingHiddenPath } from "@/lib/courseGuide";
 import { isLoggedIn } from "@/lib/auth/isLoggedIn";
 import { tryPostLoginRedirectPath } from "@/lib/postLoginRedirect";
-import { LoginRequiredContext, type BotBubble } from "@/lib/auth/LoginRequiredContext";
-
-const DEFAULT_LOGIN_BUBBLE_TEXT =
-  "이 기능은 로그인이 필요해요.\n로그인하면 더 많은 기능을 사용할 수 있어요!";
-
-/** 챗봇은 홈(루트) 페이지에서만 노출한다. (`/` 는 `/home` 으로 리다이렉트됨) */
-const BOT_VISIBLE_PATHS = ["/home"];
+import { LoginRequiredContext } from "@/lib/auth/LoginRequiredContext";
 
 export function LoginRequiredProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const botVisible = BOT_VISIBLE_PATHS.includes(pathname);
-  const [bubble, setBubble] = useState<BotBubble | null>(null);
-  const [redirectPath, setRedirectPath] = useState<string | undefined>();
-  const [botCourseId, setBotCourseIdState] = useState<number | null>(null);
+  const loggedIn = isLoggedIn();
 
-  const hideBubble = useCallback(() => {
-    setBubble(null);
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [redirectPath, setRedirectPath] = useState<string | undefined>();
+  const [courseGuideActive, setCourseGuideActive] = useState(false);
+  const [courseGuideId, setCourseGuideId] = useState<number | null>(null);
+
+  const hideLoginDialog = useCallback(() => {
+    setLoginDialogOpen(false);
     setRedirectPath(undefined);
   }, []);
 
   const goLogin = useCallback(() => {
     const redirect = tryPostLoginRedirectPath(redirectPath);
-    hideBubble();
+    hideLoginDialog();
     void navigate({
       to: "/login-entry",
       search: { redirect },
     });
-  }, [hideBubble, navigate, redirectPath]);
+  }, [hideLoginDialog, navigate, redirectPath]);
 
   const requireLogin = useCallback((onAuthorized: () => void, returnPath?: string) => {
     if (isLoggedIn()) {
@@ -39,39 +38,75 @@ export function LoginRequiredProvider({ children }: { children: ReactNode }) {
       return;
     }
     setRedirectPath(returnPath);
-    setBubble({ kind: "login", text: DEFAULT_LOGIN_BUBBLE_TEXT, redirectPath: returnPath });
+    setLoginDialogOpen(true);
   }, []);
 
-  const promptLoginOnEnter = useCallback((returnPath?: string) => {
-    if (isLoggedIn()) return;
-    setRedirectPath(returnPath);
-    setBubble({ kind: "login", text: DEFAULT_LOGIN_BUBBLE_TEXT, redirectPath: returnPath });
+  const startCourseGuide = useCallback((courseId: number) => {
+    if (!isLoggedIn() || courseId <= 0) return;
+    setCourseGuideActive(true);
+    setCourseGuideId(courseId);
   }, []);
 
-  const showInfoBubble = useCallback((text: string) => {
-    setBubble({ kind: "info", text });
+  const endCourseGuide = useCallback(() => {
+    setCourseGuideActive(false);
+    setCourseGuideId(null);
   }, []);
 
-  const setBotCourseId = useCallback((courseId: number | null) => {
-    setBotCourseIdState(courseId);
-  }, []);
+  /** 앱 재진입 시 진행 중 투어가 있으면 코스 안내 세션 복구 */
+  useEffect(() => {
+    if (!loggedIn) return;
+
+    let cancelled = false;
+    void getCurrentTour()
+      .then((tour) => {
+        if (cancelled) return;
+        if (tour?.status === "IN_PROGRESS" && tour.courseId > 0) {
+          setCourseGuideActive(true);
+          setCourseGuideId(tour.courseId);
+        } else {
+          setCourseGuideActive(false);
+          setCourseGuideId(null);
+        }
+      })
+      .catch(() => {
+        /* 조용히 무시 */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [loggedIn]);
+
+  const resolvedCourseGuideActive = loggedIn && courseGuideActive;
+  const resolvedCourseGuideId = loggedIn ? courseGuideId : null;
+
+  const isHomePath = pathname === "/home";
+  /** 로그인 사용자: 홈에서 항상 노출, 코스 안내 중에는 다른 화면에서도 노출 */
+  const showBot = loggedIn && (isHomePath || resolvedCourseGuideActive);
+  const showBotFloating = showBot && !isBotFloatingHiddenPath(pathname);
 
   const value = useMemo(
-    () => ({ requireLogin, promptLoginOnEnter, showInfoBubble, setBotCourseId }),
-    [requireLogin, promptLoginOnEnter, showInfoBubble, setBotCourseId],
+    () => ({
+      requireLogin,
+      startCourseGuide,
+      endCourseGuide,
+      courseGuideActive: resolvedCourseGuideActive,
+      courseGuideId: resolvedCourseGuideId,
+    }),
+    [
+      requireLogin,
+      startCourseGuide,
+      endCourseGuide,
+      resolvedCourseGuideActive,
+      resolvedCourseGuideId,
+    ],
   );
 
   return (
     <LoginRequiredContext.Provider value={value}>
       {children}
-      {botVisible ? (
-        <BreadBotWidget
-          bubble={bubble}
-          courseId={botCourseId}
-          onGuestContinue={hideBubble}
-          onGoLogin={goLogin}
-          onCloseBubble={hideBubble}
-        />
+      <LoginRequiredDialog open={loginDialogOpen} onCancel={hideLoginDialog} onLogin={goLogin} />
+      {showBot ? (
+        <BreadBotWidget courseId={resolvedCourseGuideId} showFloatingButton={showBotFloating} />
       ) : null}
     </LoginRequiredContext.Provider>
   );

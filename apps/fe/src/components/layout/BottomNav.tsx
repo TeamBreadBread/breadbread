@@ -1,5 +1,6 @@
 import { AppIcon, IconAssets } from "@/components/icons";
 import { useLocation, useNavigate } from "@tanstack/react-router";
+import { isBotFloatingHiddenPath } from "@/lib/courseGuide";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import BottomNavItem from "./BottomNavItem";
 import { APP_SHELL_MAX_WIDTH } from "./layout.constants";
@@ -20,14 +21,16 @@ const navItems: NavItem[] = [
 const BottomNav = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { requireLogin } = useLoginRequired();
+  const { requireLogin, courseGuideActive } = useLoginRequired();
+
+  const showRouteGuideTooltip = courseGuideActive && isBotFloatingHiddenPath(pathname);
 
   const handleNavClick = (to: NavItem["to"]) => {
     if (!to) return;
-    if (to === "/my") {
+    if (to === "/my" || to === "/route") {
       requireLogin(() => {
         void navigate({ to });
-      }, "/my");
+      }, to);
       return;
     }
     void navigate({ to });
@@ -53,12 +56,9 @@ const BottomNav = () => {
               key={item.label}
               label={item.label}
               active={isActive}
+              tooltip={to === "/route" && showRouteGuideTooltip ? "안내 중" : undefined}
               icon={
-                <AppIcon
-                  src={item.icon}
-                  size={20}
-                  className={isActive ? "opacity-100" : "opacity-45"}
-                />
+                <AppIcon src={item.icon} size={24} color={isActive ? "gray-900" : "gray-500"} />
               }
               onClick={to ? () => handleNavClick(to) : undefined}
             />

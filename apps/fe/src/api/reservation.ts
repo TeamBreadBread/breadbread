@@ -3,7 +3,7 @@ import type { ApiEnvelope } from "@/api/types/common";
 
 const PATH = "/reservations";
 
-export type ReservationStatus = "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
+export type ReservationStatus = "PENDING" | "CONFIRMED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 
 export type ReservationSummary = {
   id: number;
@@ -101,6 +101,11 @@ export async function cancelReservation(id: number): Promise<void> {
     `${PATH}/${id}/cancel`,
   );
   extractData(data);
+}
+
+/** `DELETE /reservations/{id}` — PENDING·CANCELLED만 삭제 가능, 204 No Content */
+export async function deleteReservation(id: number): Promise<void> {
+  await apiClient.delete(`${PATH}/${id}`);
 }
 
 export type UnavailableTimesResponse = {
