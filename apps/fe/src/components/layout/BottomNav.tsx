@@ -21,18 +21,12 @@ const navItems: NavItem[] = [
 const BottomNav = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { requireLogin, courseGuideActive } = useLoginRequired();
+  const { courseGuideActive } = useLoginRequired();
 
   const showRouteGuideTooltip = courseGuideActive && isBotFloatingHiddenPath(pathname);
 
   const handleNavClick = (to: NavItem["to"]) => {
     if (!to) return;
-    if (to === "/my" || to === "/route") {
-      requireLogin(() => {
-        void navigate({ to });
-      }, to);
-      return;
-    }
     void navigate({ to });
   };
 

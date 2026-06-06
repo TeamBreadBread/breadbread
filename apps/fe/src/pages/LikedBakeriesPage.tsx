@@ -91,7 +91,7 @@ export default function LikedBakeriesPage() {
                 <div>
                   <p className="typo-t4bold text-gray-1000">{bakery.name}</p>
                   <p className="mt-x1 typo-t3regular text-gray-700">
-                    {resolveThumbnailDongAddress(bakery.address)}
+                    {resolveThumbnailDongAddress(bakery.address, bakery.dong, bakery.name)}
                   </p>
                 </div>
                 <span className="rounded-full bg-[#fff4da] px-x3 py-x1 typo-t3medium text-[#9a5a00]">

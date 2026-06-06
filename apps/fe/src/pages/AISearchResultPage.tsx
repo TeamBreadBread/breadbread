@@ -9,6 +9,7 @@ import CourseTimeline from "@/components/domain/ai-course/CourseTimeline";
 import ResultSummaryCard from "@/components/domain/ai-course/ResultSummaryCard";
 import type { CoursePlace, CourseSummary } from "@/components/domain/ai-course/types";
 import { getDevFallbackCourseId } from "@/lib/courseIdFallback";
+import { pickCourseBreadIcon } from "@/lib/courseBreadIcons";
 import { getLatestAiCourseDepartureCoords } from "@/lib/aiCourseDepartureCoords";
 import CourseKakaoMap from "@/components/domain/ai-course/CourseKakaoMap";
 import { courseBakeriesToMapPoints } from "@/components/domain/ai-course/courseMapPoints";
@@ -113,6 +114,11 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     if (!courseDetail?.bakeries?.length) return [];
     return courseBakeriesToMapPoints(courseDetail.bakeries);
   }, [courseDetail]);
+
+  const courseIconSrc = useMemo(
+    () => pickCourseBreadIcon(effectiveCourseId ?? dynamicSummary?.title ?? summary.title),
+    [effectiveCourseId, dynamicSummary?.title],
+  );
 
   const departurePoint = useMemo(() => {
     const departure = getLatestAiCourseDepartureCoords();
@@ -228,6 +234,8 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
         <CourseKakaoMap
           bakeries={mapBakeries}
           departurePoint={visibleDeparturePoint}
+          pathMode="simple"
+          courseSeed={effectiveCourseId ?? summary.title}
           className="h-full w-full"
         />
       </div>
@@ -247,7 +255,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
               </button>
             }
           />
-          <ResultSummaryCard summary={dynamicSummary ?? summary} />
+          <ResultSummaryCard summary={dynamicSummary ?? summary} iconSrc={courseIconSrc} />
         </div>
       </div>
 

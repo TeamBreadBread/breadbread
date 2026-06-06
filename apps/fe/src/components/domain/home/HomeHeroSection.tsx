@@ -3,9 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { getStoredAccessToken } from "@/api/auth";
 import { getMyProfile } from "@/api/user";
-import { isLoggedIn } from "@/lib/auth/isLoggedIn";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
 import leadingLogo from "@/assets/icons/Leading.svg";
 import RecommendationHeroCard from "./RecommendationHeroCard";
@@ -15,7 +13,6 @@ import { getDisplayNameForLoginId, getUserProfile, saveUserProfile } from "@/lib
 
 const HomeHeroSection = () => {
   const navigate = useNavigate();
-  const loggedIn = isLoggedIn();
   const [greetingBread] = useState(() => pickRandomHomeGreetingBread());
   const [displayName, setDisplayName] = useState(() => {
     const profile = getUserProfile();
@@ -27,7 +24,6 @@ const HomeHeroSection = () => {
   useEffect(() => {
     let mounted = true;
     const fetchProfile = async () => {
-      if (!getStoredAccessToken()) return;
       try {
         const me = await getMyProfile();
         if (!mounted) return;
@@ -50,7 +46,6 @@ const HomeHeroSection = () => {
   }, []);
 
   const goAiCoursePreferenceFlow = () => {
-    // 게스트도 취향/조건 입력 화면까지는 자유롭게 진입 (로그인은 마지막 "추천 받기" 단계에서 유도)
     void navigate({ to: AI_COURSE_FLOW_START });
   };
 
@@ -60,14 +55,8 @@ const HomeHeroSection = () => {
         <div className="flex flex-col gap-[18px]">
           <img src={leadingLogo} alt="빵빵" className="h-[41px] w-[63px] object-contain" />
           <h1 className="font-sans text-[20px] leading-[27px] tracking-[-0.02em] text-gray-1000">
-            {loggedIn ? (
-              <>
-                <span className="font-bold">{displayName}</span>
-                <span className="font-medium">님, 오늘은 </span>
-              </>
-            ) : (
-              <span className="font-medium">오늘은 </span>
-            )}
+            <span className="font-bold">{displayName}</span>
+            <span className="font-medium">님, 오늘은 </span>
             <span className="font-bold">{greetingBread}</span>
             <span className="font-medium"> 어떠세요?</span>
           </h1>

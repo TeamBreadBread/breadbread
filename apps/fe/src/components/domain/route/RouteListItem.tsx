@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AppIcon, IconAssets } from "@/components/icons";
+import { pickCourseBreadIcon } from "@/lib/courseBreadIcons";
 import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
 import { cn } from "@/utils/cn";
 import type { RouteCourse } from "./types";
@@ -28,6 +29,7 @@ export default function RouteListItem({
 }: RouteListItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+  const courseIconSrc = pickCourseBreadIcon(course.id);
 
   const handleItemClick = () => {
     setIsExpanded((prev) => !prev);
@@ -97,7 +99,12 @@ export default function RouteListItem({
         className="flex w-full cursor-pointer items-start gap-[10px] py-x6 text-left"
       >
         <div className="flex h-[46px] w-[46px] items-center justify-center p-[6px]">
-          <AppIcon src={IconAssets.IcCompass} size={35} alt="" />
+          <img
+            src={courseIconSrc}
+            alt=""
+            aria-hidden
+            className="h-[35px] w-[35px] object-contain"
+          />
         </div>
 
         <div className="flex-1">
@@ -210,7 +217,7 @@ export default function RouteListItem({
 
           <div
             className={cn(
-              "absolute bottom-0 left-1/2 flex max-h-[500px] w-full -translate-x-1/2 flex-col items-start justify-start gap-[12px] overflow-hidden rounded-tl-[24px] rounded-tr-[24px] bg-white",
+              "absolute bottom-0 left-1/2 flex max-h-[500px] w-full -translate-x-1/2 flex-col items-start justify-start overflow-hidden rounded-tl-[24px] rounded-tr-[24px] bg-white",
               RESPONSIVE_FRAME_WIDTH,
             )}
           >
@@ -225,7 +232,7 @@ export default function RouteListItem({
               </button>
             </div>
 
-            <div className="flex w-full flex-row items-start justify-start px-[20px] py-0">
+            <div className="flex w-full flex-row items-start justify-start px-[20px] pb-[calc(49px+env(safe-area-inset-bottom,0px))]">
               <div className="flex w-full flex-col items-start justify-start">
                 <div className="flex w-full flex-col items-start justify-start gap-x2">
                   <button
@@ -267,10 +274,6 @@ export default function RouteListItem({
                   </button>
                 </div>
               </div>
-            </div>
-
-            <div className="w-full">
-              <div className="h-[33px] w-full shrink-0" />
             </div>
           </div>
         </div>

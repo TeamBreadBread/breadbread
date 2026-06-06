@@ -3,17 +3,6 @@ import { CurationBakeryContent } from "@/components/domain/home/CurationBakeryCo
 import { CURATION_BBANGTEO_DISPLAY_COUNT } from "@/components/domain/home/curationBakeryContentParams";
 import type { CommunitySectionItem } from "./types";
 
-const CircleIcon = ({ size, color }: { size: number; color: string }) => {
-  return (
-    <div className="flex items-center justify-center p-[3px]">
-      <div
-        className="shrink-0 rounded-full"
-        style={{ width: size, height: size, backgroundColor: color }}
-      />
-    </div>
-  );
-};
-
 type BbangteoCommunitySectionProps = {
   section: CommunitySectionItem;
   onMoreClick?: () => void;
@@ -41,12 +30,11 @@ const BbangteoCommunitySection = ({
       <div className={`flex flex-col gap-[12px] ${isCuration ? "" : "h-full"}`}>
         <SectionHeader
           title={section.title}
-          titleClassName={isCuration ? "typo-t6bold text-gray-1000" : undefined}
+          titleClassName="typo-t6bold text-gray-1000"
           actionLabel="더보기"
           onActionClick={onMoreClick ?? (() => {})}
           onTitleAreaClick={onSectionTitleAreaClick}
-          showDefaultIcon={!isCuration}
-          icon={isCuration ? undefined : <CircleIcon size={18} color="#dcdee3" />}
+          showDefaultIcon={false}
         />
 
         {section.contentType === "curationApi" ? (

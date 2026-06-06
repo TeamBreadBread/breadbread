@@ -1,6 +1,7 @@
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
 import { AppIcon, IconAssets } from "@/components/icons";
 import { cn } from "@/utils/cn";
+import { formatBakeryRating } from "@/utils/bakeryRating";
 
 type CurationCardProps = {
   title?: string;
@@ -60,16 +61,16 @@ const CurationCard = ({
         </p>
         <div
           className={cn(
-            "flex w-full min-w-0 items-center gap-[var(--spacing-x0-5)]",
+            "flex w-full min-w-0 items-center justify-start gap-[var(--spacing-x0-5)]",
             "text-[length:var(--font-size-1)] leading-[var(--leading-t2)] font-normal",
             "text-[var(--color-gray-700)]",
           )}
         >
           <AppIcon src={IconAssets.IcPin} size="x3" className="icon-gray-600 shrink-0" />
-          <span className="min-w-0 flex-1 truncate">{address}</span>
+          <span className="min-w-0 truncate">{address}</span>
           <span className="shrink-0">·</span>
           <AppIcon src={IconAssets.IcStar} size="x3" className="icon-orange-600 shrink-0" />
-          <span className="shrink-0">{rate}</span>
+          <span className="shrink-0">{formatBakeryRating(rate)}</span>
         </div>
       </div>
     </div>

@@ -40,7 +40,7 @@ const CurationSection = ({
         "w-full bg-white",
         /* 헤더·카드(이미지 240 + 메타)·여백 합산 — 세로 스크롤 없이 한 블록에 들어가도록 */
         "min-h-[392px] sm:min-h-[408px] md:min-h-[424px]",
-        "overflow-x-hidden overflow-y-visible",
+        "overflow-y-visible",
         "px-4 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-6",
         APP_SHELL_MAX_WIDTH,
       )}
@@ -54,7 +54,7 @@ const CurationSection = ({
           onActionClick={handleMoreClick}
         />
 
-        <div className="w-full">
+        <div className="min-w-0 w-full">
           <CurationBakeryContent
             bakeryListEntryFrom="home"
             listParamsOverride={listParamsOverride}

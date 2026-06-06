@@ -2,6 +2,7 @@ import type { CourseSummary } from "./types";
 
 interface ResultSummaryCardProps {
   summary: CourseSummary;
+  iconSrc?: string;
   liked?: boolean;
   likeCount?: number;
   onToggleLike?: () => void;
@@ -28,6 +29,7 @@ function HeartIcon({ filled }: { filled: boolean }) {
 
 export default function ResultSummaryCard({
   summary,
+  iconSrc,
   liked = false,
   likeCount = 0,
   onToggleLike,
@@ -35,7 +37,11 @@ export default function ResultSummaryCard({
   return (
     <section className="flex items-center gap-x2_5 bg-white px-x5 pt-x9 pb-x6">
       <div className="flex h-[80px] w-[80px] items-center justify-center p-x2_5">
-        <div className="h-[60px] w-[60px] rounded-full bg-[#dcdee3]" />
+        {iconSrc ? (
+          <img src={iconSrc} alt="" aria-hidden className="h-[60px] w-[60px] object-contain" />
+        ) : (
+          <div className="h-[60px] w-[60px] rounded-full bg-[#dcdee3]" />
+        )}
       </div>
 
       <div className="flex-1">

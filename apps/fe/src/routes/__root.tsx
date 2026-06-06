@@ -1,7 +1,10 @@
-import { createRootRoute, Outlet } from "@tanstack/react-router";
+import { createRootRoute, Outlet, redirect } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import FcmNotificationListener from "@/components/FcmNotificationListener";
+import { isLoggedIn } from "@/lib/auth/isLoggedIn";
+import { isPublicPath } from "@/lib/auth/publicRoutes";
 import { LoginRequiredProvider } from "@/lib/auth/LoginRequiredProvider";
+import { parseLoginRedirectPath } from "@/lib/postLoginRedirect";
 
 const showDevtools = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEVTOOLS === "true";
 
@@ -26,6 +29,16 @@ function RootErrorBoundary({ error }: { error: unknown }) {
 }
 
 export const Route = createRootRoute({
+  beforeLoad: ({ location }) => {
+    if (isLoggedIn() || isPublicPath(location.pathname)) return;
+
+    throw redirect({
+      to: "/login-entry",
+      search: {
+        redirect: parseLoginRedirectPath(location.pathname),
+      },
+    });
+  },
   errorComponent: RootErrorBoundary,
   component: () => (
     <>

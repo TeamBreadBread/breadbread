@@ -142,6 +142,13 @@ public class BakeryService {
                                 .collect(
                                         Collectors.toMap(
                                                 row -> (Long) row[0], row -> (Long) row[1]));
+        Map<Long, Double> avgRatingMap =
+                ids.isEmpty()
+                        ? Collections.emptyMap()
+                        : reviewRepository.averageRatingByBakeryIdIn(ids).stream()
+                                .collect(
+                                        Collectors.toMap(
+                                                row -> (Long) row[0], row -> (Double) row[1]));
         Set<Long> likeIds =
                 userId != null
                         ? new HashSet<>(
@@ -164,7 +171,8 @@ public class BakeryService {
                                                     likeIds.contains(b.getId()),
                                                     previews,
                                                     remainingPreviewByBakery.getOrDefault(
-                                                            b.getId(), 0));
+                                                            b.getId(), 0),
+                                                    avgRatingMap.getOrDefault(b.getId(), 0.0));
                                         })
                                 .toList())
                 .total((int) result.getTotalElements())
@@ -197,13 +205,23 @@ public class BakeryService {
                                                     url -> thumbnailByBakery.put(bakeryId, url)));
         }
 
+        Map<Long, Double> avgRatingMap =
+                ids.isEmpty()
+                        ? Collections.emptyMap()
+                        : reviewRepository.averageRatingByBakeryIdIn(ids).stream()
+                                .collect(
+                                        Collectors.toMap(
+                                                row -> (Long) row[0], row -> (Double) row[1]));
+
         return BakerySimpleListResponse.builder()
                 .bakeries(
                         bakeries.stream()
                                 .map(
                                         b ->
                                                 BakerySummarySimpleResponse.from(
-                                                        b, thumbnailByBakery.get(b.getId())))
+                                                        b,
+                                                        thumbnailByBakery.get(b.getId()),
+                                                        avgRatingMap.getOrDefault(b.getId(), 0.0)))
                                 .toList())
                 .total((int) result.getTotalElements())
                 .page(pageable.getPageNumber())
@@ -222,6 +240,7 @@ public class BakeryService {
         boolean liked =
                 userId != null && bakeryLikeRepository.existsByBakeryIdAndUserId(bakeryId, userId);
         long reviewCount = reviewRepository.countByBakeryIdAndActiveTrue(bakeryId);
+        double rating = reviewRepository.findAverageRatingByBakeryId(bakeryId).orElse(0.0);
 
         // 이미지가 없으면 Google Places에서 자동 동기화 후 신규 이미지 조회.
         // syncBakery는 REQUIRES_NEW 트랜잭션이므로 readOnly 컨텍스트에서도 write 가능.
@@ -246,7 +265,7 @@ public class BakeryService {
                         .filter(url -> url != null)
                         .toList();
 
-        return BakeryDetailResponse.from(bakery, likeCount, liked, reviewCount, imageUrls);
+        return BakeryDetailResponse.from(bakery, likeCount, liked, reviewCount, imageUrls, rating);
     }
 
     @Transactional
