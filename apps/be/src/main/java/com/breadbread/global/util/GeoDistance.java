@@ -14,8 +14,7 @@ public final class GeoDistance {
     }
 
     /** Haversine 거리 (미터) */
-    public static double metersBetween(
-            double lat1, double lng1, double lat2, double lng2) {
+    public static double metersBetween(double lat1, double lng1, double lat2, double lng2) {
         double dLat = Math.toRadians(lat2 - lat1);
         double dLng = Math.toRadians(lng2 - lng1);
         double a =
