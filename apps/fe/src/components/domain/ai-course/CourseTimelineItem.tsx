@@ -82,7 +82,11 @@ export default function CourseTimelineItem({
               type="button"
               aria-label={`${place.name} 순서 위로`}
               disabled={!canMoveUp || reorderBusy}
-              onClick={onMoveUp}
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                onMoveUp?.();
+              }}
               className="flex h-x6 w-x6 items-center justify-center rounded-r2 border border-gray-200 bg-white text-[14px] text-gray-700 disabled:opacity-40"
             >
               ↑
@@ -91,7 +95,11 @@ export default function CourseTimelineItem({
               type="button"
               aria-label={`${place.name} 순서 아래로`}
               disabled={!canMoveDown || reorderBusy}
-              onClick={onMoveDown}
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                onMoveDown?.();
+              }}
               className="flex h-x6 w-x6 items-center justify-center rounded-r2 border border-gray-200 bg-white text-[14px] text-gray-700 disabled:opacity-40"
             >
               ↓

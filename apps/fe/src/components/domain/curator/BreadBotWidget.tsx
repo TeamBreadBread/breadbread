@@ -24,7 +24,11 @@ import {
   type ChatButtonAction,
 } from "@/types/curatorActions";
 import { reorderCourseForCongestion } from "@/utils/courseCongestionActions";
-import { buildCongestionCheckReply, isCongestionCheckIntent } from "@/utils/congestionCheck";
+import {
+  buildCongestionCheckReply,
+  buildBakeryNameLookup,
+  isCongestionCheckIntent,
+} from "@/utils/congestionCheck";
 import {
   TOUR_REMINDER_WINDOW_MS,
   buildReminderKey,
@@ -476,7 +480,10 @@ export default function BreadBotWidget({
 
           const res = await checkTourCongestion({ courseId, bakeryIds });
           lastCongestionResultsRef.current = res.data ?? [];
-          const { text: replyText, isCongestionAlert } = buildCongestionCheckReply(res);
+          const bakeryNamesById = buildBakeryNameLookup(course.bakeries);
+          const { text: replyText, isCongestionAlert } = buildCongestionCheckReply(res, {
+            bakeryNamesById,
+          });
           const actions = isCongestionAlert ? CONGESTION_ACTION_BUTTONS : [];
 
           setMessages((prev) => [

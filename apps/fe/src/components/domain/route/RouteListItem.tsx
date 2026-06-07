@@ -207,7 +207,12 @@ export default function RouteListItem({
       ) : null}
 
       {isBottomSheetOpen ? (
-        <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="코스 옵션">
+        <div
+          className="fixed inset-0 z-[60]"
+          role="dialog"
+          aria-modal="true"
+          aria-label="코스 옵션"
+        >
           <button
             type="button"
             className="absolute inset-0 bg-black/30"
@@ -232,7 +237,7 @@ export default function RouteListItem({
               </button>
             </div>
 
-            <div className="flex w-full flex-row items-start justify-start px-[20px] pb-[calc(49px+env(safe-area-inset-bottom,0px))]">
+            <div className="flex w-full flex-row items-start justify-start px-[20px] pb-[calc(56px+40px+env(safe-area-inset-bottom,0px))] sm:pb-[calc(60px+40px+env(safe-area-inset-bottom,0px))]">
               <div className="flex w-full flex-col items-start justify-start">
                 <div className="flex w-full flex-col items-start justify-start gap-x2">
                   <button
