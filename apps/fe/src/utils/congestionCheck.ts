@@ -44,14 +44,52 @@ export function isCongestionCheckIntent(message: string): boolean {
   return /혼잡|대기|웨이팅|붐비|crowded|busy|congestion/i.test(text);
 }
 
-export function formatCongestionCheckResults(results: CongestionCheckResult[]): string {
+export type BakeryNameLookup = ReadonlyMap<number, string> | Readonly<Record<number, string>>;
+
+export function buildBakeryNameLookup(
+  bakeries: ReadonlyArray<{ id: number; name?: string | null }>,
+): Map<number, string> {
+  const map = new Map<number, string>();
+  for (const bakery of bakeries) {
+    const name = bakery.name?.trim();
+    if (bakery.id > 0 && name) {
+      map.set(bakery.id, name);
+    }
+  }
+  return map;
+}
+
+function lookupBakeryName(
+  bakeryId: number,
+  apiName: string | null | undefined,
+  names?: BakeryNameLookup,
+): string {
+  const fromApi = apiName?.trim();
+  if (fromApi && fromApi.toLowerCase() !== "null") return fromApi;
+
+  if (names) {
+    const fromCourse =
+      names instanceof Map
+        ? names.get(bakeryId)
+        : (names as Readonly<Record<number, string>>)[bakeryId];
+    if (fromCourse?.trim()) return fromCourse.trim();
+  }
+
+  return bakeryId > 0 ? `빵집 #${bakeryId}` : "방문 예정인 빵집";
+}
+
+export function formatCongestionCheckResults(
+  results: CongestionCheckResult[],
+  bakeryNamesById?: BakeryNameLookup,
+): string {
   if (results.length === 0) {
     return "혼잡도 분석 결과가 없습니다.";
   }
 
   return results
     .map((item) => {
-      const lines = [`📍 ${item.bakeryName}`, `· 혼잡도: ${formatCongestionLevel(item.level)}`];
+      const bakeryName = lookupBakeryName(item.bakeryId, item.bakeryName, bakeryNamesById);
+      const lines = [`📍 ${bakeryName}`, `· 혼잡도: ${formatCongestionLevel(item.level)}`];
 
       if (item.congestionScore != null && Number.isFinite(item.congestionScore)) {
         lines[1] += ` (점수 ${Math.round(item.congestionScore)})`;
@@ -87,8 +125,11 @@ export function findPrimaryCongestionAlert(
   return sorted.find(isCongestionAlertResult) ?? null;
 }
 
-export function buildCongestionAlertMessage(primary: CongestionCheckResult): string {
-  const bakeryName = primary.bakeryName?.trim() || "방문 예정인 빵집";
+export function buildCongestionAlertMessage(
+  primary: CongestionCheckResult,
+  bakeryNamesById?: BakeryNameLookup,
+): string {
+  const bakeryName = lookupBakeryName(primary.bakeryId, primary.bakeryName, bakeryNamesById);
   const waitText =
     primary.expectedWaitMin != null && primary.expectedWaitMin > 0
       ? ` 웨이팅이 약 ${primary.expectedWaitMin}분 예상돼요.`
@@ -96,11 +137,16 @@ export function buildCongestionAlertMessage(primary: CongestionCheckResult): str
   return `😥 현재 방문 예정인 ${bakeryName}이(가) 혼잡해요.${waitText}\n코스를 변경해드릴까요?`;
 }
 
-export function buildCongestionCheckReply(response: {
-  success: boolean;
-  data: CongestionCheckResult[];
-  error?: string | null;
-}): { text: string; isCongestionAlert: boolean; primaryAlert: CongestionCheckResult | null } {
+export function buildCongestionCheckReply(
+  response: {
+    success: boolean;
+    data: CongestionCheckResult[];
+    error?: string | null;
+  },
+  options?: { bakeryNamesById?: BakeryNameLookup },
+): { text: string; isCongestionAlert: boolean; primaryAlert: CongestionCheckResult | null } {
+  const bakeryNamesById = options?.bakeryNamesById;
+
   if (!response.success) {
     return {
       text: response.error?.trim() || "혼잡도 분석에 실패했습니다. 잠시 후 다시 시도해 주세요.",
@@ -112,14 +158,14 @@ export function buildCongestionCheckReply(response: {
   const primaryAlert = findPrimaryCongestionAlert(response.data);
   if (primaryAlert) {
     return {
-      text: buildCongestionAlertMessage(primaryAlert),
+      text: buildCongestionAlertMessage(primaryAlert, bakeryNamesById),
       isCongestionAlert: true,
       primaryAlert,
     };
   }
 
   return {
-    text: `현재 혼잡도를 분석했어요.\n\n${formatCongestionCheckResults(response.data)}`,
+    text: `현재 혼잡도를 분석했어요.\n\n${formatCongestionCheckResults(response.data, bakeryNamesById)}`,
     isCongestionAlert: false,
     primaryAlert: null,
   };

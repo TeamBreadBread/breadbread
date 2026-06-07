@@ -20,11 +20,9 @@ import handleArrow from "@/assets/icons/handle_arrowup.png";
 import { useAiSearchBottomSheet } from "@/hooks/useAiSearchBottomSheet";
 import {
   getCourseDetail,
-  getCourseDirections,
   reorderCourseBakeries,
   saveCourseRoute,
   type CourseDetail,
-  type CourseDirectionPoint,
 } from "@/api/courses";
 import { getBakeriesCongestion } from "@/api/bakery";
 import { getErrorMessage } from "@/api/types/common";
@@ -88,7 +86,6 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
   const [congestionByBakeryId, setCongestionByBakeryId] = useState<
     Map<number, { level?: string | null; expectedWaitMin?: number | null }>
   >(new Map());
-  const [routePath, setRoutePath] = useState<CourseDirectionPoint[] | null>(null);
 
   // 루트 목록 등 sessionStorage에 코스 정보가 없는 경로로 진입한 경우 courseId로 직접 조회
   useEffect(() => {
@@ -108,29 +105,9 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     };
   }, [effectiveCourseId, storedCourseDetail]);
 
-  useEffect(() => {
-    if (!effectiveCourseId) {
-      setRoutePath(null);
-      return undefined;
-    }
-
-    let cancelled = false;
-    void getCourseDirections(effectiveCourseId)
-      .then((directions) => {
-        if (!cancelled) setRoutePath(directions.path ?? null);
-      })
-      .catch(() => {
-        if (!cancelled) setRoutePath(null);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [effectiveCourseId]);
-
   const courseDetail: CourseDetail | null = useMemo(() => {
-    if (storedCourseDetail?.id === effectiveCourseId) return storedCourseDetail;
     if (apiCourseDetail?.courseId === effectiveCourseId) return apiCourseDetail.detail;
+    if (storedCourseDetail?.id === effectiveCourseId) return storedCourseDetail;
     return storedCourseDetail;
   }, [storedCourseDetail, apiCourseDetail, effectiveCourseId]);
 
@@ -190,27 +167,14 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
 
   const departurePoint = useMemo(() => {
     const stored = getLatestAiCourseDepartureCoords();
-    if (stored) {
-      return {
-        lat: stored.latitude,
-        lng: stored.longitude,
-        label: stored.markerLabel?.trim() || getAiCourseDepartureMarkerLabel() || "출발지",
-      };
-    }
+    if (!stored) return null;
 
-    const pathStart = routePath?.[0];
-    if (pathStart && Number.isFinite(pathStart.lat) && Number.isFinite(pathStart.lng)) {
-      return {
-        lat: pathStart.lat,
-        lng: pathStart.lng,
-        label: getAiCourseDepartureMarkerLabel() || "출발지",
-      };
-    }
-
-    return null;
-  }, [routePath]);
-
-  const mapPathMode = routePath && routePath.length > 1 ? "road" : "simple";
+    return {
+      lat: stored.latitude,
+      lng: stored.longitude,
+      label: stored.markerLabel?.trim() || getAiCourseDepartureMarkerLabel() || "출발지",
+    };
+  }, []);
 
   const dynamicPlaces: CoursePlace[] | null = useMemo(() => {
     if (!courseDetail) return null;
@@ -319,15 +283,26 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     const targetIndex = direction === "up" ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= bakeryIds.length) return;
 
-    const nextOrder = [...bakeryIds];
-    [nextOrder[index], nextOrder[targetIndex]] = [nextOrder[targetIndex], nextOrder[index]];
+    const nextBakeries = [...courseDetail.bakeries];
+    [nextBakeries[index], nextBakeries[targetIndex]] = [
+      nextBakeries[targetIndex],
+      nextBakeries[index],
+    ];
+    const nextOrder = nextBakeries.map((bakery) => bakery.id);
 
+    setApiCourseDetail({
+      courseId: effectiveCourseId,
+      detail: { ...courseDetail, bakeries: nextBakeries },
+    });
     setReorderBusy(true);
     void (async () => {
       try {
         await reorderCourseBakeries(effectiveCourseId, { bakeryOrder: nextOrder });
         await refreshCourseDetail(effectiveCourseId);
       } catch (error) {
+        await refreshCourseDetail(effectiveCourseId).catch(() => {
+          /* 서버 복구 실패 시 아래 alert만 표시 */
+        });
         window.alert(getErrorMessage(error));
       } finally {
         setReorderBusy(false);
@@ -349,8 +324,6 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
         <CourseKakaoMap
           bakeries={mapBakeries}
           departurePoint={departurePoint}
-          routePath={routePath}
-          pathMode={mapPathMode}
           className="h-full w-full"
         />
       </div>

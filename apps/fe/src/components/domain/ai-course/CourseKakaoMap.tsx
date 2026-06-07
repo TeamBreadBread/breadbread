@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import mapImage from "@/assets/images/map.png";
-import type { CourseDirectionPoint } from "@/api/courses";
 import { loadKakaoMapSdk } from "@/lib/kakaoMapSdk";
-import { fetchKakaoWalkingRoutePath } from "@/lib/kakaoWalkingRoute";
 import type { KakaoLatLng, KakaoLatLngBounds, KakaoMap, KakaoMaps } from "@/types/kakao-maps";
 import { cn } from "@/utils/cn";
 import { getCourseOrderMarkerPalette } from "@/lib/courseOrderMarkerPalette";
@@ -10,15 +8,9 @@ import { filterValidMapPoints, type CourseMapBakery } from "./courseMapPoints";
 
 export type { CourseMapBakery } from "./courseMapPoints";
 
-/** simple: 마커 간 직선(대각선) · walking: 보행 길찾기 API · road: 사전 계산 도로 좌표 */
-export type CourseMapPathMode = "simple" | "walking" | "road";
-
 type Props = {
   bakeries: CourseMapBakery[];
   departurePoint?: { lat: number; lng: number; label: string } | null;
-  /** road 모드에서만 사용 */
-  routePath?: CourseDirectionPoint[] | null;
-  pathMode?: CourseMapPathMode;
   className?: string;
 };
 
@@ -170,14 +162,10 @@ function buildSimplePathPositions(
 function CourseKakaoMapView({
   mapPoints,
   departurePoint,
-  routePath,
-  pathMode = "simple",
   className,
 }: {
   mapPoints: CourseMapBakery[];
   departurePoint?: { lat: number; lng: number; label: string } | null;
-  routePath?: CourseDirectionPoint[] | null;
-  pathMode?: CourseMapPathMode;
   className?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -214,60 +202,22 @@ function CourseKakaoMapView({
         mapRef.current = map;
 
         if (markerPositions.length > 1) {
-          const routeCoords = orderedPoints.map((p) => ({ lat: p.lat, lng: p.lng }));
-
           const departureOverlayPosition = departurePoint
             ? new maps.LatLng(departurePoint.lat, departurePoint.lng)
             : null;
 
-          let pathPositions = buildSimplePathPositions(maps, departurePoint, markerPositions);
+          const pathPositions = buildSimplePathPositions(maps, departurePoint, markerPositions);
 
-          if (pathMode === "road" && routePath && routePath.length > 1) {
-            pathPositions = routePath.map((p) => new maps.LatLng(p.lat, p.lng));
-          } else if (pathMode === "walking") {
-            const walkingInput = departurePoint
-              ? [{ lat: departurePoint.lat, lng: departurePoint.lng }, ...routeCoords]
-              : routeCoords;
-            const walkingPath = await fetchKakaoWalkingRoutePath(walkingInput);
-            if (cancelled) return;
-            if (walkingPath && walkingPath.length > 1) {
-              pathPositions = walkingPath.map((p) => new maps.LatLng(p.lat, p.lng));
-            }
-          }
-
-          if (pathMode === "simple") {
-            mapObjects.push(
-              new maps.Polyline({
-                map,
-                path: pathPositions,
-                strokeWeight: 3,
-                strokeColor: "#41454e",
-                strokeOpacity: 0.85,
-                strokeStyle: "shortdash",
-              }),
-            );
-          } else {
-            mapObjects.push(
-              new maps.Polyline({
-                map,
-                path: pathPositions,
-                strokeWeight: 10,
-                strokeColor: "#ffffff",
-                strokeOpacity: 0.95,
-                strokeStyle: "solid",
-              }),
-            );
-            mapObjects.push(
-              new maps.Polyline({
-                map,
-                path: pathPositions,
-                strokeWeight: 6,
-                strokeColor: "#2563eb",
-                strokeOpacity: 0.95,
-                strokeStyle: "solid",
-              }),
-            );
-          }
+          mapObjects.push(
+            new maps.Polyline({
+              map,
+              path: pathPositions,
+              strokeWeight: 3,
+              strokeColor: "#41454e",
+              strokeOpacity: 0.85,
+              strokeStyle: "shortdash",
+            }),
+          );
 
           if (departurePoint && departureOverlayPosition) {
             mapObjects.push(
@@ -362,7 +312,7 @@ function CourseKakaoMapView({
       }
       container.replaceChildren();
     };
-  }, [departurePoint, mapPoints, pathMode, routePath]);
+  }, [departurePoint, mapPoints]);
 
   useEffect(() => {
     if (status !== "ready") return;
@@ -405,13 +355,7 @@ function CourseKakaoMapView({
   );
 }
 
-export default function CourseKakaoMap({
-  bakeries,
-  departurePoint,
-  routePath,
-  pathMode = "simple",
-  className,
-}: Props) {
+export default function CourseKakaoMap({ bakeries, departurePoint, className }: Props) {
   const mapPoints = useMemo(() => filterValidMapPoints(bakeries), [bakeries]);
 
   if (mapPoints.length === 0) {
@@ -425,8 +369,6 @@ export default function CourseKakaoMap({
       key={mapPointsKey(mapPoints)}
       mapPoints={mapPoints}
       departurePoint={departurePoint}
-      routePath={routePath}
-      pathMode={pathMode}
       className={className}
     />
   );

@@ -16,7 +16,11 @@ import CongestionBadge from "@/components/common/CongestionBadge";
 import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
-import { buildCongestionCheckReply, mapCongestionByBakeryId } from "@/utils/congestionCheck";
+import {
+  buildCongestionCheckReply,
+  buildBakeryNameLookup,
+  mapCongestionByBakeryId,
+} from "@/utils/congestionCheck";
 import { cn } from "@/utils/cn";
 
 interface TourPageProps {
@@ -186,7 +190,8 @@ export default function TourPage({ courseId }: TourPageProps) {
         bakeryIds,
         targetBakeryId: nextBakery?.id,
       });
-      const { text } = buildCongestionCheckReply(response);
+      const bakeryNamesById = buildBakeryNameLookup(bakeries);
+      const { text } = buildCongestionCheckReply(response, { bakeryNamesById });
       setCongestionMessage(text);
     } catch (e) {
       setCongestionMessage(getErrorMessage(e));

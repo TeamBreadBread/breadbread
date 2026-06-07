@@ -1,3 +1,5 @@
+import ImgCelebrate from "@/assets/icons/Img_Celebrate.svg";
+
 interface SignupWelcomeSectionProps {
   name: string;
 }
@@ -6,7 +8,12 @@ export default function SignupWelcomeSection({ name }: SignupWelcomeSectionProps
   return (
     <section className="flex flex-1 flex-col items-center justify-start px-0 pb-0 pt-[156px]">
       <div className="flex w-full flex-col items-center gap-[28px] p-[20px]">
-        <div className="h-[100px] w-[100px] shrink-0 bg-gray-200" />
+        <img
+          src={ImgCelebrate}
+          alt=""
+          aria-hidden
+          className="h-[100px] w-[100px] shrink-0 object-contain"
+        />
 
         <div className="flex w-full flex-col items-center gap-[8px]">
           <h1 className="w-full text-center text-[22px] font-bold leading-[30px] tracking-[0] text-gray-900">
