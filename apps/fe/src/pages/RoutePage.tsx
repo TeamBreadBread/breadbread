@@ -7,6 +7,7 @@ import MobileFrame from "@/components/layout/MobileFrame";
 import type { RouteCourse } from "@/components/domain/route";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
 import {
+  deleteAiCourse,
   getCourseDetail,
   getMyCourseRoutes,
   likeCourse,
@@ -69,8 +70,11 @@ export default function RoutePage() {
   const handleDeleteCourse = async (courseId: string) => {
     const parsed = Number.parseInt(courseId, 10);
     if (!Number.isFinite(parsed)) return;
+    if (!window.confirm("이 AI 코스를 삭제할까요? 저장된 루트에서도 제거됩니다.")) return;
+
     try {
-      await removeCourseRoute(parsed);
+      await deleteAiCourse(parsed);
+      await removeCourseRoute(parsed).catch(() => undefined);
       setCourses((prev) => prev.filter((c) => c.id !== courseId));
     } catch (error) {
       window.alert(getErrorMessage(error));

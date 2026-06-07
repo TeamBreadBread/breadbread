@@ -15,11 +15,18 @@ import CourseKakaoMap from "@/components/domain/ai-course/CourseKakaoMap";
 import { courseBakeriesToMapPoints } from "@/components/domain/ai-course/courseMapPoints";
 import handleArrow from "@/assets/icons/handle_arrowup.png";
 import { useAiSearchBottomSheet } from "@/hooks/useAiSearchBottomSheet";
-import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
-import { getCourseDetail, saveCourseRoute, type CourseDetail } from "@/api/courses";
+import {
+  getCourseDetail,
+  reorderCourseBakeries,
+  saveCourseRoute,
+  type CourseDetail,
+} from "@/api/courses";
+import { getBakeriesCongestion } from "@/api/bakery";
 import { getErrorMessage } from "@/api/types/common";
 import { startTour } from "@/api/tours";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
+import { mapCongestionByBakeryId } from "@/utils/congestionCheck";
+import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
 import ResultCTASection from "@/components/domain/ai-course/ResultCTASection";
 import SaveRouteBanner from "@/components/domain/ai-course/SaveRouteBanner";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
@@ -72,6 +79,10 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     courseId: number;
     detail: CourseDetail;
   } | null>(null);
+  const [reorderBusy, setReorderBusy] = useState(false);
+  const [congestionByBakeryId, setCongestionByBakeryId] = useState<
+    Map<number, { level?: string | null; expectedWaitMin?: number | null }>
+  >(new Map());
 
   // 루트 목록 등 sessionStorage에 코스 정보가 없는 경로로 진입한 경우 courseId로 직접 조회
   useEffect(() => {
@@ -96,6 +107,37 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     if (apiCourseDetail?.courseId === effectiveCourseId) return apiCourseDetail.detail;
     return storedCourseDetail;
   }, [storedCourseDetail, apiCourseDetail, effectiveCourseId]);
+
+  useEffect(() => {
+    const bakeryIds =
+      courseDetail?.bakeries?.map((bakery) => bakery.id).filter((id) => id > 0) ?? [];
+    if (bakeryIds.length === 0) {
+      setCongestionByBakeryId(new Map());
+      return;
+    }
+
+    let cancelled = false;
+    void getBakeriesCongestion(bakeryIds)
+      .then((items) => {
+        if (cancelled) return;
+        const mapped = mapCongestionByBakeryId(items);
+        setCongestionByBakeryId(
+          new Map(
+            [...mapped.entries()].map(([id, item]) => [
+              id,
+              { level: item.level, expectedWaitMin: item.expectedWaitMin },
+            ]),
+          ),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setCongestionByBakeryId(new Map());
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [courseDetail]);
 
   const dynamicSummary: CourseSummary | null = useMemo(() => {
     if (!courseDetail) return null;
@@ -137,14 +179,17 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     if (!courseDetail) return null;
     if (!Array.isArray(courseDetail.bakeries)) return null;
     return courseDetail.bakeries.map((bakery, index) => {
+      const congestion = congestionByBakeryId.get(bakery.id);
       return {
         id: String(bakery.id ?? index + 1),
         name: bakery.name || `빵집 ${index + 1}`,
         address: bakery.address || "",
         menu: Number.isFinite(bakery.rating) ? `평점 ${bakery.rating}` : "빵집 정보",
+        congestionLevel: congestion?.level,
+        expectedWaitMin: congestion?.expectedWaitMin,
       };
     });
-  }, [courseDetail]);
+  }, [courseDetail, congestionByBakeryId]);
 
   const [showSavedBanner, setShowSavedBanner] = useState(false);
 
@@ -218,6 +263,39 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     requireLogin(() => {
       void navigate({ to: AI_COURSE_FLOW_START });
     }, "/preference");
+  };
+
+  const refreshCourseDetail = async (courseId: number) => {
+    const detail = await getCourseDetail(courseId);
+    setApiCourseDetail({ courseId, detail });
+    try {
+      sessionStorage.setItem(AI_COURSE_RESULT_STORAGE_KEY, JSON.stringify(detail));
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const handleMoveBakery = (index: number, direction: "up" | "down") => {
+    if (!effectiveCourseId || !courseDetail?.bakeries?.length || reorderBusy) return;
+
+    const bakeryIds = courseDetail.bakeries.map((bakery) => bakery.id);
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= bakeryIds.length) return;
+
+    const nextOrder = [...bakeryIds];
+    [nextOrder[index], nextOrder[targetIndex]] = [nextOrder[targetIndex], nextOrder[index]];
+
+    setReorderBusy(true);
+    void (async () => {
+      try {
+        await reorderCourseBakeries(effectiveCourseId, { bakeryOrder: nextOrder });
+        await refreshCourseDetail(effectiveCourseId);
+      } catch (error) {
+        window.alert(getErrorMessage(error));
+      } finally {
+        setReorderBusy(false);
+      }
+    })();
   };
 
   return (
@@ -295,7 +373,13 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
             "pb-[calc(160px+env(safe-area-inset-bottom))]",
           )}
         >
-          <CourseTimeline places={dynamicPlaces ?? places} onPlaceClick={handlePlaceClick} />
+          <CourseTimeline
+            places={dynamicPlaces ?? places}
+            onPlaceClick={handlePlaceClick}
+            canReorder={Boolean(courseDetail?.bakeries && courseDetail.bakeries.length > 1)}
+            reorderBusy={reorderBusy}
+            onMoveBakery={handleMoveBakery}
+          />
         </div>
       </aside>
 

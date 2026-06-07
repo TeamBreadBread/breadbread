@@ -28,6 +28,24 @@ function pathFromData(data) {
   if (data.type === "PAYMENT" && data.reservationId) {
     return "/my-reservation-detail?id=" + encodeURIComponent(String(data.reservationId));
   }
+  if (data.courseId) {
+    if (
+      data.type === "TOUR_START" ||
+      data.type === "TEN_MIN_BEFORE" ||
+      data.type === "CONGESTION_ALERT"
+    ) {
+      return "/tour?courseId=" + encodeURIComponent(String(data.courseId));
+    }
+  }
+  if (
+    data.type === "TODAY_TOUR" ||
+    data.type === "ONE_HOUR_BEFORE" ||
+    data.type === "TEN_MIN_BEFORE" ||
+    data.type === "TOUR_START" ||
+    data.type === "CONGESTION_ALERT"
+  ) {
+    return "/home";
+  }
   return "/home";
 }
 

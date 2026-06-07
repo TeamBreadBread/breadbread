@@ -4,9 +4,18 @@ import type { CoursePlace } from "./types";
 interface CourseTimelineProps {
   places: CoursePlace[];
   onPlaceClick?: (place: CoursePlace) => void;
+  canReorder?: boolean;
+  reorderBusy?: boolean;
+  onMoveBakery?: (index: number, direction: "up" | "down") => void;
 }
 
-export default function CourseTimeline({ places, onPlaceClick }: CourseTimelineProps) {
+export default function CourseTimeline({
+  places,
+  onPlaceClick,
+  canReorder = false,
+  reorderBusy = false,
+  onMoveBakery,
+}: CourseTimelineProps) {
   return (
     <section className="relative overflow-hidden px-x5 py-x3">
       <div className="absolute bottom-0 left-[39px] top-0 w-[2px] bg-[#f3f4f5]" />
@@ -18,6 +27,12 @@ export default function CourseTimeline({ places, onPlaceClick }: CourseTimelineP
             index={idx + 1}
             place={place}
             onClick={onPlaceClick ? () => onPlaceClick(place) : undefined}
+            canReorder={canReorder}
+            canMoveUp={idx > 0}
+            canMoveDown={idx < places.length - 1}
+            reorderBusy={reorderBusy}
+            onMoveUp={onMoveBakery ? () => onMoveBakery(idx, "up") : undefined}
+            onMoveDown={onMoveBakery ? () => onMoveBakery(idx, "down") : undefined}
           />
         ))}
       </div>

@@ -17,6 +17,7 @@ public class CourseSummaryResponse {
     private int likeCount;
     private boolean liked;
     private boolean isSaved;
+    private String theme;
     private List<CourseBakerySummary> bakeries;
 
     public static CourseSummaryResponse from(
@@ -35,6 +36,7 @@ public class CourseSummaryResponse {
                 .likeCount(likeCount)
                 .liked(liked)
                 .isSaved(isSaved)
+                .theme(course.getTheme())
                 .bakeries(bakeries)
                 .build();
     }
