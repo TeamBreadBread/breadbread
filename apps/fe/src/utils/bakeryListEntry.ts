@@ -21,6 +21,35 @@ function dedupePositiveInts(nums: readonly number[]): number[] | undefined {
   return out.length > 0 ? out : undefined;
 }
 
+export type BbangteoBakeryListSearch = {
+  from?: BakeryListEntryFrom;
+  curationOnly?: boolean;
+  dong?: string;
+  curationPins?: number[];
+  excludePins?: number[];
+};
+
+/** `/bbangteo-bakery-list` 이동 시 검색 파라미터 기본값 채우기 */
+export function buildBbangteoBakeryListSearch(search: BbangteoBakeryListSearch = {}) {
+  return {
+    from: search.from,
+    curationOnly: search.curationOnly ?? false,
+    dong: search.dong,
+    curationPins: search.curationPins ?? [],
+    excludePins: search.excludePins ?? [],
+  };
+}
+
+export function parseCurationOnlyParam(value: unknown): boolean {
+  return value === true || value === "true" || value === 1 || value === "1";
+}
+
+export function parseDongFilterParam(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
 /** URL/검색 파라미터에서 큐레이션 고정 순서 id 목록 파싱 */
 export function parseCurationPinsParam(value: unknown): number[] | undefined {
   if (value == null || value === "") return undefined;

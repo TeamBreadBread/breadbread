@@ -10,6 +10,7 @@ import {
 } from "@/data/bbangteoCommunityMocks";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { buildBbangteoBakeryListSearch } from "@/utils/bakeryListEntry";
 import {
   QUICK_MENU_ROUTE_BY_LABEL,
   type QuickMenuCategoryLabel,
@@ -44,10 +45,10 @@ const BbangteoPage = () => {
   const goToBakeryList = () => {
     navigate({
       to: "/bbangteo-bakery-list",
-      search: {
+      search: buildBbangteoBakeryListSearch({
         from: "bbangteo",
         curationPins: curationDisplayedBakeryIds,
-      },
+      }),
     });
   };
   const goToBoardList = () => {

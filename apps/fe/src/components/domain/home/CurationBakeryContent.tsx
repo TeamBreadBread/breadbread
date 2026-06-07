@@ -14,7 +14,11 @@ import {
   CURATION_DISPLAY_COUNT,
   shuffleArray,
 } from "./curationBakeryContentParams";
-import { DONG_REGION_FALLBACK } from "./dongCurationParams";
+import {
+  DONG_REGION_FALLBACK,
+  bakeryMatchesDongForRegionFallback,
+  shouldExcludeFromDongCuration,
+} from "./dongCurationParams";
 import CurationFooter, { type CurationItem } from "./CurationFooter";
 
 type CurationBakeryContentProps = {
@@ -120,6 +124,9 @@ export function CurationBakeryContent({
     enabled: useSummary && !dongFilter,
   });
 
+  const usedRegionFallback =
+    Boolean(dongFilter) && dongSummaryEmpty && Boolean(regionSummaryQuery.data?.bakeries.length);
+
   const summaryData =
     dongFilter && dongSummaryQuery.data?.bakeries.length
       ? dongSummaryQuery.data
@@ -152,8 +159,24 @@ export function CurationBakeryContent({
     if (!data?.bakeries?.length) return [];
 
     const excluded = new Set(excludeBakeryIds ?? []);
-    const filtered = data.bakeries.filter((bakery) => !excluded.has(bakery.id));
-    const source = filtered.length > 0 ? filtered : data.bakeries;
+    let pool = data.bakeries.filter((bakery) => !excluded.has(bakery.id));
+
+    if (dongFilter) {
+      pool = pool.filter((bakery) => !shouldExcludeFromDongCuration(bakery, dongFilter));
+      if (usedRegionFallback) {
+        pool = pool.filter((bakery) => bakeryMatchesDongForRegionFallback(bakery, dongFilter));
+      }
+      // 1번 큐레이션과 겹쳐 전부 빠지면, 잘못 배치된 빵집만 제외하고 다시 채움
+      if (pool.length === 0) {
+        pool = data.bakeries.filter((bakery) => !shouldExcludeFromDongCuration(bakery, dongFilter));
+        if (usedRegionFallback) {
+          pool = pool.filter((bakery) => bakeryMatchesDongForRegionFallback(bakery, dongFilter));
+        }
+      }
+    }
+
+    const source = pool.length > 0 ? pool : dongFilter ? [] : data.bakeries;
+
     const picked = shuffleArray(source).slice(0, displayCount);
 
     if (useSummary) {
@@ -166,6 +189,8 @@ export function CurationBakeryContent({
     data,
     displayCount,
     excludeBakeryIds,
+    dongFilter,
+    usedRegionFallback,
     useSummary,
     dongCardLabel,
     lockSelectionOnMount,

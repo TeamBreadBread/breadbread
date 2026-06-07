@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { getBakeryById } from "@/api/bakery";
-import type { BakeryDetail, BakeryListItem } from "@/api/types/bakery";
+import type { BakeryDetail, BakeryListItem, BakerySortType } from "@/api/types/bakery";
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
 import { AppIcon, IconAssets } from "@/components/icons";
 import BottomNav from "@/components/layout/BottomNav";
@@ -11,6 +11,10 @@ import {
 } from "@/components/layout/layout.constants";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { CURATION_BBANGTEO_DISPLAY_COUNT } from "@/components/domain/home/curationBakeryContentParams";
+import {
+  DONG_REGION_FALLBACK,
+  shouldExcludeFromDongCuration,
+} from "@/components/domain/home/dongCurationParams";
 import { useBakeries } from "@/hooks/useBakeries";
 import {
   getBakeryLikeOverlay,
@@ -25,8 +29,51 @@ import {
   resolveBakeryRating,
   resolveBakeryReviewCount,
 } from "@/utils/bakeryRating";
+import { isListItemOpenNow } from "@/utils/bakeryBusinessHours";
 
 const PAGE_SIZE = 6;
+const OPEN_FILTER_FETCH_SIZE = 60;
+
+type BakeryListSort = Extract<BakerySortType, "RATING" | "REVIEW_COUNT" | "LIKE_COUNT">;
+
+const BAKERY_LIST_SORT_OPTIONS: { value: BakeryListSort; label: string }[] = [
+  { value: "RATING", label: "별점순" },
+  { value: "REVIEW_COUNT", label: "리뷰순" },
+  { value: "LIKE_COUNT", label: "좋아요순" },
+];
+
+function sortBakeryRows(rows: BakeryRow[], sort: BakeryListSort): BakeryRow[] {
+  const copy = [...rows];
+  if (sort === "REVIEW_COUNT") {
+    copy.sort((a, b) => b.reviewCount - a.reviewCount || b.rating - a.rating || b.id - a.id);
+    return copy;
+  }
+  if (sort === "LIKE_COUNT") {
+    copy.sort(
+      (a, b) =>
+        b.bookmarkCount - a.bookmarkCount ||
+        b.rating - a.rating ||
+        b.reviewCount - a.reviewCount ||
+        b.id - a.id,
+    );
+    return copy;
+  }
+  copy.sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount || b.id - a.id);
+  return copy;
+}
+
+function filterBakeryRowsByOpenOnly(rows: BakeryRow[], openOnly: boolean): BakeryRow[] {
+  if (!openOnly) return rows;
+  return rows.filter((row) => isListItemOpenNow(row));
+}
+
+function filterRowsByKeyword(rows: BakeryRow[], keyword: string): BakeryRow[] {
+  const q = keyword.trim().toLowerCase();
+  if (!q) return rows;
+  return rows.filter(
+    (row) => row.name.toLowerCase().includes(q) || row.address.toLowerCase().includes(q),
+  );
+}
 
 type BakeryRow = {
   id: number;
@@ -36,6 +83,8 @@ type BakeryRow = {
   reviewCount: number;
   bookmarkCount: number;
   liked: boolean;
+  openTime?: string | null;
+  closeTime?: string | null;
   /** 최대 4개 미리보기 URL */
   images: string[];
   /** 4장 초과분 — 4번째 타일에 더보기 오버레이 */
@@ -64,6 +113,8 @@ function mapListItemToBakeryRow(b: BakeryListItem): BakeryRow {
     reviewCount: resolveBakeryReviewCount(item.reviewCount),
     bookmarkCount: item.likeCount ?? 0,
     liked: Boolean(item.liked),
+    openTime: item.openTime,
+    closeTime: item.closeTime,
     images: previews,
     remainingPreviewImageCount: remaining,
   };
@@ -87,6 +138,8 @@ function mapDetailToBakeryRow(detail: BakeryDetail): BakeryRow {
     reviewCount: resolveBakeryReviewCount(detail.reviewCount),
     bookmarkCount: detail.likeCount ?? 0,
     liked: Boolean(detail.liked),
+    openTime: detail.openTime,
+    closeTime: detail.closeTime,
     images: previews,
     remainingPreviewImageCount: remaining,
   };
@@ -134,22 +187,119 @@ const PageHeader = ({
   );
 };
 
-const FilterChip = ({ label, withIcon = false }: { label: string; withIcon?: boolean }) => (
+const SortFilterChip = ({
+  value,
+  onChange,
+}: {
+  value: BakeryListSort;
+  onChange: (sort: BakeryListSort) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const selectedLabel =
+    BAKERY_LIST_SORT_OPTIONS.find((opt) => opt.value === value)?.label ?? "별점순";
+
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node) || !rootRef.current?.contains(target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+    };
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex max-h-[34px] items-center rounded-[9999px] bg-[#f3f4f5] p-[8px]"
+      >
+        <span className="px-[4px] text-[14px] leading-[19px] text-[#1a1c20]">{selectedLabel}</span>
+        <AppIcon
+          src={IconAssets.IcChevronDown}
+          size={18}
+          alt=""
+          className={cn("transition-transform", open && "rotate-180")}
+        />
+      </button>
+      {open ? (
+        <div
+          role="listbox"
+          aria-label="정렬"
+          className="absolute left-0 top-[calc(100%+4px)] z-30 min-w-[112px] overflow-hidden rounded-[12px] border border-[#eeeff1] bg-white py-1 shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
+        >
+          {BAKERY_LIST_SORT_OPTIONS.map((opt) => {
+            const isSelected = opt.value === value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+                className={cn(
+                  "flex w-full px-[12px] py-[10px] text-left text-[14px] leading-[19px] text-[#1a1c20]",
+                  isSelected ? "bg-[#f3f4f5] font-semibold" : "font-medium hover:bg-[#f9fafb]",
+                )}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+const OpenFilterChip = ({ active, onToggle }: { active: boolean; onToggle: () => void }) => (
   <button
     type="button"
-    className="flex max-h-[34px] items-center rounded-[9999px] bg-[#f3f4f5] p-[8px]"
+    aria-pressed={active}
+    onClick={onToggle}
+    className={cn(
+      "flex max-h-[34px] items-center rounded-[9999px] p-[8px] transition-colors",
+      active ? "bg-orange-600" : "bg-[#f3f4f5]",
+    )}
   >
-    <span className="px-[4px] text-[14px] leading-[19px] text-[#1a1c20]">{label}</span>
-    {withIcon ? <AppIcon src={IconAssets.IcChevronDown} size={18} alt="" /> : null}
+    <span
+      className={cn(
+        "px-[4px] text-[14px] leading-[19px]",
+        active ? "font-semibold text-white" : "text-[#1a1c20]",
+      )}
+    >
+      영업 중
+    </span>
   </button>
 );
 
 const SearchFilterSection = ({
   keyword,
   onKeywordChange,
+  sort,
+  onSortChange,
+  openOnly,
+  onOpenOnlyToggle,
 }: {
   keyword: string;
   onKeywordChange: (value: string) => void;
+  sort: BakeryListSort;
+  onSortChange: (sort: BakeryListSort) => void;
+  openOnly: boolean;
+  onOpenOnlyToggle: () => void;
 }) => (
   <section className="flex flex-col gap-[16px] bg-white px-[20px] py-[12px]">
     <div className="flex h-[56px] items-center gap-x1-5 rounded-[12px] border border-[#dcdee3] px-[20px] py-[16px]">
@@ -170,8 +320,8 @@ const SearchFilterSection = ({
       >
         <AppIcon src={IconAssets.IcTune} size={18} alt="" />
       </button>
-      <FilterChip label="정렬" withIcon />
-      <FilterChip label="영업 중" />
+      <SortFilterChip value={sort} onChange={onSortChange} />
+      <OpenFilterChip active={openOnly} onToggle={onOpenOnlyToggle} />
     </div>
   </section>
 );
@@ -356,11 +506,25 @@ type BbangteoBakeryListPageProps = {
   listEntryFrom?: BakeryListEntryFrom;
   /** 큐레이션 카드에 노출된 빵집 id 순서(첫 페이지 상단 고정) */
   curationPinIds?: number[];
+  /** true면 큐레이션에 포함된 빵집만 표시 */
+  curationOnly?: boolean;
+  /** 동 큐레이션 더보기 — 해당 행정동 빵집만 표시 */
+  dongFilter?: string;
+  /** 동 큐레이션에서 제외할 빵집 id (홈 1번 큐레이션과 중복 방지) */
+  excludePinIds?: number[];
 };
 
-const BbangteoBakeryListPage = ({ listEntryFrom, curationPinIds }: BbangteoBakeryListPageProps) => {
+const BbangteoBakeryListPage = ({
+  listEntryFrom,
+  curationPinIds,
+  curationOnly = false,
+  dongFilter,
+  excludePinIds,
+}: BbangteoBakeryListPageProps) => {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState("");
+  const [listSort, setListSort] = useState<BakeryListSort>("RATING");
+  const [openOnly, setOpenOnly] = useState(false);
   const [page, setPage] = useState(0);
   const [fetchedPinRowsById, setFetchedPinRowsById] = useState<Map<number, BakeryRow>>(
     () => new Map(),
@@ -369,41 +533,136 @@ const BbangteoBakeryListPage = ({ listEntryFrom, curationPinIds }: BbangteoBaker
 
   useEffect(() => subscribeBakeryLikeOverlayChange(() => setLikeOverlayTick((t) => t + 1)), []);
 
+  const dongFilterTrimmed = dongFilter?.trim() ?? "";
+  const isDongCurationList = curationOnly && Boolean(dongFilterTrimmed);
+
   const pinIdsKey = (curationPinIds ?? []).join(",");
   const pins = useMemo(() => {
     if (!pinIdsKey) return [];
-    return pinIdsKey
+    const ids = pinIdsKey
       .split(",")
       .map((segment) => Number.parseInt(segment.trim(), 10))
-      .filter((n) => Number.isFinite(n) && n > 0)
-      .slice(0, CURATION_BBANGTEO_DISPLAY_COUNT);
-  }, [pinIdsKey]);
+      .filter((n) => Number.isFinite(n) && n > 0);
+    if (listEntryFrom === "bbangteo") {
+      return ids.slice(0, CURATION_BBANGTEO_DISPLAY_COUNT);
+    }
+    return ids;
+  }, [pinIdsKey, listEntryFrom]);
 
-  const isBbangteoCurationOnly = listEntryFrom === "bbangteo" && pins.length > 0 && !keyword.trim();
+  const isPinOnlyList =
+    !isDongCurationList &&
+    (curationOnly || listEntryFrom === "bbangteo") &&
+    pins.length > 0 &&
+    !keyword.trim();
+
+  const useOpenFilterFetch = openOnly && !isDongCurationList && !isPinOnlyList;
 
   const handleKeywordChange = (value: string) => {
     setKeyword(value);
     setPage(0);
   };
 
+  const handleSortChange = (sort: BakeryListSort) => {
+    setListSort(sort);
+    setPage(0);
+  };
+
+  const handleOpenOnlyToggle = () => {
+    setOpenOnly((prev) => !prev);
+    setPage(0);
+  };
+
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [page]);
+  }, [page, listSort, openOnly]);
 
   const queryKeyword = keyword.trim() || undefined;
-  const { data, loading, error } = useBakeries({
-    page,
-    size: PAGE_SIZE,
-    sort: "RATING",
-    open: false,
-    keyword: queryKeyword,
-  });
+  const { data, loading, error } = useBakeries(
+    {
+      page: useOpenFilterFetch ? 0 : page,
+      size: useOpenFilterFetch ? OPEN_FILTER_FETCH_SIZE : PAGE_SIZE,
+      sort: listSort,
+      open: openOnly,
+      keyword: queryKeyword,
+    },
+    { enabled: !isDongCurationList },
+  );
+
+  const regionFallback = dongFilterTrimmed ? DONG_REGION_FALLBACK[dongFilterTrimmed] : undefined;
+  const dongListQuery = useBakeries(
+    {
+      page: 0,
+      size: 60,
+      sort: listSort,
+      open: openOnly,
+      dong: dongFilterTrimmed,
+    },
+    { enabled: isDongCurationList },
+  );
+  const dongListEmpty =
+    isDongCurationList &&
+    !dongListQuery.loading &&
+    dongListQuery.data != null &&
+    dongListQuery.data.bakeries.length === 0;
+  const regionListQuery = useBakeries(
+    {
+      page: 0,
+      size: 60,
+      sort: listSort,
+      open: openOnly,
+      region: regionFallback,
+    },
+    { enabled: isDongCurationList && dongListEmpty && Boolean(regionFallback) },
+  );
+
+  const excludeSet = useMemo(() => new Set(excludePinIds ?? []), [excludePinIds]);
+
+  const dongCurationRows: BakeryRow[] = useMemo(() => {
+    if (!isDongCurationList) return [];
+
+    const sourceBakeries =
+      dongFilterTrimmed && dongListQuery.data?.bakeries.length
+        ? dongListQuery.data.bakeries
+        : dongListEmpty && regionListQuery.data?.bakeries.length
+          ? regionListQuery.data.bakeries
+          : (dongListQuery.data?.bakeries ?? []);
+
+    const filtered = sourceBakeries.filter(
+      (bakery) =>
+        !excludeSet.has(bakery.id) && !shouldExcludeFromDongCuration(bakery, dongFilterTrimmed),
+    );
+    const rows = filtered.map((bakery) =>
+      applyLikeOverlayToBakeryRow(mapListItemToBakeryRow(bakery)),
+    );
+    const sorted = sortBakeryRows(rows, listSort);
+    return filterBakeryRowsByOpenOnly(filterRowsByKeyword(sorted, keyword), openOnly);
+  }, [
+    isDongCurationList,
+    dongFilterTrimmed,
+    dongListQuery.data,
+    dongListEmpty,
+    regionListQuery.data,
+    excludeSet,
+    listSort,
+    openOnly,
+    keyword,
+    likeOverlayTick,
+  ]);
+
+  const dongLoading =
+    isDongCurationList &&
+    (dongListQuery.loading ||
+      (dongListEmpty && Boolean(regionFallback) && regionListQuery.loading));
+  const dongError =
+    isDongCurationList && (dongListQuery.error ?? (dongListEmpty ? regionListQuery.error : null));
 
   const pinResolutionActive =
+    !openOnly &&
+    !isDongCurationList &&
     page === 0 &&
     queryKeyword == null &&
     pins.length > 0 &&
-    (isBbangteoCurationOnly || Boolean(data?.bakeries?.length));
+    (isPinOnlyList || Boolean(data?.bakeries?.length));
 
   const listIds = useMemo(() => new Set(data?.bakeries?.map((b) => b.id) ?? []), [data?.bakeries]);
 
@@ -486,10 +745,25 @@ const BbangteoBakeryListPage = ({ listEntryFrom, curationPinIds }: BbangteoBaker
     });
   }, [data, likeOverlayTick]);
 
-  const rows: BakeryRow[] = useMemo(() => {
-    const applyPins = page === 0 && !queryKeyword && pins.length > 0;
+  const openFilteredRows: BakeryRow[] = useMemo(() => {
+    if (!useOpenFilterFetch || !apiRows.length) return [];
+    return sortBakeryRows(filterBakeryRowsByOpenOnly(apiRows, true), listSort);
+  }, [useOpenFilterFetch, apiRows, listSort]);
 
-    if (isBbangteoCurationOnly) {
+  const rows: BakeryRow[] = useMemo(() => {
+    if (isDongCurationList) {
+      return dongCurationRows;
+    }
+
+    if (useOpenFilterFetch) {
+      const start = page * PAGE_SIZE;
+      return openFilteredRows.slice(start, start + PAGE_SIZE);
+    }
+
+    const applyPins =
+      page === 0 && !queryKeyword && pins.length > 0 && listSort === "RATING" && !openOnly;
+
+    if (isPinOnlyList) {
       const pinnedOrdered: BakeryRow[] = [];
       for (const id of pins) {
         const fromList = apiRows.find((r) => r.id === id);
@@ -497,12 +771,12 @@ const BbangteoBakeryListPage = ({ listEntryFrom, curationPinIds }: BbangteoBaker
         const row = fromList ?? fetched;
         if (row) pinnedOrdered.push(row);
       }
-      return pinnedOrdered;
+      return filterBakeryRowsByOpenOnly(sortBakeryRows(pinnedOrdered, listSort), openOnly);
     }
 
     if (!apiRows.length) return [];
     if (!applyPins) {
-      return apiRows;
+      return filterBakeryRowsByOpenOnly(sortBakeryRows(apiRows, listSort), openOnly);
     }
 
     const pinSet = new Set(pins);
@@ -513,12 +787,37 @@ const BbangteoBakeryListPage = ({ listEntryFrom, curationPinIds }: BbangteoBaker
       const row = fromList ?? fetched;
       if (row) pinnedOrdered.push(row);
     }
-    const tail = apiRows.filter((r) => !pinSet.has(r.id));
-    return [...pinnedOrdered, ...tail].slice(0, PAGE_SIZE);
-  }, [apiRows, page, queryKeyword, pins, resolvedPinRowsById, isBbangteoCurationOnly]);
+    const tail = sortBakeryRows(
+      apiRows.filter((r) => !pinSet.has(r.id)),
+      listSort,
+    );
+    return filterBakeryRowsByOpenOnly([...pinnedOrdered, ...tail], openOnly).slice(0, PAGE_SIZE);
+  }, [
+    isDongCurationList,
+    dongCurationRows,
+    apiRows,
+    page,
+    queryKeyword,
+    pins,
+    resolvedPinRowsById,
+    isPinOnlyList,
+    listSort,
+    openOnly,
+    useOpenFilterFetch,
+    openFilteredRows,
+  ]);
 
-  const total = data?.total ?? 0;
-  const totalPages = total === 0 ? 0 : Math.ceil(total / PAGE_SIZE);
+  const listLoading = isDongCurationList ? dongLoading : loading;
+  const listError = isDongCurationList ? dongError : error;
+  const isCurationScopedList = isDongCurationList || isPinOnlyList;
+
+  const totalPages = useOpenFilterFetch
+    ? openFilteredRows.length === 0
+      ? 0
+      : Math.ceil(openFilteredRows.length / PAGE_SIZE)
+    : (data?.total ?? 0) === 0
+      ? 0
+      : Math.ceil((data?.total ?? 0) / PAGE_SIZE);
 
   const handleBakeryClick = (bakery: BakeryRow) => {
     void navigate({
@@ -538,23 +837,30 @@ const BbangteoBakeryListPage = ({ listEntryFrom, curationPinIds }: BbangteoBaker
       <div className="flex min-h-screen flex-1 flex-col bg-white">
         <PageHeader title="빵집 리스트" listEntryFrom={listEntryFrom} />
         <main className="flex flex-1 flex-col pb-[56px] sm:pb-[60px]">
-          <SearchFilterSection keyword={keyword} onKeywordChange={handleKeywordChange} />
-          {loading ? (
+          <SearchFilterSection
+            keyword={keyword}
+            onKeywordChange={handleKeywordChange}
+            sort={listSort}
+            onSortChange={handleSortChange}
+            openOnly={openOnly}
+            onOpenOnlyToggle={handleOpenOnlyToggle}
+          />
+          {listLoading ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 px-[20px] py-[40px] text-[14px] text-[#868b94]">
               불러오는 중…
             </div>
-          ) : error ? (
+          ) : listError ? (
             <div className="flex flex-1 flex-col items-center justify-center px-[20px] py-[40px] text-center text-[14px] text-[#868b94]">
-              {error.message}
+              {listError.message}
             </div>
           ) : rows.length === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center px-[20px] py-[40px] text-[14px] text-[#868b94]">
-              빵집이 없습니다.
+              {openOnly ? "영업 중인 빵집이 없어요." : "빵집이 없습니다."}
             </div>
           ) : (
             <>
               <BakeryList items={rows} onItemClick={handleBakeryClick} />
-              {totalPages > 0 && !isBbangteoCurationOnly ? (
+              {totalPages > 0 && !isCurationScopedList ? (
                 <PageNumberNav currentPage={page} totalPages={totalPages} onSelectPage={setPage} />
               ) : null}
             </>

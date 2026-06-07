@@ -6,6 +6,7 @@ import { useNavigate } from "@tanstack/react-router";
 import SectionHeader from "@/components/common/section-header/SectionHeader";
 import { cn } from "@/utils/cn";
 import { APP_SHELL_MAX_WIDTH } from "@/components/layout/layout.constants";
+import { buildBbangteoBakeryListSearch } from "@/utils/bakeryListEntry";
 import { CurationBakeryContent } from "./CurationBakeryContent";
 
 type CurationSectionProps = {
@@ -27,10 +28,10 @@ const CurationSection = ({
   const handleMoreClick = () => {
     void navigate({
       to: "/bbangteo-bakery-list",
-      search: {
-        from: "home" as const,
+      search: buildBbangteoBakeryListSearch({
+        from: "home",
         curationPins: displayedPinIds.length > 0 ? displayedPinIds : [],
-      },
+      }),
     });
   };
 
