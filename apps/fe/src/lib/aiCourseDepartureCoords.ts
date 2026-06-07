@@ -1,4 +1,4 @@
-/** AI 코스 출발 좌표 — 메모리 + sessionStorage(결과 화면·새로고침 복구용) */
+/** AI 코스 출발 좌표 — 같은 탭 세션 동안 메모리에만 보관 (좌표는 sessionStorage에 저장하지 않음) */
 export type AiCourseDeparture = {
   latitude: number;
   longitude: number;
@@ -11,66 +11,43 @@ const DEPARTURE_MARKER_LABEL_STORAGE_KEY = "aiCourseDepartureMarkerLabel";
 let pending: AiCourseDeparture | null = null;
 let latest: AiCourseDeparture | null = null;
 
-function isValidDeparture(value: AiCourseDeparture): boolean {
-  return (
-    Number.isFinite(value.latitude) &&
-    Number.isFinite(value.longitude) &&
-    !(value.latitude === 0 && value.longitude === 0)
-  );
-}
-
-function readPersistedDeparture(): AiCourseDeparture | null {
-  if (typeof sessionStorage === "undefined") return null;
-  try {
-    const raw = sessionStorage.getItem(DEPARTURE_COORDS_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<AiCourseDeparture>;
-    if (
-      typeof parsed.latitude !== "number" ||
-      typeof parsed.longitude !== "number" ||
-      !isValidDeparture(parsed as AiCourseDeparture)
-    ) {
-      return null;
-    }
-    const markerLabel =
-      typeof parsed.markerLabel === "string" && parsed.markerLabel.trim()
-        ? parsed.markerLabel.trim()
-        : sessionStorage.getItem(DEPARTURE_MARKER_LABEL_STORAGE_KEY)?.trim() || "출발지";
-    return { latitude: parsed.latitude, longitude: parsed.longitude, markerLabel };
-  } catch {
-    return null;
-  }
-}
-
-function persistDeparture(value: AiCourseDeparture): void {
+/** 이전 버전에서 sessionStorage에 남아 있을 수 있는 좌표 평문 데이터 제거 */
+function clearLegacyPersistedCoords(): void {
   if (typeof sessionStorage === "undefined") return;
-  sessionStorage.setItem(DEPARTURE_COORDS_STORAGE_KEY, JSON.stringify(value));
-  sessionStorage.setItem(DEPARTURE_MARKER_LABEL_STORAGE_KEY, value.markerLabel?.trim() || "출발지");
+  sessionStorage.removeItem(DEPARTURE_COORDS_STORAGE_KEY);
 }
+
+function persistMarkerLabel(label: string): void {
+  if (typeof sessionStorage === "undefined") return;
+  sessionStorage.setItem(DEPARTURE_MARKER_LABEL_STORAGE_KEY, label);
+}
+
+clearLegacyPersistedCoords();
 
 export function setAiCourseDepartureCoords(
   latitude: number,
   longitude: number,
   markerLabel?: string,
 ): void {
+  const label = markerLabel?.trim() || "출발지";
   const value: AiCourseDeparture = {
     latitude,
     longitude,
-    markerLabel: markerLabel?.trim() || "출발지",
+    markerLabel: label,
   };
   pending = value;
   latest = value;
-  persistDeparture(value);
+  persistMarkerLabel(label);
 }
 
 export function takeAiCourseDepartureCoords(): AiCourseDeparture | null {
-  const value = pending ?? latest ?? readPersistedDeparture();
+  const value = pending ?? latest;
   pending = null;
   return value;
 }
 
 export function getLatestAiCourseDepartureCoords(): AiCourseDeparture | null {
-  return latest ?? readPersistedDeparture();
+  return latest;
 }
 
 export function getAiCourseDepartureMarkerLabel(): string | null {
@@ -83,7 +60,7 @@ export function clearAiCourseDepartureCoords(): void {
   pending = null;
   latest = null;
   if (typeof sessionStorage !== "undefined") {
-    sessionStorage.removeItem(DEPARTURE_COORDS_STORAGE_KEY);
+    clearLegacyPersistedCoords();
     sessionStorage.removeItem(DEPARTURE_MARKER_LABEL_STORAGE_KEY);
   }
 }
