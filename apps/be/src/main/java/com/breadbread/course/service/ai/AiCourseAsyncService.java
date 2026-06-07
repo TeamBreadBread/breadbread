@@ -16,6 +16,7 @@ import com.breadbread.course.entity.*;
 import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.global.util.GeoDistance;
 import com.breadbread.notification.service.FcmService;
 import com.breadbread.user.dto.PreferenceResponse;
 import com.breadbread.user.entity.User;
@@ -35,6 +36,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 @RequiredArgsConstructor
 public class AiCourseAsyncService {
+
+    private static final int AI_BAKERY_CANDIDATE_LIMIT = 40;
 
     private final UserRepository userRepository;
     private final UserPreferenceRepository userPreferenceRepository;
@@ -73,7 +76,10 @@ public class AiCourseAsyncService {
                                                                                 .PREFERENCE_NOT_FOUND));
 
                                 List<Bakery> bakeries = bakeryRepository.findAllByActiveTrue();
-                                List<Long> ids = bakeries.stream().map(Bakery::getId).toList();
+                                List<Bakery> candidateBakeries =
+                                        selectBakeriesNearDeparture(bakeries, request);
+                                List<Long> ids =
+                                        candidateBakeries.stream().map(Bakery::getId).toList();
                                 Map<Long, List<Bread>> breadMap =
                                         breadRepository.findAllByBakeryIdIn(ids).stream()
                                                 .collect(
@@ -87,7 +93,7 @@ public class AiCourseAsyncService {
 
                                 // BakeryAiResponse.from() 내부의 모든 lazy 필드 접근이 트랜잭션 안에서 일어남
                                 List<BakeryAiResponse> bakeryAiResponses =
-                                        bakeries.stream()
+                                        candidateBakeries.stream()
                                                 .map(
                                                         b ->
                                                                 BakeryAiResponse.from(
@@ -230,5 +236,31 @@ public class AiCourseAsyncService {
             aiCourseRedisService.saveFailed(jobId, ErrorCode.AI_SERVER_ERROR.getMessage());
         }
         return CompletableFuture.completedFuture(null);
+    }
+
+    /** 출발지에서 가까운 빵집만 AI 후보로 전달해 먼 지역(예: 유성구) 추천을 줄인다. */
+    private List<Bakery> selectBakeriesNearDeparture(
+            List<Bakery> bakeries, AiCourseRequest request) {
+        double departureLat = request.getLatitude();
+        double departureLng = request.getLongitude();
+
+        List<Bakery> sorted =
+                bakeries.stream()
+                        .filter(
+                                bakery ->
+                                        GeoDistance.isValidCoordinate(
+                                                bakery.getLatitude(), bakery.getLongitude()))
+                        .sorted(
+                                Comparator.comparingDouble(
+                                        bakery ->
+                                                GeoDistance.metersBetween(
+                                                        departureLat,
+                                                        departureLng,
+                                                        bakery.getLatitude(),
+                                                        bakery.getLongitude())))
+                        .limit(AI_BAKERY_CANDIDATE_LIMIT)
+                        .toList();
+
+        return sorted.isEmpty() ? bakeries : sorted;
     }
 }

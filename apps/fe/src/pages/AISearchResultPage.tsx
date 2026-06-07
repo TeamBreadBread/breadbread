@@ -10,16 +10,21 @@ import ResultSummaryCard from "@/components/domain/ai-course/ResultSummaryCard";
 import type { CoursePlace, CourseSummary } from "@/components/domain/ai-course/types";
 import { getDevFallbackCourseId } from "@/lib/courseIdFallback";
 import { pickCourseBreadIcon } from "@/lib/courseBreadIcons";
-import { getLatestAiCourseDepartureCoords } from "@/lib/aiCourseDepartureCoords";
+import {
+  getLatestAiCourseDepartureCoords,
+  getAiCourseDepartureMarkerLabel,
+} from "@/lib/aiCourseDepartureCoords";
 import CourseKakaoMap from "@/components/domain/ai-course/CourseKakaoMap";
 import { courseBakeriesToMapPoints } from "@/components/domain/ai-course/courseMapPoints";
 import handleArrow from "@/assets/icons/handle_arrowup.png";
 import { useAiSearchBottomSheet } from "@/hooks/useAiSearchBottomSheet";
 import {
   getCourseDetail,
+  getCourseDirections,
   reorderCourseBakeries,
   saveCourseRoute,
   type CourseDetail,
+  type CourseDirectionPoint,
 } from "@/api/courses";
 import { getBakeriesCongestion } from "@/api/bakery";
 import { getErrorMessage } from "@/api/types/common";
@@ -83,6 +88,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
   const [congestionByBakeryId, setCongestionByBakeryId] = useState<
     Map<number, { level?: string | null; expectedWaitMin?: number | null }>
   >(new Map());
+  const [routePath, setRoutePath] = useState<CourseDirectionPoint[] | null>(null);
 
   // 루트 목록 등 sessionStorage에 코스 정보가 없는 경로로 진입한 경우 courseId로 직접 조회
   useEffect(() => {
@@ -101,6 +107,26 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
       cancelled = true;
     };
   }, [effectiveCourseId, storedCourseDetail]);
+
+  useEffect(() => {
+    if (!effectiveCourseId) {
+      setRoutePath(null);
+      return undefined;
+    }
+
+    let cancelled = false;
+    void getCourseDirections(effectiveCourseId)
+      .then((directions) => {
+        if (!cancelled) setRoutePath(directions.path ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setRoutePath(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveCourseId]);
 
   const courseDetail: CourseDetail | null = useMemo(() => {
     if (storedCourseDetail?.id === effectiveCourseId) return storedCourseDetail;
@@ -163,17 +189,28 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
   );
 
   const departurePoint = useMemo(() => {
-    const departure = getLatestAiCourseDepartureCoords();
-    if (!departure) return null;
-    return {
-      lat: departure.latitude,
-      lng: departure.longitude,
-      label: departure.markerLabel?.trim() || "출발지",
-    };
-  }, []);
+    const stored = getLatestAiCourseDepartureCoords();
+    if (stored) {
+      return {
+        lat: stored.latitude,
+        lng: stored.longitude,
+        label: stored.markerLabel?.trim() || getAiCourseDepartureMarkerLabel() || "출발지",
+      };
+    }
 
-  // 출발지 좌표가 없으면 출발지 마커 없이 빵집들만 직선으로 연결한다.
-  const visibleDeparturePoint = departurePoint;
+    const pathStart = routePath?.[0];
+    if (pathStart && Number.isFinite(pathStart.lat) && Number.isFinite(pathStart.lng)) {
+      return {
+        lat: pathStart.lat,
+        lng: pathStart.lng,
+        label: getAiCourseDepartureMarkerLabel() || "출발지",
+      };
+    }
+
+    return null;
+  }, [routePath]);
+
+  const mapPathMode = routePath && routePath.length > 1 ? "road" : "simple";
 
   const dynamicPlaces: CoursePlace[] | null = useMemo(() => {
     if (!courseDetail) return null;
@@ -311,9 +348,9 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
       >
         <CourseKakaoMap
           bakeries={mapBakeries}
-          departurePoint={visibleDeparturePoint}
-          pathMode="simple"
-          courseSeed={effectiveCourseId ?? summary.title}
+          departurePoint={departurePoint}
+          routePath={routePath}
+          pathMode={mapPathMode}
           className="h-full w-full"
         />
       </div>
