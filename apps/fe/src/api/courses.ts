@@ -25,7 +25,9 @@ export type CourseSummaryItem = {
   estimatedCost: number;
   likeCount: number;
   liked: boolean;
+  saved?: boolean;
   bakeries: CourseBakerySummary[];
+  theme?: string;
 };
 
 export type CourseListResponse = {

@@ -68,3 +68,52 @@ export async function getCurrentTour(): Promise<TourCurrentResponse | null> {
   const { data } = await apiClient.get<ApiEnvelope<TourCurrentResponse | null>>(`${PATH}/current`);
   return extractData(data) ?? null;
 }
+
+export type CongestionCheckSignals = {
+  waitingKeywordCount?: number | null;
+  openRunKeywordCount?: number | null;
+  soldOutKeywordCount?: number | null;
+  recentMentionCount?: number | null;
+  morningMentions?: number | null;
+  afternoonMentions?: number | null;
+  eveningMentions?: number | null;
+};
+
+export type CongestionCheckResult = {
+  userId?: number | null;
+  courseId?: number | null;
+  bakeryId: number;
+  bakeryName: string;
+  congestionScore?: number | null;
+  level?: string | null;
+  expectedWaitMin?: number | null;
+  reason?: string | null;
+  signals?: CongestionCheckSignals | null;
+  checkedAt?: string | null;
+};
+
+export type CongestionInstantCheckResponse = {
+  success: boolean;
+  data: CongestionCheckResult[];
+  error?: string | null;
+};
+
+export type CongestionInstantCheckRequest = {
+  courseId: number;
+  bakeryIds: number[];
+  targetBakeryId?: number | null;
+};
+
+/**
+ * `POST /tours/congestion-check` — 코스 내 빵집 혼잡도 즉시 분석.
+ * `targetBakeryId`가 있으면 해당 빵집만, 없으면 `bakeryIds` 전체를 분석합니다.
+ */
+export async function checkTourCongestion(
+  body: CongestionInstantCheckRequest,
+): Promise<CongestionInstantCheckResponse> {
+  const { data } = await apiClient.post<ApiEnvelope<CongestionInstantCheckResponse>>(
+    `${PATH}/congestion-check`,
+    body,
+  );
+  return extractData(data);
+}

@@ -19,7 +19,7 @@ const CoursePageHeader = ({ title }: CoursePageHeaderProps) => {
           <button
             type="button"
             className="flex h-[36px] w-[36px] items-center justify-center"
-            onClick={() => navigate({ to: "/bbangteo" })}
+            onClick={() => navigate({ to: "/home" })}
           >
             <AppIcon src={IconAssets.IcChevronLeft} size="x6" alt="뒤로가기" />
           </button>

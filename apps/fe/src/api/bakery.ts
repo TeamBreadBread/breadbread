@@ -203,3 +203,44 @@ export async function deleteBakeryReview(bakeryId: number, reviewId: number): Pr
   );
   extractData(data);
 }
+
+export type BakeryCongestionSignals = {
+  waitingKeywordCount?: number | null;
+  openRunKeywordCount?: number | null;
+  soldOutKeywordCount?: number | null;
+  recentMentionCount?: number | null;
+  morningMentions?: number | null;
+  afternoonMentions?: number | null;
+  eveningMentions?: number | null;
+};
+
+/** `GET /bakeries/{id}/congestion` · `GET /bakeries/congestion` 공통 응답 */
+export type BakeryCongestion = {
+  bakeryId: number;
+  bakeryName: string;
+  level?: string | null;
+  congestionScore?: number | null;
+  expectedWaitMin?: number | null;
+  reason?: string | null;
+  signals?: BakeryCongestionSignals | null;
+  updatedAt?: string | null;
+};
+
+/** Swagger `GET /bakeries/{id}/congestion` */
+export async function getBakeryCongestion(bakeryId: number): Promise<BakeryCongestion> {
+  const { data } = await apiClient.get<ApiEnvelope<BakeryCongestion>>(
+    `${PATH}/${bakeryId}/congestion`,
+  );
+  return extractData(data);
+}
+
+/** Swagger `GET /bakeries/congestion?ids=1,2,3` — congestionScore 오름차순 */
+export async function getBakeriesCongestion(bakeryIds: number[]): Promise<BakeryCongestion[]> {
+  const ids = bakeryIds.filter((id) => id > 0);
+  if (ids.length === 0) return [];
+
+  const { data } = await apiClient.get<ApiEnvelope<BakeryCongestion[]>>(`${PATH}/congestion`, {
+    params: { ids: ids.join(",") },
+  });
+  return extractData(data) ?? [];
+}

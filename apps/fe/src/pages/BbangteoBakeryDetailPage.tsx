@@ -31,6 +31,8 @@ import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import { formatInstantInSeoul } from "@/utils/formatSeoulDateTime";
 import { buildWeeklyHoursRows, getBakeryHoursStatusLabel } from "@/utils/bakeryBusinessHours";
 import BakeryKakaoMapPreview from "@/components/domain/bbangteo/BakeryKakaoMapPreview";
+import CongestionBadge from "@/components/common/CongestionBadge";
+import { getBakeryCongestion, type BakeryCongestion } from "@/api/bakery";
 import { formatPhoneDisplay } from "@/utils/formatPhoneNumber";
 import { cn } from "@/utils/cn";
 import {
@@ -209,13 +211,34 @@ const BakeryTitleInfo = ({
 const BakeryInfoList = ({ detail }: { detail: BakeryDetail }) => {
   const [mapExpanded, setMapExpanded] = useState(false);
   const [hoursExpanded, setHoursExpanded] = useState(false);
+  const [congestion, setCongestion] = useState<BakeryCongestion | null>(null);
   const statusLabel = getBakeryHoursStatusLabel(detail);
   const weeklyRows = buildWeeklyHoursRows(detail);
   const phoneLabel = formatPhoneDisplay(detail.phone);
   const isOpenNow = statusLabel === "영업 중";
 
+  useEffect(() => {
+    let cancelled = false;
+    void getBakeryCongestion(detail.id)
+      .then((response) => {
+        if (!cancelled) setCongestion(response);
+      })
+      .catch(() => {
+        if (!cancelled) setCongestion(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [detail.id]);
+
   return (
     <div className="flex flex-col gap-[10px]">
+      {congestion?.level ? (
+        <div className="flex items-center gap-[8px]">
+          <span className="text-[14px] leading-[19px] font-medium text-gray-600">혼잡도</span>
+          <CongestionBadge level={congestion.level} expectedWaitMin={congestion.expectedWaitMin} />
+        </div>
+      ) : null}
       <div className="flex flex-col">
         <button
           type="button"

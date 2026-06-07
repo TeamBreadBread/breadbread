@@ -1,29 +1,34 @@
-const CircleIcon = ({ size = 18 }: { size?: number }) => (
-  <div className="rounded-full bg-[#dcdee3]" style={{ width: size, height: size }} />
-);
+import type { CourseCatalogFilterOption } from "./courseCatalogFilters";
 
-const FilterChip = ({ label, withIcon = false }: { label: string; withIcon?: boolean }) => (
-  <button
-    type="button"
-    className="flex max-h-[34px] items-center justify-center rounded-[9999px] bg-[#f3f4f5] p-[8px]"
-  >
-    <span className="px-[4px] text-[14px] leading-[19px] text-[#1a1c20]">{label}</span>
-    {withIcon ? <CircleIcon size={18} /> : null}
-  </button>
-);
+type CourseFilterBarProps = {
+  options: CourseCatalogFilterOption[];
+  activeValue?: string;
+  onChange: (value?: string) => void;
+};
 
-const CourseFilterBar = () => {
+const CourseFilterBar = ({ options, activeValue, onChange }: CourseFilterBarProps) => {
+  if (options.length === 0) return null;
+
   return (
-    <section className="h-[58px] shrink-0 bg-white px-[20px] py-[12px]">
-      <div className="flex items-center gap-[8px]">
-        <button
-          type="button"
-          className="flex max-h-[34px] items-center justify-center rounded-[9999px] bg-[#f3f4f5] p-[8px]"
-        >
-          <CircleIcon size={18} />
-        </button>
-        <FilterChip label="정렬" withIcon />
-        <FilterChip label="영업 중" />
+    <section className="shrink-0 border-b border-[#eeeff1] bg-white px-[20px] py-[12px]">
+      <div className="flex items-center gap-[8px] overflow-x-auto">
+        {options.map((option) => {
+          const isActive = (option.value ?? undefined) === (activeValue ?? undefined);
+          return (
+            <button
+              key={option.label}
+              type="button"
+              onClick={() => onChange(option.value)}
+              className={
+                isActive
+                  ? "shrink-0 rounded-[9999px] bg-[#1a1c20] px-[12px] py-[8px] text-[14px] leading-[19px] font-semibold text-white"
+                  : "shrink-0 rounded-[9999px] bg-[#f3f4f5] px-[12px] py-[8px] text-[14px] leading-[19px] text-[#1a1c20]"
+              }
+            >
+              {option.label}
+            </button>
+          );
+        })}
       </div>
     </section>
   );

@@ -11,6 +11,16 @@ import { LoginRequiredContext } from "@/lib/auth/LoginRequiredContext";
 export function LoginRequiredProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const routeFlowCourseId = useRouterState({
+    select: (s) => {
+      if (s.location.pathname !== "/ai-search-result") return null;
+      const search = s.location.search as { courseId?: number; from?: string };
+      if (search.from === "route" && typeof search.courseId === "number" && search.courseId > 0) {
+        return search.courseId;
+      }
+      return null;
+    },
+  });
   const loggedIn = isLoggedIn();
 
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
@@ -80,9 +90,11 @@ export function LoginRequiredProvider({ children }: { children: ReactNode }) {
   const resolvedCourseGuideId = loggedIn ? courseGuideId : null;
 
   const isHomePath = pathname === "/home";
-  /** 로그인 사용자: 홈에서 항상 노출, 코스 안내 중에는 다른 화면에서도 노출 */
-  const showBot = loggedIn && (isHomePath || resolvedCourseGuideActive);
+  const isSavedRouteFlow = pathname === "/route" || routeFlowCourseId != null;
+  /** 로그인 사용자: 홈·저장 루트·코스 안내 중 BreadBot 노출 */
+  const showBot = loggedIn && (isHomePath || isSavedRouteFlow || resolvedCourseGuideActive);
   const showBotFloating = showBot && !isBotFloatingHiddenPath(pathname);
+  const botCourseId = resolvedCourseGuideId ?? routeFlowCourseId;
 
   const value = useMemo(
     () => ({
@@ -106,7 +118,7 @@ export function LoginRequiredProvider({ children }: { children: ReactNode }) {
       {children}
       <LoginRequiredDialog open={loginDialogOpen} onCancel={hideLoginDialog} onLogin={goLogin} />
       {showBot ? (
-        <BreadBotWidget courseId={resolvedCourseGuideId} showFloatingButton={showBotFloating} />
+        <BreadBotWidget courseId={botCourseId} showFloatingButton={showBotFloating} />
       ) : null}
     </LoginRequiredContext.Provider>
   );

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { getBakeriesCongestion } from "@/api/bakery";
 import { getCourseDetail, type CourseDetail } from "@/api/courses";
 import {
+  checkTourCongestion,
   checkTourVisit,
   completeTour,
   getCurrentTour,
@@ -10,9 +12,11 @@ import {
 } from "@/api/tours";
 import { ApiBusinessError, getErrorMessage } from "@/api/types/common";
 import { AppTopBar } from "@/components/common";
+import CongestionBadge from "@/components/common/CongestionBadge";
 import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
+import { buildCongestionCheckReply, mapCongestionByBakeryId } from "@/utils/congestionCheck";
 import { cn } from "@/utils/cn";
 
 interface TourPageProps {
@@ -33,6 +37,11 @@ export default function TourPage({ courseId }: TourPageProps) {
   const [error, setError] = useState("");
   const [busyOrder, setBusyOrder] = useState<number | null>(null);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [congestionMessage, setCongestionMessage] = useState("");
+  const [isCheckingCongestion, setIsCheckingCongestion] = useState(false);
+  const [congestionByBakeryId, setCongestionByBakeryId] = useState<
+    Map<number, { level?: string | null; expectedWaitMin?: number | null }>
+  >(new Map());
 
   const init = useCallback(async () => {
     if (courseId <= 0) {
@@ -90,6 +99,43 @@ export default function TourPage({ courseId }: TourPageProps) {
     if (courseId > 0) startCourseGuide(courseId);
   }, [courseId, startCourseGuide]);
 
+  useEffect(() => {
+    const bakeryIds = course?.bakeries?.map((bakery) => bakery.id).filter((id) => id > 0) ?? [];
+    if (bakeryIds.length === 0) {
+      setCongestionByBakeryId(new Map());
+      return;
+    }
+
+    let cancelled = false;
+    void getBakeriesCongestion(bakeryIds)
+      .then((items) => {
+        if (cancelled) return;
+        const mapped = mapCongestionByBakeryId(items);
+        setCongestionByBakeryId(
+          new Map(
+            [...mapped.entries()].map(([id, item]) => [
+              id,
+              { level: item.level, expectedWaitMin: item.expectedWaitMin },
+            ]),
+          ),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setCongestionByBakeryId(new Map());
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [course]);
+
+  const bakeries = course?.bakeries ?? [];
+  const total = bakeries.length || tour?.remainingCount || 0;
+  const visitedCount = visitedCountOf(tour);
+  const isCompleted = tour?.status === "COMPLETED";
+  const progressPct = total > 0 ? Math.min(100, Math.round((visitedCount / total) * 100)) : 0;
+  const nextOrder = visitedCount + 1;
+
   const handleVisit = async (order: number) => {
     if (busyOrder != null || isCompleting) return;
     setBusyOrder(order);
@@ -121,12 +167,33 @@ export default function TourPage({ courseId }: TourPageProps) {
     }
   };
 
-  const bakeries = course?.bakeries ?? [];
-  const total = bakeries.length || tour?.remainingCount || 0;
-  const visitedCount = visitedCountOf(tour);
-  const isCompleted = tour?.status === "COMPLETED";
-  const progressPct = total > 0 ? Math.min(100, Math.round((visitedCount / total) * 100)) : 0;
-  const nextOrder = visitedCount + 1;
+  const handleCongestionCheck = async () => {
+    if (isCheckingCongestion || isLoading) return;
+
+    const bakeryIds = bakeries.map((bakery) => bakery.id).filter((id) => id > 0);
+    if (bakeryIds.length === 0) {
+      setCongestionMessage("방문할 빵집 정보가 없어 혼잡도를 확인할 수 없습니다.");
+      return;
+    }
+
+    const nextBakery = !isCompleted && nextOrder > 0 ? bakeries[nextOrder - 1] : undefined;
+
+    setIsCheckingCongestion(true);
+    setCongestionMessage("");
+    try {
+      const response = await checkTourCongestion({
+        courseId,
+        bakeryIds,
+        targetBakeryId: nextBakery?.id,
+      });
+      const { text } = buildCongestionCheckReply(response);
+      setCongestionMessage(text);
+    } catch (e) {
+      setCongestionMessage(getErrorMessage(e));
+    } finally {
+      setIsCheckingCongestion(false);
+    }
+  };
 
   return (
     <MobileFrame>
@@ -166,7 +233,25 @@ export default function TourPage({ courseId }: TourPageProps) {
                   style={{ width: `${isCompleted ? 100 : progressPct}%` }}
                 />
               </div>
+              {!isCompleted ? (
+                <button
+                  type="button"
+                  disabled={isCheckingCongestion || total === 0}
+                  onClick={() => void handleCongestionCheck()}
+                  className="self-start rounded-[8px] border border-orange-200 bg-orange-50 px-[12px] py-[8px] text-[13px] font-semibold text-orange-700 disabled:opacity-50"
+                >
+                  {isCheckingCongestion ? "혼잡도 확인 중…" : "혼잡도 확인"}
+                </button>
+              ) : null}
             </div>
+
+            {congestionMessage ? (
+              <div className="bg-white px-[20px] py-[12px]">
+                <p className="whitespace-pre-line text-[14px] leading-[20px] text-[#555d6d]">
+                  {congestionMessage}
+                </p>
+              </div>
+            ) : null}
 
             {error ? (
               <div className="bg-white px-[20px] py-[12px]">
@@ -181,6 +266,7 @@ export default function TourPage({ courseId }: TourPageProps) {
                 const visited = order <= visitedCount;
                 const isNext = !isCompleted && order === nextOrder;
                 const locked = !visited && !isNext;
+                const congestion = congestionByBakeryId.get(bakery.id);
                 return (
                   <div
                     key={bakery.id}
@@ -211,6 +297,13 @@ export default function TourPage({ courseId }: TourPageProps) {
                         {bakery.name}
                       </span>
                       <span className="truncate text-[12px] text-[#868b94]">{bakery.address}</span>
+                      {congestion?.level ? (
+                        <CongestionBadge
+                          level={congestion.level}
+                          expectedWaitMin={congestion.expectedWaitMin}
+                          className="mt-[4px]"
+                        />
+                      ) : null}
                     </div>
                     {isNext ? (
                       <button
