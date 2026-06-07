@@ -93,9 +93,22 @@ function getOpenCloseForJsDay(
 function isWithinHours(nowMinutes: number, open: number, close: number): boolean {
   if (open === close) return false;
   if (close > open) {
-    return nowMinutes >= open && nowMinutes < close;
+    return nowMinutes >= open && nowMinutes <= close;
   }
-  return nowMinutes >= open || nowMinutes < close;
+  return nowMinutes >= open || nowMinutes <= close;
+}
+
+/** 목록 API의 오늘 openTime·closeTime 기준 영업 중 여부 */
+export function isListItemOpenNow(item: {
+  openTime?: string | null;
+  closeTime?: string | null;
+}): boolean {
+  const open = parseMinutes(item.openTime);
+  const close = parseMinutes(item.closeTime);
+  if (open == null || close == null) return false;
+  const now = getSeoulNow();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  return isWithinHours(nowMinutes, open, close);
 }
 
 function findNextOpenJsDay(

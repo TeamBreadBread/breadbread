@@ -42,20 +42,36 @@ export function extractDong(full: string): string | null {
 
 /**
  * 도로명에서 행정동을 유추합니다.
- * 예: "둔산대로 123" -> "둔산동", "문화원로77" -> "문화원동"
+ * 예: "둔산대로 123" -> "둔산동", "문화원로77" -> "문화원동", "변정4길 30" -> "변동"
  */
+/** 도로명 어근 → 행정동 (도로명과 동 이름 철자가 다른 경우) */
+const ROAD_BASE_TO_DONG: Record<string, string> = {
+  변정: "변동",
+};
+
+function inferDongFromRoadToken(raw: string): string | null {
+  const roadMatch = raw.match(/^(.+?)(?:대로\d*길|대로|로\d*길|\d*길|로)$/);
+  if (!roadMatch?.[1]) return null;
+
+  const base = roadMatch[1].replace(/[0-9].*$/, "");
+  if (base.length < 2 || /(구|시|군|읍|면|동)$/.test(base)) return null;
+
+  return ROAD_BASE_TO_DONG[base] ?? `${base}동`;
+}
+
 export function extractDongFromRoad(full: string): string | null {
   const t = full?.trim();
   if (!t) return null;
 
   for (const raw of t.split(/\s+/).filter(Boolean)) {
-    const token = raw.replace(/[0-9].*$/, "");
-    const roadMatch = token.match(/^(.+?)(?:대로\d*길|대로|로\d*길|길)$/);
-    if (!roadMatch?.[1]) continue;
+    const fromRaw = inferDongFromRoadToken(raw);
+    if (fromRaw) return fromRaw;
 
-    const base = roadMatch[1];
-    if (base.length < 2 || /(구|시|군|읍|면|동)$/.test(base)) continue;
-    return `${base}동`;
+    const withoutTrailingNumber = raw.replace(/\d+[-\d]*$/, "");
+    if (withoutTrailingNumber !== raw) {
+      const fromTrimmed = inferDongFromRoadToken(withoutTrailingNumber);
+      if (fromTrimmed) return fromTrimmed;
+    }
   }
 
   return null;
@@ -81,15 +97,75 @@ export function extractDongFromBakeryName(name: string): string | null {
   return null;
 }
 
+/** Google Places 등에서 내려오는 영문 행정동(예: Dunsan-dong) → 한글 */
+const ROMANIZED_DONG_ALIASES: Record<string, string> = {
+  "dunsan-dong": "둔산동",
+  "eunhaeng-dong": "은행동",
+  "soje-dong": "소제동",
+  "seonhwa-dong": "선화동",
+  "byeondong-dong": "변동",
+  "byeonjeong-dong": "변동",
+  "yongam-dong": "용암동",
+  "tanbang-dong": "탄방동",
+  "gung-dong": "궁동",
+  "wolpyeong-dong": "월평동",
+  "gujeuk-dong": "구즉동",
+  "yongjeong-dong": "용전동",
+  "singi-dong": "신기동",
+  "bongmyeong-dong": "봉명동",
+  "bongmyong-dong": "봉명동",
+  "sintanjin-dong": "신탄진동",
+  "daedeok-dong": "대덕동",
+  "oe-dong": "외동",
+};
+
+function toRomanizedDongKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, "-");
+}
+
+function isRomanizedDongLabel(value: string): boolean {
+  return /^[a-z][a-z-]*-dong$/i.test(value.trim());
+}
+
+/** 주소·문장 속 영문 행정동(예: Bongmyeong-dong) 추출 후 한글 변환 */
+function extractRomanizedDongFromText(text: string): string | null {
+  for (const match of text.matchAll(/\b([A-Za-z][A-Za-z-]*-dong)\b/gi)) {
+    const normalized = normalizeDongLabel(match[1]);
+    if (normalized) return normalized;
+  }
+  return null;
+}
+
+export function normalizeDongLabel(raw?: string | null): string | null {
+  const trimmed = raw?.trim();
+  if (!trimmed) return null;
+
+  if (/[가-힣]/.test(trimmed)) {
+    const dong = extractDong(trimmed);
+    return dong ?? trimmed;
+  }
+
+  const key = toRomanizedDongKey(trimmed);
+  if (ROMANIZED_DONG_ALIASES[key]) return ROMANIZED_DONG_ALIASES[key];
+
+  const suffixMatch = key.match(/^([a-z-]+)-dong$/);
+  if (suffixMatch?.[1]) {
+    const withSuffix = `${suffixMatch[1]}-dong`;
+    if (ROMANIZED_DONG_ALIASES[withSuffix]) return ROMANIZED_DONG_ALIASES[withSuffix];
+  }
+
+  return null;
+}
+
 /** 썸네일·큐레이션 카드용 주소 — 행정동(00동) 우선, 없으면 전체 주소 */
 export function resolveThumbnailDongAddress(
   full: string | undefined | null,
   apiDong?: string | null,
   bakeryName?: string | null,
 ): string {
-  const dongFromApi = apiDong?.trim();
-  if (dongFromApi) return dongFromApi;
-
   const trimmed = full?.trim();
   if (trimmed) {
     const dong = extractDong(trimmed);
@@ -97,10 +173,25 @@ export function resolveThumbnailDongAddress(
 
     const fromRoad = extractDongFromRoad(trimmed);
     if (fromRoad) return fromRoad;
+
+    const fromRomanizedInAddress = extractRomanizedDongFromText(trimmed);
+    if (fromRomanizedInAddress) return fromRomanizedInAddress;
+
+    if (isRomanizedDongLabel(trimmed)) {
+      const normalizedWhole = normalizeDongLabel(trimmed);
+      if (normalizedWhole) return normalizedWhole;
+    }
   }
+
+  const normalizedApiDong = normalizeDongLabel(apiDong);
+  if (normalizedApiDong) return normalizedApiDong;
 
   const fromName = extractDongFromBakeryName(bakeryName ?? "");
   if (fromName) return fromName;
+
+  if (trimmed && isRomanizedDongLabel(trimmed)) {
+    return normalizeDongLabel(trimmed) ?? "";
+  }
 
   return trimmed ?? "";
 }

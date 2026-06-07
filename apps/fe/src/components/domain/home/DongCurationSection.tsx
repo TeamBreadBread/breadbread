@@ -4,8 +4,9 @@ import { useNavigate } from "@tanstack/react-router";
 import SectionHeader from "@/components/common/section-header/SectionHeader";
 import { cn } from "@/utils/cn";
 import { APP_SHELL_MAX_WIDTH } from "@/components/layout/layout.constants";
-import type { DongOption } from "./dongCurationParams";
+import { buildBbangteoBakeryListSearch } from "@/utils/bakeryListEntry";
 import { CurationBakeryContent } from "./CurationBakeryContent";
+import type { DongOption } from "./dongCurationParams";
 
 type DongCurationSectionProps = {
   selectedDong: DongOption;
@@ -25,10 +26,13 @@ const DongCurationSection = ({
   const handleMoreClick = () => {
     void navigate({
       to: "/bbangteo-bakery-list",
-      search: {
-        from: "home" as const,
+      search: buildBbangteoBakeryListSearch({
+        from: "home",
+        curationOnly: true,
+        dong: selectedDong,
         curationPins: displayedPinIds.length > 0 ? displayedPinIds : [],
-      },
+        excludePins: excludeBakeryIds ?? [],
+      }),
     });
   };
 

@@ -27,7 +27,7 @@ import { patchBakeryInListCaches } from "@/hooks/useBakeries";
 import { useBakeryDetail } from "@/hooks/useBakeryDetail";
 import { getUserProfile } from "@/lib/userProfileCache";
 import type { BakeryDetail, BakeryDetailBread } from "@/api/types/bakery";
-import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
+import { buildBbangteoBakeryListSearch, type BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import { formatInstantInSeoul } from "@/utils/formatSeoulDateTime";
 import { buildWeeklyHoursRows, getBakeryHoursStatusLabel } from "@/utils/bakeryBusinessHours";
 import BakeryKakaoMapPreview from "@/components/domain/bbangteo/BakeryKakaoMapPreview";
@@ -83,7 +83,7 @@ const BackHeader = ({
     }
     void navigate({
       to: "/bbangteo-bakery-list",
-      search: { from: listEntryFrom, curationPins: [] },
+      search: buildBbangteoBakeryListSearch({ from: listEntryFrom }),
     });
   };
 
@@ -772,7 +772,7 @@ const MissingBakeryId = ({
           }
           void navigate({
             to: "/bbangteo-bakery-list",
-            search: { from: listEntryFrom, curationPins: [] },
+            search: buildBbangteoBakeryListSearch({ from: listEntryFrom }),
           });
         }}
       >
@@ -946,7 +946,7 @@ const BbangteoBakeryDetailPage = ({
                   }
                   void navigate({
                     to: "/bbangteo-bakery-list",
-                    search: { from: listEntryFrom, curationPins: [] },
+                    search: buildBbangteoBakeryListSearch({ from: listEntryFrom }),
                   });
                 }}
               >
