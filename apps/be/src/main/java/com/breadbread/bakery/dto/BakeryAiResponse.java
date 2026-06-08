@@ -91,6 +91,7 @@ public class BakeryAiResponse {
     @Getter
     @Builder
     public static class BreadInfo {
+        private Long id;
         private String name;
         private int price;
         private String breadType;
@@ -100,6 +101,7 @@ public class BakeryAiResponse {
 
         public static BreadInfo from(Bread bread) {
             return BreadInfo.builder()
+                    .id(bread.getId())
                     .name(bread.getName())
                     .price(bread.getPrice())
                     .breadType(bread.getBreadType() != null ? bread.getBreadType().name() : null)
