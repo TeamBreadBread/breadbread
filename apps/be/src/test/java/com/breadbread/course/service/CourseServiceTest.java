@@ -28,9 +28,13 @@ import com.breadbread.course.dto.ReorderBakeriesResponse;
 import com.breadbread.course.dto.RouteResponse;
 import com.breadbread.course.dto.RouteResult;
 import com.breadbread.course.dto.UpdateCourseRequest;
+import com.breadbread.course.dto.ai.AiCoursePreviewResponse;
 import com.breadbread.course.dto.ai.AiCourseRequest;
+import com.breadbread.course.dto.ai.AiCourseResultCache;
+import com.breadbread.course.dto.ai.AiCourseWebhookResponse;
 import com.breadbread.course.dto.ai.AiJobStatus;
 import com.breadbread.course.dto.ai.AiJobStatusResponse;
+import com.breadbread.course.dto.ai.RecommendedBakeryResponse;
 import com.breadbread.course.entity.AiCourseInfo;
 import com.breadbread.course.entity.BudgetRange;
 import com.breadbread.course.entity.Course;
@@ -48,10 +52,14 @@ import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.course.repository.RouteRepository;
 import com.breadbread.course.service.ai.AiCourseAsyncService;
 import com.breadbread.course.service.ai.AiCourseRedisService;
+import com.breadbread.course.service.ai.AiCourseResultRedisService;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.entity.User;
+import com.breadbread.user.entity.UserPreference;
 import com.breadbread.user.entity.UserRole;
+import com.breadbread.user.entity.WaitingTolerance;
+import com.breadbread.user.repository.UserPreferenceRepository;
 import com.breadbread.user.repository.UserRepository;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -84,6 +92,8 @@ class CourseServiceTest {
     @Mock private CourseDrivingRouteRepository courseDrivingRouteRepository;
     @Mock private AiCourseAsyncService aiCourseAsyncService;
     @Mock private AiCourseRedisService aiCourseRedisService;
+    @Mock private AiCourseResultRedisService aiCourseResultRedisService;
+    @Mock private UserPreferenceRepository userPreferenceRepository;
     @Mock private DrivingRouteClient drivingRouteClient;
     @Mock private CourseDrivingRouteSaver courseDrivingRouteSaver;
     @Mock private BakeryImageUrlResolver bakeryImageUrlResolver;
@@ -407,7 +417,7 @@ class CourseServiceTest {
 
     @Test
     void getAiJobStatus_returns_cached_when_job_exists() {
-        AiJobStatusResponse expected = new AiJobStatusResponse(AiJobStatus.COMPLETED, 9L, null);
+        AiJobStatusResponse expected = new AiJobStatusResponse(AiJobStatus.COMPLETED, null);
         when(aiCourseRedisService.findByJobId("job-2", 1L)).thenReturn(Optional.of(expected));
 
         assertThat(courseService.getAiJobStatus("job-2", 1L)).isSameAs(expected);
@@ -1034,6 +1044,122 @@ class CourseServiceTest {
 
     // ── updateManual 추가 케이스 ─────────────────────────────────────────
 
+    // ── getAiPreview ─────────────────────────────────────────────────────
+
+    @Test
+    void getAiPreview_throws_whenResultNotFound() {
+        when(aiCourseResultRedisService.getResult("job-1", 1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> courseService.getAiPreview("job-1", 1L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.AI_RESULT_NOT_FOUND);
+    }
+
+    @Test
+    void getAiPreview_returns_preview_whenResultExists() {
+        AiCourseWebhookResponse webhookResponse = webhookResponse(10L);
+        AiCourseResultCache cache =
+                AiCourseResultCache.builder()
+                        .userId(1L)
+                        .request(aiRequest())
+                        .response(webhookResponse)
+                        .build();
+        when(aiCourseResultRedisService.getResult("job-2", 1L)).thenReturn(Optional.of(cache));
+
+        AiCoursePreviewResponse preview = courseService.getAiPreview("job-2", 1L);
+
+        assertThat(preview.getName()).isEqualTo("ai-course-name");
+        assertThat(preview.getBakeryCount()).isEqualTo(1);
+        assertThat(preview.getBakeries()).hasSize(1);
+    }
+
+    // ── saveAiCourse ─────────────────────────────────────────────────────
+
+    @Test
+    void saveAiCourse_throws_whenLockAlreadyHeld() {
+        // 동시 요청 — 두 번째 요청은 락 획득 실패 → 409
+        when(aiCourseResultRedisService.tryAcquireSaveLock("job-dup")).thenReturn(false);
+
+        assertThatThrownBy(() -> courseService.saveAiCourse("job-dup", 1L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.AI_COURSE_SAVE_IN_PROGRESS);
+    }
+
+    @Test
+    void saveAiCourse_throws_whenResultNotFound() {
+        when(aiCourseResultRedisService.tryAcquireSaveLock("job-gone")).thenReturn(true);
+        when(aiCourseResultRedisService.getResult("job-gone", 1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> courseService.saveAiCourse("job-gone", 1L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.AI_RESULT_NOT_FOUND);
+    }
+
+    @Test
+    void saveAiCourse_throws_whenRequesterIsNotOwner() {
+        // 비소유자(userId=99)가 호출하면 AiCourseResultRedisService에서 FORBIDDEN을 던진다.
+        // Redis 키는 삭제되지 않아 원소유자(userId=1)의 결과가 보존된다.
+        when(aiCourseResultRedisService.tryAcquireSaveLock("job-other")).thenReturn(true);
+        when(aiCourseResultRedisService.getResult("job-other", 99L))
+                .thenThrow(new CustomException(ErrorCode.FORBIDDEN));
+
+        assertThatThrownBy(() -> courseService.saveAiCourse("job-other", 99L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.FORBIDDEN);
+    }
+
+    @Test
+    void saveAiCourse_throws_whenRecommendedBakeryMissing() {
+        AiCourseResultCache cache = resultCache(1L, 10L);
+        when(aiCourseResultRedisService.tryAcquireSaveLock("job-3")).thenReturn(true);
+        when(aiCourseResultRedisService.getResult("job-3", 1L)).thenReturn(Optional.of(cache));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
+        when(userPreferenceRepository.findByUserId(1L))
+                .thenReturn(Optional.of(preference(user(1L))));
+        // 추천 빵집 ID가 DB에 없음 → DB 저장 실패, Redis 결과는 보존됨
+        when(bakeryRepository.findAllByIdInAndActiveTrue(List.of(10L))).thenReturn(List.of());
+
+        assertThatThrownBy(() -> courseService.saveAiCourse("job-3", 1L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.AI_RECOMMENDED_BAKERY_NOT_FOUND);
+
+        verify(aiCourseResultRedisService, never()).deleteResult(any());
+    }
+
+    @Test
+    void saveAiCourse_saves_and_returns_courseId() {
+        Bakery bakery = bakery(10L, "맛집");
+        AiCourseResultCache cache = resultCache(1L, 10L);
+
+        when(aiCourseResultRedisService.tryAcquireSaveLock("job-4")).thenReturn(true);
+        when(aiCourseResultRedisService.getResult("job-4", 1L)).thenReturn(Optional.of(cache));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
+        when(userPreferenceRepository.findByUserId(1L))
+                .thenReturn(Optional.of(preference(user(1L))));
+        when(bakeryRepository.findAllByIdInAndActiveTrue(List.of(10L))).thenReturn(List.of(bakery));
+        when(courseRepository.save(any(Course.class)))
+                .thenAnswer(
+                        inv -> {
+                            Course c = inv.getArgument(0);
+                            ReflectionTestUtils.setField(c, "id", 99L);
+                            return c;
+                        });
+
+        Long courseId = courseService.saveAiCourse("job-4", 1L);
+
+        assertThat(courseId).isEqualTo(99L);
+        verify(courseRepository).save(any(Course.class));
+        // 단위 테스트는 트랜잭션 동기화 비활성 → afterCommit 없이 즉시 정리됨
+        verify(aiCourseResultRedisService).deleteResult("job-4");
+        verify(aiCourseResultRedisService).releaseSaveLock("job-4");
+        verify(aiCourseRedisService).deleteJob("job-4");
+    }
+
     @Test
     void updateManual_doesNotInvalidateCache_whenBakeriesNotChanged() {
         Course course = manualCourse(1L, "이름");
@@ -1148,6 +1274,57 @@ class CourseServiceTest {
                         .build();
         ReflectionTestUtils.setField(b, "id", id);
         return b;
+    }
+
+    private static AiCourseRequest aiRequest() {
+        AiCourseRequest req = new AiCourseRequest();
+        ReflectionTestUtils.setField(req, "travelType", TravelType.ALONE);
+        ReflectionTestUtils.setField(req, "budgetRange", BudgetRange.ANY);
+        ReflectionTestUtils.setField(req, "minimizeRoute", false);
+        ReflectionTestUtils.setField(req, "breadTypes", List.of(BreadType.BREAD));
+        ReflectionTestUtils.setField(req, "latitude", 36.0);
+        ReflectionTestUtils.setField(req, "longitude", 127.0);
+        ReflectionTestUtils.setField(req, "waitingPreference", false);
+        ReflectionTestUtils.setField(req, "drinkPreference", false);
+        ReflectionTestUtils.setField(req, "bakeryCount", 2);
+        ReflectionTestUtils.setField(req, "flexibilityLevel", FlexibilityLevel.ACTIVE);
+        return req;
+    }
+
+    private static AiCourseWebhookResponse webhookResponse(long bakeryId) {
+        RecommendedBakeryResponse rb = new RecommendedBakeryResponse();
+        ReflectionTestUtils.setField(rb, "id", bakeryId);
+        ReflectionTestUtils.setField(rb, "order", 1);
+        ReflectionTestUtils.setField(rb, "recommendedBread", "소금빵");
+        ReflectionTestUtils.setField(rb, "reason", "맛있음");
+
+        AiCourseWebhookResponse res = new AiCourseWebhookResponse();
+        ReflectionTestUtils.setField(res, "name", "ai-course-name");
+        ReflectionTestUtils.setField(res, "theme", "테마");
+        ReflectionTestUtils.setField(res, "estimatedCost", 8000L);
+        ReflectionTestUtils.setField(res, "estimatedTime", "2h");
+        ReflectionTestUtils.setField(res, "summary", "요약");
+        ReflectionTestUtils.setField(res, "recommendReason", "추천");
+        ReflectionTestUtils.setField(res, "bakeries", List.of(rb));
+        return res;
+    }
+
+    private static AiCourseResultCache resultCache(long userId, long bakeryId) {
+        return AiCourseResultCache.builder()
+                .userId(userId)
+                .request(aiRequest())
+                .response(webhookResponse(bakeryId))
+                .build();
+    }
+
+    private static UserPreference preference(User user) {
+        return UserPreference.builder()
+                .bakeryTypes(List.of(com.breadbread.bakery.entity.BakeryType.CLASSIC))
+                .bakeryPersonalities(List.of())
+                .bakeryUseTypes(List.of())
+                .waitingTolerance(WaitingTolerance.NO_WAIT)
+                .user(user)
+                .build();
     }
 
     private static ReorderBakeriesRequest reorderRequest(List<Long> bakeryOrder) {

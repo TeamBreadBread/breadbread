@@ -76,6 +76,9 @@ public enum ErrorCode {
     ROUTE_TOO_MANY_WAYPOINTS(
             HttpStatus.UNPROCESSABLE_ENTITY, "E0422", "경로에 포함할 수 있는 최대 빵집 수를 초과했습니다."),
     AI_INVALID_API_KEY(HttpStatus.UNAUTHORIZED, "E0423", "유효하지 않은 API 키입니다."),
+    AI_RESULT_NOT_FOUND(HttpStatus.NOT_FOUND, "E0424", "AI 추천 결과가 만료되었거나 존재하지 않습니다."),
+    AI_COURSE_SAVE_IN_PROGRESS(
+            HttpStatus.CONFLICT, "E0425", "AI 코스 저장이 이미 진행 중입니다. 잠시 후 다시 시도해주세요."),
 
     // 예약 E05xx
     RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "E0501", "존재하지 않는 예약입니다."),

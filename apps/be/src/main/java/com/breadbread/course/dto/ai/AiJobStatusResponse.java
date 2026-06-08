@@ -9,6 +9,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AiJobStatusResponse {
     private AiJobStatus status;
-    private Long courseId;
     private String errorMessage;
 }

@@ -29,6 +29,10 @@ public interface RouteRepository extends JpaRepository<Route, Long> {
     List<Route> findByUserId(Long userId);
 
     @Query(
-            "SELECT r FROM Route r JOIN FETCH r.course c WHERE r.user.id = :userId AND c.active = true")
+            "SELECT DISTINCT r FROM Route r "
+                    + "JOIN FETCH r.course c "
+                    + "LEFT JOIN FETCH c.courseBakeries cb "
+                    + "LEFT JOIN FETCH cb.bakery "
+                    + "WHERE r.user.id = :userId AND c.active = true")
     List<Route> findActiveByUserId(@Param("userId") Long userId);
 }

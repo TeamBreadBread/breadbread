@@ -62,7 +62,6 @@ class AiCourseRedisServiceTest {
                 objectMapper.writeValueAsString(
                         com.breadbread.course.dto.ai.AiJobCache.builder()
                                 .status(AiJobStatus.COMPLETED)
-                                .courseId(100L)
                                 .userId(5L)
                                 .build());
         when(valueOps.get("ai:job:job-x")).thenReturn(json);
@@ -71,7 +70,6 @@ class AiCourseRedisServiceTest {
 
         assertThat(result).isPresent();
         assertThat(result.get().getStatus()).isEqualTo(AiJobStatus.COMPLETED);
-        assertThat(result.get().getCourseId()).isEqualTo(100L);
     }
 
     @Test
@@ -108,13 +106,13 @@ class AiCourseRedisServiceTest {
                                 .build());
         when(valueOps.get("ai:job:job-z")).thenReturn(existing);
 
-        aiCourseRedisService.saveCompleted("job-z", 200L);
+        aiCourseRedisService.saveCompleted("job-z");
 
         ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
         verify(valueOps).set(eq("ai:job:job-z"), jsonCaptor.capture(), any(Duration.class));
         assertThat(jsonCaptor.getValue())
                 .contains("\"status\":\"COMPLETED\"")
-                .contains("\"courseId\":200")
-                .contains("\"userId\":3");
+                .contains("\"userId\":3")
+                .doesNotContain("\"courseId\"");
     }
 }
