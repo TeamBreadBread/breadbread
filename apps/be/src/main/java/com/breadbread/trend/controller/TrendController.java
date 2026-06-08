@@ -29,8 +29,7 @@ public class TrendController {
             summary = "[n8n] 트렌드 키워드 저장",
             description = "n8n에서 수집한 SNS/검색 기반 유행 빵 트렌드 데이터를 저장합니다. X-AI-API-KEY 헤더 필요.")
     @PostMapping("/admin/trends/discover-sync")
-    public ApiResponse<Void> discoverSync(
-            @RequestBody @Valid List<TrendDiscoverRequest> requests) {
+    public ApiResponse<Void> discoverSync(@RequestBody @Valid List<TrendDiscoverRequest> requests) {
         trendService.saveAll(requests);
         return ApiResponse.ok();
     }
@@ -43,7 +42,8 @@ public class TrendController {
                     TrendStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.ok(TrendBreadListResponse.from(trendService.getBreads(status, page, size)));
+        return ApiResponse.ok(
+                TrendBreadListResponse.from(trendService.getBreads(status, page, size)));
     }
 
     @Operation(
@@ -56,6 +56,7 @@ public class TrendController {
                     String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.ok(TrendBakeryListResponse.from(trendService.getBakeries(keyword, page, size)));
+        return ApiResponse.ok(
+                TrendBakeryListResponse.from(trendService.getBakeries(keyword, page, size)));
     }
 }

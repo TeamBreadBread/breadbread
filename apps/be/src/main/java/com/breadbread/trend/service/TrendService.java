@@ -35,7 +35,8 @@ public class TrendService {
     public Page<TrendBreadResponse> getBreads(TrendStatus status, int page, int size) {
         PageRequest pageable = PageRequest.of(page, size);
         if (status != null) {
-            return repository.findLatestByKeywordAndStatus(status, pageable)
+            return repository
+                    .findLatestByKeywordAndStatus(status, pageable)
                     .map(TrendBreadResponse::from);
         }
         return repository.findLatestByKeyword(pageable).map(TrendBreadResponse::from);
@@ -45,7 +46,8 @@ public class TrendService {
     public Page<TrendBakeryResponse> getBakeries(String keyword, int page, int size) {
         PageRequest pageable = PageRequest.of(page, size);
         if (keyword != null && !keyword.isBlank()) {
-            return repository.findLatestByBakeryAndKeyword(keyword, pageable)
+            return repository
+                    .findLatestByBakeryAndKeyword(keyword, pageable)
                     .map(TrendBakeryResponse::from);
         }
         return repository.findLatestByBakery(pageable).map(TrendBakeryResponse::from);
