@@ -1,5 +1,26 @@
 export const AI_COURSE_PREFERENCE_STORAGE_KEY = "aiCoursePreference";
 export const AI_COURSE_RESULT_STORAGE_KEY = "aiCourseResult";
+export const ROUTE_FOCUS_COURSE_ID_KEY = "routeFocusCourseId";
+
+export function saveRouteFocusCourseId(courseId: number): void {
+  if (courseId <= 0) return;
+  try {
+    sessionStorage.setItem(ROUTE_FOCUS_COURSE_ID_KEY, String(courseId));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function readRouteFocusCourseId(): number | null {
+  try {
+    const raw = sessionStorage.getItem(ROUTE_FOCUS_COURSE_ID_KEY);
+    if (!raw) return null;
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  } catch {
+    return null;
+  }
+}
 
 export type AiCoursePreferenceDraft = {
   companion: string;

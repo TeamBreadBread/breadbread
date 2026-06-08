@@ -29,7 +29,7 @@ import { getErrorMessage } from "@/api/types/common";
 import { startTour } from "@/api/tours";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import { mapCongestionByBakeryId } from "@/utils/congestionCheck";
-import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
+import { AI_COURSE_RESULT_STORAGE_KEY, saveRouteFocusCourseId } from "@/utils/aiCourseStorage";
 import ResultCTASection from "@/components/domain/ai-course/ResultCTASection";
 import SaveRouteBanner from "@/components/domain/ai-course/SaveRouteBanner";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
@@ -220,6 +220,9 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     if (!effectiveCourseId) {
       window.alert("안내할 코스 정보를 찾지 못했습니다.");
       return;
+    }
+    if (from === "route") {
+      saveRouteFocusCourseId(effectiveCourseId);
     }
     startCourseGuide(effectiveCourseId);
     try {

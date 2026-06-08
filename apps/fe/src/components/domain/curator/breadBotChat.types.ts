@@ -23,6 +23,7 @@ export type ChatMessage = {
   showBackToStart?: boolean;
   showBakeryInfoId?: number;
   congestionContext?: CongestionChatContext;
+  showCelebration?: boolean;
 };
 
 export type CourseMovementBubble = {
@@ -43,6 +44,11 @@ export const WELCOME_SUBTITLE = "궁금한 것을 클릭해보세요!";
 export const BACK_TO_START_LABEL = "처음으로";
 export const BACK_TO_START_FOOTER_LABEL = "처음으로 돌아가기";
 export const COURSE_NOT_IN_PROGRESS_MESSAGE = "현재 코스 진행중이 아닙니다!";
+
+export function buildTourCompleteCelebrationMessage(courseName: string): string {
+  const label = courseName.trim() || "오늘의 빵 투어";
+  return `'${label}' 완주! 🎉\n수고 많으셨어요. 달콤한 하루 보내세요!`;
+}
 
 export function getBreadBotErrorMessage(error: unknown): string {
   const message = getErrorMessage(error);
@@ -79,4 +85,12 @@ export function buildCourseExplainMessage(course: CourseDetail): string {
 
 export function isCourseExplainIntent(text: string): boolean {
   return /현재\s*코스\s*설명|코스\s*설명해/.test(text.trim());
+}
+
+export function isCourseReorderIntent(text: string): boolean {
+  return /코스\s*순서|순서\s*바꿀|방문\s*순서|경로\s*변경|순서\s*변경/.test(text.trim());
+}
+
+export function isNextBakeryRecommendIntent(text: string): boolean {
+  return /다음\s*빵집|빵집\s*추천|다음\s*방문|다음\s*으로\s*갈/.test(text.trim());
 }
