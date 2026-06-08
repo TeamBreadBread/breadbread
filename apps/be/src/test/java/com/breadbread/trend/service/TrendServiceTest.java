@@ -101,9 +101,7 @@ class TrendServiceTest {
         PageRequest pageable = PageRequest.of(0, 20);
         Page<BakeryTrendTag> page =
                 new PageImpl<>(
-                        List.of(tag("소금빵", TrendStatus.STABLE, 28.5, null, null)),
-                        pageable,
-                        1);
+                        List.of(tag("소금빵", TrendStatus.STABLE, 28.5, null, null)), pageable, 1);
         when(repository.findLatestByKeyword(any())).thenReturn(page);
 
         Page<TrendBreadResponse> result = service.getBreads(null, 0, 20);
@@ -149,10 +147,7 @@ class TrendServiceTest {
     void getBakeries_withoutKeyword_returnsAllBakeries() {
         PageRequest pageable = PageRequest.of(0, 20);
         Page<BakeryTrendTag> page =
-                new PageImpl<>(
-                        List.of(bakeryTag("소금빵", 1L, "파리바게뜨", null, null)),
-                        pageable,
-                        1);
+                new PageImpl<>(List.of(bakeryTag("소금빵", 1L, "파리바게뜨", null, null)), pageable, 1);
         when(repository.findLatestByBakery(any())).thenReturn(page);
 
         Page<TrendBakeryResponse> result = service.getBakeries(null, 0, 20);
@@ -166,10 +161,7 @@ class TrendServiceTest {
     void getBakeries_withKeyword_returnsFilteredBakeries() {
         PageRequest pageable = PageRequest.of(0, 20);
         Page<BakeryTrendTag> page =
-                new PageImpl<>(
-                        List.of(bakeryTag("소금빵", 1L, "파리바게뜨", null, null)),
-                        pageable,
-                        1);
+                new PageImpl<>(List.of(bakeryTag("소금빵", 1L, "파리바게뜨", null, null)), pageable, 1);
         when(repository.findLatestByBakeryAndKeyword(eq("소금빵"), any())).thenReturn(page);
 
         Page<TrendBakeryResponse> result = service.getBakeries("소금빵", 0, 20);
@@ -193,15 +185,13 @@ class TrendServiceTest {
     @Test
     void getBakeries_parsesMatchedMenusJsonToList() {
         PageRequest pageable = PageRequest.of(0, 20);
-        BakeryTrendTag tag =
-                bakeryTag("소금빵", 1L, "파리바게뜨", "[\"소금빵\",\"버터소금빵\"]", null);
+        BakeryTrendTag tag = bakeryTag("소금빵", 1L, "파리바게뜨", "[\"소금빵\",\"버터소금빵\"]", null);
         when(repository.findLatestByBakery(any()))
                 .thenReturn(new PageImpl<>(List.of(tag), pageable, 1));
 
         Page<TrendBakeryResponse> result = service.getBakeries(null, 0, 20);
 
-        assertThat(result.getContent().get(0).getMatchedMenus())
-                .containsExactly("소금빵", "버터소금빵");
+        assertThat(result.getContent().get(0).getMatchedMenus()).containsExactly("소금빵", "버터소금빵");
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
@@ -243,11 +233,7 @@ class TrendServiceTest {
     }
 
     private static BakeryTrendTag bakeryTag(
-            String keyword,
-            Long bakeryId,
-            String bakeryName,
-            String matchedMenus,
-            String sources) {
+            String keyword, Long bakeryId, String bakeryName, String matchedMenus, String sources) {
         return BakeryTrendTag.builder()
                 .keyword(keyword)
                 .trendScore(28.5)
