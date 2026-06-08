@@ -6,6 +6,7 @@ import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
 import type { RouteCourse } from "@/components/domain/route";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
+import { saveRouteFocusCourseId } from "@/utils/aiCourseStorage";
 import { deleteAiCourse, getMyCourseRoutes, removeCourseRoute } from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
 
@@ -59,6 +60,7 @@ export default function RoutePage() {
   const handleOpenCourse = (courseId: string) => {
     const parsed = Number.parseInt(courseId, 10);
     if (!Number.isFinite(parsed)) return;
+    saveRouteFocusCourseId(parsed);
     void navigate({ to: "/ai-search-result", search: { courseId: parsed, from: "route" } });
   };
 

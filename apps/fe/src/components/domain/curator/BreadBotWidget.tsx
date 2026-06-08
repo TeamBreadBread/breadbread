@@ -31,6 +31,7 @@ import {
   buildCongestionCheckReply,
   findAlternativeBakerySuggestion,
   findPrimaryCongestionAlert,
+  isCongestionAlertResult,
   isCongestionCheckIntent,
 } from "@/utils/congestionCheck";
 import {
@@ -43,6 +44,7 @@ import {
   reservationStartMs,
   resolvePreDepartureReminderStage,
 } from "@/utils/tourReminders";
+import { consumeTourCompleteCelebration, TOUR_COMPLETE_EVENT } from "@/utils/tourCelebration";
 import { cn } from "@/utils/cn";
 import ChatBotImage from "@/assets/images/Img_ChatBot.svg";
 import ChatbotCourseSpeechBubble, {
@@ -50,11 +52,15 @@ import ChatbotCourseSpeechBubble, {
   CHATBOT_FAB_SIZE,
 } from "@/components/domain/curator/ChatbotCourseSpeechBubble";
 import BreadBotChatModal from "@/components/domain/curator/BreadBotChatModal";
+import BreadBotConfetti from "@/components/domain/curator/BreadBotConfetti";
 import {
   buildCourseExplainMessage,
+  buildTourCompleteCelebrationMessage,
   COURSE_NOT_IN_PROGRESS_MESSAGE,
   getBreadBotErrorMessage,
   isCourseExplainIntent,
+  isCourseReorderIntent,
+  isNextBakeryRecommendIntent,
   type ChatMessage,
   type CongestionChatContext,
   type CourseMovementBubble,
@@ -177,6 +183,155 @@ function markFiredReserveNudge(key: string): void {
   }
 }
 
+async function resolveChatCourseId(courseId?: number | null): Promise<number | null> {
+  if (courseId != null && courseId > 0) return courseId;
+
+  try {
+    const tour = await getCurrentTour();
+    if (tour?.status === "IN_PROGRESS" && tour.courseId > 0) {
+      return tour.courseId;
+    }
+  } catch {
+    /* ignore */
+  }
+
+  return null;
+}
+
+async function buildCourseReorderReply(
+  resolvedCourseId: number,
+  lastCongestionResultsRef: { current: CongestionCheckResult[] },
+  lastCongestionContextRef: { current: CongestionChatContext | null },
+): Promise<Omit<ChatMessage, "id" | "role"> | null> {
+  const course = await getCourseDetail(resolvedCourseId);
+  const bakeryIds = course.bakeries.map((bakery) => bakery.id).filter((id) => id > 0);
+  if (bakeryIds.length === 0) {
+    throw new Error("코스에 빵집 정보가 없어 순서를 변경할 수 없습니다.");
+  }
+
+  const res = await checkTourCongestion({ courseId: resolvedCourseId, bakeryIds });
+  const results = res.data ?? [];
+  lastCongestionResultsRef.current = results;
+  const bakeryNamesById = buildBakeryNameLookup(course.bakeries);
+  const congestionMessage = buildCongestionChatBotMessage(results, bakeryNamesById);
+
+  if (congestionMessage) {
+    if (congestionMessage.congestionContext) {
+      lastCongestionContextRef.current = congestionMessage.congestionContext;
+    }
+    return congestionMessage;
+  }
+
+  return {
+    text: `${buildCourseExplainMessage(course)}\n\n지금은 혼잡한 빵집이 없어요. 위 순서 그대로 진행해도 괜찮아 보여요!`,
+    showCourseMap: true,
+    showBackToStart: true,
+  };
+}
+
+async function buildNextBakeryRecommendReply(
+  resolvedCourseId: number,
+  lastCongestionResultsRef: { current: CongestionCheckResult[] },
+  lastCongestionContextRef: { current: CongestionChatContext | null },
+): Promise<Omit<ChatMessage, "id" | "role">> {
+  const course = await getCourseDetail(resolvedCourseId);
+  const bakeries = course.bakeries ?? [];
+  if (bakeries.length === 0) {
+    throw new Error("코스에 빵집 정보가 없어 추천할 수 없습니다.");
+  }
+
+  const tour = await getCurrentTour();
+  let nextIndex = 0;
+  if (tour?.status === "IN_PROGRESS" && tour.courseId === resolvedCourseId) {
+    nextIndex = tour.currentVisitOrder ?? 0;
+  }
+
+  const nextBakery = bakeries[nextIndex];
+  if (!nextBakery) {
+    return {
+      text: "코스의 모든 빵집 방문을 마쳤어요! 오늘 빵 투어도 수고하셨어요 🍞",
+      showBackToStart: true,
+    };
+  }
+
+  const bakeryIds = bakeries.map((bakery) => bakery.id).filter((id) => id > 0);
+  const res = await checkTourCongestion({ courseId: resolvedCourseId, bakeryIds });
+  const results = res.data ?? [];
+  lastCongestionResultsRef.current = results;
+
+  const bakeryNamesById = buildBakeryNameLookup(bakeries);
+  const nextName = nextBakery.name?.trim() || `빵집 ${nextIndex + 1}`;
+  const lines = [
+    `다음 방문 추천은 코스 ${nextIndex + 1}/${bakeries.length}번째 빵집 '${nextName}'이에요!`,
+  ];
+
+  if (nextBakery.address?.trim()) {
+    lines.push(`📍 ${nextBakery.address.trim()}`);
+  }
+  if (Number.isFinite(nextBakery.rating) && nextBakery.rating > 0) {
+    lines.push(`⭐ 평점 ${nextBakery.rating}`);
+  }
+
+  const nextCongestion = results.find((item) => item.bakeryId === nextBakery.id);
+  if (nextCongestion && isCongestionAlertResult(nextCongestion)) {
+    const waitText =
+      nextCongestion.expectedWaitMin != null && nextCongestion.expectedWaitMin > 0
+        ? ` 예상 대기 약 ${nextCongestion.expectedWaitMin}분`
+        : "";
+    lines.push("", `지금 ${nextName}은(는) 혼잡해요.${waitText}`);
+
+    const upcomingBakeryIds = new Set(bakeries.slice(nextIndex + 1).map((bakery) => bakery.id));
+    const upcomingResults = results.filter((item) => upcomingBakeryIds.has(item.bakeryId));
+    const alternative = findAlternativeBakerySuggestion(
+      upcomingResults,
+      nextCongestion,
+      bakeryNamesById,
+    );
+
+    if (alternative) {
+      lines.push(
+        "",
+        `같은 코스 안에서는 '${alternative.bakeryName}'을(를) 먼저 방문하면 대기 시간을 줄일 수 있어요.`,
+      );
+      lastCongestionContextRef.current = {
+        congestedBakeryId: nextBakery.id,
+        congestedBakeryName: nextName,
+        alternativeBakeryId: alternative.bakeryId,
+        alternativeBakeryName: alternative.bakeryName,
+      };
+      return {
+        text: lines.join("\n"),
+        actions: buildCongestionChatButtons(alternative.bakeryName, alternative.bakeryId),
+        showSadBread: true,
+        showCourseMap: true,
+        showBackToStart: true,
+        congestionContext: lastCongestionContextRef.current,
+      };
+    }
+
+    lines.push("", "코스 순서를 바꿀까요? '코스 순서 바꿀까?'를 눌러주세요.");
+  } else {
+    lines.push("", "지금은 웨이팅이 길지 않아 보여요. 편하게 방문해 보세요!");
+  }
+
+  const upcomingNames = bakeries
+    .slice(nextIndex + 1)
+    .map(
+      (bakery, index) =>
+        `${nextIndex + index + 2}. ${bakery.name?.trim() || `빵집 ${nextIndex + index + 2}`}`,
+    )
+    .join("\n");
+  if (upcomingNames) {
+    lines.push("", "이후 코스 방문 예정:", upcomingNames);
+  }
+
+  return {
+    text: lines.join("\n"),
+    showCourseMap: true,
+    showBackToStart: true,
+  };
+}
+
 type BreadBotWidgetProps = {
   courseId?: number | null;
   showFloatingButton?: boolean;
@@ -239,8 +394,10 @@ export default function BreadBotWidget({
   const [courseMovementBubble, setCourseMovementBubble] = useState<CourseMovementBubble | null>(
     null,
   );
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const dismissedTourRef = useRef<Set<string>>(new Set());
+  const celebratedTourRef = useRef<Set<string>>(new Set());
   const dismissedMovementRef = useRef<Set<string>>(new Set());
   const lastCongestionResultsRef = useRef<CongestionCheckResult[]>([]);
   const lastCongestionContextRef = useRef<CongestionChatContext | null>(null);
@@ -349,16 +506,85 @@ export default function BreadBotWidget({
     [startCourseGuide],
   );
 
+  const celebrateTourComplete = useCallback(async (completedCourseId: number) => {
+    const key = `celebrated:${completedCourseId}`;
+    if (celebratedTourRef.current.has(key)) return;
+    celebratedTourRef.current.add(key);
+
+    setTourBubble((prev) => (prev?.mode === "resume" ? null : prev));
+    setCourseMovementBubble(null);
+
+    let courseName = "";
+    try {
+      const course = await getCourseDetail(completedCourseId);
+      courseName = course.name?.trim() || "";
+    } catch {
+      /* ignore */
+    }
+
+    setShowConfetti(true);
+    setMessages((prev) => {
+      const celebrationId = `tour-complete-${completedCourseId}`;
+      if (prev.some((message) => message.id === celebrationId)) return prev;
+      return [
+        ...prev,
+        {
+          id: celebrationId,
+          role: "bot",
+          text: buildTourCompleteCelebrationMessage(courseName),
+          showCelebration: true,
+          showBackToStart: true,
+        },
+      ];
+    });
+  }, []);
+
+  const clearResumeTourBubble = useCallback(() => {
+    setTourBubble((prev) => (prev?.mode === "resume" ? null : prev));
+  }, []);
+
+  useEffect(() => {
+    const pendingCelebrationId = consumeTourCompleteCelebration();
+    if (pendingCelebrationId) {
+      void celebrateTourComplete(pendingCelebrationId);
+    }
+  }, [celebrateTourComplete]);
+
+  useEffect(() => {
+    const handleTourComplete = (event: Event) => {
+      const courseId = (event as CustomEvent<{ courseId?: number }>).detail?.courseId;
+      if (courseId && courseId > 0) {
+        void celebrateTourComplete(courseId);
+      }
+    };
+
+    window.addEventListener(TOUR_COMPLETE_EVENT, handleTourComplete);
+    return () => window.removeEventListener(TOUR_COMPLETE_EVENT, handleTourComplete);
+  }, [celebrateTourComplete]);
+
   useEffect(() => {
     if (!isLoggedIn()) return;
     let cancelled = false;
 
     const check = async () => {
       try {
-        const current = await getCurrentTour();
+        const pendingCelebrationId = consumeTourCompleteCelebration();
+        if (pendingCelebrationId) {
+          await celebrateTourComplete(pendingCelebrationId);
+        }
+
+        const current = await getCurrentTour().catch(() => null);
         if (cancelled) return;
 
-        if (current && current.status === "IN_PROGRESS") {
+        if (current?.status === "COMPLETED") {
+          clearResumeTourBubble();
+          setCourseMovementBubble(null);
+          await celebrateTourComplete(current.courseId);
+        } else if (!current || current.status !== "IN_PROGRESS") {
+          clearResumeTourBubble();
+        }
+
+        if (current?.status === "IN_PROGRESS") {
           const key = `resume:${current.courseId}`;
           if (!dismissedTourRef.current.has(key)) {
             setTourBubble({
@@ -475,7 +701,7 @@ export default function BreadBotWidget({
 
         setReserveNudgeBubble(null);
       } catch {
-        // 네트워크/권한 등 오류는 조용히 무시
+        clearResumeTourBubble();
       }
     };
 
@@ -485,7 +711,7 @@ export default function BreadBotWidget({
       cancelled = true;
       clearInterval(timer);
     };
-  }, [courseId, handleAutoTourStart, onRoutePage]);
+  }, [celebrateTourComplete, clearResumeTourBubble, courseId, handleAutoTourStart, onRoutePage]);
 
   const applyCourseMovementBubble = useCallback((next: CourseMovementBubble | null) => {
     if (next && dismissedMovementRef.current.has(next.dismissKey)) return;
@@ -730,6 +956,73 @@ export default function BreadBotWidget({
           return;
         }
 
+        if (isCourseReorderIntent(text)) {
+          const resolvedCourseId = await resolveChatCourseId(courseId);
+          if (!resolvedCourseId) {
+            appendBotMessage(
+              "코스 정보를 찾을 수 없어요. 루트에서 코스를 선택하거나 코스 안내를 시작한 뒤 다시 시도해 주세요.",
+            );
+            return;
+          }
+
+          const reorderMessage = await buildCourseReorderReply(
+            resolvedCourseId,
+            lastCongestionResultsRef,
+            lastCongestionContextRef,
+          );
+          if (!reorderMessage) return;
+
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `course-reorder-${Date.now()}`,
+              role: "bot",
+              ...reorderMessage,
+            },
+          ]);
+
+          if (reorderMessage.actions && reorderMessage.actions.length > 0) {
+            setChangeBubble({
+              text: reorderMessage.text,
+              actions: reorderMessage.actions,
+            });
+          }
+          return;
+        }
+
+        if (isNextBakeryRecommendIntent(text)) {
+          const resolvedCourseId = await resolveChatCourseId(courseId);
+          if (!resolvedCourseId) {
+            appendBotMessage(
+              "코스 정보를 찾을 수 없어요. 코스 안내를 시작한 뒤 다시 시도해 주세요.",
+            );
+            return;
+          }
+
+          const recommendMessage = await buildNextBakeryRecommendReply(
+            resolvedCourseId,
+            lastCongestionResultsRef,
+            lastCongestionContextRef,
+          );
+
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `next-bakery-${Date.now()}`,
+              role: "bot",
+              ...recommendMessage,
+            },
+          ]);
+
+          if (recommendMessage.actions && recommendMessage.actions.length > 0) {
+            setChangeBubble({
+              text: recommendMessage.text,
+              actions: recommendMessage.actions,
+            });
+          }
+          return;
+        }
+
         if (courseId && courseId > 0 && isCongestionCheckIntent(text)) {
           const course = await getCourseDetail(courseId);
           const bakeryIds = course.bakeries.map((bakery) => bakery.id).filter((id) => id > 0);
@@ -882,7 +1175,11 @@ export default function BreadBotWidget({
 
   const showCourseMovementBubble =
     courseMovementBubble !== null && showFloatingButton && !open && courseGuideActive;
-  const showTourBubble = tourBubble !== null && !open && !onTourPage;
+  const showTourBubble =
+    tourBubble !== null &&
+    !open &&
+    !onTourPage &&
+    (tourBubble.mode !== "resume" || courseGuideActive);
   const showChangeBubble =
     !showCourseMovementBubble &&
     tourBubble === null &&
@@ -898,6 +1195,7 @@ export default function BreadBotWidget({
 
   return (
     <>
+      <BreadBotConfetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
       {open ? (
         <BreadBotChatModal
           listRef={listRef}
