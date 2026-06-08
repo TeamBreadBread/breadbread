@@ -7,6 +7,7 @@ import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.bakery.service.BakeryImageUrlResolver;
 import com.breadbread.course.client.DrivingRouteClient;
 import com.breadbread.course.dto.*;
+import com.breadbread.course.dto.ai.AiCoursePreviewBakeryResponse;
 import com.breadbread.course.dto.ai.AiCoursePreviewResponse;
 import com.breadbread.course.dto.ai.AiCourseRequest;
 import com.breadbread.course.dto.ai.AiCourseResultCache;
@@ -365,16 +366,42 @@ public class CourseService {
                 .orElseThrow(() -> new CustomException(ErrorCode.AI_JOB_NOT_FOUND));
     }
 
+    @Transactional(readOnly = true)
     public AiCoursePreviewResponse getAiPreview(String jobId, Long userId) {
         AiCourseResultCache cache =
                 aiCourseResultRedisService
                         .getResult(jobId, userId)
                         .orElseThrow(() -> new CustomException(ErrorCode.AI_RESULT_NOT_FOUND));
-        return AiCoursePreviewResponse.from(cache.getResponse());
+
+        var webhookResponse = cache.getResponse();
+        List<RecommendedBakeryResponse> aiBakeries = webhookResponse.getBakeries();
+
+        // 추천 빵집 ID 목록
+        List<Long> bakeryIds = aiBakeries.stream().map(RecommendedBakeryResponse::getId).toList();
+
+        // DB에서 빵집 정보 일괄 조회 (주소·좌표·평점)
+        Map<Long, Bakery> bakeryMap =
+                bakeryRepository.findAllByIdInAndActiveTrue(bakeryIds).stream()
+                        .collect(Collectors.toMap(Bakery::getId, b -> b));
+
+        // 저장과 동일 기준: DB에 없거나 비활성화된 추천 빵집이 있으면 예외
+        // (프리뷰에서 일부 빵집만 보이다 저장이 실패하는 불일치 방지)
+        if (bakeryMap.size() != bakeryIds.size()) {
+            throw new CustomException(ErrorCode.AI_RECOMMENDED_BAKERY_NOT_FOUND);
+        }
+
+        // AI 순서 기준 정렬 후 DB 정보 병합
+        List<AiCoursePreviewBakeryResponse> enrichedBakeries =
+                aiBakeries.stream()
+                        .sorted(Comparator.comparingInt(RecommendedBakeryResponse::getOrder))
+                        .map(ai -> AiCoursePreviewBakeryResponse.of(ai, bakeryMap.get(ai.getId())))
+                        .toList();
+
+        return AiCoursePreviewResponse.of(webhookResponse, enrichedBakeries);
     }
 
     @Transactional
-    public Long saveAiCourse(String jobId, Long userId) {
+    public Long saveAiCourse(String jobId, Long userId, List<Long> bakeryOrder) {
         // 동시 저장 요청 차단 — SET NX EX 락
         if (!aiCourseResultRedisService.tryAcquireSaveLock(jobId)) {
             throw new CustomException(ErrorCode.AI_COURSE_SAVE_IN_PROGRESS);
@@ -437,20 +464,43 @@ public class CourseService {
 
             Course saved = courseRepository.save(course);
 
-            response.getBakeries().stream()
-                    .sorted(Comparator.comparingInt(RecommendedBakeryResponse::getOrder))
-                    .forEach(
-                            item -> {
-                                CourseBakery cb =
-                                        CourseBakery.builder()
-                                                .bakery(bakeryMap.get(item.getId()))
-                                                .course(saved)
-                                                .visitOrder(item.getOrder())
-                                                .recommendedBread(item.getRecommendedBread())
-                                                .reason(item.getReason())
-                                                .build();
-                                saved.addCourseBakery(cb);
-                            });
+            // 사용자 지정 순서가 있으면 유효성 검사 후 적용, 없으면 AI 추천 순서 사용
+            List<Long> effectiveOrder;
+            if (bakeryOrder != null && !bakeryOrder.isEmpty()) {
+                boolean validOrder =
+                        bakeryOrder.size() == recommendedIds.size()
+                                && new HashSet<>(bakeryOrder).equals(new HashSet<>(recommendedIds));
+                if (!validOrder) {
+                    throw new CustomException(ErrorCode.BAKERY_ORDER_COUNT_MISMATCH);
+                }
+                effectiveOrder = bakeryOrder;
+            } else {
+                effectiveOrder =
+                        response.getBakeries().stream()
+                                .sorted(
+                                        Comparator.comparingInt(
+                                                RecommendedBakeryResponse::getOrder))
+                                .map(RecommendedBakeryResponse::getId)
+                                .toList();
+            }
+
+            Map<Long, RecommendedBakeryResponse> aiMetaMap =
+                    response.getBakeries().stream()
+                            .collect(Collectors.toMap(RecommendedBakeryResponse::getId, r -> r));
+
+            for (int i = 0; i < effectiveOrder.size(); i++) {
+                Long bakeryId = effectiveOrder.get(i);
+                RecommendedBakeryResponse meta = aiMetaMap.get(bakeryId);
+                CourseBakery cb =
+                        CourseBakery.builder()
+                                .bakery(bakeryMap.get(bakeryId))
+                                .course(saved)
+                                .visitOrder(i + 1)
+                                .recommendedBread(meta.getRecommendedBread())
+                                .reason(meta.getReason())
+                                .build();
+                saved.addCourseBakery(cb);
+            }
 
             // 커밋 성공 후 Redis 결과 + 락 정리
             // 트랜잭션 동기화가 활성 상태(정상 프로덕션)이면 afterCommit에 등록,

@@ -134,13 +134,18 @@ public class CourseController {
 
     @Operation(
             summary = "AI 코스 저장",
-            description = "미리보기 확인 후 코스를 내 목록에 저장합니다. 저장 후 Redis 임시 데이터는 삭제됩니다.")
+            description =
+                    "미리보기 확인 후 코스를 내 목록에 저장합니다. 저장 후 Redis 임시 데이터는 삭제됩니다."
+                            + " bakeryOrder 미전달 시 AI 추천 순서 그대로 저장됩니다.")
     @PostMapping("/ai/{jobId}/save")
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<Long> saveAiCourse(
-            @PathVariable String jobId, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ApiResponse.ok(courseService.saveAiCourse(jobId, userDetails.getId()));
+            @PathVariable String jobId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody(required = false) ReorderBakeriesRequest reorderRequest) {
+        List<Long> bakeryOrder = reorderRequest != null ? reorderRequest.getBakeryOrder() : null;
+        return ApiResponse.ok(courseService.saveAiCourse(jobId, userDetails.getId(), bakeryOrder));
     }
 
     @Operation(summary = "AI 코스 삭제 (본인 코스만 가능)")

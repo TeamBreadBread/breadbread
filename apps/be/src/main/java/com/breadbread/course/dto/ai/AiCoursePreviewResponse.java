@@ -18,18 +18,20 @@ public class AiCoursePreviewResponse {
     private String theme;
     private String summary;
     private String recommendReason;
-    private List<RecommendedBakeryResponse> bakeries;
+    private List<AiCoursePreviewBakeryResponse> bakeries;
 
-    public static AiCoursePreviewResponse from(AiCourseWebhookResponse response) {
+    public static AiCoursePreviewResponse of(
+            AiCourseWebhookResponse response,
+            List<AiCoursePreviewBakeryResponse> enrichedBakeries) {
         return AiCoursePreviewResponse.builder()
                 .name(response.getName())
-                .bakeryCount(response.getBakeries() != null ? response.getBakeries().size() : 0)
+                .bakeryCount(enrichedBakeries.size())
                 .estimatedTime(response.getEstimatedTime())
                 .estimatedCost(response.getEstimatedCost())
                 .theme(response.getTheme())
                 .summary(response.getSummary())
                 .recommendReason(response.getRecommendReason())
-                .bakeries(response.getBakeries())
+                .bakeries(enrichedBakeries)
                 .build();
     }
 }

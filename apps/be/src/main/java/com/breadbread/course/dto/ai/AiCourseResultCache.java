@@ -11,7 +11,7 @@ import lombok.ToString;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = "response")
+@ToString(exclude = {"request", "response"})
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AiCourseResultCache {
     private Long userId;
