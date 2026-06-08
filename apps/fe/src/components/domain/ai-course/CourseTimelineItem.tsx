@@ -57,7 +57,12 @@ export default function CourseTimelineItem({
 
           <div className="mt-x1_5 flex flex-col gap-x1">
             <div className="flex items-start gap-x1">
-              <AppIcon src={IconAssets.IcPin} size={14} className="mt-[2px] shrink-0" />
+              <AppIcon
+                src={IconAssets.IcPin}
+                size={14}
+                color="gray-600"
+                className="mt-[2px] shrink-0"
+              />
               <span className="flex-1 font-pretendard typo-t3regular text-[#555d6d]">
                 {place.address}
               </span>
@@ -67,7 +72,7 @@ export default function CourseTimelineItem({
                 src={bestBreadIcon}
                 alt=""
                 aria-hidden
-                className="h-x4 w-x4 shrink-0 object-contain"
+                className="icon-gray-600 h-x4 w-x4 shrink-0 object-contain"
               />
               <span className="flex-1 font-pretendard typo-t3regular text-[#555d6d]">
                 {place.menu}

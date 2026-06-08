@@ -18,7 +18,7 @@ const CategoryCard = ({
     <button
       type="button"
       onClick={() => onClick?.(label)}
-      className="flex h-full w-full flex-col items-center justify-center gap-x1-5 rounded-[8px] border border-[#f3f4f5] bg-[#f7f8f9] px-[20px] py-[12px]"
+      className="flex h-full w-full flex-col items-center justify-center gap-x1-5 rounded-[8px] bg-[#f7f8f9] px-[20px] py-[12px]"
     >
       <img src={imageSrc} alt="" aria-hidden className="h-[44px] w-[44px] object-contain" />
       <span className="w-full text-center text-[12px] leading-[16px] font-medium text-[#2a3038]">

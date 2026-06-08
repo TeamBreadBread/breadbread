@@ -1,0 +1,47 @@
+<svg width="87" height="87" viewBox="0 0 87 87" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g filter="url(#filter0_g_4501_7628)">
+<path d="M60.4266 5.38629C72.747 7.94652 80.1538 14.5236 83.2399 25.4814C83.2399 30.4041 82.9346 34.9124 80.1753 38.4062C79.0759 39.7982 78.2633 41.4734 78.4245 43.2399L81.0083 71.5648C81.5002 76.958 77.2541 81.6091 71.8385 81.6091H14.4014C8.98579 81.6091 4.73968 76.958 5.23165 71.5648L7.81543 43.2398C7.97656 41.4734 7.16407 39.7982 6.0648 38.4062C3.30568 34.9124 3 30.4038 3 25.4814C4.85169 14.5236 12.8757 7.94663 25.8133 5.38629C32.8036 4.00293 36.8266 4.00043 43.1199 4.00043C48.6266 4.00043 53.4483 3.93617 60.4266 5.38629Z" fill="#D9D9D9"/>
+<path d="M60.4266 5.38629C72.747 7.94652 80.1538 14.5236 83.2399 25.4814C83.2399 30.4041 82.9346 34.9124 80.1753 38.4062C79.0759 39.7982 78.2633 41.4734 78.4245 43.2399L81.0083 71.5648C81.5002 76.958 77.2541 81.6091 71.8385 81.6091H14.4014C8.98579 81.6091 4.73968 76.958 5.23165 71.5648L7.81543 43.2398C7.97656 41.4734 7.16407 39.7982 6.0648 38.4062C3.30568 34.9124 3 30.4038 3 25.4814C4.85169 14.5236 12.8757 7.94663 25.8133 5.38629C32.8036 4.00293 36.8266 4.00043 43.1199 4.00043C48.6266 4.00043 53.4483 3.93617 60.4266 5.38629Z" fill="url(#paint0_radial_4501_7628)"/>
+</g>
+<g filter="url(#filter1_g_4501_7628)">
+<circle cx="29.3084" cy="44.7771" r="3.94609" fill="#835520"/>
+</g>
+<g filter="url(#filter2_g_4501_7628)">
+<circle cx="56.9319" cy="44.7771" r="3.94609" fill="#835520"/>
+</g>
+<path d="M39.8311 53.9844L40.6768 53.6461C42.2449 53.0189 43.9941 53.0189 45.5621 53.6461L46.4079 53.9844" stroke="#7D451A" stroke-width="2.63082" stroke-linecap="round"/>
+<path d="M68.514 20.9602C68.4295 21.2355 68.1672 21.7895 67.806 22.9847C67.1695 25.0909 67.1553 25.6591 67.231 29.0811C67.2517 30.0165 67.6254 30.3663 67.9071 30.7028C68.1667 31.0128 68.5153 31.2626 69.1797 31.4538C70.3821 31.7996 71.3114 31.3398 71.5327 31.0381C72.0607 30.318 72.4666 29.8039 72.7689 28.9522C72.7895 27.7935 72.7243 26.9116 72.6263 26.6171" stroke="#835520" stroke-width="2" stroke-linecap="round"/>
+<defs>
+<filter id="filter0_g_4501_7628" x="1.81613" y="2.81613" width="82.6075" height="79.9771" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.26214492321014404 0.26214492321014404" numOctaves="3" seed="7701" />
+<feDisplacementMap in="shape" scale="2.367734432220459" xChannelSelector="R" yChannelSelector="G" result="displacedImage" width="100%" height="100%" />
+<feMerge result="effect1_texture_4501_7628">
+<feMergeNode in="displacedImage"/>
+</feMerge>
+</filter>
+<filter id="filter1_g_4501_7628" x="24.7046" y="40.1734" width="9.2075" height="9.20799" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.11878443509340286 0.11878443509340286" numOctaves="3" seed="7701" />
+<feDisplacementMap in="shape" scale="1.3154081106185913" xChannelSelector="R" yChannelSelector="G" result="displacedImage" width="100%" height="100%" />
+<feMerge result="effect1_texture_4501_7628">
+<feMergeNode in="displacedImage"/>
+</feMerge>
+</filter>
+<filter id="filter2_g_4501_7628" x="52.3281" y="40.1734" width="9.2075" height="9.20799" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.11878443509340286 0.11878443509340286" numOctaves="3" seed="7701" />
+<feDisplacementMap in="shape" scale="1.3154081106185913" xChannelSelector="R" yChannelSelector="G" result="displacedImage" width="100%" height="100%" />
+<feMerge result="effect1_texture_4501_7628">
+<feMergeNode in="displacedImage"/>
+</feMerge>
+</filter>
+<radialGradient id="paint0_radial_4501_7628" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(43.12 51.1683) rotate(90) scale(58.0644 57.7092)">
+<stop offset="0.163462" stop-color="#FFBF21"/>
+<stop offset="1" stop-color="#FFF9E5"/>
+</radialGradient>
+</defs>
+</svg>

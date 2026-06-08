@@ -1,8 +1,10 @@
+import { formatCourseEstimatedTime } from "@/utils/formatCourseEstimatedTime";
+import CourseBreadThumbnail from "./CourseBreadThumbnail";
 import type { CourseSummary } from "./types";
 
 interface ResultSummaryCardProps {
   summary: CourseSummary;
-  iconSrc?: string;
+  iconSeed?: string | number;
   liked?: boolean;
   likeCount?: number;
   onToggleLike?: () => void;
@@ -29,43 +31,35 @@ function HeartIcon({ filled }: { filled: boolean }) {
 
 export default function ResultSummaryCard({
   summary,
-  iconSrc,
+  iconSeed,
   liked = false,
   likeCount = 0,
   onToggleLike,
 }: ResultSummaryCardProps) {
+  const durationLabel = formatCourseEstimatedTime(summary.duration) || summary.duration;
+
   return (
     <section className="flex items-center gap-x2_5 bg-white px-x5 pt-x9 pb-x6">
-      <div className="flex h-[80px] w-[80px] items-center justify-center p-x2_5">
-        {iconSrc ? (
-          <img src={iconSrc} alt="" aria-hidden className="h-[60px] w-[60px] object-contain" />
-        ) : (
-          <div className="h-[60px] w-[60px] rounded-full bg-[#dcdee3]" />
-        )}
-      </div>
+      {iconSeed != null ? (
+        <CourseBreadThumbnail seed={iconSeed} size={60} />
+      ) : (
+        <div className="size-[60px] shrink-0 rounded-full bg-[#dcdee3]" />
+      )}
 
-      <div className="flex-1">
+      <div className="min-w-0 flex-1">
         <h2 className="font-pretendard typo-t7bold text-[#1a1c20]">{summary.title}</h2>
 
-        <div className="mt-x2 flex items-center gap-x2">
-          <div className="flex items-center gap-x1">
-            <span className="font-pretendard typo-t4medium whitespace-nowrap text-[#868b94]">
-              소요시간
-            </span>
-            <span className="font-pretendard typo-t4medium whitespace-nowrap text-[#2a3038]">
-              {summary.duration}
-            </span>
+        <div className="mt-x2 flex flex-wrap items-center gap-x2 gap-y-x1">
+          <div className="flex min-w-0 items-center gap-x1">
+            <span className="font-pretendard typo-t4medium shrink-0 text-[#868b94]">소요시간</span>
+            <span className="font-pretendard typo-t4medium text-[#2a3038]">{durationLabel}</span>
           </div>
 
-          <span className="font-pretendard typo-t4medium whitespace-nowrap text-[#868b94]">·</span>
+          <span className="font-pretendard typo-t4medium shrink-0 text-[#868b94]">·</span>
 
-          <div className="flex items-center gap-x1">
-            <span className="font-pretendard typo-t4medium whitespace-nowrap text-[#868b94]">
-              예상비용
-            </span>
-            <span className="font-pretendard typo-t4medium whitespace-nowrap text-[#2a3038]">
-              {summary.price}
-            </span>
+          <div className="flex min-w-0 items-center gap-x1">
+            <span className="font-pretendard typo-t4medium shrink-0 text-[#868b94]">예상비용</span>
+            <span className="font-pretendard typo-t4medium text-[#2a3038]">{summary.price}</span>
           </div>
         </div>
       </div>

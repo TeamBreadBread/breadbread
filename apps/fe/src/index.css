@@ -48,6 +48,12 @@
 		filter: brightness(0) saturate(100%) invert(58%) sepia(79%) saturate(1742%)
 			hue-rotate(346deg) brightness(101%) contrast(101%);
 	}
+
+	/** SVG img 아이콘을 red_700(#E25C50) 톤으로 */
+	.icon-red-700 {
+		filter: brightness(0) saturate(100%) invert(52%) sepia(36%) saturate(1126%)
+			hue-rotate(326deg) brightness(92%) contrast(91%);
+	}
 }
 
 @layer components {

@@ -9,13 +9,13 @@ import CourseTimeline from "@/components/domain/ai-course/CourseTimeline";
 import ResultSummaryCard from "@/components/domain/ai-course/ResultSummaryCard";
 import type { CoursePlace, CourseSummary } from "@/components/domain/ai-course/types";
 import { getDevFallbackCourseId } from "@/lib/courseIdFallback";
-import { pickCourseBreadIcon } from "@/lib/courseBreadIcons";
+import { formatCourseEstimatedTime } from "@/utils/formatCourseEstimatedTime";
 import {
   getLatestAiCourseDepartureCoords,
   getAiCourseDepartureMarkerLabel,
 } from "@/lib/aiCourseDepartureCoords";
 import CourseKakaoMap from "@/components/domain/ai-course/CourseKakaoMap";
-import { courseBakeriesToMapPoints } from "@/components/domain/ai-course/courseMapPoints";
+import { useCourseMapPoints } from "@/hooks/useCourseMapPoints";
 import handleArrow from "@/assets/icons/handle_arrowup.png";
 import { useAiSearchBottomSheet } from "@/hooks/useAiSearchBottomSheet";
 import {
@@ -72,11 +72,13 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     const raw = sessionStorage.getItem(AI_COURSE_RESULT_STORAGE_KEY);
     if (!raw) return null;
     try {
-      return JSON.parse(raw) as CourseDetail;
+      const parsed = JSON.parse(raw) as CourseDetail;
+      if (effectiveCourseId && parsed.id !== effectiveCourseId) return null;
+      return parsed;
     } catch {
       return null;
     }
-  }, []);
+  }, [effectiveCourseId]);
 
   const [apiCourseDetail, setApiCourseDetail] = useState<{
     courseId: number;
@@ -87,15 +89,21 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     Map<number, { level?: string | null; expectedWaitMin?: number | null }>
   >(new Map());
 
-  // 루트 목록 등 sessionStorage에 코스 정보가 없는 경로로 진입한 경우 courseId로 직접 조회
+  // courseId가 있으면 항상 API로 최신 코스 상세를 조회한다.
   useEffect(() => {
     if (!effectiveCourseId) return undefined;
-    if (storedCourseDetail?.id === effectiveCourseId) return undefined;
 
     let cancelled = false;
+
     void getCourseDetail(effectiveCourseId)
       .then((detail) => {
-        if (!cancelled) setApiCourseDetail({ courseId: effectiveCourseId, detail });
+        if (cancelled) return;
+        setApiCourseDetail({ courseId: effectiveCourseId, detail });
+        try {
+          sessionStorage.setItem(AI_COURSE_RESULT_STORAGE_KEY, JSON.stringify(detail));
+        } catch {
+          /* ignore */
+        }
       })
       .catch(() => {
         /* 조회 실패 시 sessionStorage/하드코딩 폴백 사용 */
@@ -103,13 +111,18 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     return () => {
       cancelled = true;
     };
-  }, [effectiveCourseId, storedCourseDetail]);
+  }, [effectiveCourseId]);
 
   const courseDetail: CourseDetail | null = useMemo(() => {
     if (apiCourseDetail?.courseId === effectiveCourseId) return apiCourseDetail.detail;
     if (storedCourseDetail?.id === effectiveCourseId) return storedCourseDetail;
-    return storedCourseDetail;
+    return null;
   }, [storedCourseDetail, apiCourseDetail, effectiveCourseId]);
+
+  const courseDetailLoading =
+    effectiveCourseId != null &&
+    apiCourseDetail?.courseId !== effectiveCourseId &&
+    storedCourseDetail?.id !== effectiveCourseId;
 
   useEffect(() => {
     const bakeryIds =
@@ -150,31 +163,10 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
         : summary.price;
     return {
       title: courseDetail.name || summary.title,
-      duration: courseDetail.estimatedTime || summary.duration,
+      duration: formatCourseEstimatedTime(courseDetail.estimatedTime) || summary.duration,
       price: costLabel,
     };
   }, [courseDetail]);
-
-  const mapBakeries = useMemo(() => {
-    if (!courseDetail?.bakeries?.length) return [];
-    return courseBakeriesToMapPoints(courseDetail.bakeries);
-  }, [courseDetail]);
-
-  const courseIconSrc = useMemo(
-    () => pickCourseBreadIcon(effectiveCourseId ?? dynamicSummary?.title ?? summary.title),
-    [effectiveCourseId, dynamicSummary?.title],
-  );
-
-  const departurePoint = useMemo(() => {
-    const stored = getLatestAiCourseDepartureCoords();
-    if (!stored) return null;
-
-    return {
-      lat: stored.latitude,
-      lng: stored.longitude,
-      label: stored.markerLabel?.trim() || getAiCourseDepartureMarkerLabel() || "출발지",
-    };
-  }, []);
 
   const dynamicPlaces: CoursePlace[] | null = useMemo(() => {
     if (!courseDetail) return null;
@@ -192,12 +184,37 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     });
   }, [courseDetail, congestionByBakeryId]);
 
+  const { mapPoints: mapBakeries, resolving: mapPointsResolving } = useCourseMapPoints(
+    courseDetail?.bakeries,
+  );
+
+  const mapLoading = (courseDetailLoading && !courseDetail) || mapPointsResolving;
+  const useDevFallbackContent = !effectiveCourseId;
+  const displaySummary = dynamicSummary ?? (useDevFallbackContent ? summary : null);
+  const displayPlaces = dynamicPlaces ?? (useDevFallbackContent ? places : null);
+  const courseIconSeed = effectiveCourseId ?? displaySummary?.title ?? summary.title;
+
+  const departurePoint = useMemo(() => {
+    const stored = getLatestAiCourseDepartureCoords();
+    if (!stored) return null;
+
+    return {
+      lat: stored.latitude,
+      lng: stored.longitude,
+      label: stored.markerLabel?.trim() || getAiCourseDepartureMarkerLabel() || "출발지",
+    };
+  }, []);
+
   const [showSavedBanner, setShowSavedBanner] = useState(false);
 
   const { sheetRef, contentRef, liveSheetTopY, isDragging, isHalfSheet, togglePhase } =
     useAiSearchBottomSheet();
 
   const mapHeightPx = useMemo(() => Math.max(160, Math.round(liveSheetTopY)), [liveSheetTopY]);
+
+  const resolvedSummary =
+    displaySummary ??
+    (effectiveCourseId ? { title: "코스 불러오는 중…", duration: "—", price: "—" } : summary);
 
   const handleCourseGuide = async () => {
     if (!effectiveCourseId) {
@@ -322,9 +339,11 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
         aria-hidden={false}
       >
         <CourseKakaoMap
+          key={effectiveCourseId ?? "no-course"}
           bakeries={mapBakeries}
           departurePoint={departurePoint}
           className="h-full w-full"
+          isLoading={mapLoading && mapBakeries.length === 0}
         />
       </div>
 
@@ -332,7 +351,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
         <div className="pointer-events-auto bg-white shadow-[0_1px_0_rgba(0,0,0,0.06)]">
           <AppTopBar
             title="AI 추천 코스"
-            onBack={() => navigate({ to: "/home" })}
+            onBack={() => navigate({ to: from === "route" ? "/route" : "/home" })}
             rightAction={
               <button
                 type="button"
@@ -343,7 +362,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
               </button>
             }
           />
-          <ResultSummaryCard summary={dynamicSummary ?? summary} iconSrc={courseIconSrc} />
+          <ResultSummaryCard summary={resolvedSummary} iconSeed={courseIconSeed} />
         </div>
       </div>
 
@@ -383,13 +402,19 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
             "pb-[calc(160px+env(safe-area-inset-bottom))]",
           )}
         >
-          <CourseTimeline
-            places={dynamicPlaces ?? places}
-            onPlaceClick={handlePlaceClick}
-            canReorder={Boolean(courseDetail?.bakeries && courseDetail.bakeries.length > 1)}
-            reorderBusy={reorderBusy}
-            onMoveBakery={handleMoveBakery}
-          />
+          {displayPlaces && displayPlaces.length > 0 ? (
+            <CourseTimeline
+              places={displayPlaces}
+              onPlaceClick={handlePlaceClick}
+              canReorder={Boolean(courseDetail?.bakeries && courseDetail.bakeries.length > 1)}
+              reorderBusy={reorderBusy}
+              onMoveBakery={handleMoveBakery}
+            />
+          ) : courseDetailLoading ? (
+            <p className="px-x5 py-x8 text-center font-pretendard text-size-4 text-gray-500">
+              코스 불러오는 중…
+            </p>
+          ) : null}
         </div>
       </aside>
 

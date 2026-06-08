@@ -21,7 +21,7 @@ const sections: CommunitySectionItem[] = [
   {
     title: BBANGTEO_CURATION_SECTION_TITLE,
     /** 헤더·패딩·축소 미리보기 카드(이미지 92 + 텍스트) 합에 맞춘 최소 높이 — 데이터는 홈과 동일 API */
-    sectionHeight: 258,
+    sectionHeight: 280,
     contentType: "curationApi",
   },
   {

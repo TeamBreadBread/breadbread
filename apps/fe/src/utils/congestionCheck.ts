@@ -137,6 +137,48 @@ export function buildCongestionAlertMessage(
   return `😥 현재 방문 예정인 ${bakeryName}이(가) 혼잡해요.${waitText}\n코스를 변경해드릴까요?`;
 }
 
+export function findAlternativeBakerySuggestion(
+  results: CongestionCheckResult[],
+  primaryAlert: CongestionCheckResult,
+  bakeryNamesById?: BakeryNameLookup,
+): { bakeryId: number; bakeryName: string } | null {
+  const candidates = [...results]
+    .filter((item) => item.bakeryId !== primaryAlert.bakeryId)
+    .sort((a, b) => {
+      const aBusy = isCongestionAlertResult(a) ? 1 : 0;
+      const bBusy = isCongestionAlertResult(b) ? 1 : 0;
+      if (aBusy !== bBusy) return aBusy - bBusy;
+      return (a.congestionScore ?? 0) - (b.congestionScore ?? 0);
+    });
+
+  const picked = candidates[0];
+  if (!picked) return null;
+
+  return {
+    bakeryId: picked.bakeryId,
+    bakeryName: lookupBakeryName(picked.bakeryId, picked.bakeryName, bakeryNamesById),
+  };
+}
+
+export function buildCongestionChatMessage(
+  primaryAlert: CongestionCheckResult,
+  alternative: { bakeryName: string },
+  bakeryNamesById?: BakeryNameLookup,
+): string {
+  const congestedName = lookupBakeryName(
+    primaryAlert.bakeryId,
+    primaryAlert.bakeryName,
+    bakeryNamesById,
+  );
+
+  return [
+    `지금 ${congestedName} 웨이팅이 너무 길어서 빵을 먹기 어려울 것 같아요 ㅠㅠ`,
+    "",
+    "대신 고객님 취향에 맞는 다른 빵집을 찾아봤어요 !",
+    `${alternative.bakeryName}으로 변경해드릴까요?`,
+  ].join("\n");
+}
+
 export function buildCongestionCheckReply(
   response: {
     success: boolean;

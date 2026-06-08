@@ -57,7 +57,6 @@ const DongCurationSection = ({
 
         <div className="min-w-0 w-full">
           <CurationBakeryContent
-            key={selectedDong}
             bakeryListEntryFrom="home"
             useSummary
             listParamsOverride={{ size: 60, dong: selectedDong }}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AppIcon, IconAssets } from "@/components/icons";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
-import { AppTopBar, Button } from "@/components/common";
+import { Button } from "@/components/common";
 import ComingSoonDialog from "@/components/common/dialog/ComingSoonDialog";
 import MobileFrame from "@/components/layout/MobileFrame";
 import leadingLogo from "@/assets/icons/Leading.svg";
@@ -29,7 +29,7 @@ const SOCIAL_BUTTONS = [
   },
   {
     id: "email",
-    label: "이메일로 계속하기",
+    label: "아이디로 계속하기",
     className: "bg-gray-00 text-gray-1000 border border-gray-300",
   },
 ] as const;
@@ -80,8 +80,6 @@ export default function LoginEntryPage() {
 
   return (
     <MobileFrame>
-      <AppTopBar title="로그인" hideBack />
-
       <main className="relative flex flex-1 flex-col items-center py-x8">
         <div className="flex w-full flex-col items-center gap-x4">
           <section className="flex w-full flex-col items-center px-x5 pt-x8 text-center">
@@ -89,7 +87,7 @@ export default function LoginEntryPage() {
               src={leadingLogo}
               alt=""
               aria-hidden
-              className="mb-x6 h-[74px] w-[74px] object-contain"
+              className="mb-x6 h-[100px] w-[100px] object-contain"
             />
             <div className="flex w-full flex-col items-center gap-x2">
               <p className={heroTitleClassName}>
@@ -108,13 +106,14 @@ export default function LoginEntryPage() {
                 onClick={() => handleSocialLogin(id)}
                 className={cn(socialButtonBaseClassName, className)}
               >
-                {id === "email" ? null : (
-                  <AppIcon
-                    src={SOCIAL_ICON_BY_PROVIDER[id]}
-                    size="x5"
-                    className={id === "naver" ? "[filter:brightness(0)_invert(1)]" : undefined}
-                  />
-                )}
+                <AppIcon
+                  src={SOCIAL_ICON_BY_PROVIDER[id]}
+                  size="x5"
+                  className={cn(
+                    "absolute left-x5 top-1/2 -translate-y-1/2",
+                    id === "naver" ? "[filter:brightness(0)_invert(1)]" : undefined,
+                  )}
+                />
                 {label}
               </Button>
             ))}

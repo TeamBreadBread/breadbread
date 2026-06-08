@@ -39,6 +39,39 @@ export async function reorderCourseForCongestion(
   return { movedBakeryName: movedBakery };
 }
 
+/** 혼잡 빵집과 대체 빵집의 방문 순서를 맞바꿉니다. */
+export async function swapBakeryInCourse(
+  courseId: number,
+  congestedBakeryId: number,
+  alternativeBakeryId: number,
+): Promise<{ fromName: string; toName: string }> {
+  const course = await getCourseDetail(courseId);
+  const bakeryIds = course.bakeries.map((bakery) => bakery.id).filter((id) => id > 0);
+
+  const congestedIndex = bakeryIds.indexOf(congestedBakeryId);
+  const alternativeIndex = bakeryIds.indexOf(alternativeBakeryId);
+
+  if (congestedIndex < 0 || alternativeIndex < 0) {
+    throw new Error("코스에서 변경할 빵집을 찾을 수 없습니다.");
+  }
+
+  const newOrder = [...bakeryIds];
+  [newOrder[congestedIndex], newOrder[alternativeIndex]] = [
+    newOrder[alternativeIndex],
+    newOrder[congestedIndex],
+  ];
+
+  await reorderCourseBakeries(courseId, { bakeryOrder: newOrder });
+
+  const fromName =
+    course.bakeries.find((bakery) => bakery.id === congestedBakeryId)?.name?.trim() ?? "기존 빵집";
+  const toName =
+    course.bakeries.find((bakery) => bakery.id === alternativeBakeryId)?.name?.trim() ??
+    "추천 빵집";
+
+  return { fromName, toName };
+}
+
 /**
  * TODO(BE): 혼잡 빵집을 대체 빵집으로 교체하는 API가 필요합니다.
  * - POST /courses/{courseId}/bakeries/replace
