@@ -30,13 +30,12 @@ public class AiCourseRedisService {
         save(jobId, AiJobCache.builder().status(AiJobStatus.PENDING).userId(userId).build());
     }
 
-    public void saveCompleted(String jobId, Long courseId) {
+    public void saveCompleted(String jobId) {
         AiJobCache current = findCacheByJobId(jobId).orElse(null);
         save(
                 jobId,
                 AiJobCache.builder()
                         .status(AiJobStatus.COMPLETED)
-                        .courseId(courseId)
                         .userId(current != null ? current.getUserId() : null)
                         .build());
     }
@@ -61,10 +60,12 @@ public class AiCourseRedisService {
                                 throw new CustomException(ErrorCode.FORBIDDEN);
                             }
                             return new AiJobStatusResponse(
-                                    cache.getStatus(),
-                                    cache.getCourseId(),
-                                    cache.getErrorMessage());
+                                    cache.getStatus(), cache.getErrorMessage());
                         });
+    }
+
+    public void deleteJob(String jobId) {
+        stringRedisTemplate.delete(JOB_PREFIX + jobId);
     }
 
     private Optional<AiJobCache> findCacheByJobId(String jobId) {

@@ -3,6 +3,7 @@ package com.breadbread.course.controller;
 import com.breadbread.auth.dto.CustomUserDetails;
 import com.breadbread.bakery.entity.BreadType;
 import com.breadbread.course.dto.*;
+import com.breadbread.course.dto.ai.AiCoursePreviewResponse;
 import com.breadbread.course.dto.ai.AiCourseRequest;
 import com.breadbread.course.dto.ai.AiJobStatusResponse;
 import com.breadbread.course.service.CourseService;
@@ -112,12 +113,39 @@ public class CourseController {
 
     @Operation(
             summary = "AI 코스 추천 상태 조회",
-            description = "status: PENDING | COMPLETED | FAILED. COMPLETED 시 courseId로 코스를 조회하세요.")
+            description =
+                    "status: PENDING | COMPLETED | FAILED. COMPLETED 시 GET /courses/ai/{jobId}/preview로 결과를 확인한 뒤 POST /courses/ai/{jobId}/save로 저장하세요.")
     @GetMapping("/ai/status/{jobId}")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<AiJobStatusResponse> getAiJobStatus(
             @PathVariable String jobId, @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ApiResponse.ok(courseService.getAiJobStatus(jobId, userDetails.getId()));
+    }
+
+    @Operation(
+            summary = "AI 코스 추천 결과 미리보기",
+            description = "추천 완료 후 저장 전에 결과를 확인합니다. 24시간 내에 저장하지 않으면 결과가 만료됩니다.")
+    @GetMapping("/ai/{jobId}/preview")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<AiCoursePreviewResponse> getAiPreview(
+            @PathVariable String jobId, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ApiResponse.ok(courseService.getAiPreview(jobId, userDetails.getId()));
+    }
+
+    @Operation(
+            summary = "AI 코스 저장",
+            description =
+                    "미리보기 확인 후 코스를 내 목록에 저장합니다. 저장 후 Redis 임시 데이터는 삭제됩니다."
+                            + " bakeryOrder 미전달 시 AI 추천 순서 그대로 저장됩니다.")
+    @PostMapping("/ai/{jobId}/save")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<Long> saveAiCourse(
+            @PathVariable String jobId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody(required = false) ReorderBakeriesRequest reorderRequest) {
+        List<Long> bakeryOrder = reorderRequest != null ? reorderRequest.getBakeryOrder() : null;
+        return ApiResponse.ok(courseService.saveAiCourse(jobId, userDetails.getId(), bakeryOrder));
     }
 
     @Operation(summary = "AI 코스 삭제 (본인 코스만 가능)")

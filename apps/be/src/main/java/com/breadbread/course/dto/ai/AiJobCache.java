@@ -13,7 +13,6 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AiJobCache {
     private AiJobStatus status;
-    private Long courseId;
     private String errorMessage;
     private Long userId;
 }

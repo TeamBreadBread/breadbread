@@ -1,8 +1,9 @@
 package com.breadbread.course.service.ai;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -17,10 +18,8 @@ import com.breadbread.course.dto.ai.AiCourseRequest;
 import com.breadbread.course.dto.ai.AiCourseWebhookResponse;
 import com.breadbread.course.dto.ai.RecommendedBakeryResponse;
 import com.breadbread.course.entity.BudgetRange;
-import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.FlexibilityLevel;
 import com.breadbread.course.entity.TravelType;
-import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.notification.service.FcmService;
 import com.breadbread.user.entity.User;
@@ -30,11 +29,11 @@ import com.breadbread.user.entity.WaitingTolerance;
 import com.breadbread.user.repository.UserPreferenceRepository;
 import com.breadbread.user.repository.UserRepository;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -52,8 +51,8 @@ class AiCourseAsyncServiceTest {
     @Mock private BreadRepository breadRepository;
     @Mock private CrowdTimeRepository crowdTimeRepository;
     @Mock private AiWebhookClient aiWebhookClient;
-    @Mock private CourseRepository courseRepository;
     @Mock private AiCourseRedisService aiCourseRedisService;
+    @Mock private AiCourseResultRedisService aiCourseResultRedisService;
     @Mock private TransactionTemplate transactionTemplate;
     @Mock private FcmService fcmService;
 
@@ -75,8 +74,8 @@ class AiCourseAsyncServiceTest {
                         breadRepository,
                         crowdTimeRepository,
                         aiWebhookClient,
-                        courseRepository,
                         aiCourseRedisService,
+                        aiCourseResultRedisService,
                         transactionTemplate,
                         fcmService);
     }
@@ -124,7 +123,7 @@ class AiCourseAsyncServiceTest {
         when(breadRepository.findAllByBakeryIdIn(List.of())).thenReturn(List.of());
         when(crowdTimeRepository.findAllByBakeryIdIn(List.of())).thenReturn(List.of());
         when(aiWebhookClient.requestCourse(eq("job-throw"), any()))
-                .thenThrow(new RuntimeException("portone down"));
+                .thenThrow(new RuntimeException("webhook down"));
 
         aiCourseAsyncService.processAiCourse("job-throw", 1L, aiRequest()).join();
 
@@ -133,58 +132,52 @@ class AiCourseAsyncServiceTest {
     }
 
     @Test
-    void processAiCourse_saveCompleted_whenWebhookSucceeds() {
+    void processAiCourse_savesResultToRedis_andSetsCompleted_whenWebhookSucceeds() {
         User user = user(1L);
-        UserPreference pref = preference(user);
         Bakery bakery = bakery(10L, "맛집");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userPreferenceRepository.findByUserId(1L)).thenReturn(Optional.of(pref));
+        when(userPreferenceRepository.findByUserId(1L)).thenReturn(Optional.of(preference(user)));
         when(bakeryRepository.findAllByActiveTrue()).thenReturn(List.of(bakery));
         when(breadRepository.findAllByBakeryIdIn(List.of(10L))).thenReturn(List.of());
         when(crowdTimeRepository.findAllByBakeryIdIn(List.of(10L))).thenReturn(List.of());
-
-        AiCourseWebhookResponse webhookResponse = validWebhookResponse(10L);
-        when(aiWebhookClient.requestCourse(eq("job-d"), any())).thenReturn(webhookResponse);
-        when(bakeryRepository.findAllByIdInAndActiveTrue(List.of(10L))).thenReturn(List.of(bakery));
-        when(courseRepository.save(any(Course.class)))
-                .thenAnswer(
-                        inv -> {
-                            Course c = inv.getArgument(0);
-                            ReflectionTestUtils.setField(c, "id", 777L);
-                            return c;
-                        });
+        when(aiWebhookClient.requestCourse(eq("job-d"), any()))
+                .thenReturn(validWebhookResponse(10L));
 
         aiCourseAsyncService.processAiCourse("job-d", 1L, aiRequest()).join();
 
-        verify(aiCourseRedisService).saveCompleted("job-d", 777L);
-        ArgumentCaptor<Course> courseCaptor = ArgumentCaptor.forClass(Course.class);
-        verify(courseRepository).save(courseCaptor.capture());
-        assertThat(courseCaptor.getValue().getName()).isEqualTo("ai-course-name");
+        // Redis 임시 저장 + 상태 COMPLETED 업데이트
+        verify(aiCourseResultRedisService).saveResult(eq("job-d"), eq(1L), any(), any());
+        verify(aiCourseRedisService).saveCompleted("job-d");
+        // RDB 저장은 CourseService.saveAiCourse()에서 처리 — 여기서는 하지 않음
+        verify(fcmService).sendToUser(eq(1L), any(), any(), any(Map.class));
     }
 
     @Test
-    void processAiCourse_saveFailed_whenRecommendedBakeryMissingInDb() {
+    void processAiCourse_saveCompleted_evenWhenFcmFails() {
         User user = user(1L);
-        UserPreference pref = preference(user);
         Bakery bakery = bakery(10L, "맛집");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userPreferenceRepository.findByUserId(1L)).thenReturn(Optional.of(pref));
+        when(userPreferenceRepository.findByUserId(1L)).thenReturn(Optional.of(preference(user)));
         when(bakeryRepository.findAllByActiveTrue()).thenReturn(List.of(bakery));
         when(breadRepository.findAllByBakeryIdIn(List.of(10L))).thenReturn(List.of());
         when(crowdTimeRepository.findAllByBakeryIdIn(List.of(10L))).thenReturn(List.of());
+        when(aiWebhookClient.requestCourse(eq("job-fcm"), any()))
+                .thenReturn(validWebhookResponse(10L));
+        doThrow(new RuntimeException("FCM 연결 실패"))
+                .when(fcmService)
+                .sendToUser(any(), any(), any(), any(Map.class));
 
-        AiCourseWebhookResponse webhookResponse = validWebhookResponse(99L);
-        when(aiWebhookClient.requestCourse(eq("job-e"), any())).thenReturn(webhookResponse);
-        when(bakeryRepository.findAllByIdInAndActiveTrue(List.of(99L))).thenReturn(List.of());
+        aiCourseAsyncService.processAiCourse("job-fcm", 1L, aiRequest()).join();
 
-        aiCourseAsyncService.processAiCourse("job-e", 1L, aiRequest()).join();
-
-        verify(aiCourseRedisService)
-                .saveFailed(
-                        eq("job-e"), eq(ErrorCode.AI_RECOMMENDED_BAKERY_NOT_FOUND.getMessage()));
+        // FCM 실패와 무관하게 작업은 COMPLETED
+        verify(aiCourseRedisService).saveCompleted("job-fcm");
+        // saveFailed가 호출되어선 안 됨
+        verify(aiCourseRedisService, never()).saveFailed(any(), any());
     }
+
+    // ── 헬퍼 ────────────────────────────────────────────────────────────────
 
     private static AiCourseWebhookResponse validWebhookResponse(long bakeryId) {
         RecommendedBakeryResponse rb = new RecommendedBakeryResponse();

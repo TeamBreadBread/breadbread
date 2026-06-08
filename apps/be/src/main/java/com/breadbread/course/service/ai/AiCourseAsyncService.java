@@ -11,19 +11,17 @@ import com.breadbread.course.client.AiWebhookClient;
 import com.breadbread.course.dto.ai.AiCourseRequest;
 import com.breadbread.course.dto.ai.AiCourseWebhookRequest;
 import com.breadbread.course.dto.ai.AiCourseWebhookResponse;
-import com.breadbread.course.dto.ai.RecommendedBakeryResponse;
-import com.breadbread.course.entity.*;
-import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.util.GeoDistance;
 import com.breadbread.notification.service.FcmService;
 import com.breadbread.user.dto.PreferenceResponse;
-import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserPreference;
 import com.breadbread.user.repository.UserPreferenceRepository;
 import com.breadbread.user.repository.UserRepository;
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -45,8 +43,8 @@ public class AiCourseAsyncService {
     private final BreadRepository breadRepository;
     private final CrowdTimeRepository crowdTimeRepository;
     private final AiWebhookClient aiWebhookClient;
-    private final CourseRepository courseRepository;
     private final AiCourseRedisService aiCourseRedisService;
+    private final AiCourseResultRedisService aiCourseResultRedisService;
     private final TransactionTemplate transactionTemplate;
     private final FcmService fcmService;
 
@@ -91,7 +89,6 @@ public class AiCourseAsyncService {
                                                         Collectors.groupingBy(
                                                                 ct -> ct.getBakery().getId()));
 
-                                // BakeryAiResponse.from() 내부의 모든 lazy 필드 접근이 트랜잭션 안에서 일어남
                                 List<BakeryAiResponse> bakeryAiResponses =
                                         candidateBakeries.stream()
                                                 .map(
@@ -128,105 +125,23 @@ public class AiCourseAsyncService {
                 return CompletableFuture.completedFuture(null);
             }
 
-            // 3. 쓰기 트랜잭션: DB 저장 — 실패 시 롤백 후 예외 전파
-            Long courseId =
-                    transactionTemplate.execute(
-                            status -> {
-                                User user =
-                                        userRepository
-                                                .findById(userId)
-                                                .orElseThrow(
-                                                        () ->
-                                                                new CustomException(
-                                                                        ErrorCode.USER_NOT_FOUND));
-                                UserPreference userPreference =
-                                        userPreferenceRepository
-                                                .findByUserId(userId)
-                                                .orElseThrow(
-                                                        () ->
-                                                                new CustomException(
-                                                                        ErrorCode
-                                                                                .PREFERENCE_NOT_FOUND));
+            // 3. AI 응답을 Redis에 임시 저장 (TTL 24시간)
+            aiCourseResultRedisService.saveResult(jobId, userId, request, response);
 
-                                List<Long> recommendedIds =
-                                        response.getBakeries().stream()
-                                                .map(RecommendedBakeryResponse::getId)
-                                                .toList();
-                                Map<Long, Bakery> bakeryMap =
-                                        bakeryRepository
-                                                .findAllByIdInAndActiveTrue(recommendedIds)
-                                                .stream()
-                                                .collect(Collectors.toMap(Bakery::getId, b -> b));
+            // 4. Redis 상태 COMPLETED로 업데이트
+            aiCourseRedisService.saveCompleted(jobId);
+            log.info("[AI 코스 생성] 완료 (Redis 임시 저장): jobId={}", jobId);
 
-                                if (bakeryMap.size() != recommendedIds.size()) {
-                                    log.error("[AI 코스 생성] DB에 없는 빵집 ID 포함 jobId={}", jobId);
-                                    throw new CustomException(
-                                            ErrorCode.AI_RECOMMENDED_BAKERY_NOT_FOUND);
-                                }
-
-                                AiCourseInfo aiCourseInfo =
-                                        AiCourseInfo.builder()
-                                                .travelType(request.getTravelType())
-                                                .budgetRange(request.getBudgetRange())
-                                                .minimizeRoute(request.isMinimizeRoute())
-                                                .latitude(request.getLatitude())
-                                                .longitude(request.getLongitude())
-                                                .waitingPreference(request.isWaitingPreference())
-                                                .drinkPreference(request.isDrinkPreference())
-                                                .bakeryCount(request.getBakeryCount())
-                                                .flexibilityLevel(request.getFlexibilityLevel())
-                                                .recommendReason(response.getRecommendReason())
-                                                .build();
-
-                                Course course =
-                                        Course.createAi(
-                                                response.getName(),
-                                                user,
-                                                userPreference,
-                                                aiCourseInfo,
-                                                new HashSet<>(request.getBreadTypes()));
-                                course.updateAiResult(
-                                        response.getEstimatedCost(),
-                                        response.getEstimatedTime(),
-                                        response.getTheme(),
-                                        response.getSummary());
-
-                                Course saved = courseRepository.save(course);
-
-                                response.getBakeries().stream()
-                                        .sorted(
-                                                Comparator.comparingInt(
-                                                        RecommendedBakeryResponse::getOrder))
-                                        .forEach(
-                                                item -> {
-                                                    CourseBakery cb =
-                                                            CourseBakery.builder()
-                                                                    .bakery(
-                                                                            bakeryMap.get(
-                                                                                    item.getId()))
-                                                                    .course(saved)
-                                                                    .visitOrder(item.getOrder())
-                                                                    .recommendedBread(
-                                                                            item
-                                                                                    .getRecommendedBread())
-                                                                    .reason(item.getReason())
-                                                                    .build();
-                                                    saved.addCourseBakery(cb);
-                                                });
-
-                                return saved.getId();
-                            });
-
-            // 4. Redis 업데이트 (트랜잭션 밖)
-            aiCourseRedisService.saveCompleted(jobId, courseId);
-            log.info("[AI 코스 생성] 완료: jobId={}, courseId={}", jobId, courseId);
-
-            // 5. FCM 알림 (트랜잭션 밖, 비동기)
-            fcmService.sendToUser(
-                    userId,
-                    "코스 생성 완료 ✨",
-                    response.getName() + " 코스가 완성됐습니다",
-                    Map.of("type", "AI_COURSE", "courseId", String.valueOf(courseId)));
+            // 5. FCM 알림 (실패해도 AI 작업 결과에 영향 없음)
+            try {
+                fcmService.sendToUser(
+                        userId,
+                        "AI 코스 추천 완료 ✨",
+                        response.getName() + " 코스 추천이 완료됐습니다. 확인하고 저장해보세요!",
+                        Map.of("type", "AI_COURSE_READY", "jobId", jobId));
+            } catch (Exception fcmEx) {
+                log.warn("[AI 코스 생성] FCM 알림 실패 (작업은 정상 완료): jobId={}", jobId, fcmEx);
+            }
 
         } catch (CustomException e) {
             log.error("[AI 코스 생성] 실패 jobId={}", jobId, e);
@@ -243,7 +158,6 @@ public class AiCourseAsyncService {
             List<Bakery> bakeries, AiCourseRequest request) {
         double departureLat = request.getLatitude();
         double departureLng = request.getLongitude();
-
         List<Bakery> sorted =
                 bakeries.stream()
                         .filter(
@@ -260,7 +174,6 @@ public class AiCourseAsyncService {
                                                         bakery.getLongitude())))
                         .limit(AI_BAKERY_CANDIDATE_LIMIT)
                         .toList();
-
         return sorted.isEmpty() ? bakeries : sorted;
     }
 }

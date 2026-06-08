@@ -42,9 +42,6 @@ class CongestionInstantCheckClientTest {
 
     @Test
     void check_returnsResponse_whenSuccessful() throws Exception {
-        CongestionInstantCheckResponse.CongestionResult result =
-                new CongestionInstantCheckResponse.CongestionResult();
-
         String json =
                 objectMapper.writeValueAsString(
                         Map.of("success", true, "data", List.of(), "error", ""));
