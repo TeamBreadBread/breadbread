@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { sendCuratorChat } from "@/api/curator";
+import { getBakeryById } from "@/api/bakery";
 import { getCourseDetail, getMyCourseRoutes } from "@/api/courses";
 import {
   cancelReservation,
@@ -20,13 +21,16 @@ import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import {
   CONGESTION_ACTION_BUTTONS,
   RESERVE_NUDGE_ACTION_BUTTONS,
+  buildCongestionChatButtons,
   type ChatActionButton,
-  type ChatButtonAction,
 } from "@/types/curatorActions";
-import { reorderCourseForCongestion } from "@/utils/courseCongestionActions";
+import { reorderCourseForCongestion, swapBakeryInCourse } from "@/utils/courseCongestionActions";
 import {
-  buildCongestionCheckReply,
   buildBakeryNameLookup,
+  buildCongestionChatMessage,
+  buildCongestionCheckReply,
+  findAlternativeBakerySuggestion,
+  findPrimaryCongestionAlert,
   isCongestionCheckIntent,
 } from "@/utils/congestionCheck";
 import {
@@ -40,30 +44,24 @@ import {
   resolvePreDepartureReminderStage,
 } from "@/utils/tourReminders";
 import { cn } from "@/utils/cn";
-import BreadDefaultLogo from "@/assets/icons/BreadDefaultLogo.svg";
-
-const QUICK_REPLIES = [
-  "현재 코스 설명해줘",
-  "다음 빵집 추천해줘",
-  "코스 순서 바꿀까?",
-  "혼잡하면 어디가 좋아?",
-] as const;
-
-const WELCOME_MESSAGE =
-  "안녕하세요! 🍞 BreadBread AI 큐레이터입니다.\n현재 코스 설명, 다음 빵집 추천, 순서 변경 등 궁금한 점을 자유롭게 물어보세요!";
+import ChatBotImage from "@/assets/images/Img_ChatBot.svg";
+import ChatbotCourseSpeechBubble, {
+  CHATBOT_FAB_POSITION_CLASS,
+  CHATBOT_FAB_SIZE,
+} from "@/components/domain/curator/ChatbotCourseSpeechBubble";
+import BreadBotChatModal from "@/components/domain/curator/BreadBotChatModal";
+import {
+  buildCourseExplainMessage,
+  COURSE_NOT_IN_PROGRESS_MESSAGE,
+  getBreadBotErrorMessage,
+  isCourseExplainIntent,
+  type ChatMessage,
+  type CongestionChatContext,
+  type CourseMovementBubble,
+} from "@/components/domain/curator/breadBotChat.types";
 
 const CHAT_STORAGE_KEY = "breadbot:chat:v1";
 const RESERVE_NUDGE_FIRED_KEY = "bbang_reserve_nudge_fired";
-
-type ChatRole = "user" | "bot";
-
-type ChatMessage = {
-  id: string;
-  role: ChatRole;
-  text: string;
-  actions?: ChatActionButton[];
-  quickReplies?: string[];
-};
 
 type ActionBubble = {
   text: string;
@@ -97,6 +95,47 @@ function actionsForCuratorType(
     return CONGESTION_ACTION_BUTTONS;
   }
   return [];
+}
+
+type AppendBotMessageOptions = {
+  actions?: ChatActionButton[];
+  showBakeryInfoId?: number;
+  showSadBread?: boolean;
+  congestionContext?: CongestionChatContext;
+};
+
+function buildCongestionChatBotMessage(
+  results: CongestionCheckResult[],
+  bakeryNamesById: Map<number, string>,
+): Omit<ChatMessage, "id" | "role"> | null {
+  const primaryAlert = findPrimaryCongestionAlert(results);
+  if (!primaryAlert) return null;
+
+  const congestedName =
+    bakeryNamesById.get(primaryAlert.bakeryId) ??
+    primaryAlert.bakeryName?.trim() ??
+    "방문 예정 빵집";
+  const alternative = findAlternativeBakerySuggestion(results, primaryAlert, bakeryNamesById);
+
+  if (!alternative) {
+    return {
+      text: `지금 ${congestedName} 웨이팅이 너무 길어서 빵을 먹기 어려울 것 같아요 ㅠㅠ\n\n다른 빵집을 찾지 못했어요. 기존 코스로 안내해 드릴게요.`,
+      actions: [{ label: "기존 코스로 안내", action: "keep_course" }],
+      showSadBread: true,
+    };
+  }
+
+  return {
+    text: buildCongestionChatMessage(primaryAlert, alternative, bakeryNamesById),
+    actions: buildCongestionChatButtons(alternative.bakeryName, alternative.bakeryId),
+    showSadBread: true,
+    congestionContext: {
+      congestedBakeryId: primaryAlert.bakeryId,
+      congestedBakeryName: congestedName,
+      alternativeBakeryId: alternative.bakeryId,
+      alternativeBakeryName: alternative.bakeryName,
+    },
+  };
 }
 
 type PersistedChat = { messages: ChatMessage[]; conversationId?: string };
@@ -150,7 +189,7 @@ function ActionButtons({
 }: {
   actions: ChatActionButton[];
   disabled?: boolean;
-  onAction: (action: ChatButtonAction) => void;
+  onAction: (button: ChatActionButton) => void;
 }) {
   return (
     <div
@@ -161,10 +200,10 @@ function ActionButtons({
     >
       {actions.map((action, index) => (
         <button
-          key={`${action.action}-${action.label}`}
+          key={`${action.action}-${action.label}-${action.bakeryId ?? ""}`}
           type="button"
           disabled={disabled}
-          onClick={() => onAction(action.action)}
+          onClick={() => onAction(action)}
           className={
             index === 0
               ? "rounded-r2 border border-orange-200 bg-orange-50 px-x2 py-x1-5 text-center font-pretendard text-size-2 leading-t3 text-orange-700 transition-colors hover:bg-orange-100 disabled:opacity-50"
@@ -182,7 +221,7 @@ export default function BreadBotWidget({
   courseId,
   showFloatingButton = true,
 }: BreadBotWidgetProps) {
-  const { startCourseGuide } = useLoginRequired();
+  const { startCourseGuide, courseGuideActive } = useLoginRequired();
   const navigate = useNavigate();
   const onTourPage = useRouterState({ select: (s) => s.location.pathname.startsWith("/tour") });
   const onRoutePage = useRouterState({ select: (s) => s.location.pathname === "/route" });
@@ -190,7 +229,6 @@ export default function BreadBotWidget({
   const [open, setOpen] = useState(false);
   const [persisted] = useState(loadPersistedChat);
   const [messages, setMessages] = useState<ChatMessage[]>(persisted.messages);
-  const [input, setInput] = useState("");
   const [conversationId, setConversationId] = useState<string | undefined>(
     persisted.conversationId,
   );
@@ -198,9 +236,15 @@ export default function BreadBotWidget({
   const [changeBubble, setChangeBubble] = useState<ActionBubble | null>(null);
   const [tourBubble, setTourBubble] = useState<TourBubble | null>(null);
   const [reserveNudgeBubble, setReserveNudgeBubble] = useState<ReserveNudgeBubble | null>(null);
+  const [courseMovementBubble, setCourseMovementBubble] = useState<CourseMovementBubble | null>(
+    null,
+  );
 
   const dismissedTourRef = useRef<Set<string>>(new Set());
+  const dismissedMovementRef = useRef<Set<string>>(new Set());
   const lastCongestionResultsRef = useRef<CongestionCheckResult[]>([]);
+  const lastCongestionContextRef = useRef<CongestionChatContext | null>(null);
+  const injectedCongestionKeyRef = useRef<string | null>(null);
   const activeReservationIdRef = useRef<number | null>(null);
   const navigateRef = useRef(navigate);
   const listRef = useRef<HTMLDivElement>(null);
@@ -213,14 +257,77 @@ export default function BreadBotWidget({
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading, open]);
 
-  const appendBotMessage = useCallback((text: string, actions?: ChatActionButton[]) => {
+  useEffect(() => {
+    if (!open || !courseGuideActive || !courseMovementBubble) return;
+    if (!courseMovementBubble.title.includes("혼잡")) return;
+    if (injectedCongestionKeyRef.current === courseMovementBubble.dismissKey) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      if (!courseId || courseId <= 0) return;
+
+      try {
+        const course = await getCourseDetail(courseId);
+        const bakeryIds = course.bakeries.map((bakery) => bakery.id).filter((id) => id > 0);
+        if (bakeryIds.length === 0) return;
+
+        const res = await checkTourCongestion({ courseId, bakeryIds });
+        if (cancelled) return;
+
+        const results = res.data ?? [];
+        lastCongestionResultsRef.current = results;
+        const bakeryNamesById = buildBakeryNameLookup(course.bakeries);
+        const congestionMessage = buildCongestionChatBotMessage(results, bakeryNamesById);
+        if (!congestionMessage) return;
+
+        if (congestionMessage.congestionContext) {
+          lastCongestionContextRef.current = congestionMessage.congestionContext;
+        }
+
+        setMessages((prev) => {
+          const congestedBakeryId = congestionMessage.congestionContext?.congestedBakeryId;
+          if (
+            congestedBakeryId != null &&
+            prev.some(
+              (message) => message.congestionContext?.congestedBakeryId === congestedBakeryId,
+            )
+          ) {
+            return prev;
+          }
+
+          return [
+            ...prev,
+            {
+              id: `congestion-auto-${Date.now()}`,
+              role: "bot",
+              ...congestionMessage,
+            },
+          ];
+        });
+
+        injectedCongestionKeyRef.current = courseMovementBubble.dismissKey;
+      } catch {
+        // ignore
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, courseGuideActive, courseMovementBubble, courseId]);
+
+  const appendBotMessage = useCallback((text: string, options?: AppendBotMessageOptions) => {
     setMessages((prev) => [
       ...prev,
       {
         id: `b-${Date.now()}`,
         role: "bot",
         text,
-        actions,
+        actions: options?.actions,
+        showBakeryInfoId: options?.showBakeryInfoId,
+        showSadBread: options?.showSadBread,
+        congestionContext: options?.congestionContext,
       },
     ]);
   }, []);
@@ -380,6 +487,86 @@ export default function BreadBotWidget({
     };
   }, [courseId, handleAutoTourStart, onRoutePage]);
 
+  const applyCourseMovementBubble = useCallback((next: CourseMovementBubble | null) => {
+    if (next && dismissedMovementRef.current.has(next.dismissKey)) return;
+    setCourseMovementBubble(next);
+  }, []);
+
+  /** 코스 안내 중 — 다음 방문 빵집 이동·혼잡도 말풍선 (챗봇 FAB 위 4px) */
+  useEffect(() => {
+    if (!courseGuideActive || !courseId || courseId <= 0) {
+      setCourseMovementBubble(null);
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const refresh = async () => {
+      try {
+        const current = await getCurrentTour();
+        if (cancelled) return;
+
+        if (!current || current.status !== "IN_PROGRESS" || current.courseId !== courseId) {
+          setCourseMovementBubble(null);
+          return;
+        }
+
+        const course = await getCourseDetail(courseId);
+        if (cancelled) return;
+
+        const visited = current.currentVisitOrder ?? 0;
+        const nextBakery = course.bakeries[visited];
+        if (!nextBakery) {
+          setCourseMovementBubble(null);
+          return;
+        }
+
+        const bakeryName = nextBakery.name?.trim() || `빵집 ${visited + 1}`;
+        const bakeryIds = course.bakeries.map((bakery) => bakery.id).filter((id) => id > 0);
+
+        let title = `${bakeryName}으로 이동중...`;
+        let subtitle = "예상 웨이팅을 확인해보세요";
+        let dismissKey = `moving:${courseId}:${visited}`;
+
+        try {
+          const res = await checkTourCongestion({
+            courseId,
+            bakeryIds,
+            targetBakeryId: nextBakery.id,
+          });
+          if (cancelled) return;
+
+          lastCongestionResultsRef.current = res.data ?? [];
+          const { isCongestionAlert, primaryAlert } = buildCongestionCheckReply(res, {
+            bakeryNamesById: buildBakeryNameLookup(course.bakeries),
+          });
+
+          if (isCongestionAlert && primaryAlert) {
+            title = `${bakeryName} 혼잡해요`;
+            dismissKey = `congestion:${courseId}:${nextBakery.id}:${primaryAlert.level ?? ""}:${primaryAlert.expectedWaitMin ?? 0}`;
+            subtitle =
+              primaryAlert.expectedWaitMin != null && primaryAlert.expectedWaitMin > 0
+                ? `예상 대기 약 ${primaryAlert.expectedWaitMin}분 · 코스를 확인해보세요`
+                : "예상 웨이팅을 확인해보세요";
+          }
+        } catch {
+          /* 이동 안내 문구 유지 */
+        }
+
+        applyCourseMovementBubble({ title, subtitle, dismissKey });
+      } catch {
+        if (!cancelled) setCourseMovementBubble(null);
+      }
+    };
+
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), 30_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [applyCourseMovementBubble, courseGuideActive, courseId]);
+
   useEffect(() => {
     try {
       localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify({ messages, conversationId }));
@@ -389,14 +576,60 @@ export default function BreadBotWidget({
   }, [messages, conversationId]);
 
   const handleButtonAction = useCallback(
-    async (action: ChatButtonAction, targetCourseId?: number | null) => {
+    async (button: ChatActionButton, targetCourseId?: number | null) => {
+      const action = button.action;
       const resolvedCourseId = targetCourseId ?? courseId ?? null;
 
       switch (action) {
         case "keep_course":
-          appendBotMessage("그대로 진행할게요. 현재 코스대로 안내해 드릴게요! 🍞");
+          appendBotMessage("기존 코스로 안내해 드릴게요! 🍞");
           setChangeBubble(null);
           return;
+
+        case "view_bakery_info": {
+          if (!button.bakeryId || button.bakeryId <= 0) return;
+          setLoading(true);
+          try {
+            const bakery = await getBakeryById(button.bakeryId);
+            appendBotMessage(`${bakery.name} 정보를 확인해 보세요!`, {
+              showBakeryInfoId: button.bakeryId,
+            });
+          } catch (error) {
+            appendBotMessage(getErrorMessage(error));
+          } finally {
+            setLoading(false);
+            setChangeBubble(null);
+          }
+          return;
+        }
+
+        case "swap_bakery": {
+          const context = lastCongestionContextRef.current;
+          const alternativeBakeryId = button.bakeryId ?? context?.alternativeBakeryId;
+          if (!resolvedCourseId || resolvedCourseId <= 0 || !context || !alternativeBakeryId) {
+            appendBotMessage("코스 정보를 찾을 수 없어요. 투어 화면에서 다시 시도해 주세요.");
+            return;
+          }
+
+          setLoading(true);
+          try {
+            const { fromName, toName } = await swapBakeryInCourse(
+              resolvedCourseId,
+              context.congestedBakeryId,
+              alternativeBakeryId,
+            );
+            appendBotMessage(
+              `코스를 ${fromName} → ${toName}(으)로 변경했어요!\n변경된 순서로 안내해 드릴게요.`,
+            );
+            lastCongestionContextRef.current = null;
+          } catch (error) {
+            appendBotMessage(getErrorMessage(error));
+          } finally {
+            setLoading(false);
+            setChangeBubble(null);
+          }
+          return;
+        }
 
         case "change_course": {
           if (!resolvedCourseId || resolvedCourseId <= 0) {
@@ -466,11 +699,37 @@ export default function BreadBotWidget({
     if (!text || loading) return;
 
     setMessages((prev) => [...prev, { id: `u-${Date.now()}`, role: "user", text }]);
-    setInput("");
     setLoading(true);
 
     void (async () => {
       try {
+        if (isCourseExplainIntent(text)) {
+          if (!courseGuideActive || !courseId || courseId <= 0) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `course-not-active-${Date.now()}`,
+                role: "bot",
+                text: COURSE_NOT_IN_PROGRESS_MESSAGE,
+              },
+            ]);
+            return;
+          }
+
+          const course = await getCourseDetail(courseId);
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `course-explain-${Date.now()}`,
+              role: "bot",
+              text: buildCourseExplainMessage(course),
+              showCourseMap: true,
+              showBackToStart: true,
+            },
+          ]);
+          return;
+        }
+
         if (courseId && courseId > 0 && isCongestionCheckIntent(text)) {
           const course = await getCourseDetail(courseId);
           const bakeryIds = course.bakeries.map((bakery) => bakery.id).filter((id) => id > 0);
@@ -479,25 +738,61 @@ export default function BreadBotWidget({
           }
 
           const res = await checkTourCongestion({ courseId, bakeryIds });
-          lastCongestionResultsRef.current = res.data ?? [];
+          const results = res.data ?? [];
+          lastCongestionResultsRef.current = results;
           const bakeryNamesById = buildBakeryNameLookup(course.bakeries);
-          const { text: replyText, isCongestionAlert } = buildCongestionCheckReply(res, {
-            bakeryNamesById,
-          });
-          const actions = isCongestionAlert ? CONGESTION_ACTION_BUTTONS : [];
+          const congestionMessage = buildCongestionChatBotMessage(results, bakeryNamesById);
+
+          if (!congestionMessage) {
+            appendBotMessage("지금은 혼잡한 빵집이 없어요. 기존 코스대로 안내해 드릴게요!");
+            return;
+          }
+
+          if (congestionMessage.congestionContext) {
+            lastCongestionContextRef.current = congestionMessage.congestionContext;
+          }
 
           setMessages((prev) => [
             ...prev,
             {
               id: `congestion-${Date.now()}`,
               role: "bot",
-              text: replyText,
-              actions,
+              ...congestionMessage,
             },
           ]);
-          if (actions.length > 0) {
-            setChangeBubble({ text: replyText, actions });
+
+          const primaryAlert = findPrimaryCongestionAlert(results);
+          if (primaryAlert && courseGuideActive) {
+            const alertName =
+              bakeryNamesById.get(primaryAlert.bakeryId) ??
+              primaryAlert.bakeryName?.trim() ??
+              "방문 예정 빵집";
+            applyCourseMovementBubble({
+              title: `${alertName} 혼잡해요`,
+              subtitle:
+                primaryAlert.expectedWaitMin != null && primaryAlert.expectedWaitMin > 0
+                  ? `예상 대기 약 ${primaryAlert.expectedWaitMin}분 · 코스를 확인해보세요`
+                  : "예상 웨이팅을 확인해보세요",
+              dismissKey: `congestion:${courseId}:${primaryAlert.bakeryId}:${primaryAlert.level ?? ""}`,
+            });
+          } else if (congestionMessage.actions && congestionMessage.actions.length > 0) {
+            setChangeBubble({
+              text: congestionMessage.text,
+              actions: congestionMessage.actions,
+            });
           }
+          return;
+        }
+
+        if (!courseGuideActive) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `course-not-active-${Date.now()}`,
+              role: "bot",
+              text: COURSE_NOT_IN_PROGRESS_MESSAGE,
+            },
+          ]);
           return;
         }
 
@@ -521,35 +816,37 @@ export default function BreadBotWidget({
           setChangeBubble({ text: res.message, actions });
         }
       } catch (e) {
-        appendBotMessage(getErrorMessage(e));
+        appendBotMessage(getBreadBotErrorMessage(e));
       } finally {
         setLoading(false);
       }
     })();
   };
 
-  const handleSend = () => sendMessage(input);
-
   const handleQuickReply = (label: string) => {
     sendMessage(label);
   };
 
-  const showGuide = () => {
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `guide-${Date.now()}`,
-        role: "bot",
-        text: "무엇이 궁금하세요? 아래에서 골라보세요 🍞",
-        quickReplies: [...QUICK_REPLIES],
-      },
-    ]);
+  const handleCourseDetail = () => {
+    if (!courseId || courseId <= 0) return;
+    void navigate({ to: "/ai-search-result", search: { courseId, from: undefined } });
   };
 
-  const handleChangeAction = (action: ChatButtonAction) => {
+  const handleBackToStart = () => {
+    setMessages([]);
+    setConversationId(undefined);
+    setLoading(false);
+  };
+
+  const closeChat = () => {
+    handleBackToStart();
+    setOpen(false);
+  };
+
+  const handleChangeAction = (button: ChatActionButton) => {
     setChangeBubble(null);
     setOpen(true);
-    void handleButtonAction(action);
+    void handleButtonAction(button);
   };
 
   const handleTourStart = async () => {
@@ -576,9 +873,22 @@ export default function BreadBotWidget({
     setReserveNudgeBubble(null);
   };
 
+  const dismissCourseMovementBubble = () => {
+    if (courseMovementBubble) {
+      dismissedMovementRef.current.add(courseMovementBubble.dismissKey);
+    }
+    setCourseMovementBubble(null);
+  };
+
+  const showCourseMovementBubble =
+    courseMovementBubble !== null && showFloatingButton && !open && courseGuideActive;
   const showTourBubble = tourBubble !== null && !open && !onTourPage;
   const showChangeBubble =
-    tourBubble === null && reserveNudgeBubble === null && changeBubble !== null && !open;
+    !showCourseMovementBubble &&
+    tourBubble === null &&
+    reserveNudgeBubble === null &&
+    changeBubble !== null &&
+    !open;
   const showReserveNudgeBubble =
     tourBubble === null &&
     changeBubble === null &&
@@ -589,144 +899,19 @@ export default function BreadBotWidget({
   return (
     <>
       {open ? (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[71] mx-auto flex w-full max-w-[402px] justify-end">
-          <div className="pointer-events-auto fixed right-[20px] bottom-[172px] flex h-[60vh] max-h-[520px] w-[min(360px,calc(100%-40px))] flex-col overflow-hidden rounded-r4 bg-white shadow-[0_8px_32px_rgba(0,0,0,0.18)] md:right-[calc((100vw-402px)/2+20px)]">
-            <div className="flex items-center gap-x2 border-b border-gray-200 px-x4 py-x3">
-              <img src={BreadDefaultLogo} alt="" aria-hidden className="h-x8 w-x8 object-contain" />
-              <div className="flex min-w-0 flex-col">
-                <span className="font-pretendard text-size-4 font-bold leading-t5 text-gray-1000">
-                  빵빵 큐레이터
-                </span>
-                <span className="font-pretendard text-size-2 leading-t3 text-gray-600">
-                  무엇이든 물어보세요
-                </span>
-              </div>
-              <button
-                type="button"
-                aria-label="닫기"
-                onClick={() => setOpen(false)}
-                className="ml-auto flex h-x8 w-x8 shrink-0 items-center justify-center rounded-full text-size-5 text-gray-500 hover:bg-gray-100"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div ref={listRef} className="flex-1 space-y-x2 overflow-y-auto px-x4 py-x3">
-              {messages.length === 0 && !loading ? (
-                <div className="flex flex-col items-start gap-x2">
-                  <div className="max-w-[85%] rounded-r3 bg-gray-100 px-x3 py-x2">
-                    <p className="whitespace-pre-line font-pretendard text-size-3 leading-t5 text-gray-1000">
-                      {WELCOME_MESSAGE}
-                    </p>
-                  </div>
-                  <div className="grid w-full grid-cols-2 gap-x1-5 gap-y-x1-5">
-                    {QUICK_REPLIES.map((q) => (
-                      <button
-                        key={q}
-                        type="button"
-                        onClick={() => handleQuickReply(q)}
-                        disabled={loading}
-                        className="rounded-r2 border border-orange-200 bg-orange-50 px-x2 py-x1-5 text-center font-pretendard text-size-2 leading-t3 text-orange-700 transition-colors hover:bg-orange-100 disabled:opacity-50"
-                      >
-                        {q}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              {messages.map((m) => (
-                <div
-                  key={m.id}
-                  className={cn(
-                    "flex flex-col gap-x1-5",
-                    m.role === "user" ? "items-end" : "items-start",
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "max-w-[80%] whitespace-pre-wrap rounded-r3 px-x3 py-x2 font-pretendard text-size-3 leading-t4",
-                      m.role === "user"
-                        ? "bg-orange-600 text-gray-00"
-                        : "bg-gray-100 text-gray-1000",
-                    )}
-                  >
-                    {m.text}
-                  </div>
-
-                  {m.role === "bot" && m.quickReplies && m.quickReplies.length > 0 ? (
-                    <div className="grid w-full max-w-[85%] grid-cols-2 gap-x1-5 gap-y-x1-5">
-                      {m.quickReplies.map((reply) => (
-                        <button
-                          key={reply}
-                          type="button"
-                          disabled={loading}
-                          onClick={() => handleQuickReply(reply)}
-                          className="rounded-r2 border border-orange-200 bg-orange-50 px-x2 py-x1-5 text-center font-pretendard text-size-2 leading-t3 text-orange-700 transition-colors hover:bg-orange-100 disabled:opacity-50"
-                        >
-                          {reply}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-
-                  {m.role === "bot" && m.actions && m.actions.length > 0 ? (
-                    <div className="w-full max-w-[85%]">
-                      <ActionButtons
-                        actions={m.actions}
-                        disabled={loading}
-                        onAction={(action) => void handleButtonAction(action)}
-                      />
-                    </div>
-                  ) : null}
-                </div>
-              ))}
-
-              {loading ? (
-                <div className="flex justify-start">
-                  <div className="rounded-r3 bg-gray-100 px-x3 py-x2 font-pretendard text-size-3 leading-t4 text-gray-500">
-                    답변 작성 중…
-                  </div>
-                </div>
-              ) : null}
-            </div>
-
-            {messages.length > 0 ? (
-              <div className="flex justify-center border-t border-gray-100 px-x3 pt-x2">
-                <button
-                  type="button"
-                  onClick={showGuide}
-                  className="rounded-full border border-orange-200 bg-orange-50 px-x2-5 py-x1 font-pretendard text-size-2 leading-t3 text-orange-700 transition-colors hover:bg-orange-100"
-                >
-                  💡 추천 질문 다시 보기
-                </button>
-              </div>
-            ) : null}
-
-            <div className="flex items-center gap-x2 border-t border-gray-200 px-x3 py-x2">
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
-                placeholder="메시지를 입력하세요"
-                className="min-w-0 flex-1 rounded-r3 border border-gray-300 bg-gray-00 px-x3 py-x2 font-pretendard text-size-3 leading-t4 text-gray-1000 outline-none placeholder:text-gray-400"
-              />
-              <button
-                type="button"
-                onClick={handleSend}
-                disabled={!input.trim() || loading}
-                className="shrink-0 rounded-r3 bg-orange-600 px-x4 py-x2 font-pretendard text-size-3 font-bold leading-t4 text-gray-00 disabled:bg-gray-300"
-              >
-                전송
-              </button>
-            </div>
-          </div>
-        </div>
+        <BreadBotChatModal
+          listRef={listRef}
+          messages={messages}
+          loading={loading}
+          courseId={courseId}
+          courseMovementBubble={courseMovementBubble}
+          courseGuideActive={courseGuideActive}
+          onClose={closeChat}
+          onQuickReply={handleQuickReply}
+          onAction={(button) => void handleButtonAction(button)}
+          onCourseDetail={handleCourseDetail}
+          onBackToStart={handleBackToStart}
+        />
       ) : null}
 
       {showTourBubble && tourBubble ? (
@@ -782,7 +967,7 @@ export default function BreadBotWidget({
             <div className="mt-x3">
               <ActionButtons
                 actions={RESERVE_NUDGE_ACTION_BUTTONS}
-                onAction={(action) => void handleButtonAction(action, reserveNudgeBubble.courseId)}
+                onAction={(button) => void handleButtonAction(button, reserveNudgeBubble.courseId)}
               />
             </div>
 
@@ -820,19 +1005,35 @@ export default function BreadBotWidget({
         </div>
       ) : null}
 
+      {showCourseMovementBubble && courseMovementBubble ? (
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[72] mx-auto w-full max-w-[402px]">
+          <ChatbotCourseSpeechBubble
+            title={courseMovementBubble.title}
+            subtitle={courseMovementBubble.subtitle}
+            onClose={dismissCourseMovementBubble}
+            onClick={openChat}
+          />
+        </div>
+      ) : null}
+
       {showFloatingButton ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[70] mx-auto w-full max-w-[402px]">
           <button
             type="button"
             aria-label={open ? "AI 큐레이터 닫기" : "AI 큐레이터 채팅 열기"}
-            onClick={() => (open ? setOpen(false) : openChat())}
-            className="pointer-events-auto fixed right-[20px] bottom-[104px] z-[70] flex h-[56px] w-[56px] items-center justify-center rounded-full bg-orange-600 shadow-[0_4px_12px_rgba(0,0,0,0.18)] md:right-[calc((100vw-402px)/2+20px)]"
+            onClick={() => (open ? closeChat() : openChat())}
+            className={cn(
+              "pointer-events-auto block shrink-0 border-0 bg-transparent p-0",
+              CHATBOT_FAB_POSITION_CLASS,
+            )}
+            style={{ width: CHATBOT_FAB_SIZE, height: CHATBOT_FAB_SIZE }}
           >
             <img
-              src={BreadDefaultLogo}
+              src={ChatBotImage}
               alt=""
               aria-hidden
-              className="h-[36px] w-[36px] object-contain"
+              className="h-full w-full object-contain"
+              draggable={false}
             />
           </button>
         </div>

@@ -147,7 +147,7 @@ export default function EditProfilePage() {
 
     const payload: UpdateMyProfileRequest = {};
     if (isNicknameChanged) payload.nickname = trimmedNickname;
-    if (isEmailChanged) payload.email = trimmedEmail;
+    if (isEmailChanged && trimmedEmail) payload.email = trimmedEmail;
     if (isProfileImageChanged) payload.profileImageUrl = trimmedProfileImageUrl;
 
     void (async () => {

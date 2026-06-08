@@ -3,11 +3,14 @@ export type ChatButtonAction =
   | "change_course"
   | "keep_course"
   | "cancel_reservation"
-  | "reserve_taxi";
+  | "reserve_taxi"
+  | "view_bakery_info"
+  | "swap_bakery";
 
 export type ChatActionButton = {
   label: string;
   action: ChatButtonAction;
+  bakeryId?: number;
 };
 
 const CHAT_BUTTON_ACTIONS = new Set<ChatButtonAction>([
@@ -15,6 +18,8 @@ const CHAT_BUTTON_ACTIONS = new Set<ChatButtonAction>([
   "keep_course",
   "cancel_reservation",
   "reserve_taxi",
+  "view_bakery_info",
+  "swap_bakery",
 ]);
 
 export function isChatButtonAction(value: string): value is ChatButtonAction {
@@ -40,6 +45,21 @@ export const CONGESTION_ACTION_BUTTONS: ChatActionButton[] = [
   { label: "그대로 진행", action: "keep_course" },
   { label: "예약 취소", action: "cancel_reservation" },
 ];
+
+export function buildCongestionChatButtons(
+  alternativeBakeryName: string,
+  alternativeBakeryId: number,
+): ChatActionButton[] {
+  return [
+    {
+      label: `${alternativeBakeryName} 정보 보기`,
+      action: "view_bakery_info",
+      bakeryId: alternativeBakeryId,
+    },
+    { label: "변경할래", action: "swap_bakery", bakeryId: alternativeBakeryId },
+    { label: "기존 코스로 안내", action: "keep_course" },
+  ];
+}
 
 export const RESERVE_NUDGE_ACTION_BUTTONS: ChatActionButton[] = [
   { label: "빵택시 예약하기", action: "reserve_taxi" },

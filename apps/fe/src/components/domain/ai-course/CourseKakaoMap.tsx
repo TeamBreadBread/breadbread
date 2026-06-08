@@ -12,6 +12,8 @@ type Props = {
   bakeries: CourseMapBakery[];
   departurePoint?: { lat: number; lng: number; label: string } | null;
   className?: string;
+  /** API 조회 중 좌표가 아직 없을 때 정적 지도 대신 로딩 표시 */
+  isLoading?: boolean;
 };
 
 type MapStatus = "loading" | "ready" | "fallback";
@@ -355,10 +357,31 @@ function CourseKakaoMapView({
   );
 }
 
-export default function CourseKakaoMap({ bakeries, departurePoint, className }: Props) {
+function MapLoadingPlaceholder({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        "flex h-full w-full items-center justify-center bg-gray-100 text-size-3 text-gray-500",
+        className,
+      )}
+    >
+      지도 불러오는 중…
+    </div>
+  );
+}
+
+export default function CourseKakaoMap({
+  bakeries,
+  departurePoint,
+  className,
+  isLoading = false,
+}: Props) {
   const mapPoints = useMemo(() => filterValidMapPoints(bakeries), [bakeries]);
 
   if (mapPoints.length === 0) {
+    if (isLoading) {
+      return <MapLoadingPlaceholder className={className} />;
+    }
     return (
       <img src={mapImage} alt="코스 지도" className={cn("h-full w-full object-cover", className)} />
     );

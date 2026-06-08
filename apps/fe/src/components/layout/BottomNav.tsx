@@ -1,7 +1,7 @@
 import { AppIcon, IconAssets } from "@/components/icons";
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { isBotFloatingHiddenPath } from "@/lib/courseGuide";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
+import { useTourCongestionAlert } from "@/hooks/useTourCongestionAlert";
 import BottomNavItem from "./BottomNavItem";
 import { APP_SHELL_MAX_WIDTH } from "./layout.constants";
 
@@ -21,9 +21,14 @@ const navItems: NavItem[] = [
 const BottomNav = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { courseGuideActive } = useLoginRequired();
+  const { courseGuideActive, courseGuideId } = useLoginRequired();
+  const routeCongestionActive = useTourCongestionAlert(courseGuideActive, courseGuideId);
 
-  const showRouteGuideTooltip = courseGuideActive && isBotFloatingHiddenPath(pathname);
+  const routeNavTooltip = (() => {
+    if (!courseGuideActive) return undefined;
+    if (pathname === "/route" && routeCongestionActive) return "혼잡 알림";
+    return "안내 중";
+  })();
 
   const handleNavClick = (to: NavItem["to"]) => {
     if (!to) return;
@@ -32,7 +37,7 @@ const BottomNav = () => {
 
   return (
     <nav
-      className={`fixed bottom-0 left-1/2 z-50 w-full -translate-x-1/2 border-t border-gray-300 bg-gray-00 ${APP_SHELL_MAX_WIDTH}`}
+      className={`fixed bottom-0 left-1/2 z-50 w-full -translate-x-1/2 overflow-visible border-t border-gray-300 bg-gray-00 ${APP_SHELL_MAX_WIDTH}`}
     >
       <div className="flex h-[56px] sm:h-[60px]">
         {navItems.map((item) => {
@@ -50,7 +55,7 @@ const BottomNav = () => {
               key={item.label}
               label={item.label}
               active={isActive}
-              tooltip={to === "/route" && showRouteGuideTooltip ? "안내 중" : undefined}
+              tooltip={to === "/route" ? routeNavTooltip : undefined}
               icon={
                 <AppIcon src={item.icon} size={24} color={isActive ? "gray-900" : "gray-500"} />
               }

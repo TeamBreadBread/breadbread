@@ -4,6 +4,4 @@ export interface RouteCourse {
   duration: string;
   storeCount: number;
   bakeryNames: string[];
-  likeCount: number;
-  liked: boolean;
 }

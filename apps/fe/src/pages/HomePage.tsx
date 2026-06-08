@@ -1,46 +1,71 @@
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import BottomNav from "@/components/layout/BottomNav";
 import AppShell from "@/components/layout/AppShell";
 import HomeHeroSection from "@/components/domain/home/HomeHeroSection";
 import CurationSection from "@/components/domain/home/CurationSection";
 import DongCurationSection from "@/components/domain/home/DongCurationSection";
-import { pickRandomDong, type DongOption } from "@/components/domain/home/dongCurationParams";
+import {
+  beginHomeCurationVisit,
+  resetHomeCurationVisitDedupe,
+  type HomeCurationVisit,
+} from "@/components/domain/home/dongCurationParams";
 
 const HomePage = () => {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [firstCurationBakeryIds, setFirstCurationBakeryIds] = useState<number[]>([]);
   const [firstCurationReady, setFirstCurationReady] = useState(false);
-  const [selectedDong, setSelectedDong] = useState<DongOption>(() => pickRandomDong());
+  const [homeVisit, setHomeVisit] = useState<HomeCurationVisit | null>(null);
   const prevPathRef = useRef(pathname);
+  const homeVisitSetupRef = useRef(false);
 
-  /** 다른 화면에서 홈으로 돌아올 때마다 동을 새로 랜덤 선택 */
-  useEffect(() => {
+  /** 홈 진입·재진입마다 동·큐레이션 픽을 한 번만 새로 섞습니다. */
+  useLayoutEffect(() => {
     if (pathname !== "/home") {
+      resetHomeCurationVisitDedupe();
       prevPathRef.current = pathname;
+      homeVisitSetupRef.current = false;
       return;
     }
-    if (prevPathRef.current !== "/home") {
-      queueMicrotask(() => setSelectedDong(pickRandomDong()));
-    }
+    if (homeVisitSetupRef.current) return;
+    homeVisitSetupRef.current = true;
+
+    const returningToHome = prevPathRef.current !== "/home";
     prevPathRef.current = pathname;
+
+    const visit = beginHomeCurationVisit();
+    void Promise.resolve().then(() => {
+      setHomeVisit(visit);
+      if (returningToHome) {
+        setFirstCurationBakeryIds([]);
+        setFirstCurationReady(false);
+      }
+    });
   }, [pathname]);
+
+  const activeHomeVisit = pathname === "/home" ? homeVisit : null;
 
   return (
     <AppShell>
       <main className="flex-1 space-y-[10px] pb-[56px] sm:pb-[72px]">
         <HomeHeroSection />
-        <CurationSection
-          onDisplayedBakeryIdsChange={(ids) => {
-            setFirstCurationBakeryIds(ids);
-            setFirstCurationReady(true);
-          }}
-        />
-        <DongCurationSection
-          selectedDong={selectedDong}
-          excludeBakeryIds={firstCurationBakeryIds}
-          readyToPick={firstCurationReady}
-        />
+        {activeHomeVisit ? (
+          <>
+            <CurationSection
+              key={activeHomeVisit.seed}
+              onDisplayedBakeryIdsChange={(ids) => {
+                setFirstCurationBakeryIds(ids);
+                setFirstCurationReady(true);
+              }}
+            />
+            <DongCurationSection
+              key={`${activeHomeVisit.seed}-${activeHomeVisit.dong}`}
+              selectedDong={activeHomeVisit.dong}
+              excludeBakeryIds={firstCurationBakeryIds}
+              readyToPick={firstCurationReady}
+            />
+          </>
+        ) : null}
       </main>
 
       <BottomNav />

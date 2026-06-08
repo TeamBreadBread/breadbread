@@ -17,8 +17,14 @@ const BottomNavItem = ({ label, active = false, icon, onClick, tooltip }: Bottom
       className="relative flex flex-1 flex-col items-center justify-center gap-1 sm:gap-[6px]"
     >
       {tooltip ? (
-        <span className="pointer-events-none absolute -top-[26px] left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-gray-900 px-[10px] py-[4px] text-[11px] font-medium leading-[14px] text-white shadow-sm">
-          {tooltip}
+        <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-x1 flex h-[46px] w-[72px] -translate-x-1/2 flex-col items-center">
+          <span className="flex h-[40px] w-full items-center justify-center rounded-r2 bg-gray-900 font-pretendard text-[11px] font-medium leading-[14px] text-gray-00">
+            {tooltip}
+          </span>
+          <span
+            className="h-0 w-0 border-x-[6px] border-t-[6px] border-x-transparent border-t-gray-900"
+            aria-hidden
+          />
         </span>
       ) : null}
       {icon ?? (

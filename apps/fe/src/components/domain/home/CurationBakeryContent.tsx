@@ -16,7 +16,7 @@ import {
 } from "./curationBakeryContentParams";
 import {
   DONG_REGION_FALLBACK,
-  bakeryMatchesDongForRegionFallback,
+  bakeryBelongsToDong,
   shouldExcludeFromDongCuration,
 } from "./dongCurationParams";
 import CurationFooter, { type CurationItem } from "./CurationFooter";
@@ -162,16 +162,20 @@ export function CurationBakeryContent({
     let pool = data.bakeries.filter((bakery) => !excluded.has(bakery.id));
 
     if (dongFilter) {
-      pool = pool.filter((bakery) => !shouldExcludeFromDongCuration(bakery, dongFilter));
       if (usedRegionFallback) {
-        pool = pool.filter((bakery) => bakeryMatchesDongForRegionFallback(bakery, dongFilter));
+        pool = pool.filter((bakery) =>
+          bakeryBelongsToDong(bakery, dongFilter, { allowRegionFallback: true }),
+        );
+      } else {
+        pool = pool.filter((bakery) => !shouldExcludeFromDongCuration(bakery, dongFilter));
       }
-      // 1번 큐레이션과 겹쳐 전부 빠지면, 잘못 배치된 빵집만 제외하고 다시 채움
+      // 1번 큐레이션과 겹쳐 전부 빠지면, 제외 id만 무시하고 동 기준으로 다시 채움
       if (pool.length === 0) {
-        pool = data.bakeries.filter((bakery) => !shouldExcludeFromDongCuration(bakery, dongFilter));
-        if (usedRegionFallback) {
-          pool = pool.filter((bakery) => bakeryMatchesDongForRegionFallback(bakery, dongFilter));
-        }
+        pool = data.bakeries.filter((bakery) =>
+          usedRegionFallback
+            ? bakeryBelongsToDong(bakery, dongFilter, { allowRegionFallback: true })
+            : !shouldExcludeFromDongCuration(bakery, dongFilter),
+        );
       }
     }
 
@@ -248,7 +252,7 @@ export function CurationBakeryContent({
   };
 
   const skeletonClass = compact
-    ? "h-[92px] w-[118px] flex-shrink-0 rounded-[var(--radius-r3)]"
+    ? "h-[152px] w-[160px] flex-shrink-0 rounded-[var(--radius-r3)]"
     : "h-[240px] w-[254px] flex-shrink-0 rounded-[var(--radius-r3)]";
 
   if (loading || (lockSelectionOnMount && !readyToPick)) {
@@ -274,9 +278,9 @@ export function CurationBakeryContent({
   return (
     <CurationFooter
       items={items}
-      itemClassName={compact ? "!w-[118px] shrink-0" : undefined}
-      cardImageClassName={compact ? "!w-[118px] !h-[92px]" : undefined}
-      breadIconClassName={compact ? "!w-[28px] !h-[28px]" : undefined}
+      itemClassName={compact ? "!w-[160px] shrink-0" : undefined}
+      cardImageClassName={compact ? "!w-[160px] !h-[152px]" : undefined}
+      breadIconClassName={compact ? "!w-[40px] !h-[40px]" : undefined}
       onItemClick={handleItemClick}
     />
   );

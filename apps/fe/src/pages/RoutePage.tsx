@@ -6,14 +6,7 @@ import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
 import type { RouteCourse } from "@/components/domain/route";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
-import {
-  deleteAiCourse,
-  getCourseDetail,
-  getMyCourseRoutes,
-  likeCourse,
-  removeCourseRoute,
-  unlikeCourse,
-} from "@/api/courses";
+import { deleteAiCourse, getMyCourseRoutes, removeCourseRoute } from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
 
 export default function RoutePage() {
@@ -28,33 +21,15 @@ export default function RoutePage() {
         setIsLoading(true);
         const routeItems = await getMyCourseRoutes();
         if (!mounted) return;
-        const withLikes = await Promise.all(
-          routeItems.map(async (item) => {
-            try {
-              const detail = await getCourseDetail(item.courseId);
-              return {
-                id: String(item.courseId),
-                title: item.name,
-                duration: item.estimatedTime,
-                storeCount: item.bakeryCount,
-                bakeryNames: item.bakeryNames ?? [],
-                liked: Boolean(detail.liked),
-                likeCount: detail.likeCount ?? 0,
-              } satisfies RouteCourse;
-            } catch {
-              return {
-                id: String(item.courseId),
-                title: item.name,
-                duration: item.estimatedTime,
-                storeCount: item.bakeryCount,
-                bakeryNames: item.bakeryNames ?? [],
-                liked: false,
-                likeCount: 0,
-              } satisfies RouteCourse;
-            }
-          }),
+        setCourses(
+          routeItems.map((item) => ({
+            id: String(item.courseId),
+            title: item.name,
+            duration: item.estimatedTime,
+            storeCount: item.bakeryCount,
+            bakeryNames: item.bakeryNames ?? [],
+          })),
         );
-        setCourses(withLikes);
       } catch (error) {
         window.alert(getErrorMessage(error));
       } finally {
@@ -79,38 +54,6 @@ export default function RoutePage() {
     } catch (error) {
       window.alert(getErrorMessage(error));
     }
-  };
-
-  const performToggleCourseLike = async (courseId: string) => {
-    const parsed = Number.parseInt(courseId, 10);
-    if (!Number.isFinite(parsed)) return;
-    const prev = courses;
-    const target = prev.find((c) => c.id === courseId);
-    if (!target) return;
-    const optimistic = prev.map((c) =>
-      c.id !== courseId
-        ? c
-        : {
-            ...c,
-            liked: !c.liked,
-            likeCount: c.liked ? Math.max(0, c.likeCount - 1) : c.likeCount + 1,
-          },
-    );
-    setCourses(optimistic);
-    try {
-      if (target.liked) {
-        await unlikeCourse(parsed);
-      } else {
-        await likeCourse(parsed);
-      }
-    } catch (error) {
-      setCourses(prev);
-      window.alert(getErrorMessage(error));
-    }
-  };
-
-  const handleToggleCourseLike = (courseId: string) => {
-    void performToggleCourseLike(courseId);
   };
 
   const handleOpenCourse = (courseId: string) => {
@@ -139,7 +82,6 @@ export default function RoutePage() {
             courses={courses}
             onOpenCourse={handleOpenCourse}
             onDeleteCourse={handleDeleteCourse}
-            onToggleCourseLike={handleToggleCourseLike}
           />
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AppIcon, IconAssets } from "@/components/icons";
-import { pickCourseBreadIcon } from "@/lib/courseBreadIcons";
+import CourseBreadThumbnail from "@/components/domain/ai-course/CourseBreadThumbnail";
+import { formatCourseEstimatedTime } from "@/utils/formatCourseEstimatedTime";
 import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
 import { cn } from "@/utils/cn";
 import type { RouteCourse } from "./types";
@@ -10,7 +11,6 @@ interface RouteListItemProps {
   onClick?: () => void;
   onOpenCourse?: (courseId: string) => void;
   onDeleteCourse?: (courseId: string) => void;
-  onToggleCourseLike?: (courseId: string) => void;
 }
 
 function buildCourseShareLink(courseId: string): string {
@@ -25,11 +25,10 @@ export default function RouteListItem({
   onClick,
   onOpenCourse,
   onDeleteCourse,
-  onToggleCourseLike,
 }: RouteListItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
-  const courseIconSrc = pickCourseBreadIcon(course.id);
+  const durationLabel = formatCourseEstimatedTime(course.duration) || course.duration;
 
   const handleItemClick = () => {
     setIsExpanded((prev) => !prev);
@@ -84,11 +83,6 @@ export default function RouteListItem({
     closeSheet();
   };
 
-  const handleToggleLike = (event: React.MouseEvent) => {
-    event.stopPropagation();
-    onToggleCourseLike?.(course.id);
-  };
-
   return (
     <div className="w-full border-b border-gray-100 bg-gray-00">
       <div
@@ -98,40 +92,29 @@ export default function RouteListItem({
         onKeyDown={handleItemKeyDown}
         className="flex w-full cursor-pointer items-start gap-[10px] py-x6 text-left"
       >
-        <div className="flex h-[46px] w-[46px] items-center justify-center p-[6px]">
-          <img
-            src={courseIconSrc}
-            alt=""
-            aria-hidden
-            className="h-[35px] w-[35px] object-contain"
-          />
-        </div>
+        <CourseBreadThumbnail seed={course.id} />
 
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <div className="font-pretendard text-size-5 font-bold leading-t6 tracking-[-0.1px] text-gray-1000">
             {course.title}
           </div>
 
-          <div className="mt-x1 flex items-center gap-x2">
-            <div className="flex items-center gap-x1">
-              <span className="font-pretendard typo-t3regular whitespace-nowrap text-gray-700">
+          <div className="mt-x1 flex flex-wrap items-center gap-x2 gap-y-x1">
+            <div className="flex min-w-0 items-center gap-x1">
+              <span className="font-pretendard typo-t3regular shrink-0 text-gray-700">
                 소요시간
               </span>
-              <span className="font-pretendard typo-t3regular whitespace-nowrap text-gray-900">
-                {course.duration}
-              </span>
+              <span className="font-pretendard typo-t3regular text-gray-900">{durationLabel}</span>
             </div>
 
-            <span className="font-pretendard typo-t3regular whitespace-nowrap text-gray-700">
-              ·
-            </span>
+            <span className="font-pretendard typo-t3regular shrink-0 text-gray-700">·</span>
 
-            <div className="flex items-center gap-x1">
-              <span className="font-pretendard typo-t3regular whitespace-nowrap text-gray-700">
+            <div className="flex min-w-0 items-center gap-x1">
+              <span className="font-pretendard typo-t3regular shrink-0 text-gray-700">
                 방문 매장 수
               </span>
               <div className="flex items-center gap-[2px]">
-                <span className="font-pretendard typo-t3regular whitespace-nowrap text-gray-900">
+                <span className="font-pretendard typo-t3regular text-gray-900">
                   {course.storeCount}곳
                 </span>
                 <AppIcon
@@ -142,27 +125,6 @@ export default function RouteListItem({
                 />
               </div>
             </div>
-
-            <span className="font-pretendard typo-t3regular whitespace-nowrap text-gray-700">
-              ·
-            </span>
-            <button
-              type="button"
-              aria-label={course.liked ? "코스 좋아요 취소" : "코스 좋아요"}
-              aria-pressed={course.liked}
-              onClick={handleToggleLike}
-              className="flex items-center gap-x1"
-            >
-              <AppIcon
-                src={IconAssets.IcHeart}
-                size={18}
-                className={course.liked ? "red_700" : "opacity-45"}
-                alt=""
-              />
-              <span className="font-pretendard typo-t3regular whitespace-nowrap text-gray-900">
-                {course.likeCount}
-              </span>
-            </button>
           </div>
         </div>
 
@@ -189,26 +151,55 @@ export default function RouteListItem({
               onOpenCourse?.(course.id);
             }
           }}
-          className="mx-auto mb-x6 flex h-[130px] w-full max-w-[362px] cursor-pointer flex-col items-start justify-start overflow-hidden rounded-r2 border border-gray-200 bg-gray-100 p-[14px] md:max-w-full"
+          className="mx-auto mb-x6 flex w-full max-w-[362px] cursor-pointer flex-col items-start justify-start rounded-r2 bg-gray-100 p-[14px] md:max-w-full"
         >
-          <div className="relative flex w-full flex-col items-start justify-start gap-[6px] px-0 py-[4px]">
-            <div className="absolute bottom-0 left-[2px] top-0 w-[2px] bg-gray-300" />
+          <div className="flex w-full gap-[6.5px] py-[4px]">
+            <div className="relative flex w-[6px] shrink-0 flex-col items-center">
+              {course.bakeryNames.length > 1 ? (
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute left-1/2 top-[-6px] bottom-[-6px] w-[2px] -translate-x-1/2 bg-gray-300"
+                />
+              ) : null}
+              {course.bakeryNames.map((store, index) => {
+                const isLast = index === course.bakeryNames.length - 1;
+                return (
+                  <div
+                    key={`dot-${store}-${index}`}
+                    className={cn(
+                      "relative z-[1] flex h-[19px] w-full items-center justify-center",
+                      !isLast && "mb-[6px]",
+                    )}
+                  >
+                    <span className="size-[6px] shrink-0 rounded-full bg-gray-500" aria-hidden />
+                  </div>
+                );
+              })}
+            </div>
 
-            {course.bakeryNames.map((store) => (
-              <div key={store} className="flex w-full items-center justify-start gap-[6.5px]">
-                <AppIcon src={IconAssets.IcPin} size={6} className="z-10" alt="" />
-                <div className="flex-1 font-pretendard text-size-3 font-normal leading-t4 text-gray-800">
-                  {store}
-                </div>
-              </div>
-            ))}
+            <div className="flex min-w-0 flex-1 flex-col">
+              {course.bakeryNames.map((store, index) => {
+                const isLast = index === course.bakeryNames.length - 1;
+                return (
+                  <div
+                    key={`${store}-${index}`}
+                    className={cn(
+                      "flex h-[19px] items-center font-pretendard text-size-3 font-normal leading-t4 text-gray-800",
+                      !isLast && "mb-[6px]",
+                    )}
+                  >
+                    {store}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       ) : null}
 
       {isBottomSheetOpen ? (
         <div
-          className="fixed inset-0 z-[60]"
+          className="fixed inset-x-0 top-0 bottom-[56px] z-[60] sm:bottom-[60px]"
           role="dialog"
           aria-modal="true"
           aria-label="코스 옵션"
@@ -237,7 +228,7 @@ export default function RouteListItem({
               </button>
             </div>
 
-            <div className="flex w-full flex-row items-start justify-start px-[20px] pb-[calc(56px+40px+env(safe-area-inset-bottom,0px))] sm:pb-[calc(60px+40px+env(safe-area-inset-bottom,0px))]">
+            <div className="flex w-full flex-row items-start justify-start px-[20px] pb-[max(24px,env(safe-area-inset-bottom,0px))]">
               <div className="flex w-full flex-col items-start justify-start">
                 <div className="flex w-full flex-col items-start justify-start gap-x2">
                   <button
@@ -267,13 +258,8 @@ export default function RouteListItem({
                     onClick={handleDeleteCourse}
                     className="flex w-full flex-row items-center justify-start gap-x2 overflow-hidden bg-white px-0 py-[16px] text-left"
                   >
-                    <AppIcon src={IconAssets.IcTrash} size={24} alt="" />
-                    <div
-                      className={cn(
-                        "flex-1 font-pretendard text-size-5 font-normal leading-t6",
-                        "text-[#fa342c]",
-                      )}
-                    >
+                    <AppIcon src={IconAssets.IcTrash} size={24} color="red-700" alt="" />
+                    <div className="flex-1 font-pretendard text-size-5 font-normal leading-t6 text-red-700">
                       코스 삭제
                     </div>
                   </button>

@@ -3,7 +3,7 @@ import { cn } from "@/utils/cn";
 export type AppIconSize = "x3" | "x5" | "x6" | number;
 
 /** 디자인 토큰 색상 — CSS filter로 SVG 내장 색과 무관하게 적용 */
-export type AppIconColor = "gray-500" | "gray-600" | "gray-900" | "orange-600";
+export type AppIconColor = "gray-500" | "gray-600" | "gray-900" | "orange-600" | "red-700";
 
 const SIZE_CLASS: Record<Exclude<AppIconSize, number>, string> = {
   x3: "size-x3",
@@ -16,6 +16,7 @@ const ICON_FILTER_CLASS: Record<AppIconColor, string> = {
   "gray-600": "icon-gray-600",
   "gray-900": "icon-gray-900",
   "orange-600": "icon-orange-600",
+  "red-700": "icon-red-700",
 };
 
 export interface AppIconProps {

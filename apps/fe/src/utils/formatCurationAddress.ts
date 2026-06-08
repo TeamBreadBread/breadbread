@@ -27,13 +27,23 @@ export function formatCurationAddress(full: string, maxTokens = 4): string {
  * 도로명 주소처럼 동 정보가 없으면 null을 반환합니다.
  * ("구"로 끝나는 자치구 토큰은 동이 아니므로 제외)
  */
+function isAdministrativeDongToken(token: string): boolean {
+  if (token.length < 2 || !/(동|읍|면)$/.test(token)) return false;
+  if (/(구|시|군)$/.test(token)) return false;
+  // 아파트·상가 블록 (제상가동, 101동 등)
+  if (/^제/.test(token)) return false;
+  if (/^\d/.test(token)) return false;
+  if (token === "상가동") return false;
+  return true;
+}
+
 export function extractDong(full: string): string | null {
   const t = full?.trim();
   if (!t) return null;
   for (const raw of t.split(/\s+/).filter(Boolean)) {
     // "은행동123-4"처럼 붙은 지번은 숫자 이후를 제거
     const token = raw.replace(/[0-9].*$/, "");
-    if (token.length >= 2 && /(동|읍|면)$/.test(token)) {
+    if (isAdministrativeDongToken(token)) {
       return token;
     }
   }
@@ -49,14 +59,50 @@ const ROAD_BASE_TO_DONG: Record<string, string> = {
   변정: "변동",
 };
 
+/** 도로명 어근 끝 방향(남·북·서) — 둔산남로 → 둔산동 */
+const ROAD_DIRECTION_SUFFIX = /(남|북|서)$/;
+
+function normalizeRoadBaseToDong(base: string): string | null {
+  if (base.length < 2 || /(구|시|군|읍|면)$/.test(base)) return null;
+
+  if (ROAD_BASE_TO_DONG[base]) return ROAD_BASE_TO_DONG[base]!;
+
+  // ~로 도로명: 상대동로→상대동, 둔산남로→둔산동
+  if (base.endsWith("로") && base.length >= 3) {
+    let withoutRo = base.slice(0, -1);
+    if (/동$/.test(withoutRo) && withoutRo.length >= 2) {
+      return withoutRo;
+    }
+    if (withoutRo.length >= 3 && ROAD_DIRECTION_SUFFIX.test(withoutRo)) {
+      withoutRo = withoutRo.replace(ROAD_DIRECTION_SUFFIX, "");
+    }
+    if (withoutRo.length >= 2 && !/(구|시|군|읍|면)$/.test(withoutRo)) {
+      return ROAD_BASE_TO_DONG[withoutRo] ?? `${withoutRo}동`;
+    }
+  }
+
+  // 상대동, 둔산동 등 행정동 토큰이 도로명에서 추출된 경우
+  if (/동$/.test(base) && base.length >= 2) {
+    return base;
+  }
+
+  let stem = base;
+  if (stem.length >= 3 && ROAD_DIRECTION_SUFFIX.test(stem)) {
+    stem = stem.replace(ROAD_DIRECTION_SUFFIX, "");
+  }
+
+  if (ROAD_BASE_TO_DONG[stem]) return ROAD_BASE_TO_DONG[stem]!;
+
+  if (stem.length < 2) return null;
+  return `${stem}동`;
+}
+
 function inferDongFromRoadToken(raw: string): string | null {
   const roadMatch = raw.match(/^(.+?)(?:대로\d*길|대로|로\d*길|\d*길|로)$/);
   if (!roadMatch?.[1]) return null;
 
   const base = roadMatch[1].replace(/[0-9].*$/, "");
-  if (base.length < 2 || /(구|시|군|읍|면|동)$/.test(base)) return null;
-
-  return ROAD_BASE_TO_DONG[base] ?? `${base}동`;
+  return normalizeRoadBaseToDong(base);
 }
 
 export function extractDongFromRoad(full: string): string | null {
@@ -139,6 +185,50 @@ function extractRomanizedDongFromText(text: string): string | null {
   return null;
 }
 
+/** 대전 행정동 → 소속 구 (API dong·주소 구 불일치 보정용) */
+const DAEJEON_DONG_DISTRICT: Record<string, string> = {
+  은행동: "중구",
+  선화동: "중구",
+  대흥동: "중구",
+  문창동: "중구",
+  소제동: "동구",
+  변동: "서구",
+  둔산동: "서구",
+  탄방동: "서구",
+  용문동: "서구",
+  갈마동: "서구",
+  봉명동: "유성구",
+  상대동: "유성구",
+  궁동: "유성구",
+};
+
+const DAEJEON_DISTRICTS = ["동구", "중구", "서구", "유성구", "대덕구"] as const;
+
+function extractDistrictFromAddress(address: string): string | null {
+  for (const gu of DAEJEON_DISTRICTS) {
+    if (address.includes(gu)) return gu;
+  }
+  return null;
+}
+
+function apiDongConflictsWithAddress(apiDong: string, address: string): boolean {
+  const addressGu = extractDistrictFromAddress(address);
+  const dongGu = DAEJEON_DONG_DISTRICT[apiDong];
+  if (!addressGu || !dongGu) return false;
+  return addressGu !== dongGu;
+}
+
+/** 같은 구인데 API dong만 틀린 경우(둔산로→둔산동 vs 변동 등) 주소·상호 힌트 우선 */
+function shouldPreferLocalDongHintOverApi(hint: string, apiDong: string, address: string): boolean {
+  if (hint === apiDong) return false;
+  if (apiDongConflictsWithAddress(apiDong, address)) return true;
+
+  const addressGu = extractDistrictFromAddress(address);
+  const apiGu = DAEJEON_DONG_DISTRICT[apiDong];
+  const hintGu = DAEJEON_DONG_DISTRICT[hint];
+  return Boolean(addressGu && apiGu && hintGu && apiGu === hintGu && addressGu === apiGu);
+}
+
 export function normalizeDongLabel(raw?: string | null): string | null {
   const trimmed = raw?.trim();
   if (!trimmed) return null;
@@ -170,12 +260,34 @@ export function resolveThumbnailDongAddress(
   if (trimmed) {
     const dong = extractDong(trimmed);
     if (dong) return dong;
+  }
 
-    const fromRoad = extractDongFromRoad(trimmed);
-    if (fromRoad) return fromRoad;
+  const fromRoad = trimmed ? extractDongFromRoad(trimmed) : null;
+  const normalizedApiDong = normalizeDongLabel(apiDong);
+  const fromName = bakeryName ? extractDongFromBakeryName(bakeryName) : null;
 
+  if (trimmed && normalizedApiDong) {
+    if (fromName && shouldPreferLocalDongHintOverApi(fromName, normalizedApiDong, trimmed)) {
+      return fromName;
+    }
+    if (fromRoad && shouldPreferLocalDongHintOverApi(fromRoad, normalizedApiDong, trimmed)) {
+      return fromRoad;
+    }
+    if (apiDongConflictsWithAddress(normalizedApiDong, trimmed)) {
+      if (fromRoad) return fromRoad;
+
+      const fromRomanizedInAddress = extractRomanizedDongFromText(trimmed);
+      if (fromRomanizedInAddress) return fromRomanizedInAddress;
+    }
+  }
+
+  if (normalizedApiDong) return normalizedApiDong;
+
+  if (trimmed) {
     const fromRomanizedInAddress = extractRomanizedDongFromText(trimmed);
     if (fromRomanizedInAddress) return fromRomanizedInAddress;
+
+    if (fromRoad) return fromRoad;
 
     if (isRomanizedDongLabel(trimmed)) {
       const normalizedWhole = normalizeDongLabel(trimmed);
@@ -183,10 +295,6 @@ export function resolveThumbnailDongAddress(
     }
   }
 
-  const normalizedApiDong = normalizeDongLabel(apiDong);
-  if (normalizedApiDong) return normalizedApiDong;
-
-  const fromName = extractDongFromBakeryName(bakeryName ?? "");
   if (fromName) return fromName;
 
   if (trimmed && isRomanizedDongLabel(trimmed)) {

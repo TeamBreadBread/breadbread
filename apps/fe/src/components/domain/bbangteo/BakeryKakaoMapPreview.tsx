@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import mapImage from "@/assets/images/map.png";
 import { loadKakaoMapSdk } from "@/lib/kakaoMapSdk";
+import { resolveMapCoordinates } from "@/lib/resolveMapCoordinates";
 import type { KakaoMap } from "@/types/kakao-maps";
 import { cn } from "@/utils/cn";
 
@@ -13,55 +14,6 @@ type BakeryKakaoMapPreviewProps = {
 };
 
 type MapStatus = "loading" | "ready" | "fallback" | "no-location";
-
-function hasValidCoords(lat?: number | null, lng?: number | null): boolean {
-  return (
-    lat != null &&
-    lng != null &&
-    Number.isFinite(lat) &&
-    Number.isFinite(lng) &&
-    !(lat === 0 && lng === 0)
-  );
-}
-
-async function resolveCoordinates(
-  address: string,
-  lat?: number | null,
-  lng?: number | null,
-): Promise<{ lat: number; lng: number } | null> {
-  if (hasValidCoords(lat, lng)) {
-    return { lat: lat!, lng: lng! };
-  }
-
-  const trimmed = address.trim();
-  if (!trimmed) return null;
-
-  try {
-    const kakao = await loadKakaoMapSdk();
-    const services = kakao.maps.services;
-    if (!services?.Geocoder) return null;
-
-    const geocoder = new services.Geocoder();
-    return await new Promise((resolve) => {
-      geocoder.addressSearch(trimmed, (result: { x?: string; y?: string }[], status: string) => {
-        if (status !== services.Status.OK || !result?.[0]) {
-          resolve(null);
-          return;
-        }
-        const first = result[0];
-        const resolvedLat = Number(first.y);
-        const resolvedLng = Number(first.x);
-        if (!Number.isFinite(resolvedLat) || !Number.isFinite(resolvedLng)) {
-          resolve(null);
-          return;
-        }
-        resolve({ lat: resolvedLat, lng: resolvedLng });
-      });
-    });
-  } catch {
-    return null;
-  }
-}
 
 export default function BakeryKakaoMapPreview({
   name,
@@ -83,7 +35,7 @@ export default function BakeryKakaoMapPreview({
 
     void (async () => {
       setStatus("loading");
-      const coords = await resolveCoordinates(address, lat, lng);
+      const coords = await resolveMapCoordinates(address, lat, lng);
       if (cancelled) return;
 
       if (!coords) {

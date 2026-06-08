@@ -172,8 +172,17 @@ export async function getMyProfile(): Promise<MyProfileResponse> {
   return extractData(data);
 }
 
+function omitBlankOptionalStrings(body: UpdateMyProfileRequest): UpdateMyProfileRequest {
+  return Object.fromEntries(
+    Object.entries(body).filter(([, value]) => typeof value !== "string" || value.trim() !== ""),
+  ) as UpdateMyProfileRequest;
+}
+
 export async function updateMyProfile(body: UpdateMyProfileRequest): Promise<void> {
-  const { data } = await apiClient.patch<ApiEnvelope<Record<string, never>>>(`${PATH}/me`, body);
+  const { data } = await apiClient.patch<ApiEnvelope<Record<string, never>>>(
+    `${PATH}/me`,
+    omitBlankOptionalStrings(body),
+  );
   extractData(data);
 }
 
