@@ -1,37 +1,36 @@
 package com.breadbread.course.service;
 
 import com.breadbread.bakery.dto.BakerySummaryResponse;
-import com.breadbread.bakery.entity.*;
-import com.breadbread.bakery.repository.BakeryImageRepository;
+import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.repository.BakeryRepository;
-import com.breadbread.bakery.service.BakeryImageUrlResolver;
-import com.breadbread.course.client.DrivingRouteClient;
-import com.breadbread.course.dto.*;
-import com.breadbread.course.dto.ai.AiCoursePreviewBakeryResponse;
-import com.breadbread.course.dto.ai.AiCoursePreviewResponse;
-import com.breadbread.course.dto.ai.AiCourseRequest;
-import com.breadbread.course.dto.ai.AiCourseResultCache;
-import com.breadbread.course.dto.ai.AiJobStatusResponse;
-import com.breadbread.course.dto.ai.RecommendedBakeryResponse;
-import com.breadbread.course.entity.*;
+import com.breadbread.course.dto.CourseBakerySummary;
+import com.breadbread.course.dto.CourseDetailResponse;
+import com.breadbread.course.dto.CourseListResponse;
+import com.breadbread.course.dto.CourseSearch;
+import com.breadbread.course.dto.CourseSummaryResponse;
+import com.breadbread.course.dto.ManualCourseRequest;
+import com.breadbread.course.dto.RouteResponse;
+import com.breadbread.course.dto.UpdateCourseRequest;
+import com.breadbread.course.entity.Course;
+import com.breadbread.course.entity.CourseBakery;
+import com.breadbread.course.entity.CourseLike;
+import com.breadbread.course.entity.ManualCourseInfo;
+import com.breadbread.course.entity.Route;
 import com.breadbread.course.repository.CourseBakeryRepository;
 import com.breadbread.course.repository.CourseDrivingRouteRepository;
 import com.breadbread.course.repository.CourseLikeRepository;
 import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.course.repository.RouteRepository;
-import com.breadbread.course.service.ai.AiCourseAsyncService;
-import com.breadbread.course.service.ai.AiCourseRedisService;
-import com.breadbread.course.service.ai.AiCourseResultRedisService;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
-import com.breadbread.tour.service.TourRedisService;
 import com.breadbread.user.entity.User;
-import com.breadbread.user.entity.UserPreference;
 import com.breadbread.user.entity.UserRole;
-import com.breadbread.user.repository.UserPreferenceRepository;
 import com.breadbread.user.repository.UserRepository;
-import java.util.*;
-import java.util.concurrent.CompletionException;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
@@ -41,8 +40,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Slf4j
 @Service
@@ -52,19 +49,11 @@ public class CourseService {
     private final CourseRepository courseRepository;
     private final BakeryRepository bakeryRepository;
     private final CourseBakeryRepository courseBakeryRepository;
-    private final BakeryImageRepository bakeryImageRepository;
     private final CourseLikeRepository courseLikeRepository;
     private final UserRepository userRepository;
     private final RouteRepository routeRepository;
-    private final AiCourseAsyncService aiCourseAsyncService;
-    private final AiCourseRedisService aiCourseRedisService;
-    private final AiCourseResultRedisService aiCourseResultRedisService;
-    private final UserPreferenceRepository userPreferenceRepository;
-    private final DrivingRouteClient drivingRouteClient;
     private final CourseDrivingRouteRepository courseDrivingRouteRepository;
-    private final CourseDrivingRouteSaver courseDrivingRouteSaver;
-    private final BakeryImageUrlResolver bakeryImageUrlResolver;
-    private final TourRedisService tourRedisService;
+    private final CourseThumbnailAssembler courseSummaryAssembler;
 
     @Transactional(readOnly = true)
     public CourseListResponse search(CourseSearch courseSearch, Pageable pageable, Long userId) {
@@ -79,14 +68,10 @@ public class CourseService {
                         .distinct()
                         .toList();
 
-        Map<Long, String> thumbnailMap = new HashMap<>();
-        bakeryImageRepository
-                .findAllByBakeryIdInAndDisplayOrder(allBakeryIds, 1)
-                .forEach(
-                        img -> {
-                            String url = bakeryImageUrlResolver.resolve(img);
-                            if (url != null) thumbnailMap.put(img.getBakery().getId(), url);
-                        });
+        Map<Long, String> thumbnailMap =
+                allBakeryIds.isEmpty()
+                        ? new HashMap<>()
+                        : courseSummaryAssembler.buildThumbnailMap(allBakeryIds);
 
         Map<Long, Integer> likeCountMap =
                 courseLikeRepository.countByCourseIdIn(courseIds).stream()
@@ -162,14 +147,10 @@ public class CourseService {
 
         List<Long> bakeryIds = courseBakeries.stream().map(cb -> cb.getBakery().getId()).toList();
 
-        Map<Long, String> thumbnailMap = new HashMap<>();
-        bakeryImageRepository
-                .findAllByBakeryIdInAndDisplayOrder(bakeryIds, 1)
-                .forEach(
-                        img -> {
-                            String url = bakeryImageUrlResolver.resolve(img);
-                            if (url != null) thumbnailMap.put(img.getBakery().getId(), url);
-                        });
+        Map<Long, String> thumbnailMap =
+                bakeryIds.isEmpty()
+                        ? new HashMap<>()
+                        : courseSummaryAssembler.buildThumbnailMap(bakeryIds);
 
         List<BakerySummaryResponse> bakeries =
                 courseBakeries.stream()
@@ -333,231 +314,6 @@ public class CourseService {
         log.info("코스 삭제: courseId={}", courseId);
     }
 
-    public String createAi(Long userId, AiCourseRequest request) {
-        String jobId = UUID.randomUUID().toString();
-        aiCourseRedisService.savePending(jobId, userId);
-        try {
-            aiCourseAsyncService
-                    .processAiCourse(jobId, userId, request)
-                    .whenComplete(
-                            (unused, throwable) -> {
-                                if (throwable == null) {
-                                    return;
-                                }
-                                Throwable cause =
-                                        throwable instanceof CompletionException
-                                                ? throwable.getCause()
-                                                : throwable;
-                                log.error("[AI 코스 생성] 비동기 실행 실패 후처리 jobId={}", jobId, cause);
-                                aiCourseRedisService.saveFailed(jobId, "작업 처리 중 오류가 발생했습니다.");
-                            });
-        } catch (Exception e) {
-            log.error("[AI 코스 생성] 비동기 작업 제출 실패 jobId={}", jobId, e);
-            aiCourseRedisService.saveFailed(jobId, "작업 제출에 실패했습니다.");
-            throw new CustomException(ErrorCode.AI_SERVER_ERROR);
-        }
-        log.info("[AI 코스 생성] 비동기 작업 시작: jobId={}, userId={}", jobId, userId);
-        return jobId;
-    }
-
-    public AiJobStatusResponse getAiJobStatus(String jobId, Long requesterId) {
-        return aiCourseRedisService
-                .findByJobId(jobId, requesterId)
-                .orElseThrow(() -> new CustomException(ErrorCode.AI_JOB_NOT_FOUND));
-    }
-
-    @Transactional(readOnly = true)
-    public AiCoursePreviewResponse getAiPreview(String jobId, Long userId) {
-        AiCourseResultCache cache =
-                aiCourseResultRedisService
-                        .getResult(jobId, userId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.AI_RESULT_NOT_FOUND));
-
-        var webhookResponse = cache.getResponse();
-        List<RecommendedBakeryResponse> aiBakeries = webhookResponse.getBakeries();
-
-        // 추천 빵집 ID 목록
-        List<Long> bakeryIds = aiBakeries.stream().map(RecommendedBakeryResponse::getId).toList();
-
-        // DB에서 빵집 정보 일괄 조회 (주소·좌표·평점)
-        Map<Long, Bakery> bakeryMap =
-                bakeryRepository.findAllByIdInAndActiveTrue(bakeryIds).stream()
-                        .collect(Collectors.toMap(Bakery::getId, b -> b));
-
-        // 저장과 동일 기준: DB에 없거나 비활성화된 추천 빵집이 있으면 예외
-        // (프리뷰에서 일부 빵집만 보이다 저장이 실패하는 불일치 방지)
-        if (bakeryMap.size() != bakeryIds.size()) {
-            throw new CustomException(ErrorCode.AI_RECOMMENDED_BAKERY_NOT_FOUND);
-        }
-
-        // AI 순서 기준 정렬 후 DB 정보 병합
-        List<AiCoursePreviewBakeryResponse> enrichedBakeries =
-                aiBakeries.stream()
-                        .sorted(Comparator.comparingInt(RecommendedBakeryResponse::getOrder))
-                        .map(ai -> AiCoursePreviewBakeryResponse.of(ai, bakeryMap.get(ai.getId())))
-                        .toList();
-
-        return AiCoursePreviewResponse.of(webhookResponse, enrichedBakeries);
-    }
-
-    @Transactional
-    public Long saveAiCourse(String jobId, Long userId, List<Long> bakeryOrder) {
-        // 동시 저장 요청 차단 — SET NX EX 락
-        if (!aiCourseResultRedisService.tryAcquireSaveLock(jobId)) {
-            throw new CustomException(ErrorCode.AI_COURSE_SAVE_IN_PROGRESS);
-        }
-        try {
-            // 삭제는 커밋 후 수행 — DB 저장 실패 시 결과가 유실되지 않도록 보호
-            AiCourseResultCache cache =
-                    aiCourseResultRedisService
-                            .getResult(jobId, userId)
-                            .orElseThrow(() -> new CustomException(ErrorCode.AI_RESULT_NOT_FOUND));
-
-            var request = cache.getRequest();
-            var response = cache.getResponse();
-
-            User user =
-                    userRepository
-                            .findById(userId)
-                            .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-            UserPreference userPreference =
-                    userPreferenceRepository
-                            .findByUserId(userId)
-                            .orElseThrow(() -> new CustomException(ErrorCode.PREFERENCE_NOT_FOUND));
-
-            List<Long> recommendedIds =
-                    response.getBakeries().stream().map(RecommendedBakeryResponse::getId).toList();
-            Map<Long, Bakery> bakeryMap =
-                    bakeryRepository.findAllByIdInAndActiveTrue(recommendedIds).stream()
-                            .collect(Collectors.toMap(Bakery::getId, b -> b));
-
-            if (bakeryMap.size() != recommendedIds.size()) {
-                throw new CustomException(ErrorCode.AI_RECOMMENDED_BAKERY_NOT_FOUND);
-            }
-
-            AiCourseInfo aiCourseInfo =
-                    AiCourseInfo.builder()
-                            .travelType(request.getTravelType())
-                            .budgetRange(request.getBudgetRange())
-                            .minimizeRoute(request.isMinimizeRoute())
-                            .latitude(request.getLatitude())
-                            .longitude(request.getLongitude())
-                            .waitingPreference(request.isWaitingPreference())
-                            .drinkPreference(request.isDrinkPreference())
-                            .bakeryCount(request.getBakeryCount())
-                            .flexibilityLevel(request.getFlexibilityLevel())
-                            .recommendReason(response.getRecommendReason())
-                            .build();
-
-            Course course =
-                    Course.createAi(
-                            response.getName(),
-                            user,
-                            userPreference,
-                            aiCourseInfo,
-                            new HashSet<>(request.getBreadTypes()));
-            course.updateAiResult(
-                    response.getEstimatedCost(),
-                    response.getEstimatedTime(),
-                    response.getTheme(),
-                    response.getSummary());
-
-            Course saved = courseRepository.save(course);
-
-            // 사용자 지정 순서가 있으면 유효성 검사 후 적용, 없으면 AI 추천 순서 사용
-            List<Long> effectiveOrder;
-            if (bakeryOrder != null && !bakeryOrder.isEmpty()) {
-                boolean validOrder =
-                        bakeryOrder.size() == recommendedIds.size()
-                                && new HashSet<>(bakeryOrder).equals(new HashSet<>(recommendedIds));
-                if (!validOrder) {
-                    throw new CustomException(ErrorCode.BAKERY_ORDER_COUNT_MISMATCH);
-                }
-                effectiveOrder = bakeryOrder;
-            } else {
-                effectiveOrder =
-                        response.getBakeries().stream()
-                                .sorted(
-                                        Comparator.comparingInt(
-                                                RecommendedBakeryResponse::getOrder))
-                                .map(RecommendedBakeryResponse::getId)
-                                .toList();
-            }
-
-            Map<Long, RecommendedBakeryResponse> aiMetaMap =
-                    response.getBakeries().stream()
-                            .collect(Collectors.toMap(RecommendedBakeryResponse::getId, r -> r));
-
-            for (int i = 0; i < effectiveOrder.size(); i++) {
-                Long bakeryId = effectiveOrder.get(i);
-                RecommendedBakeryResponse meta = aiMetaMap.get(bakeryId);
-                CourseBakery cb =
-                        CourseBakery.builder()
-                                .bakery(bakeryMap.get(bakeryId))
-                                .course(saved)
-                                .visitOrder(i + 1)
-                                .recommendedBread(meta.getRecommendedBread())
-                                .reason(meta.getReason())
-                                .build();
-                saved.addCourseBakery(cb);
-            }
-
-            // 커밋 성공 후 Redis 결과 + 락 정리
-            // 트랜잭션 동기화가 활성 상태(정상 프로덕션)이면 afterCommit에 등록,
-            // 비활성(단위 테스트 등)이면 즉시 정리
-            if (TransactionSynchronizationManager.isSynchronizationActive()) {
-                TransactionSynchronizationManager.registerSynchronization(
-                        new TransactionSynchronization() {
-                            @Override
-                            public void afterCommit() {
-                                aiCourseResultRedisService.deleteResult(jobId);
-                                aiCourseResultRedisService.releaseSaveLock(jobId);
-                                aiCourseRedisService.deleteJob(jobId);
-                                log.info(
-                                        "[AI 코스 저장] Redis 정리 완료: jobId={}, courseId={}",
-                                        jobId,
-                                        saved.getId());
-                            }
-                        });
-            } else {
-                aiCourseResultRedisService.deleteResult(jobId);
-                aiCourseResultRedisService.releaseSaveLock(jobId);
-                aiCourseRedisService.deleteJob(jobId);
-            }
-
-            log.info(
-                    "[AI 코스 저장] 완료: jobId={}, courseId={}, userId={}",
-                    jobId,
-                    saved.getId(),
-                    userId);
-            return saved.getId();
-
-        } catch (Exception e) {
-            // DB 저장 실패 시 락 즉시 해제 — 재시도 허용
-            aiCourseResultRedisService.releaseSaveLock(jobId);
-            throw e;
-        }
-    }
-
-    @Transactional
-    public void deleteAi(Long courseId, Long userId) {
-        Course course =
-                courseRepository
-                        .findByIdAndActiveTrue(courseId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
-
-        if (course.getCourseType() != CourseType.AI) {
-            throw new CustomException(ErrorCode.NOT_AI_COURSE);
-        }
-        if (course.getUser() == null || !course.getUser().getId().equals(userId)) {
-            throw new CustomException(ErrorCode.FORBIDDEN);
-        }
-
-        course.deactivate();
-        courseDrivingRouteRepository.deleteAllByCourseIdIn(List.of(courseId));
-        log.info("AI 코스 삭제: courseId={}, userId={}", courseId, userId);
-    }
-
     @Transactional
     public void like(Long courseId, Long userId) {
         Course course =
@@ -567,18 +323,20 @@ public class CourseService {
 
         validateCourseActionAccess(course, userId);
 
-        if (courseLikeRepository.existsByCourseIdAndUserId(courseId, userId)) {
-            throw new CustomException(ErrorCode.ALREADY_COURSE_LIKED);
-        }
-
         User user =
                 userRepository
                         .findById(userId)
                         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         try {
-            courseLikeRepository.save(CourseLike.builder().course(course).user(user).build());
+            courseLikeRepository.saveAndFlush(
+                    CourseLike.builder().course(course).user(user).build());
         } catch (DataIntegrityViolationException e) {
+            log.warn(
+                    "[코스 좋아요 중복 또는 무결성 위반] courseId={}, userId={}, msg={}",
+                    courseId,
+                    userId,
+                    e.getMessage());
             throw new CustomException(ErrorCode.ALREADY_COURSE_LIKED);
         }
     }
@@ -607,18 +365,19 @@ public class CourseService {
 
         validateCourseActionAccess(course, userId);
 
-        if (routeRepository.existsByCourseIdAndUserId(courseId, userId)) {
-            throw new CustomException(ErrorCode.ALREADY_ROUTED);
-        }
-
         User user =
                 userRepository
                         .findById(userId)
                         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         try {
-            routeRepository.save(Route.builder().course(course).user(user).build());
+            routeRepository.saveAndFlush(Route.builder().course(course).user(user).build());
         } catch (DataIntegrityViolationException e) {
+            log.warn(
+                    "[코스 루트 저장 중복 또는 무결성 위반] courseId={}, userId={}, msg={}",
+                    courseId,
+                    userId,
+                    e.getMessage());
             throw new CustomException(ErrorCode.ALREADY_ROUTED);
         }
     }
@@ -630,277 +389,6 @@ public class CourseService {
                         .findByCourseIdAndUserId(courseId, userId)
                         .orElseThrow(() -> new CustomException(ErrorCode.NOT_ROUTED));
         routeRepository.delete(route);
-    }
-
-    @Transactional(readOnly = true)
-    public DrivingRouteResponse getDrivingRoute(Long courseId, Long userId, UserRole role) {
-        Course course =
-                courseRepository
-                        .findActiveWithBakeriesById(courseId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
-        validateDrivingRouteAccess(course, userId, role);
-
-        List<Bakery> orderedBakeries =
-                course.getCourseBakeries().stream()
-                        .sorted(Comparator.comparingInt(CourseBakery::getVisitOrder))
-                        .map(CourseBakery::getBakery)
-                        .filter(Bakery::isActive)
-                        .toList();
-        int totalStayMinutes = calculateTotalStayMinutes(orderedBakeries);
-        List<Integer> stayMinutesPerBakery = getStayMinutesPerBakery(orderedBakeries);
-
-        DrivingRouteResponse response =
-                courseDrivingRouteRepository
-                        .findById(courseId)
-                        .map(
-                                cached ->
-                                        buildResponseFromCache(
-                                                cached, stayMinutesPerBakery, totalStayMinutes))
-                        .orElseGet(
-                                () ->
-                                        fetchAndSaveDrivingRoute(
-                                                course,
-                                                orderedBakeries,
-                                                stayMinutesPerBakery,
-                                                totalStayMinutes));
-
-        courseDrivingRouteSaver.updateCourseTotalMinutes(courseId, response.getTotalMinutes());
-        return response;
-    }
-
-    private int calculateTotalStayMinutes(List<Bakery> bakeries) {
-        return bakeries.stream().mapToInt(Bakery::getEstimatedStayMinutes).sum();
-    }
-
-    private List<Integer> getStayMinutesPerBakery(List<Bakery> bakeries) {
-        return bakeries.stream().map(Bakery::getEstimatedStayMinutes).toList();
-    }
-
-    private DrivingRouteResponse buildResponseFromCache(
-            CourseDrivingRoute cached, List<Integer> stayMinutesPerBakery, int totalStayMinutes) {
-        List<Integer> legs =
-                cached.getLegDurations() == null
-                        ? List.of()
-                        : cached.getLegDurations().stream()
-                                .map(this::secondsToMinutesCeil)
-                                .toList();
-
-        int totalTravelMinutes = toTotalTravelMinutes(legs, cached.getTotalTravelSeconds());
-
-        return DrivingRouteResponse.builder()
-                .path(cached.getPath())
-                .legs(legs)
-                .stayMinutesPerBakery(stayMinutesPerBakery)
-                .totalTravelMinutes(totalTravelMinutes)
-                .totalStayMinutes(totalStayMinutes)
-                .totalMinutes(totalTravelMinutes + totalStayMinutes)
-                .build();
-    }
-
-    private void validateDrivingRouteAccess(Course course, Long userId, UserRole role) {
-        if (!course.isShared() && role != UserRole.ROLE_ADMIN) {
-            if (userId == null) {
-                throw new CustomException(ErrorCode.UNAUTHORIZED);
-            }
-            if (course.getUser() == null || !course.getUser().getId().equals(userId)) {
-                throw new CustomException(ErrorCode.FORBIDDEN);
-            }
-        }
-    }
-
-    private DrivingRouteResponse fetchAndSaveDrivingRoute(
-            Course course,
-            List<Bakery> orderedBakeries,
-            List<Integer> stayMinutesPerBakery,
-            int totalStayMinutes) {
-        Long courseId = course.getId();
-
-        List<Coordinate> bakeryCoordinates =
-                orderedBakeries.stream()
-                        .map(bakery -> new Coordinate(bakery.getLatitude(), bakery.getLongitude()))
-                        .toList();
-
-        List<Coordinate> coordinates;
-        if (course.getCourseType() == CourseType.AI) {
-            AiCourseInfo aiInfo = course.getAiCourseInfo();
-            if (aiInfo == null) {
-                log.error("AI 코스 출발 위치 없음: courseId={}", courseId);
-                throw new CustomException(ErrorCode.ROUTE_NOT_FOUND);
-            }
-            Coordinate startCoord = new Coordinate(aiInfo.getLatitude(), aiInfo.getLongitude());
-            coordinates = new ArrayList<>();
-            coordinates.add(startCoord);
-            coordinates.addAll(bakeryCoordinates);
-        } else {
-            coordinates = bakeryCoordinates;
-        }
-
-        if (coordinates.size() < 2) {
-            log.warn("경로 조회 실패 - 경유지 부족: courseId={}, count={}", courseId, coordinates.size());
-            throw new CustomException(ErrorCode.ROUTE_INSUFFICIENT_WAYPOINTS);
-        }
-
-        // Kakao Directions API: waypoints 최대 5개 (origin + destination 제외)
-        if (coordinates.size() > 7) {
-            log.warn("경로 조회 실패 - 경유지 초과: courseId={}, count={}", courseId, coordinates.size());
-            throw new CustomException(ErrorCode.ROUTE_TOO_MANY_WAYPOINTS);
-        }
-
-        RouteResult result = drivingRouteClient.getPath(coordinates);
-        try {
-            courseDrivingRouteSaver.save(courseId, result);
-        } catch (DataIntegrityViolationException e) {
-            log.info("동시 경로 저장 충돌 무시 (이미 저장됨): courseId={}", courseId);
-        }
-
-        List<Integer> legs =
-                result.getLegDurationsSeconds().stream().map(this::secondsToMinutesCeil).toList();
-        int totalTravelMinutes = toTotalTravelMinutes(legs, result.getTotalDurationSeconds());
-
-        return DrivingRouteResponse.builder()
-                .path(result.getPath())
-                .legs(legs)
-                .stayMinutesPerBakery(stayMinutesPerBakery)
-                .totalTravelMinutes(totalTravelMinutes)
-                .totalStayMinutes(totalStayMinutes)
-                .totalMinutes(totalTravelMinutes + totalStayMinutes)
-                .build();
-    }
-
-    private int secondsToMinutesCeil(int seconds) {
-        return (int) Math.ceil(seconds / 60.0);
-    }
-
-    /** legs가 있으면 합산, 없으면 총 초를 분으로 변환. legs 표시값과 항상 일치함. */
-    private int toTotalTravelMinutes(List<Integer> legs, Integer totalSeconds) {
-        if (!legs.isEmpty()) {
-            return legs.stream().mapToInt(Integer::intValue).sum();
-        }
-        return secondsToMinutesCeil(totalSeconds != null ? totalSeconds : 0);
-    }
-
-    @Transactional
-    public ReorderBakeriesResponse reorderBakeries(
-            Long courseId, Long userId, UserRole role, ReorderBakeriesRequest request) {
-        Course course =
-                courseRepository
-                        .findByIdAndActiveTrue(courseId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
-
-        validateEditAccess(course, userId, role);
-
-        if (request.getBakeryOrder() == null || request.getBakeryOrder().isEmpty()) {
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
-        }
-
-        // 현재 코스의 빵집들 (활성만)
-        List<CourseBakery> courseBakeries =
-                courseBakeryRepository.findAllByCourseId(courseId).stream()
-                        .filter(cb -> cb.getBakery().isActive())
-                        .toList();
-
-        Set<Long> currentBakeryIds =
-                courseBakeries.stream()
-                        .map(cb -> cb.getBakery().getId())
-                        .collect(Collectors.toSet());
-
-        // 비활성/미포함 ID 제거 후 순서 목록 구성
-        List<Long> activeBakeryOrder =
-                request.getBakeryOrder().stream().filter(currentBakeryIds::contains).toList();
-
-        // 활성 빵집 목록 내 중복 ID 검증
-        if (activeBakeryOrder.size() != new HashSet<>(activeBakeryOrder).size()) {
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
-        }
-
-        // 필터링 후 코스의 전체 활성 빵집 목록과 일치하지 않으면 에러
-        if (!new HashSet<>(activeBakeryOrder).equals(currentBakeryIds)) {
-            throw new CustomException(ErrorCode.BAKERY_ORDER_COUNT_MISMATCH);
-        }
-
-        // 투어 진행 중이면 이미 방문한 빵집 순서는 변경 불가
-        tourRedisService
-                .getTourState(userId)
-                .filter(
-                        state ->
-                                state.getCourseId().equals(courseId)
-                                        && state.getStatus()
-                                                == com.breadbread.tour.redis.TourStatus.IN_PROGRESS)
-                .ifPresent(
-                        state -> {
-                            int visitedCount = state.getCurrentVisitOrder();
-                            if (visitedCount == 0) return;
-
-                            List<Long> visitedOrder =
-                                    courseBakeries.stream()
-                                            .filter(cb -> cb.getVisitOrder() <= visitedCount)
-                                            .sorted(
-                                                    Comparator.comparingInt(
-                                                            CourseBakery::getVisitOrder))
-                                            .map(cb -> cb.getBakery().getId())
-                                            .toList();
-
-                            for (int i = 0; i < visitedOrder.size(); i++) {
-                                if (!activeBakeryOrder.get(i).equals(visitedOrder.get(i))) {
-                                    throw new CustomException(ErrorCode.TOUR_INVALID_VISIT_ORDER);
-                                }
-                            }
-                        });
-
-        // visitOrder 업데이트
-        Map<Long, CourseBakery> bakeryMap =
-                courseBakeries.stream()
-                        .collect(Collectors.toMap(cb -> cb.getBakery().getId(), cb -> cb));
-
-        for (int i = 0; i < activeBakeryOrder.size(); i++) {
-            final int order = i + 1;
-            bakeryMap.get(activeBakeryOrder.get(i)).setVisitOrder(order);
-        }
-
-        // 순서 변경으로 기존 경로 캐시 무효화
-        courseDrivingRouteRepository.deleteAllByCourseIdIn(List.of(courseId));
-        log.info("코스 빵집 순서 변경으로 경로 캐시 삭제: courseId={}", courseId);
-
-        // 새 순서로 전체 활성 빵집 목록 구성 후 경로 재조회
-        List<Bakery> orderedBakeries =
-                activeBakeryOrder.stream().map(id -> bakeryMap.get(id).getBakery()).toList();
-        int totalStayMinutes = calculateTotalStayMinutes(orderedBakeries);
-
-        int estimatedTotalMinutes = 0;
-        try {
-            DrivingRouteResponse routeResponse =
-                    fetchAndSaveDrivingRoute(
-                            course,
-                            orderedBakeries,
-                            getStayMinutesPerBakery(orderedBakeries),
-                            totalStayMinutes);
-            estimatedTotalMinutes = routeResponse.getTotalMinutes();
-            course.updateTotalMinutes(estimatedTotalMinutes);
-        } catch (CustomException e) {
-            log.warn(
-                    "코스 순서 변경 후 경로 갱신 실패: courseId={}, error={}",
-                    courseId,
-                    e.getErrorCode().name());
-        }
-
-        log.info(
-                "코스 빵집 순서 변경: courseId={}, userId={}, count={}",
-                courseId,
-                userId,
-                activeBakeryOrder.size());
-
-        return ReorderBakeriesResponse.builder()
-                .courseId(courseId)
-                .bakeryOrder(activeBakeryOrder)
-                .estimatedTotalMinutes(estimatedTotalMinutes)
-                .build();
-    }
-
-    private void validateEditAccess(Course course, Long userId, UserRole role) {
-        if (role == UserRole.ROLE_ADMIN) return;
-        if (course.getUser() == null || !course.getUser().getId().equals(userId)) {
-            throw new CustomException(ErrorCode.FORBIDDEN);
-        }
     }
 
     private void validateCourseActionAccess(Course course, Long userId) {
