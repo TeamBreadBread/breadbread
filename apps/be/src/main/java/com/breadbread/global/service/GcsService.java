@@ -29,12 +29,12 @@ public class GcsService {
 
     /** {@link com.breadbread.global.dto.UploadFolder} 과 동일한 업로드 루트만 허용 */
     private static final Set<String> ALLOWED_OBJECT_PREFIXES =
-            Set.of("bakeries", "breads", "reviews", "posts", "profiles");
+            Set.of("bakeries", "breads", "reviews", "posts", "profiles", "courses");
 
     /** 업로드 시 생성하는 객체 키 형식만 삭제에 허용합니다. (CodeQL 경로/URL taint 완화) */
     private static final Pattern ALLOWED_OBJECT_KEY =
             Pattern.compile(
-                    "^(bakeries|breads|reviews|posts|profiles)/[0-9a-fA-F-]{36}\\.(jpg|png|webp)$");
+                    "^(bakeries|breads|reviews|posts|profiles|courses)/[0-9a-fA-F-]{36}\\.(jpg|png|webp)$");
 
     private final Storage storage;
 
@@ -130,6 +130,19 @@ public class GcsService {
         }
     }
 
+    public void deleteByObjectKey(String objectKey) {
+        if (!isAllowedObjectKey(objectKey)) {
+            throw new CustomException(ErrorCode.INVALID_GCS_URL);
+        }
+        try {
+            storage.delete(BlobId.of(bucketName, objectKey));
+            log.info("GCS file delete success: {}", objectKey);
+        } catch (Exception e) {
+            log.error("GCS file delete failed: {}", objectKey, e);
+            throw new CustomException(ErrorCode.FILE_DELETE_FAILED);
+        }
+    }
+
     public void deleteQuietly(String url) {
         try {
             delete(url);
@@ -139,6 +152,10 @@ public class GcsService {
     }
 
     /** 공개 GCS URL에서 객체 키만 추출합니다. 호스트·경로·키 형식을 모두 검증합니다. */
+    public String extractObjectKey(String fileUrl) {
+        return parseVerifiedObjectKeyFromPublicUrl(fileUrl);
+    }
+
     private String parseVerifiedObjectKeyFromPublicUrl(String fileUrl) {
         final URI uri;
         try {

@@ -12,6 +12,7 @@ import com.breadbread.bakery.entity.BakeryImage;
 import com.breadbread.bakery.repository.BakeryImageRepository;
 import com.breadbread.bakery.service.BakeryImageService.PreviewBatch;
 import com.breadbread.global.service.GcsService;
+import com.breadbread.global.tempimage.service.TempImageService;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ class BakeryImageServiceTest {
     @Mock private BakeryImageRepository bakeryImageRepository;
     @Mock private BakeryImageUrlResolver bakeryImageUrlResolver;
     @Mock private GcsService gcsService;
+    @Mock private TempImageService tempImageService;
 
     @InjectMocks private BakeryImageService bakeryImageService;
 
@@ -37,7 +39,7 @@ class BakeryImageServiceTest {
     void saveImages_does_nothing_when_urls_null() {
         Bakery bakery = bakeryWithId(1L);
 
-        bakeryImageService.saveImages(bakery, null);
+        bakeryImageService.saveImages(1L, bakery, null);
 
         verify(bakeryImageRepository, never()).saveAll(any());
     }
@@ -47,7 +49,7 @@ class BakeryImageServiceTest {
         Bakery bakery = bakeryWithId(1L);
         String[] urls = {"a.jpg", "b.jpg", "c.jpg"};
 
-        bakeryImageService.saveImages(bakery, urls);
+        bakeryImageService.saveImages(1L, bakery, urls);
 
         ArgumentCaptor<List<BakeryImage>> captor = ArgumentCaptor.forClass(List.class);
         verify(bakeryImageRepository).saveAll(captor.capture());
@@ -114,7 +116,7 @@ class BakeryImageServiceTest {
                                 .build());
         String[] newUrls = {"new1.jpg", "new2.jpg"};
 
-        bakeryImageService.replaceImages(bakery, newUrls);
+        bakeryImageService.replaceImages(1L, bakery, newUrls);
 
         verify(gcsService).deleteQuietly("old.jpg");
         verify(bakeryImageRepository).deleteAllByBakery(bakery);
@@ -137,7 +139,7 @@ class BakeryImageServiceTest {
         // 기존 URL을 새 목록에 그대로 포함 → GCS 삭제 불필요
         String[] newUrls = {"keep.jpg", "added.jpg"};
 
-        bakeryImageService.replaceImages(bakery, newUrls);
+        bakeryImageService.replaceImages(1L, bakery, newUrls);
 
         verify(gcsService, never()).deleteQuietly("keep.jpg");
         verify(bakeryImageRepository).deleteAllByBakery(bakery);

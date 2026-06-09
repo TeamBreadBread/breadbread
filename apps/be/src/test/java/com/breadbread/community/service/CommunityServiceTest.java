@@ -21,9 +21,11 @@ import com.breadbread.community.entity.PostType;
 import com.breadbread.community.repository.CommentRepository;
 import com.breadbread.community.repository.PostLikeRepository;
 import com.breadbread.community.repository.PostRepository;
+import com.breadbread.global.dto.UploadFolder;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.service.GcsService;
+import com.breadbread.global.tempimage.service.TempImageService;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
@@ -50,6 +52,7 @@ class CommunityServiceTest {
     @Mock private PostLikeRepository postLikeRepository;
     @Mock private UserRepository userRepository;
     @Mock private GcsService gcsService;
+    @Mock private TempImageService tempImageService;
 
     @InjectMocks private CommunityService communityService;
 
@@ -155,6 +158,8 @@ class CommunityServiceTest {
         assertThat(postCaptor.getValue().getTitle()).isEqualTo("자유");
         assertThat(postCaptor.getValue().getPostType()).isEqualTo(PostType.FREE);
         assertThat(postCaptor.getValue().getUser()).isSameAs(author);
+        verify(tempImageService)
+                .consumeOwnedImages(2L, List.of("https://a.jpg"), UploadFolder.posts);
     }
 
     @Test
@@ -253,6 +258,8 @@ class CommunityServiceTest {
         assertThat(post.getTitle()).isEqualTo("new-title");
         assertThat(post.getContent()).isEqualTo("new-body");
         assertThat(post.getImageUrls()).containsExactly("https://x.jpg");
+        verify(tempImageService)
+                .consumeOwnedImages(owner.getId(), List.of("https://x.jpg"), UploadFolder.posts);
     }
 
     @Test
