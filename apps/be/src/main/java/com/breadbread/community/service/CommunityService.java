@@ -15,9 +15,9 @@ import com.breadbread.community.entity.Comment;
 import com.breadbread.community.entity.Post;
 import com.breadbread.community.entity.PostLike;
 import com.breadbread.community.entity.PostType;
-import com.breadbread.community.respository.CommentRepository;
-import com.breadbread.community.respository.PostLikeRepository;
-import com.breadbread.community.respository.PostRepository;
+import com.breadbread.community.repository.CommentRepository;
+import com.breadbread.community.repository.PostLikeRepository;
+import com.breadbread.community.repository.PostRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.service.GcsService;
@@ -219,13 +219,14 @@ public class CommunityService {
                         .findById(userId)
                         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        if (postLikeRepository.existsByUserIdAndPostId(userId, postId)) {
-            throw new CustomException(ErrorCode.ALREADY_POST_LIKED);
-        }
-
         try {
-            postLikeRepository.save(PostLike.builder().post(post).user(user).build());
+            postLikeRepository.saveAndFlush(PostLike.builder().post(post).user(user).build());
         } catch (DataIntegrityViolationException e) {
+            log.warn(
+                    "[게시글 좋아요 중복 또는 무결성 위반] postId={}, userId={}, msg={}",
+                    postId,
+                    userId,
+                    e.getMessage());
             throw new CustomException(ErrorCode.ALREADY_POST_LIKED);
         }
 

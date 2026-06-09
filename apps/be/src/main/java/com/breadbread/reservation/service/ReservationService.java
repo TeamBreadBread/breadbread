@@ -129,6 +129,11 @@ public class ReservationService {
                     request.getCourseId());
             return savedId;
         } catch (DataIntegrityViolationException e) {
+            log.warn(
+                    "[예약 생성 중복 또는 무결성 위반] userId={}, courseId={}, msg={}",
+                    userId,
+                    request.getCourseId(),
+                    e.getMessage());
             throw new CustomException(ErrorCode.ALREADY_RESERVED);
         }
     }

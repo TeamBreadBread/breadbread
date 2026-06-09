@@ -93,7 +93,7 @@ public class UserService {
                             .waitingTolerance(request.getWaitingTolerance())
                             .build());
         } catch (DataIntegrityViolationException e) {
-            // 동시에 두 번 저장하면 user_id 유니크 충돌 → 처리되지 않으면 500
+            log.warn("[선호도 등록 중복 또는 무결성 위반] userId={}, msg={}", userId, e.getMessage());
             throw new CustomException(ErrorCode.PREFERENCE_ALREADY_EXISTS);
         }
         log.info("선호도 등록: userId={}", userId);
@@ -163,6 +163,7 @@ public class UserService {
             user.updateProfile(request);
             userRepository.saveAndFlush(user);
         } catch (DataIntegrityViolationException e) {
+            log.warn("[프로필 수정 중복 또는 무결성 위반] userId={}, msg={}", userId, e.getMessage());
             throw new CustomException(ErrorCode.DUPLICATE_NICKNAME);
         }
         log.info("프로필 수정: userId={}", userId);
