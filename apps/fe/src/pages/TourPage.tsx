@@ -21,6 +21,7 @@ import {
   buildBakeryNameLookup,
   mapCongestionByBakeryId,
 } from "@/utils/congestionCheck";
+import { notifyTourCompleteCelebration } from "@/utils/tourCelebration";
 import { cn } from "@/utils/cn";
 
 interface TourPageProps {
@@ -147,6 +148,10 @@ export default function TourPage({ courseId }: TourPageProps) {
     try {
       const updated = await checkTourVisit(courseId, order);
       setTour(updated);
+      if (updated.status === "COMPLETED") {
+        endCourseGuide();
+        notifyTourCompleteCelebration(courseId);
+      }
     } catch (e) {
       setError(getErrorMessage(e));
     } finally {
@@ -163,6 +168,7 @@ export default function TourPage({ courseId }: TourPageProps) {
       setTour(updated);
       if (updated.status === "COMPLETED") {
         endCourseGuide();
+        notifyTourCompleteCelebration(courseId);
       }
     } catch (e) {
       setError(getErrorMessage(e));

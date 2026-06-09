@@ -6,21 +6,25 @@ import { getCurrentTour } from "@/api/tours";
 import { isBotFloatingHiddenPath } from "@/lib/courseGuide";
 import { isLoggedIn } from "@/lib/auth/isLoggedIn";
 import { tryPostLoginRedirectPath } from "@/lib/postLoginRedirect";
+import { readRouteFocusCourseId } from "@/utils/aiCourseStorage";
 import { LoginRequiredContext } from "@/lib/auth/LoginRequiredContext";
+
+function parseSearchCourseId(search: unknown): number | null {
+  if (!search || typeof search !== "object") return null;
+  const courseId = (search as { courseId?: unknown }).courseId;
+  if (typeof courseId === "number" && Number.isFinite(courseId) && courseId > 0) {
+    return Math.floor(courseId);
+  }
+  return null;
+}
 
 export function LoginRequiredProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const routeFlowCourseId = useRouterState({
-    select: (s) => {
-      if (s.location.pathname !== "/ai-search-result") return null;
-      const search = s.location.search as { courseId?: number; from?: string };
-      if (search.from === "route" && typeof search.courseId === "number" && search.courseId > 0) {
-        return search.courseId;
-      }
-      return null;
-    },
+  const searchCourseId = useRouterState({
+    select: (s) => parseSearchCourseId(s.location.search),
   });
+  const routeFocusCourseId = pathname === "/route" ? readRouteFocusCourseId() : null;
   const loggedIn = isLoggedIn();
 
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
@@ -90,11 +94,12 @@ export function LoginRequiredProvider({ children }: { children: ReactNode }) {
   const resolvedCourseGuideId = loggedIn ? courseGuideId : null;
 
   const isHomePath = pathname === "/home";
-  const isSavedRouteFlow = pathname === "/route" || routeFlowCourseId != null;
+  const isSavedRouteFlow =
+    pathname === "/route" || searchCourseId != null || routeFocusCourseId != null;
   /** 로그인 사용자: 홈·저장 루트·코스 안내 중 BreadBot 노출 */
   const showBot = loggedIn && (isHomePath || isSavedRouteFlow || resolvedCourseGuideActive);
   const showBotFloating = showBot && !isBotFloatingHiddenPath(pathname);
-  const botCourseId = resolvedCourseGuideId ?? routeFlowCourseId;
+  const botCourseId = resolvedCourseGuideId ?? searchCourseId ?? routeFocusCourseId;
 
   const value = useMemo(
     () => ({
