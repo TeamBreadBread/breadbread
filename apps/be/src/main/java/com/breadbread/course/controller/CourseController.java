@@ -1,11 +1,13 @@
 package com.breadbread.course.controller;
 
 import com.breadbread.auth.dto.CustomUserDetails;
-import com.breadbread.bakery.entity.BreadType;
 import com.breadbread.course.dto.*;
 import com.breadbread.course.dto.ai.AiCoursePreviewResponse;
 import com.breadbread.course.dto.ai.AiCourseRequest;
 import com.breadbread.course.dto.ai.AiJobStatusResponse;
+import com.breadbread.course.service.AiCourseSaveService;
+import com.breadbread.course.service.CourseBakeryOrderService;
+import com.breadbread.course.service.CourseDrivingRouteService;
 import com.breadbread.course.service.CourseService;
 import com.breadbread.global.dto.ApiResponse;
 import com.breadbread.user.entity.UserRole;
@@ -29,6 +31,9 @@ import org.springframework.web.bind.annotation.*;
 public class CourseController {
 
     private final CourseService courseService;
+    private final AiCourseSaveService aiCourseSaveService;
+    private final CourseDrivingRouteService courseDrivingRouteService;
+    private final CourseBakeryOrderService courseBakeryOrderService;
 
     @Operation(summary = "코스 목록 조회", description = "지역별/종류별/테마별/에디터픽 필터 지원")
     @Parameters({
@@ -42,21 +47,9 @@ public class CourseController {
     @GetMapping
     public ApiResponse<CourseListResponse> search(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam(required = false) String region,
-            @RequestParam(required = false) BreadType breadType,
-            @RequestParam(required = false) String theme,
-            @RequestParam(required = false) Boolean editorPick,
+            @ModelAttribute CourseSearch search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-
-        CourseSearch search =
-                CourseSearch.builder()
-                        .region(region)
-                        .breadType(breadType)
-                        .theme(theme)
-                        .editorPick(editorPick)
-                        .build();
-
         Long userId = userDetails != null ? userDetails.getId() : null;
         return ApiResponse.ok(courseService.search(search, PageRequest.of(page, size), userId));
     }
@@ -107,7 +100,7 @@ public class CourseController {
     public ApiResponse<String> createAi(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody AiCourseRequest request) {
-        String jobId = courseService.createAi(userDetails.getId(), request);
+        String jobId = aiCourseSaveService.createAi(userDetails.getId(), request);
         return ApiResponse.ok(jobId);
     }
 
@@ -119,7 +112,7 @@ public class CourseController {
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<AiJobStatusResponse> getAiJobStatus(
             @PathVariable String jobId, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ApiResponse.ok(courseService.getAiJobStatus(jobId, userDetails.getId()));
+        return ApiResponse.ok(aiCourseSaveService.getAiJobStatus(jobId, userDetails.getId()));
     }
 
     @Operation(
@@ -129,7 +122,7 @@ public class CourseController {
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<AiCoursePreviewResponse> getAiPreview(
             @PathVariable String jobId, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ApiResponse.ok(courseService.getAiPreview(jobId, userDetails.getId()));
+        return ApiResponse.ok(aiCourseSaveService.getAiPreview(jobId, userDetails.getId()));
     }
 
     @Operation(
@@ -145,7 +138,8 @@ public class CourseController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody(required = false) ReorderBakeriesRequest reorderRequest) {
         List<Long> bakeryOrder = reorderRequest != null ? reorderRequest.getBakeryOrder() : null;
-        return ApiResponse.ok(courseService.saveAiCourse(jobId, userDetails.getId(), bakeryOrder));
+        return ApiResponse.ok(
+                aiCourseSaveService.saveAiCourse(jobId, userDetails.getId(), bakeryOrder));
     }
 
     @Operation(summary = "AI 코스 삭제 (본인 코스만 가능)")
@@ -153,7 +147,7 @@ public class CourseController {
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<Void> deleteAi(
             @AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable Long id) {
-        courseService.deleteAi(id, userDetails.getId());
+        aiCourseSaveService.deleteAi(id, userDetails.getId());
         return ApiResponse.ok(null);
     }
 
@@ -206,7 +200,7 @@ public class CourseController {
             @PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = userDetails != null ? userDetails.getId() : null;
         UserRole role = userDetails != null ? userDetails.getRole() : null;
-        return ApiResponse.ok(courseService.getDrivingRoute(id, userId, role));
+        return ApiResponse.ok(courseDrivingRouteService.getDrivingRoute(id, userId, role));
     }
 
     @Operation(summary = "코스 내 빵집 방문 순서 변경")
@@ -217,7 +211,7 @@ public class CourseController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody ReorderBakeriesRequest request) {
         return ApiResponse.ok(
-                courseService.reorderBakeries(
+                courseBakeryOrderService.reorderBakeries(
                         courseId, userDetails.getId(), userDetails.getRole(), request));
     }
 }
