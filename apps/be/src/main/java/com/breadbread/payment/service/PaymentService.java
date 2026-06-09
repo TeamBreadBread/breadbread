@@ -26,6 +26,7 @@ import io.portone.sdk.server.webhook.WebhookVerifier;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -104,7 +105,9 @@ public class PaymentService {
                     .build();
         }
 
-        PortOnePaymentResponse response = fetchPortOnePaymentOrThrow(payment.getPaymentId());
+        PortOnePaymentResponse response =
+                fetchPortOnePayment(payment.getPaymentId())
+                        .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_FAILED));
         assertPaidMatchesOrder(payment, response);
         confirmPaidPayment(payment, response);
         log.info("결제 완료: paymentId={}, userId={}", request.getPaymentId(), userId);
@@ -205,7 +208,7 @@ public class PaymentService {
         if (payment.getStatus() == PaymentStatus.PAID) {
             return;
         }
-        PortOnePaymentResponse remote = fetchPortOnePaymentSilent(paymentId);
+        PortOnePaymentResponse remote = fetchPortOnePayment(paymentId).orElse(null);
         if (remote == null) {
             log.warn("[포트원 웹훅] 포트원에서 결제 정보 조회 실패: paymentId={}", paymentId);
             return;
@@ -246,7 +249,7 @@ public class PaymentService {
             log.warn("[포트원 웹훅] 알 수 없는 paymentId: paymentId={}", paymentId);
             return;
         }
-        PortOnePaymentResponse remote = fetchPortOnePaymentSilent(paymentId);
+        PortOnePaymentResponse remote = fetchPortOnePayment(paymentId).orElse(null);
         if (remote == null || remote.getStatus() != PaymentStatus.FAILED) {
             return;
         }
@@ -264,7 +267,7 @@ public class PaymentService {
             log.warn("[포트원 웹훅] 알 수 없는 paymentId: paymentId={}", paymentId);
             return;
         }
-        PortOnePaymentResponse remote = fetchPortOnePaymentSilent(paymentId);
+        PortOnePaymentResponse remote = fetchPortOnePayment(paymentId).orElse(null);
         if (remote == null) {
             return;
         }
@@ -289,7 +292,7 @@ public class PaymentService {
             log.warn("[포트원 웹훅] 알 수 없는 paymentId: paymentId={}", paymentId);
             return;
         }
-        PortOnePaymentResponse remote = fetchPortOnePaymentSilent(paymentId);
+        PortOnePaymentResponse remote = fetchPortOnePayment(paymentId).orElse(null);
         if (remote == null || remote.getStatus() != PaymentStatus.VIRTUAL_ACCOUNT_ISSUED) {
             return;
         }
@@ -306,7 +309,7 @@ public class PaymentService {
             log.warn("[포트원 웹훅] 알 수 없는 paymentId: paymentId={}", paymentId);
             return;
         }
-        PortOnePaymentResponse remote = fetchPortOnePaymentSilent(paymentId);
+        PortOnePaymentResponse remote = fetchPortOnePayment(paymentId).orElse(null);
         if (remote == null || remote.getStatus() != PaymentStatus.PAY_PENDING) {
             return;
         }
@@ -317,44 +320,22 @@ public class PaymentService {
         }
     }
 
-    private PortOnePaymentResponse fetchPortOnePaymentOrThrow(String paymentId) {
+    private Optional<PortOnePaymentResponse> fetchPortOnePayment(String paymentId) {
         try {
-            return portOneClient
-                    .http()
-                    .get()
-                    .uri("/payments/{paymentId}", paymentId)
-                    .retrieve()
-                    .bodyToMono(PortOnePaymentResponse.class)
-                    .block();
+            return Optional.ofNullable(
+                    portOneClient
+                            .http()
+                            .get()
+                            .uri("/payments/{paymentId}", paymentId)
+                            .retrieve()
+                            .bodyToMono(PortOnePaymentResponse.class)
+                            .block());
         } catch (WebClientResponseException e) {
-            if (e.getStatusCode().value() == 404) {
-                throw new CustomException(ErrorCode.PAYMENT_FAILED);
-            }
-            throw new CustomException(ErrorCode.PAYMENT_FAILED);
+            log.warn("[포트원] API 응답 오류: paymentId={}, status={}", paymentId, e.getStatusCode());
+            return Optional.empty();
         } catch (WebClientRequestException e) {
-            log.warn("PortOne API 연결 실패 paymentId={}: {}", paymentId, e.getMessage());
-            throw new CustomException(ErrorCode.PAYMENT_FAILED);
-        }
-    }
-
-    private PortOnePaymentResponse fetchPortOnePaymentSilent(String paymentId) {
-        try {
-            return portOneClient
-                    .http()
-                    .get()
-                    .uri("/payments/{paymentId}", paymentId)
-                    .retrieve()
-                    .bodyToMono(PortOnePaymentResponse.class)
-                    .block();
-        } catch (WebClientResponseException e) {
-            if (e.getStatusCode().value() == 404) {
-                return null;
-            }
-            log.warn("[포트원 웹훅] API 호출 실패: paymentId={}, status={}", paymentId, e.getStatusCode());
-            return null;
-        } catch (WebClientRequestException e) {
-            log.warn("[포트원 웹훅] API 연결 실패: paymentId={}, msg={}", paymentId, e.getMessage());
-            return null;
+            log.warn("[포트원] API 연결 실패: paymentId={}, msg={}", paymentId, e.getMessage());
+            return Optional.empty();
         }
     }
 

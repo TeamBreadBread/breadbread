@@ -1,4 +1,4 @@
-package com.breadbread.community.respository;
+package com.breadbread.community.repository;
 
 import com.breadbread.community.entity.PostLike;
 import java.util.List;

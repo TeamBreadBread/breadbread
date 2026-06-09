@@ -18,9 +18,9 @@ import com.breadbread.community.entity.Comment;
 import com.breadbread.community.entity.Post;
 import com.breadbread.community.entity.PostLike;
 import com.breadbread.community.entity.PostType;
-import com.breadbread.community.respository.CommentRepository;
-import com.breadbread.community.respository.PostLikeRepository;
-import com.breadbread.community.respository.PostRepository;
+import com.breadbread.community.repository.CommentRepository;
+import com.breadbread.community.repository.PostLikeRepository;
+import com.breadbread.community.repository.PostRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.service.GcsService;
@@ -405,14 +405,14 @@ class CommunityServiceTest {
         Post post = post(1L, "t", PostType.FREE, user(1L), List.of());
         when(postRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(post));
         when(userRepository.findById(2L)).thenReturn(Optional.of(user(2L)));
-        when(postLikeRepository.existsByUserIdAndPostId(2L, 1L)).thenReturn(true);
+        doThrow(new DataIntegrityViolationException("dup"))
+                .when(postLikeRepository)
+                .saveAndFlush(any(PostLike.class));
 
         assertThatThrownBy(() -> communityService.likePost(1L, 2L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ALREADY_POST_LIKED);
-
-        verify(postLikeRepository, never()).save(any(PostLike.class));
     }
 
     @Test
@@ -420,10 +420,9 @@ class CommunityServiceTest {
         Post post = post(1L, "t", PostType.FREE, user(1L), List.of());
         when(postRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(post));
         when(userRepository.findById(2L)).thenReturn(Optional.of(user(2L)));
-        when(postLikeRepository.existsByUserIdAndPostId(2L, 1L)).thenReturn(false);
         doThrow(new DataIntegrityViolationException("dup"))
                 .when(postLikeRepository)
-                .save(any(PostLike.class));
+                .saveAndFlush(any(PostLike.class));
 
         assertThatThrownBy(() -> communityService.likePost(1L, 2L))
                 .isInstanceOf(CustomException.class)

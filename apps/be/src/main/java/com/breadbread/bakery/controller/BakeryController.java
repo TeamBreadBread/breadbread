@@ -2,21 +2,18 @@ package com.breadbread.bakery.controller;
 
 import com.breadbread.auth.dto.CustomUserDetails;
 import com.breadbread.bakery.dto.*;
-import com.breadbread.bakery.entity.BakeryPersonality;
-import com.breadbread.bakery.entity.BakerySortType;
-import com.breadbread.bakery.entity.BakeryType;
-import com.breadbread.bakery.entity.BakeryUseType;
 import com.breadbread.bakery.entity.ReviewSortType;
 import com.breadbread.bakery.service.BakeryService;
+import com.breadbread.bakery.service.BreadService;
 import com.breadbread.bakery.service.GooglePlacesUpdateService;
+import com.breadbread.bakery.service.ReviewService;
 import com.breadbread.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -31,6 +28,8 @@ import org.springframework.web.bind.annotation.*;
 public class BakeryController {
 
     private final BakeryService bakeryService;
+    private final BreadService breadService;
+    private final ReviewService reviewService;
     private final GooglePlacesUpdateService googlePlacesUpdateService;
 
     @Operation(
@@ -53,30 +52,7 @@ public class BakeryController {
     })
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200")
     @GetMapping("/ai")
-    public ApiResponse<java.util.List<BakeryAiResponse>> findAllForAi(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "false") boolean open,
-            @RequestParam(required = false) LocalDate visitDate,
-            @RequestParam(required = false) LocalTime visitTime,
-            @RequestParam(required = false) String region,
-            @RequestParam(required = false) Boolean drinkAvailable,
-            @RequestParam(required = false) Boolean dineInAvailable,
-            @RequestParam(required = false) BakeryType bakeryType,
-            @RequestParam(required = false) java.util.List<BakeryUseType> bakeryUseTypes,
-            @RequestParam(required = false) java.util.List<BakeryPersonality> bakeryPersonalities) {
-        BakeryAiSearch search =
-                BakeryAiSearch.builder()
-                        .keyword(keyword)
-                        .open(open)
-                        .visitDate(visitDate)
-                        .visitTime(visitTime)
-                        .region(region)
-                        .drinkAvailable(drinkAvailable)
-                        .dineInAvailable(dineInAvailable)
-                        .bakeryType(bakeryType)
-                        .bakeryUseTypes(bakeryUseTypes)
-                        .bakeryPersonalities(bakeryPersonalities)
-                        .build();
+    public ApiResponse<List<BakeryAiResponse>> findAllForAi(@ModelAttribute BakeryAiSearch search) {
         return ApiResponse.ok(bakeryService.findAllForAi(search));
     }
 
@@ -95,22 +71,10 @@ public class BakeryController {
     @GetMapping
     public ApiResponse<BakeryListResponse> search(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) BakerySortType sort,
-            @RequestParam(defaultValue = "false") boolean open,
-            @RequestParam(required = false) String region,
-            @RequestParam(required = false) String dong,
+            @ModelAttribute BakerySearch search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Long userId = userDetails != null ? userDetails.getId() : null;
-        BakerySearch search =
-                BakerySearch.builder()
-                        .keyword(keyword)
-                        .sort(sort)
-                        .open(open)
-                        .region(region)
-                        .dong(dong)
-                        .build();
         return ApiResponse.ok(bakeryService.search(search, PageRequest.of(page, size), userId));
     }
 
@@ -128,21 +92,9 @@ public class BakeryController {
     })
     @GetMapping("/summary")
     public ApiResponse<BakerySimpleListResponse> searchSimple(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) BakerySortType sort,
-            @RequestParam(defaultValue = "false") boolean open,
-            @RequestParam(required = false) String region,
-            @RequestParam(required = false) String dong,
+            @ModelAttribute BakerySearch search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        BakerySearch search =
-                BakerySearch.builder()
-                        .keyword(keyword)
-                        .sort(sort)
-                        .open(open)
-                        .region(region)
-                        .dong(dong)
-                        .build();
         return ApiResponse.ok(bakeryService.searchSimple(search, PageRequest.of(page, size)));
     }
 
@@ -198,7 +150,7 @@ public class BakeryController {
             @PathVariable Long bakeryId,
             @Valid @RequestBody CreateBreadRequest request) {
         Long id =
-                bakeryService.createBread(
+                breadService.createBread(
                         userDetails.getId(), userDetails.getRole(), bakeryId, request);
         return ApiResponse.ok(id);
     }
@@ -210,7 +162,7 @@ public class BakeryController {
             @PathVariable Long bakeryId,
             @PathVariable Long breadId,
             @Valid @RequestBody UpdateBreadRequest request) {
-        bakeryService.updateBread(
+        breadService.updateBread(
                 userDetails.getId(), userDetails.getRole(), bakeryId, breadId, request);
         return ApiResponse.ok();
     }
@@ -221,7 +173,7 @@ public class BakeryController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long bakeryId,
             @PathVariable Long breadId) {
-        bakeryService.deleteBread(userDetails.getId(), userDetails.getRole(), bakeryId, breadId);
+        breadService.deleteBread(userDetails.getId(), userDetails.getRole(), bakeryId, breadId);
         return ApiResponse.ok();
     }
 
@@ -258,7 +210,7 @@ public class BakeryController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Long userId = userDetails != null ? userDetails.getId() : null;
-        return ApiResponse.ok(bakeryService.getReviews(bakeryId, sort, page, size, userId));
+        return ApiResponse.ok(reviewService.getReviews(bakeryId, sort, page, size, userId));
     }
 
     @Operation(summary = "빵집 리뷰 등록")
@@ -268,7 +220,7 @@ public class BakeryController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long bakeryId,
             @Valid @RequestBody CreateReviewRequest request) {
-        return ApiResponse.ok(bakeryService.createReview(bakeryId, userDetails.getId(), request));
+        return ApiResponse.ok(reviewService.createReview(bakeryId, userDetails.getId(), request));
     }
 
     @Operation(summary = "빵집 리뷰 수정", description = "본인 작성 리뷰만 수정 가능")
@@ -278,7 +230,7 @@ public class BakeryController {
             @PathVariable Long bakeryId,
             @PathVariable Long reviewId,
             @Valid @RequestBody UpdateReviewRequest request) {
-        bakeryService.updateReview(bakeryId, reviewId, userDetails.getId(), request);
+        reviewService.updateReview(bakeryId, reviewId, userDetails.getId(), request);
         return ApiResponse.ok();
     }
 
@@ -288,7 +240,7 @@ public class BakeryController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long bakeryId,
             @PathVariable Long reviewId) {
-        bakeryService.deleteReview(bakeryId, reviewId, userDetails.getId(), userDetails.getRole());
+        reviewService.deleteReview(bakeryId, reviewId, userDetails.getId(), userDetails.getRole());
         return ApiResponse.ok();
     }
 

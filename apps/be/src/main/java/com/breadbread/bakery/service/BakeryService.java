@@ -3,11 +3,11 @@ package com.breadbread.bakery.service;
 import com.breadbread.bakery.dto.*;
 import com.breadbread.bakery.entity.*;
 import com.breadbread.bakery.repository.*;
+import com.breadbread.bakery.service.BakeryImageService.PreviewBatch;
 import com.breadbread.course.repository.CourseBakeryRepository;
 import com.breadbread.course.repository.CourseDrivingRouteRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
-import com.breadbread.global.service.GcsService;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
@@ -20,9 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,11 +35,10 @@ public class BakeryService {
     private final BakeryImageRepository bakeryImageRepository;
     private final BakeryLikeRepository bakeryLikeRepository;
     private final ReviewRepository reviewRepository;
-    private final GcsService gcsService;
     private final CourseBakeryRepository courseBakeryRepository;
     private final CourseDrivingRouteRepository courseDrivingRouteRepository;
-    private final BakeryImageUrlResolver bakeryImageUrlResolver;
     private final GooglePlacesUpdateService googlePlacesUpdateService;
+    private final BakeryImageService bakeryImageService;
 
     @Transactional(readOnly = true)
     public List<BakeryAiResponse> findAllForAi(BakeryAiSearch search) {
@@ -108,30 +105,9 @@ public class BakeryService {
         List<Bakery> bakeries = result.getContent();
 
         List<Long> ids = bakeries.stream().map(Bakery::getId).toList();
-        Map<Long, List<String>> previewUrlsByBakery = new HashMap<>();
-        Map<Long, Integer> remainingPreviewByBakery = new HashMap<>();
-        if (!ids.isEmpty()) {
-            List<BakeryImage> allListImages =
-                    bakeryImageRepository.findAllByBakeryIdInOrderByDisplayOrderAsc(ids);
-            Map<Long, List<BakeryImage>> imagesByBakery =
-                    allListImages.stream()
-                            .collect(Collectors.groupingBy(img -> img.getBakery().getId()));
-            for (Long bakeryId : ids) {
-                List<BakeryImage> ordered =
-                        imagesByBakery.getOrDefault(bakeryId, List.of()).stream()
-                                .sorted(Comparator.comparingInt(BakeryImage::getDisplayOrder))
-                                .toList();
-                int remaining = ordered.size() > 4 ? ordered.size() - 4 : 0;
-                List<String> firstFour =
-                        ordered.stream()
-                                .limit(4)
-                                .map(bakeryImageUrlResolver::resolve)
-                                .filter(url -> url != null)
-                                .toList();
-                previewUrlsByBakery.put(bakeryId, firstFour);
-                remainingPreviewByBakery.put(bakeryId, remaining);
-            }
-        }
+        PreviewBatch previewBatch = bakeryImageService.resolvePreviewBatch(ids);
+        Map<Long, List<String>> previewUrlsByBakery = previewBatch.previewUrls();
+        Map<Long, Integer> remainingPreviewByBakery = previewBatch.remainingCounts();
         Map<Long, Long> likeCountMap =
                 bakeryLikeRepository.countByBakeryIdIn(ids).stream()
                         .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
@@ -188,22 +164,7 @@ public class BakeryService {
         List<Bakery> bakeries = result.getContent();
         List<Long> ids = bakeries.stream().map(Bakery::getId).toList();
 
-        Map<Long, String> thumbnailByBakery = new HashMap<>();
-        if (!ids.isEmpty()) {
-            List<BakeryImage> allImages =
-                    bakeryImageRepository.findAllByBakeryIdInOrderByDisplayOrderAsc(ids);
-            allImages.stream()
-                    .collect(Collectors.groupingBy(img -> img.getBakery().getId()))
-                    .forEach(
-                            (bakeryId, images) ->
-                                    images.stream()
-                                            .min(
-                                                    Comparator.comparingInt(
-                                                            BakeryImage::getDisplayOrder))
-                                            .map(bakeryImageUrlResolver::resolve)
-                                            .ifPresent(
-                                                    url -> thumbnailByBakery.put(bakeryId, url)));
-        }
+        Map<Long, String> thumbnailByBakery = bakeryImageService.resolveThumbnails(ids);
 
         Map<Long, Double> avgRatingMap =
                 ids.isEmpty()
@@ -258,12 +219,7 @@ public class BakeryService {
             }
         }
 
-        List<String> imageUrls =
-                images.stream()
-                        .sorted(Comparator.comparingInt(BakeryImage::getDisplayOrder))
-                        .map(bakeryImageUrlResolver::resolve)
-                        .filter(url -> url != null)
-                        .toList();
+        List<String> imageUrls = bakeryImageService.resolveDetailUrls(images);
 
         return BakeryDetailResponse.from(bakery, likeCount, liked, reviewCount, imageUrls, rating);
     }
@@ -311,19 +267,7 @@ public class BakeryService {
         Bakery saved = bakeryRepository.save(bakery);
         log.info("빵집 생성: bakeryId={}, userId={}", saved.getId(), userId);
 
-        if (request.getImageUrls() != null) {
-            List<BakeryImage> images = new ArrayList<>();
-            String[] urls = request.getImageUrls();
-            for (int i = 0; i < urls.length; i++) {
-                images.add(
-                        BakeryImage.builder()
-                                .imageUrl(urls[i])
-                                .displayOrder(i + 1)
-                                .bakery(saved)
-                                .build());
-            }
-            bakeryImageRepository.saveAll(images);
-        }
+        bakeryImageService.saveImages(saved, request.getImageUrls());
 
         return saved.getId();
     }
@@ -351,25 +295,7 @@ public class BakeryService {
         }
 
         if (request.getImageUrls() != null) {
-            bakery.getImages()
-                    .forEach(
-                            img -> {
-                                if (img.getImageUrl() != null) {
-                                    gcsService.deleteQuietly(img.getImageUrl());
-                                }
-                            });
-            bakeryImageRepository.deleteAllByBakery(bakery);
-            List<BakeryImage> images = new ArrayList<>();
-            String[] urls = request.getImageUrls();
-            for (int i = 0; i < urls.length; i++) {
-                images.add(
-                        BakeryImage.builder()
-                                .imageUrl(urls[i])
-                                .displayOrder(i + 1)
-                                .bakery(bakery)
-                                .build());
-            }
-            bakeryImageRepository.saveAll(images);
+            bakeryImageService.replaceImages(bakery, request.getImageUrls());
         }
     }
 
@@ -382,14 +308,7 @@ public class BakeryService {
 
         checkAuthority(bakery, userId, role);
         log.info("빵집 삭제: bakeryId={}, userId={}", bakeryId, userId);
-        bakery.getImages()
-                .forEach(
-                        img -> {
-                            if (img.getImageUrl() != null) {
-                                gcsService.deleteQuietly(img.getImageUrl());
-                            }
-                        });
-        bakeryImageRepository.deleteAllByBakery(bakery);
+        bakeryImageService.deleteAllImages(bakery);
         bakery.deactivate();
 
         List<Long> courseIds = courseBakeryRepository.findCourseIdsByBakeryId(bakeryId);
@@ -400,82 +319,11 @@ public class BakeryService {
     }
 
     @Transactional
-    public Long createBread(Long userId, UserRole role, Long bakeryId, CreateBreadRequest request) {
-        Bakery bakery =
-                bakeryRepository
-                        .findByIdAndActiveTrue(bakeryId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
-
-        checkAuthority(bakery, userId, role);
-
-        Bread bread =
-                Bread.builder()
-                        .name(request.getName())
-                        .price(request.getPrice())
-                        .imageUrl(request.getImageUrl())
-                        .breadType(request.getBreadType())
-                        .signature(request.isSignature())
-                        .bakery(bakery)
-                        .build();
-
-        Long breadId = breadRepository.save(bread).getId();
-        log.info("빵 등록: breadId={}, bakeryId={}, userId={}", breadId, bakeryId, userId);
-        return breadId;
-    }
-
-    @Transactional
-    public void updateBread(
-            Long userId, UserRole role, Long bakeryId, Long breadId, UpdateBreadRequest request) {
-        Bakery bakery =
-                bakeryRepository
-                        .findByIdAndActiveTrue(bakeryId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
-
-        checkAuthority(bakery, userId, role);
-
-        Bread bread =
-                breadRepository
-                        .findById(breadId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.MENU_NOT_FOUND));
-
-        if (request.getImageUrl() != null && bread.getImageUrl() != null) {
-            gcsService.deleteQuietly(bread.getImageUrl());
-        }
-        bread.update(request);
-        log.info("빵 수정: breadId={}, bakeryId={}, userId={}", breadId, bakeryId, userId);
-    }
-
-    @Transactional
-    public void deleteBread(Long userId, UserRole role, Long bakeryId, Long breadId) {
-        Bakery bakery =
-                bakeryRepository
-                        .findByIdAndActiveTrue(bakeryId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
-
-        checkAuthority(bakery, userId, role);
-
-        Bread bread =
-                breadRepository
-                        .findById(breadId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.MENU_NOT_FOUND));
-
-        log.info("빵 삭제: breadId={}, bakeryId={}, userId={}", breadId, bakeryId, userId);
-        if (bread.getImageUrl() != null) {
-            gcsService.deleteQuietly(bread.getImageUrl());
-        }
-        breadRepository.delete(bread);
-    }
-
-    @Transactional
     public void like(Long bakeryId, Long userId) {
         Bakery bakery =
                 bakeryRepository
                         .findByIdAndActiveTrue(bakeryId)
                         .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
-
-        if (bakeryLikeRepository.existsByBakeryIdAndUserId(bakeryId, userId)) {
-            throw new CustomException(ErrorCode.ALREADY_LIKED);
-        }
 
         User user =
                 userRepository
@@ -483,8 +331,14 @@ public class BakeryService {
                         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         try {
-            bakeryLikeRepository.save(BakeryLike.builder().bakery(bakery).user(user).build());
+            bakeryLikeRepository.saveAndFlush(
+                    BakeryLike.builder().bakery(bakery).user(user).build());
         } catch (DataIntegrityViolationException e) {
+            log.warn(
+                    "[빵집 좋아요 중복 또는 무결성 위반] bakeryId={}, userId={}, msg={}",
+                    bakeryId,
+                    userId,
+                    e.getMessage());
             throw new CustomException(ErrorCode.ALREADY_LIKED);
         }
     }
@@ -496,101 +350,6 @@ public class BakeryService {
                         .findByBakeryIdAndUserId(bakeryId, userId)
                         .orElseThrow(() -> new CustomException(ErrorCode.NOT_LIKED));
         bakeryLikeRepository.delete(like);
-    }
-
-    @Transactional
-    public Long createReview(Long bakeryId, Long userId, CreateReviewRequest request) {
-        Bakery bakery =
-                bakeryRepository
-                        .findByIdAndActiveTrue(bakeryId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
-        User user =
-                userRepository
-                        .findById(userId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        Review review =
-                Review.builder()
-                        .content(request.getContent())
-                        .rating(request.getRating())
-                        .imageUrls(request.getImageUrls())
-                        .bakery(bakery)
-                        .user(user)
-                        .build();
-        reviewRepository.save(review);
-        bakery.updateRating(reviewRepository.findAverageRatingByBakeryId(bakeryId).orElse(null));
-        return review.getId();
-    }
-
-    @Transactional(readOnly = true)
-    public ReviewListResponse getReviews(
-            Long bakeryId, ReviewSortType sort, int page, int size, Long userId) {
-        if (!bakeryRepository.existsByIdAndActiveTrue(bakeryId)) {
-            throw new CustomException(ErrorCode.BAKERY_NOT_FOUND);
-        }
-        Sort sorting =
-                switch (sort) {
-                    case RATING_HIGH -> Sort.by("rating").descending();
-                    case RATING_LOW -> Sort.by("rating").ascending();
-                    default -> Sort.by("createdAt").descending();
-                };
-        Page<Review> result =
-                reviewRepository.findAllByBakeryIdAndActiveTrue(
-                        bakeryId, PageRequest.of(page, size, sorting));
-        return ReviewListResponse.builder()
-                .reviews(
-                        result.getContent().stream()
-                                .map(r -> ReviewResponse.from(r, userId))
-                                .toList())
-                .total((int) result.getTotalElements())
-                .page(page)
-                .size(size)
-                .hasNext(result.hasNext())
-                .build();
-    }
-
-    @Transactional
-    public void updateReview(
-            Long bakeryId, Long reviewId, Long userId, UpdateReviewRequest request) {
-        Bakery bakery =
-                bakeryRepository
-                        .findByIdAndActiveTrue(bakeryId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
-
-        Review review =
-                reviewRepository
-                        .findByIdAndBakeryIdAndActiveTrue(reviewId, bakeryId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
-
-        if (!review.getUser().getId().equals(userId)) {
-            throw new CustomException(ErrorCode.FORBIDDEN);
-        }
-
-        review.update(request);
-        bakery.updateRating(reviewRepository.findAverageRatingByBakeryId(bakeryId).orElse(null));
-        log.info("리뷰 수정: reviewId={}, bakeryId={}, userId={}", reviewId, bakeryId, userId);
-    }
-
-    @Transactional
-    public void deleteReview(Long bakeryId, Long reviewId, Long userId, UserRole role) {
-        Bakery bakery =
-                bakeryRepository
-                        .findByIdAndActiveTrue(bakeryId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
-
-        Review review =
-                reviewRepository
-                        .findByIdAndBakeryIdAndActiveTrue(reviewId, bakeryId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
-
-        if (role != UserRole.ROLE_ADMIN && !review.getUser().getId().equals(userId)) {
-            throw new CustomException(ErrorCode.FORBIDDEN);
-        }
-
-        review.getImageUrls().forEach(gcsService::deleteQuietly);
-        review.deactivate();
-        bakery.updateRating(reviewRepository.findAverageRatingByBakeryId(bakeryId).orElse(null));
-        log.info("리뷰 삭제: reviewId={}, bakeryId={}, userId={}", reviewId, bakeryId, userId);
     }
 
     private void checkAuthority(Bakery bakery, Long userId, UserRole role) {
