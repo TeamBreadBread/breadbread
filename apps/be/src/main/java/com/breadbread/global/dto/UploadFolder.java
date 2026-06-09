@@ -5,7 +5,8 @@ public enum UploadFolder {
     breads,
     reviews,
     posts,
-    profiles;
+    profiles,
+    courses;
 
     public String path() {
         return this.name();

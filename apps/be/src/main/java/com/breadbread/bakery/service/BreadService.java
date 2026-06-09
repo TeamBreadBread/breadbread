@@ -6,10 +6,13 @@ import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.Bread;
 import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.bakery.repository.BreadRepository;
+import com.breadbread.global.dto.UploadFolder;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.service.GcsService;
+import com.breadbread.global.tempimage.service.TempImageService;
 import com.breadbread.user.entity.UserRole;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,7 @@ public class BreadService {
     private final BakeryRepository bakeryRepository;
     private final BreadRepository breadRepository;
     private final GcsService gcsService;
+    private final TempImageService tempImageService;
 
     @Transactional
     public Long createBread(Long userId, UserRole role, Long bakeryId, CreateBreadRequest request) {
@@ -44,6 +48,10 @@ public class BreadService {
                         .build();
 
         Long breadId = breadRepository.save(bread).getId();
+        if (request.getImageUrl() != null) {
+            tempImageService.consumeOwnedImages(
+                    userId, List.of(request.getImageUrl()), UploadFolder.breads);
+        }
         log.info("빵 등록: breadId={}, bakeryId={}, userId={}", breadId, bakeryId, userId);
         return breadId;
     }
@@ -63,10 +71,19 @@ public class BreadService {
                         .findByIdAndBakeryId(breadId, bakeryId)
                         .orElseThrow(() -> new CustomException(ErrorCode.MENU_NOT_FOUND));
 
-        if (request.getImageUrl() != null && bread.getImageUrl() != null) {
-            gcsService.deleteQuietly(bread.getImageUrl());
+        String oldImageUrl = bread.getImageUrl();
+        String newImageUrl = request.getImageUrl();
+
+        if (newImageUrl != null && !newImageUrl.equals(oldImageUrl)) {
+            tempImageService.consumeOwnedImages(userId, List.of(newImageUrl), UploadFolder.breads);
         }
+
         bread.update(request);
+
+        if (newImageUrl != null && oldImageUrl != null && !newImageUrl.equals(oldImageUrl)) {
+            gcsService.deleteQuietly(oldImageUrl);
+        }
+
         log.info("빵 수정: breadId={}, bakeryId={}, userId={}", breadId, bakeryId, userId);
     }
 

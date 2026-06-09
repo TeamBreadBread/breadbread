@@ -9,12 +9,15 @@ import com.breadbread.bakery.entity.Review;
 import com.breadbread.bakery.entity.ReviewSortType;
 import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.bakery.repository.ReviewRepository;
+import com.breadbread.global.dto.UploadFolder;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.service.GcsService;
+import com.breadbread.global.tempimage.service.TempImageService;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -32,6 +35,7 @@ public class ReviewService {
     private final UserRepository userRepository;
     private final ReviewRepository reviewRepository;
     private final GcsService gcsService;
+    private final TempImageService tempImageService;
 
     @Transactional
     public Long createReview(Long bakeryId, Long userId, CreateReviewRequest request) {
@@ -53,6 +57,7 @@ public class ReviewService {
                         .user(user)
                         .build();
         reviewRepository.save(review);
+        tempImageService.consumeOwnedImages(userId, request.getImageUrls(), UploadFolder.reviews);
         bakery.updateRating(reviewRepository.findAverageRatingByBakeryId(bakeryId).orElse(null));
         return review.getId();
     }
@@ -101,7 +106,21 @@ public class ReviewService {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
 
+        List<String> previousImageUrls = List.copyOf(review.getImageUrls());
+        if (request.getImageUrls() != null) {
+            List<String> addedImageUrls =
+                    request.getImageUrls().stream()
+                            .filter(url -> !previousImageUrls.contains(url))
+                            .toList();
+            tempImageService.consumeOwnedImages(userId, addedImageUrls, UploadFolder.reviews);
+        }
         review.update(request);
+        if (request.getImageUrls() != null) {
+            previousImageUrls.stream()
+                    .filter(url -> !request.getImageUrls().contains(url))
+                    .forEach(gcsService::deleteQuietly);
+        }
+
         bakery.updateRating(reviewRepository.findAverageRatingByBakeryId(bakeryId).orElse(null));
         log.info("리뷰 수정: reviewId={}, bakeryId={}, userId={}", reviewId, bakeryId, userId);
     }

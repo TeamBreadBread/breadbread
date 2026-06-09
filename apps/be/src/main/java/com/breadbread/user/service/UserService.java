@@ -24,8 +24,11 @@ import com.breadbread.course.entity.CourseLike;
 import com.breadbread.course.repository.CourseLikeRepository;
 import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.course.repository.RouteRepository;
+import com.breadbread.global.dto.UploadFolder;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.global.service.GcsService;
+import com.breadbread.global.tempimage.service.TempImageService;
 import com.breadbread.global.validator.PaginationValidator;
 import com.breadbread.user.dto.ChangePasswordRequest;
 import com.breadbread.user.dto.ChangePhoneRequest;
@@ -71,6 +74,8 @@ public class UserService {
     private final CourseRepository courseRepository;
     private final RouteRepository routeRepository;
     private final BakeryImageUrlResolver bakeryImageUrlResolver;
+    private final GcsService gcsService;
+    private final TempImageService tempImageService;
 
     @Transactional
     public void savePreference(Long userId, CreatePreferenceRequest request) {
@@ -159,9 +164,21 @@ public class UserService {
                 && userRepository.existsByNicknameAndIdNot(request.getNickname(), userId)) {
             throw new CustomException(ErrorCode.DUPLICATE_NICKNAME);
         }
+
+        String oldProfileImageUrl = user.getProfileImageUrl();
+        String newProfileImageUrl = request.getProfileImageUrl();
+
         try {
             user.updateProfile(request);
             userRepository.saveAndFlush(user);
+
+            if (newProfileImageUrl != null && !newProfileImageUrl.equals(oldProfileImageUrl)) {
+                tempImageService.consumeOwnedImages(
+                        userId, List.of(newProfileImageUrl), UploadFolder.profiles);
+                if (oldProfileImageUrl != null) {
+                    gcsService.deleteQuietly(oldProfileImageUrl);
+                }
+            }
         } catch (DataIntegrityViolationException e) {
             log.warn("[프로필 수정 중복 또는 무결성 위반] userId={}, msg={}", userId, e.getMessage());
             throw new CustomException(ErrorCode.DUPLICATE_NICKNAME);

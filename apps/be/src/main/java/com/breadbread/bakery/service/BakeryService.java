@@ -267,7 +267,7 @@ public class BakeryService {
         Bakery saved = bakeryRepository.save(bakery);
         log.info("빵집 생성: bakeryId={}, userId={}", saved.getId(), userId);
 
-        bakeryImageService.saveImages(saved, request.getImageUrls());
+        bakeryImageService.saveImages(userId, saved, request.getImageUrls());
 
         return saved.getId();
     }
@@ -295,7 +295,7 @@ public class BakeryService {
         }
 
         if (request.getImageUrls() != null) {
-            bakeryImageService.replaceImages(bakery, request.getImageUrls());
+            bakeryImageService.replaceImages(userId, bakery, request.getImageUrls());
         }
     }
 

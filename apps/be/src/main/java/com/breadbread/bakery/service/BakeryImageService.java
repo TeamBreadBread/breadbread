@@ -3,7 +3,9 @@ package com.breadbread.bakery.service;
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.BakeryImage;
 import com.breadbread.bakery.repository.BakeryImageRepository;
+import com.breadbread.global.dto.UploadFolder;
 import com.breadbread.global.service.GcsService;
+import com.breadbread.global.tempimage.service.TempImageService;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -17,13 +19,45 @@ public class BakeryImageService {
     private final BakeryImageRepository bakeryImageRepository;
     private final BakeryImageUrlResolver bakeryImageUrlResolver;
     private final GcsService gcsService;
+    private final TempImageService tempImageService;
 
     /** createBakery — 새 이미지 저장 */
     @Transactional
-    public void saveImages(Bakery bakery, String[] urls) {
+    public void saveImages(Long userId, Bakery bakery, String[] urls) {
+        if (urls == null) return;
+        List<String> urlList = Arrays.stream(urls).filter(Objects::nonNull).toList();
+        persistImages(bakery, urls);
+        tempImageService.consumeOwnedImages(userId, urlList, UploadFolder.bakeries);
+    }
+
+    /** updateBakery — GCS 삭제 후 새 이미지로 교체 */
+    @Transactional
+    public void replaceImages(Long userId, Bakery bakery, String[] urls) {
+        Set<String> previousUrls =
+                bakery.getImages().stream()
+                        .map(BakeryImage::getImageUrl)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
+        Set<String> nextUrls =
+                urls == null
+                        ? Collections.emptySet()
+                        : Arrays.stream(urls).filter(Objects::nonNull).collect(Collectors.toSet());
+        List<String> addedUrls =
+                nextUrls.stream().filter(url -> !previousUrls.contains(url)).toList();
+        tempImageService.consumeOwnedImages(userId, addedUrls, UploadFolder.bakeries);
+
+        bakeryImageRepository.deleteAllByBakery(bakery);
+        persistImages(bakery, urls);
+        previousUrls.stream()
+                .filter(url -> !nextUrls.contains(url))
+                .forEach(gcsService::deleteQuietly);
+    }
+
+    private void persistImages(Bakery bakery, String[] urls) {
         if (urls == null) return;
         List<BakeryImage> images = new ArrayList<>();
         for (int i = 0; i < urls.length; i++) {
+            if (urls[i] == null) continue;
             images.add(
                     BakeryImage.builder()
                             .imageUrl(urls[i])
@@ -32,22 +66,6 @@ public class BakeryImageService {
                             .build());
         }
         bakeryImageRepository.saveAll(images);
-    }
-
-    /** updateBakery — GCS 삭제 후 새 이미지로 교체 */
-    @Transactional
-    public void replaceImages(Bakery bakery, String[] urls) {
-        Set<String> nextUrls =
-                urls == null
-                        ? Collections.emptySet()
-                        : Arrays.stream(urls).filter(Objects::nonNull).collect(Collectors.toSet());
-        bakery.getImages().stream()
-                .map(BakeryImage::getImageUrl)
-                .filter(Objects::nonNull)
-                .filter(url -> !nextUrls.contains(url))
-                .forEach(gcsService::deleteQuietly);
-        bakeryImageRepository.deleteAllByBakery(bakery);
-        saveImages(bakery, urls);
     }
 
     /** deleteBakery — GCS + DB 이미지 전체 삭제 */

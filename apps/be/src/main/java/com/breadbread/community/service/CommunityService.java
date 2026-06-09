@@ -18,9 +18,11 @@ import com.breadbread.community.entity.PostType;
 import com.breadbread.community.repository.CommentRepository;
 import com.breadbread.community.repository.PostLikeRepository;
 import com.breadbread.community.repository.PostRepository;
+import com.breadbread.global.dto.UploadFolder;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.service.GcsService;
+import com.breadbread.global.tempimage.service.TempImageService;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
@@ -46,6 +48,7 @@ public class CommunityService {
     private final PostLikeRepository postLikeRepository;
     private final UserRepository userRepository;
     private final GcsService gcsService;
+    private final TempImageService tempImageService;
 
     @Transactional(readOnly = true)
     public PostListResponse findAll(
@@ -103,6 +106,7 @@ public class CommunityService {
                                 .imageUrls(request.getImageUrls())
                                 .user(user)
                                 .build());
+        tempImageService.consumeOwnedImages(userId, request.getImageUrls(), UploadFolder.posts);
 
         log.info(
                 "게시글 작성: postId={}, userId={}, postType={}",
@@ -136,7 +140,20 @@ public class CommunityService {
                         .findByIdWithUser(postId)
                         .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
         validatePostAuthority(post, userId, role);
+        List<String> previousImageUrls = List.copyOf(post.getImageUrls());
+        if (request.getImageUrls() != null) {
+            List<String> addedImageUrls =
+                    request.getImageUrls().stream()
+                            .filter(url -> !previousImageUrls.contains(url))
+                            .toList();
+            tempImageService.consumeOwnedImages(userId, addedImageUrls, UploadFolder.posts);
+        }
         post.update(request.getTitle(), request.getContent(), request.getImageUrls());
+        if (request.getImageUrls() != null) {
+            previousImageUrls.stream()
+                    .filter(url -> !request.getImageUrls().contains(url))
+                    .forEach(gcsService::deleteQuietly);
+        }
 
         log.info("게시글 수정: postId={}, userId={}", postId, userId);
     }

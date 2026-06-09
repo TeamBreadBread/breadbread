@@ -15,9 +15,11 @@ import com.breadbread.bakery.entity.Review;
 import com.breadbread.bakery.entity.ReviewSortType;
 import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.bakery.repository.ReviewRepository;
+import com.breadbread.global.dto.UploadFolder;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.service.GcsService;
+import com.breadbread.global.tempimage.service.TempImageService;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
@@ -42,6 +44,7 @@ class ReviewServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private ReviewRepository reviewRepository;
     @Mock private GcsService gcsService;
+    @Mock private TempImageService tempImageService;
 
     @InjectMocks private ReviewService reviewService;
 
@@ -65,6 +68,31 @@ class ReviewServiceTest {
 
         assertThat(reviewId).isEqualTo(900L);
         assertThat(bakery.getRating()).isEqualTo(4.25);
+    }
+
+    @Test
+    void createReview_consumes_temp_images_when_urls_present() {
+        Bakery bakery = bakeryWithId(20L);
+        User author = user(30L, UserRole.ROLE_USER);
+        CreateReviewRequest request = createReviewRequest("좋아요", 5);
+        ReflectionTestUtils.setField(
+                request,
+                "imageUrls",
+                List.of(
+                        "https://storage.googleapis.com/bucket/reviews/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.jpg"));
+        when(bakeryRepository.findByIdAndActiveTrue(20L)).thenReturn(Optional.of(bakery));
+        when(userRepository.findById(30L)).thenReturn(Optional.of(author));
+        when(reviewRepository.save(any(Review.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(reviewRepository.findAverageRatingByBakeryId(20L)).thenReturn(Optional.of(5.0));
+
+        reviewService.createReview(20L, 30L, request);
+
+        verify(tempImageService)
+                .consumeOwnedImages(
+                        30L,
+                        List.of(
+                                "https://storage.googleapis.com/bucket/reviews/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.jpg"),
+                        UploadFolder.reviews);
     }
 
     @Test
@@ -223,7 +251,8 @@ class ReviewServiceTest {
         assertThat(review.getRating()).isEqualTo(5);
         assertThat(review.getImageUrls()).containsExactly("new.jpg");
         assertThat(bakery.getRating()).isEqualTo(4.75);
-        verify(gcsService, never()).deleteQuietly(any());
+        verify(tempImageService).consumeOwnedImages(40L, List.of("new.jpg"), UploadFolder.reviews);
+        verify(gcsService).deleteQuietly("old.jpg");
     }
 
     @Test

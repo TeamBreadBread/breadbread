@@ -379,7 +379,7 @@ class BakeryServiceTest {
 
         assertThat(id).isEqualTo(100L);
         verify(bakeryImageService)
-                .saveImages(any(Bakery.class), eq(new String[] {"a.jpg", "b.jpg"}));
+                .saveImages(eq(10L), any(Bakery.class), eq(new String[] {"a.jpg", "b.jpg"}));
         verify(bakeryRepository).save(any(Bakery.class));
     }
 
@@ -418,7 +418,7 @@ class BakeryServiceTest {
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.FORBIDDEN);
 
-        verify(bakeryImageService, never()).replaceImages(any(), any());
+        verify(bakeryImageService, never()).replaceImages(any(), any(), any());
     }
 
     @Test
@@ -430,7 +430,8 @@ class BakeryServiceTest {
 
         bakeryService.updateBakery(999L, UserRole.ROLE_ADMIN, 5L, request);
 
-        verify(bakeryImageService).replaceImages(eq(bakery), eq(new String[] {"new.jpg"}));
+        verify(bakeryImageService)
+                .replaceImages(eq(999L), eq(bakery), eq(new String[] {"new.jpg"}));
     }
 
     @Test
@@ -444,7 +445,7 @@ class BakeryServiceTest {
         bakeryService.updateBakery(50L, UserRole.ROLE_BUSINESS, 12L, request);
 
         assertThat(bakery.getName()).isEqualTo("이름만변경");
-        verify(bakeryImageService, never()).replaceImages(any(), any());
+        verify(bakeryImageService, never()).replaceImages(any(), any(), any());
     }
 
     @Test

@@ -14,11 +14,14 @@ import com.breadbread.bakery.entity.Bread;
 import com.breadbread.bakery.entity.BreadType;
 import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.bakery.repository.BreadRepository;
+import com.breadbread.global.dto.UploadFolder;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.service.GcsService;
+import com.breadbread.global.tempimage.service.TempImageService;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +36,7 @@ class BreadServiceTest {
     @Mock private BakeryRepository bakeryRepository;
     @Mock private BreadRepository breadRepository;
     @Mock private GcsService gcsService;
+    @Mock private TempImageService tempImageService;
 
     @InjectMocks private BreadService breadService;
 
@@ -92,6 +96,7 @@ class BreadServiceTest {
 
         breadService.updateBread(7L, UserRole.ROLE_BUSINESS, 4L, 50L, request);
 
+        verify(tempImageService).consumeOwnedImages(7L, List.of("next.jpg"), UploadFolder.breads);
         verify(gcsService).deleteQuietly("prev.jpg");
     }
 
