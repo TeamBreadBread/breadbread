@@ -1,12 +1,10 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 import BottomNav from "@/components/layout/BottomNav";
 import AppShell from "@/components/layout/AppShell";
 import HomeHeroSection from "@/components/domain/home/HomeHeroSection";
 import CurationSection from "@/components/domain/home/CurationSection";
 import DongCurationSection from "@/components/domain/home/DongCurationSection";
-import TrendCurationSection from "@/components/domain/trend/TrendCurationSection";
-import { buildBbangteoBakeryListSearch } from "@/utils/bakeryListEntry";
 import {
   beginHomeCurationVisit,
   resetHomeCurationVisitDedupe,
@@ -14,10 +12,8 @@ import {
 } from "@/components/domain/home/dongCurationParams";
 
 const HomePage = () => {
-  const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [firstCurationBakeryIds, setFirstCurationBakeryIds] = useState<number[]>([]);
-  const [trendCurationBakeryIds, setTrendCurationBakeryIds] = useState<number[]>([]);
   const [firstCurationReady, setFirstCurationReady] = useState(false);
   const [homeVisit, setHomeVisit] = useState<HomeCurationVisit | null>(null);
   const prevPathRef = useRef(pathname);
@@ -55,20 +51,6 @@ const HomePage = () => {
         <HomeHeroSection />
         {activeHomeVisit ? (
           <>
-            <TrendCurationSection
-              title="요즘 뜨는 빵"
-              bakeryListEntryFrom="home"
-              onMoreClick={() => {
-                void navigate({
-                  to: "/bbangteo-bakery-list",
-                  search: buildBbangteoBakeryListSearch({
-                    from: "home",
-                    curationPins: trendCurationBakeryIds,
-                  }),
-                });
-              }}
-              onDisplayedBakeryIdsChange={setTrendCurationBakeryIds}
-            />
             <CurationSection
               key={activeHomeVisit.seed}
               onDisplayedBakeryIdsChange={(ids) => {

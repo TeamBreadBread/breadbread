@@ -1,9 +1,13 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTrendBakeries } from "@/hooks/trend/useTrendBakeries";
 import { useTrendBreads } from "@/hooks/trend/useTrendBreads";
 import { useTrendMenuIndex } from "@/hooks/trend/useTrendMenuFallback";
 import type { TrendBakery, TrendBread, TrendCurationSource } from "@/types/trend";
-import { hasTrendBakeryId, matchBakeriesByBreadKeyword } from "@/utils/trendCuration";
+import {
+  hasTrendBakeryId,
+  matchBakeriesByBreadKeyword,
+  pickRandomTopTrendKeyword,
+} from "@/utils/trendCuration";
 
 const DEFAULT_BREAD_SIZE = 10;
 const DEFAULT_BAKERY_SIZE = 20;
@@ -20,6 +24,8 @@ export type TrendCurationViewModel = {
 type UseTrendCurationOptions = {
   breadSize?: number;
   bakerySize?: number;
+  /** 1~N위 트렌드 키워드 중 무작위 선택 (0이면 1위 고정) */
+  randomTopKeywordCount?: number;
 };
 
 function mergeTrendAndMenuBakeries(
@@ -44,6 +50,8 @@ function mergeTrendAndMenuBakeries(
 export function useTrendCuration(options?: UseTrendCurationOptions) {
   const breadSize = options?.breadSize ?? DEFAULT_BREAD_SIZE;
   const bakerySize = options?.bakerySize ?? DEFAULT_BAKERY_SIZE;
+  const randomTopKeywordCount = options?.randomTopKeywordCount ?? 0;
+  const [randomSeed] = useState(() => Math.random());
 
   const breadsQuery = useTrendBreads({ page: 0, size: breadSize });
   const menuIndexQuery = useTrendMenuIndex({ enabled: breadsQuery.isSuccess });
@@ -72,8 +80,30 @@ export function useTrendCuration(options?: UseTrendCurationOptions) {
   }, [breadsQuery.data?.breads, hasTrendKeywords, popularKeyword]);
 
   const selectedKeyword = useMemo(() => {
-    return keywordChips[0]?.keyword?.trim() ?? "";
-  }, [keywordChips]);
+    if (isFallbackKeyword) {
+      return popularKeyword.trim();
+    }
+    if (keywordChips.length === 0) {
+      return "";
+    }
+    if (randomTopKeywordCount <= 0) {
+      return keywordChips[0]?.keyword?.trim() ?? "";
+    }
+
+    const aiBakeries = menuIndexQuery.data?.aiBakeries;
+    if (!aiBakeries) {
+      return "";
+    }
+
+    return pickRandomTopTrendKeyword(keywordChips, aiBakeries, randomTopKeywordCount, randomSeed);
+  }, [
+    isFallbackKeyword,
+    keywordChips,
+    menuIndexQuery.data?.aiBakeries,
+    popularKeyword,
+    randomTopKeywordCount,
+    randomSeed,
+  ]);
 
   const trendBakeriesQuery = useTrendBakeries(
     { keyword: selectedKeyword, page: 0, size: bakerySize },

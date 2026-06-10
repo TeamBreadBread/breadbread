@@ -18,6 +18,7 @@ type TrendCurationSectionProps = {
   title?: string;
   compact?: boolean;
   bakeryListEntryFrom: BakeryListEntryFrom;
+  randomTopKeywordCount?: number;
   onMoreClick?: () => void;
   onDisplayedBakeryIdsChange?: (ids: number[]) => void;
   className?: string;
@@ -27,12 +28,13 @@ export default function TrendCurationSection({
   title = "요즘 뜨는 빵",
   compact = false,
   bakeryListEntryFrom,
+  randomTopKeywordCount,
   onMoreClick,
   onDisplayedBakeryIdsChange,
   className,
 }: TrendCurationSectionProps) {
   const navigate = useNavigate();
-  const { viewModel, loading, error } = useTrendCuration();
+  const { viewModel, loading, error } = useTrendCuration({ randomTopKeywordCount });
 
   const summaryQuery = useBakeriesSummary(
     { ...CURATION_BAKERY_LIST_PARAMS, page: 0, size: 50 },

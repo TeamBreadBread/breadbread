@@ -1,8 +1,6 @@
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
 import { cn } from "@/utils/cn";
 import type { TrendBakery } from "@/types/trend";
-import TrendStatusBadge from "@/components/domain/trend/TrendStatusBadge";
-import { formatGrowthRate, formatTrendScore } from "@/utils/trendCuration";
 import { getSafeImageUrl } from "@/utils/safeImageUrl";
 
 type TrendingBakeryCardProps = {
@@ -23,8 +21,6 @@ export default function TrendingBakeryCard({
   const title = bakery.bakeryName?.trim() || "빵집";
   const matchedMenus = bakery.matchedMenus?.filter(Boolean) ?? [];
   const menuPreview = matchedMenus.length > 0 ? matchedMenus.slice(0, 2).join(", ") : null;
-  const scoreLabel = formatTrendScore(bakery.trendScore);
-  const growthLabel = formatGrowthRate(bakery.growthRate);
   const photo = getSafeImageUrl(imageUrl ?? undefined);
 
   const content = (
@@ -48,9 +44,6 @@ export default function TrendingBakeryCard({
             />
           </div>
         )}
-        <div className="absolute left-[8px] top-[8px] flex flex-wrap gap-[4px]">
-          <TrendStatusBadge status={bakery.trendStatus} />
-        </div>
       </div>
 
       <div className={cn("flex min-w-0 flex-col gap-[4px]", compact ? "w-[160px]" : "w-[220px]")}>
@@ -62,12 +55,6 @@ export default function TrendingBakeryCard({
             {menuPreview}
           </p>
         ) : null}
-        {(scoreLabel || growthLabel) && (
-          <div className="flex flex-wrap items-center gap-[6px] text-[11px] leading-[16px] text-[var(--color-gray-500)]">
-            {scoreLabel ? <span>트렌드 {scoreLabel}</span> : null}
-            {growthLabel ? <span>{growthLabel}</span> : null}
-          </div>
-        )}
       </div>
     </>
   );
