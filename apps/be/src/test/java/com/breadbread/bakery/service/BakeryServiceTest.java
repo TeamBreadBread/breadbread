@@ -576,6 +576,98 @@ class BakeryServiceTest {
         verify(courseDrivingRouteRepository, never()).deleteAllByCourseIdIn(any());
     }
 
+    // ── validateSearch ──────────────────────────────────────────────────────
+
+    @Test
+    void search_throws_when_NEARBY_and_no_coords() {
+        BakerySearch search =
+                BakerySearch.builder()
+                        .sort(com.breadbread.bakery.entity.BakerySortType.NEARBY)
+                        .build();
+
+        assertThatThrownBy(() -> bakeryService.search(search, PageRequest.of(0, 10), null))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.INVALID_INPUT_VALUE);
+    }
+
+    @Test
+    void search_throws_when_radiusMeters_and_no_coords() {
+        BakerySearch search = BakerySearch.builder().radiusMeters(3000).build();
+
+        assertThatThrownBy(() -> bakeryService.search(search, PageRequest.of(0, 10), null))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.INVALID_INPUT_VALUE);
+    }
+
+    @Test
+    void search_throws_when_radiusMeters_and_only_one_coord() {
+        BakerySearch search = BakerySearch.builder().radiusMeters(3000).userLat(36.35).build();
+
+        assertThatThrownBy(() -> bakeryService.search(search, PageRequest.of(0, 10), null))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.INVALID_INPUT_VALUE);
+    }
+
+    @Test
+    void search_passes_when_NEARBY_with_both_coords() {
+        Pageable pageable = PageRequest.of(0, 10);
+        BakerySearch search =
+                BakerySearch.builder()
+                        .sort(com.breadbread.bakery.entity.BakerySortType.NEARBY)
+                        .userLat(36.35)
+                        .userLng(127.38)
+                        .build();
+        when(bakeryRepository.search(any(BakerySearch.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+        when(bakeryImageService.resolvePreviewBatch(List.of()))
+                .thenReturn(new PreviewBatch(Map.of(), Map.of()));
+        when(bakeryLikeRepository.countByBakeryIdIn(List.of())).thenReturn(List.of());
+
+        var result = bakeryService.search(search, pageable, null);
+
+        assertThat(result.getTotal()).isZero();
+    }
+
+    @Test
+    void searchSimple_throws_when_NEARBY_and_no_coords() {
+        BakerySearch search =
+                BakerySearch.builder()
+                        .sort(com.breadbread.bakery.entity.BakerySortType.NEARBY)
+                        .build();
+
+        assertThatThrownBy(() -> bakeryService.searchSimple(search, PageRequest.of(0, 10)))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.INVALID_INPUT_VALUE);
+    }
+
+    @Test
+    void searchSimple_throws_when_radiusMeters_and_no_coords() {
+        BakerySearch search = BakerySearch.builder().radiusMeters(5000).build();
+
+        assertThatThrownBy(() -> bakeryService.searchSimple(search, PageRequest.of(0, 10)))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.INVALID_INPUT_VALUE);
+    }
+
+    @Test
+    void searchSimple_passes_when_radiusMeters_with_both_coords() {
+        Pageable pageable = PageRequest.of(0, 10);
+        BakerySearch search =
+                BakerySearch.builder().radiusMeters(3000).userLat(36.35).userLng(127.38).build();
+        when(bakeryRepository.search(any(BakerySearch.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+        when(bakeryImageService.resolveThumbnails(List.of())).thenReturn(Map.of());
+
+        var result = bakeryService.searchSimple(search, pageable);
+
+        assertThat(result.getTotal()).isZero();
+    }
+
     private static Bakery bakeryWithId(long id) {
         Bakery b =
                 Bakery.builder()

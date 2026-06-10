@@ -99,8 +99,17 @@ public class BakeryService {
         return BakeryAiResponse.from(bakery, breads, crowdTimes, null);
     }
 
+    private void validateSearch(BakerySearch search) {
+        boolean needsCoords =
+                search.getSort() == BakerySortType.NEARBY || search.getRadiusMeters() != null;
+        if (needsCoords && (search.getUserLat() == null || search.getUserLng() == null)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+    }
+
     @Transactional(readOnly = true)
     public BakeryListResponse search(BakerySearch search, Pageable pageable, Long userId) {
+        validateSearch(search);
         Page<Bakery> result = bakeryRepository.search(search, pageable);
         List<Bakery> bakeries = result.getContent();
 
@@ -160,6 +169,7 @@ public class BakeryService {
 
     @Transactional(readOnly = true)
     public BakerySimpleListResponse searchSimple(BakerySearch search, Pageable pageable) {
+        validateSearch(search);
         Page<Bakery> result = bakeryRepository.search(search, pageable);
         List<Bakery> bakeries = result.getContent();
         List<Long> ids = bakeries.stream().map(Bakery::getId).toList();

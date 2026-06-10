@@ -14,6 +14,10 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.PrecisionModel;
 
 @Entity
 @Table
@@ -30,6 +34,10 @@ public class Bakery extends BaseEntity {
     private String region; // 지역구
     private double latitude; // 위도
     private double longitude; // 경도
+
+    @Column(columnDefinition = "geometry(Point,4326)", nullable = false)
+    private Point location;
+
     private String phone; // • 문의 전화 번호
     private Double rating; // • 별점 평균 (null 허용 위해 Double로 저장)
     private String mapLink; // • 지도 링크
@@ -96,6 +104,9 @@ public class Bakery extends BaseEntity {
         if (req.getRegion() != null) this.region = req.getRegion();
         if (req.getLat() != null) this.latitude = req.getLat();
         if (req.getLng() != null) this.longitude = req.getLng();
+        if (req.getLat() != null && req.getLng() != null) {
+            this.location = toPoint(this.longitude, this.latitude);
+        }
         if (req.getPhone() != null) this.phone = req.getPhone();
         if (req.getMapLink() != null) this.mapLink = req.getMapLink();
         if (req.getNote() != null) this.note = req.getNote();
@@ -159,6 +170,11 @@ public class Bakery extends BaseEntity {
         this.active = false;
     }
 
+    private static Point toPoint(double longitude, double latitude) {
+        GeometryFactory gf = new GeometryFactory(new PrecisionModel(), 4326);
+        return gf.createPoint(new Coordinate(longitude, latitude));
+    }
+
     @Builder
     public Bakery(
             String name,
@@ -192,6 +208,7 @@ public class Bakery extends BaseEntity {
         this.region = region;
         this.latitude = latitude;
         this.longitude = longitude;
+        this.location = toPoint(longitude, latitude);
         this.businessHours =
                 BusinessHours.builder()
                         .weekdayOpen(weekdayOpen)

@@ -9,6 +9,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
+import com.querydsl.core.types.dsl.NumberTemplate;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.DayOfWeek;
@@ -38,11 +39,12 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
         BooleanExpression region = eqRegion(bakery, search.getRegion());
         BooleanExpression dong = eqDong(bakery, search.getDong());
         BooleanExpression active = bakery.active.isTrue();
+        BooleanExpression withinRadius = withinRadius(bakery, search);
         OrderSpecifier<Integer> openFirst = openFirstOrder(bakery, search.isOpen());
 
         List<Bakery> content =
                 fetchContent(
-                        search.getSort(),
+                        search,
                         bakery,
                         review,
                         like,
@@ -50,6 +52,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
                         keyword,
                         region,
                         dong,
+                        withinRadius,
                         openFirst,
                         pageable);
 
@@ -57,7 +60,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
                 queryFactory
                         .select(bakery.count())
                         .from(bakery)
-                        .where(active, keyword, region, dong)
+                        .where(active, keyword, region, dong, withinRadius)
                         .fetchOne();
 
         return new PageImpl<>(content, pageable, total != null ? total : 0L);
@@ -65,7 +68,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
 
     // 정렬별 쿼리 분기 + 페이징 한 곳에서 처리
     private List<Bakery> fetchContent(
-            BakerySortType sort,
+            BakerySearch search,
             QBakery bakery,
             QReview review,
             QBakeryLike like,
@@ -73,8 +76,11 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
             BooleanExpression keyword,
             BooleanExpression region,
             BooleanExpression dong,
+            BooleanExpression withinRadius,
             OrderSpecifier<Integer> openFirst,
             Pageable pageable) {
+
+        BakerySortType sort = search.getSort();
 
         if (sort == BakerySortType.REVIEW_COUNT) {
             return applyPaging(
@@ -82,7 +88,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
                             .selectFrom(bakery)
                             .leftJoin(review)
                             .on(review.bakery.eq(bakery).and(review.active.isTrue()))
-                            .where(active, keyword, region, dong)
+                            .where(active, keyword, region, dong, withinRadius)
                             .groupBy(bakery.id)
                             .orderBy(openFirst, review.count().desc(), bakery.id.desc()),
                     pageable);
@@ -93,15 +99,32 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
                             .selectFrom(bakery)
                             .leftJoin(like)
                             .on(like.bakery.eq(bakery))
-                            .where(active, keyword, region, dong)
+                            .where(active, keyword, region, dong, withinRadius)
                             .groupBy(bakery.id)
                             .orderBy(openFirst, like.count().desc(), bakery.id.desc()),
+                    pageable);
+        }
+        if (sort == BakerySortType.NEARBY
+                && search.getUserLat() != null
+                && search.getUserLng() != null) {
+            return applyPaging(
+                    queryFactory
+                            .selectFrom(bakery)
+                            .where(active, keyword, region, dong, withinRadius)
+                            .orderBy(
+                                    openFirst,
+                                    distanceTemplate(
+                                                    bakery,
+                                                    search.getUserLng(),
+                                                    search.getUserLat())
+                                            .asc(),
+                                    bakery.id.asc()),
                     pageable);
         }
         return applyPaging(
                 queryFactory
                         .selectFrom(bakery)
-                        .where(active, keyword, region, dong)
+                        .where(active, keyword, region, dong, withinRadius)
                         .orderBy(openFirst, defaultOrder(sort, bakery)[0], bakery.id.desc()),
                 pageable);
     }
@@ -171,6 +194,26 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
                         .otherwise(1);
 
         return openScore.asc();
+    }
+
+    private NumberTemplate<Double> distanceTemplate(
+            QBakery bakery, double userLng, double userLat) {
+        return Expressions.numberTemplate(
+                Double.class,
+                "ST_DistanceSphere({0}, ST_SetSRID(ST_MakePoint({1}, {2}), 4326))",
+                bakery.location,
+                userLng,
+                userLat);
+    }
+
+    private BooleanExpression withinRadius(QBakery bakery, BakerySearch search) {
+        if (search.getRadiusMeters() == null
+                || search.getUserLat() == null
+                || search.getUserLng() == null) {
+            return null;
+        }
+        return distanceTemplate(bakery, search.getUserLng(), search.getUserLat())
+                .loe(search.getRadiusMeters().doubleValue());
     }
 
     private BooleanExpression eqRegion(QBakery bakery, String region) {
