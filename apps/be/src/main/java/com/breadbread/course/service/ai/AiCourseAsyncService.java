@@ -48,7 +48,7 @@ public class AiCourseAsyncService {
     private final TransactionTemplate transactionTemplate;
     private final FcmService fcmService;
 
-    @Async("aiTaskExecutor")
+    @Async("asyncTaskExecutor")
     public CompletableFuture<Void> processAiCourse(
             String jobId, Long userId, AiCourseRequest request) {
         try {
