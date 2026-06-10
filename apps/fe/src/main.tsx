@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { appRouter } from "@/lib/appRouter";
 import { isKakaoMapKeyConfigured, loadKakaoMapSdk } from "@/lib/kakaoMapSdk";
+import PwaUpdatePrompt from "@/components/common/PwaUpdatePrompt";
 import "./index.css";
 
 if (isKakaoMapKeyConfigured()) {
@@ -32,6 +33,7 @@ const queryClient = new QueryClient();
 export const App = () => (
   <QueryClientProvider client={queryClient}>
     <RouterProvider router={appRouter} />
+    <PwaUpdatePrompt />
     {showDevtools && <ReactQueryDevtools />}
   </QueryClientProvider>
 );

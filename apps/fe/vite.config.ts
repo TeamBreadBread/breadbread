@@ -22,7 +22,8 @@ export default defineConfig(({ mode }) => {
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // prompt: 새 버전 감지 시 자동 적용하지 않고 PwaUpdatePrompt 팝업에서 사용자가 새로고침
+      registerType: 'prompt',
       workbox: {
         importScripts: ['firebase-messaging-sw.js'],
       },

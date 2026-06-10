@@ -21,7 +21,8 @@ export default function CongestionBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-x2 py-[2px] font-pretendard text-[11px] font-semibold leading-[16px]",
+        // self-start w-fit: flex-col 부모에서 가로로 늘어나지 않고 텍스트 길이에 맞춤
+        "inline-flex w-fit items-center self-start rounded-full px-x2 py-[2px] font-pretendard text-[11px] font-semibold leading-[16px]",
         getCongestionBadgeClass(level),
         className,
       )}

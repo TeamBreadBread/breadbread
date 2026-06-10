@@ -442,17 +442,22 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
             RESPONSIVE_FRAME_WIDTH,
           )}
         >
-          <div className="flex flex-col gap-x2">
+          <div className="flex gap-x2">
             <Button
               variant="primary"
-              fullWidth
               type="button"
+              className="flex-1"
               onClick={() => void handleCourseGuide()}
             >
-              코스 안내하기
+              코스 안내
             </Button>
-            <Button variant="secondary" fullWidth type="button" onClick={goBreadTaxiReserve}>
-              빵택시 예약
+            <Button
+              variant="secondary"
+              type="button"
+              className="flex-1"
+              onClick={goBreadTaxiReserve}
+            >
+              예약하기
             </Button>
           </div>
         </div>

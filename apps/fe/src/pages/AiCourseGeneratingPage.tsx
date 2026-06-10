@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import MobileFrame from "@/components/layout/MobileFrame";
-import { getCourseDetail, saveCourseRoute } from "@/api/courses";
+import { getCourseDetail, saveAiCourse, saveCourseRoute } from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
 import { AI_COURSE_ESTIMATED_WAIT_SECONDS, pollAiCourseStatus } from "@/utils/pollAiCourseStatus";
 import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
@@ -45,7 +45,10 @@ export default function AiCourseGeneratingPage({ jobId }: AiCourseGeneratingPage
 
     void (async () => {
       try {
-        const courseId = await pollAiCourseStatus(jobId);
+        await pollAiCourseStatus(jobId);
+        if (cancelled) return;
+        // BE가 결과를 Redis에 임시 저장하므로, save를 호출해야 DB에 코스가 생성되고 courseId를 받는다.
+        const courseId = await saveAiCourse(jobId);
         if (cancelled) return;
         // 루트 저장과 상세 조회는 서로 독립적이라 병렬로 처리해 대기 시간을 줄인다.
         // 루트 저장은 이미 저장된 코스거나 일시 오류여도 화면 이동을 막지 않는다.
