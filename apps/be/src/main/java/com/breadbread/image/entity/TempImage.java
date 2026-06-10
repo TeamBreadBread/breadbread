@@ -1,4 +1,4 @@
-package com.breadbread.global.tempimage.entity;
+package com.breadbread.image.entity;
 
 import com.breadbread.global.dto.UploadFolder;
 import com.breadbread.user.entity.User;

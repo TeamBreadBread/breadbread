@@ -1,11 +1,10 @@
-package com.breadbread.global.tempimage.service;
+package com.breadbread.image.service;
 
 import com.breadbread.global.dto.UploadFolder;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
-import com.breadbread.global.service.GcsService;
-import com.breadbread.global.tempimage.entity.TempImage;
-import com.breadbread.global.tempimage.repository.TempImageRepository;
+import com.breadbread.image.entity.TempImage;
+import com.breadbread.image.repository.TempImageRepository;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;

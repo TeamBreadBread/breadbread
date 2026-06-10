@@ -1,4 +1,4 @@
-package com.breadbread.global.service;
+package com.breadbread.image.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

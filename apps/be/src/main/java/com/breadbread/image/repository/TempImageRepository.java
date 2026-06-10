@@ -1,6 +1,6 @@
-package com.breadbread.global.tempimage.repository;
+package com.breadbread.image.repository;
 
-import com.breadbread.global.tempimage.entity.TempImage;
+import com.breadbread.image.entity.TempImage;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;

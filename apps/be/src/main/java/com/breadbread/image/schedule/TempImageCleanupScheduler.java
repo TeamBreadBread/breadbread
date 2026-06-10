@@ -1,6 +1,6 @@
-package com.breadbread.global.tempimage.schedule;
+package com.breadbread.image.schedule;
 
-import com.breadbread.global.tempimage.service.TempImageService;
+import com.breadbread.image.service.TempImageService;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
