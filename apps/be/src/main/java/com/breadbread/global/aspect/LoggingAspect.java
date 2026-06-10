@@ -57,7 +57,7 @@ public class LoggingAspect {
 
             if (result instanceof CompletableFuture<?> future) {
                 future.whenComplete(
-                        (value, ex) -> {
+                        (_ignored, ex) -> {
                             long completedAt = System.currentTimeMillis();
                             long elapsed = completedAt - submittedAt;
                             if (ex != null) {
@@ -161,7 +161,7 @@ public class LoggingAspect {
         if (param instanceof Map<?, ?> map) {
             return "Map(size=" + map.size() + ")";
         }
-        if (param != null && param.getClass().isArray()) {
+        if (param.getClass().isArray()) {
             return param.getClass().getComponentType().getSimpleName() + "[]";
         }
         if (isComplexObject(param)) {
