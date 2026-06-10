@@ -110,6 +110,27 @@
         }
       },
       {
+        "source": "/trends/**",
+        "run": {
+          "serviceId": "bread-be",
+          "region": "asia-northeast3"
+        }
+      },
+      {
+        "source": "/tours/**",
+        "run": {
+          "serviceId": "bread-be",
+          "region": "asia-northeast3"
+        }
+      },
+      {
+        "source": "/curator/**",
+        "run": {
+          "serviceId": "bread-be",
+          "region": "asia-northeast3"
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

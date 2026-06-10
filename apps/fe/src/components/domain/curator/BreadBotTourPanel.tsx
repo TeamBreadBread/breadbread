@@ -244,24 +244,24 @@ export default function BreadBotTourPanel({ courseId, onOpenFullPage }: BreadBot
       ) : null}
 
       {/* 액션 버튼 */}
-      <div className="flex flex-col gap-x2">
+      <div className="flex gap-x2">
+        <button
+          type="button"
+          onClick={onOpenFullPage}
+          className="h-[44px] flex-1 rounded-r3 bg-gray-00 font-pretendard text-size-3 font-medium text-gray-1000 shadow-[0_1px_2px_rgba(26,31,39,0.05)] transition-colors hover:bg-gray-200"
+        >
+          전체 화면
+        </button>
         {!isCompleted ? (
           <button
             type="button"
             disabled={isCompleting || busyOrder != null || total === 0}
             onClick={() => void handleComplete()}
-            className="h-[44px] w-full rounded-r3 bg-orange-600 font-pretendard text-size-3 font-bold text-gray-00 disabled:bg-gray-300"
+            className="h-[44px] flex-1 rounded-r3 bg-orange-600 font-pretendard text-size-3 font-bold text-gray-00 disabled:bg-gray-300"
           >
-            {isCompleting ? "완료 처리 중…" : "투어 완료하기"}
+            {isCompleting ? "처리 중…" : "투어 완료"}
           </button>
         ) : null}
-        <button
-          type="button"
-          onClick={onOpenFullPage}
-          className="h-[44px] w-full rounded-r3 bg-gray-00 font-pretendard text-size-3 font-medium text-gray-1000 shadow-[0_1px_2px_rgba(26,31,39,0.05)] transition-colors hover:bg-gray-200"
-        >
-          투어 페이지 전체 화면으로 보기
-        </button>
       </div>
     </div>
   );
