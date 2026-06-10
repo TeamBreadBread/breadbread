@@ -150,6 +150,29 @@ kakao:
     base-url: https://apis-navi.kakaomobility.com
     timeout-seconds: ${KAKAO_MOBILITY_TIMEOUT_SECONDS:10}
 
+rate-limit:
+  rules:
+    - method: POST
+      uris: [ /auth/signup, /auth/find-id, /auth/find-pw, /auth/phone/send ]
+      ttl-seconds: 60
+      max-requests: 3
+    - method: POST
+      uris: [ /auth/phone/verify, /curator/chat, /courses/ai, /posts ]
+      ttl-seconds: 60
+      max-requests: 5
+    - method: POST
+      uris: [ /auth/login, /auth/naver/state, /images, /payments/prepare, /payments/complete ]
+      ttl-seconds: 60
+      max-requests: 10
+    - method: POST
+      uris: [ /auth/refresh ]
+      ttl-seconds: 60
+      max-requests: 20
+    - method: GET
+      uris: [ /courses, /bakeries, /bakeries/summary, /bakeries/ai, /trends/breads, /trends/bakeries ]
+      ttl-seconds: 60
+      max-requests: 50
+
 route:
   provider: kakao  # naver | kakao
 

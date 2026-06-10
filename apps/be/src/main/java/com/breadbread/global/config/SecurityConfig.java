@@ -2,11 +2,14 @@ package com.breadbread.global.config;
 
 import com.breadbread.auth.service.CustomUserDetailsService;
 import com.breadbread.global.filter.AiApiKeyFilter;
+import com.breadbread.global.filter.AuthRateLimitFilter;
 import com.breadbread.global.filter.JwtAuthenticationFilter;
 import com.breadbread.global.jwt.JwtProvider;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -30,7 +33,18 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
     private final JwtProvider jwtProvider;
     private final CustomUserDetailsService customUserDetailsService;
-    private final AiApiKeyFilter aiApiKeyFilter;
+    private final AuthRateLimitFilter authRateLimitFilter;
+    private final AiProperties aiProperties;
+    private final ObjectMapper objectMapper;
+
+    @Bean
+    public FilterRegistrationBean<AuthRateLimitFilter> authRateLimitFilterRegistration(
+            AuthRateLimitFilter filter) {
+        FilterRegistrationBean<AuthRateLimitFilter> registration =
+                new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -115,10 +129,13 @@ public class SecurityConfig {
                                         .hasRole("ADMIN")
                                         .anyRequest()
                                         .authenticated())
-                .addFilterBefore(aiApiKeyFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(
+                        new AiApiKeyFilter(aiProperties, objectMapper),
+                        UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(
                         new JwtAuthenticationFilter(jwtProvider, customUserDetailsService),
-                        AiApiKeyFilter.class);
+                        AiApiKeyFilter.class)
+                .addFilterBefore(authRateLimitFilter, JwtAuthenticationFilter.class);
         return http.build();
     }
 
