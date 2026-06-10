@@ -12,8 +12,13 @@ export type DepartureRecentEntry = {
   lng: number;
 };
 
-function hasValidCoords(lat?: number, lng?: number): lat is number {
-  return Number.isFinite(lat) && Number.isFinite(lng);
+function toCoordPair(
+  lat: number | undefined,
+  lng: number | undefined,
+): { lat: number; lng: number } | null {
+  if (typeof lat !== "number" || typeof lng !== "number") return null;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
 }
 
 function parseRecentEntry(item: unknown): DepartureRecentEntry | null {
@@ -29,8 +34,9 @@ function parseRecentEntry(item: unknown): DepartureRecentEntry | null {
     const label = normalizeDepartureLabel(String(row.label ?? ""));
     const lat = typeof row.lat === "number" ? row.lat : undefined;
     const lng = typeof row.lng === "number" ? row.lng : undefined;
-    if (!label || !hasValidCoords(lat, lng)) return null;
-    return { label, lat, lng };
+    const coords = toCoordPair(lat, lng);
+    if (!label || !coords) return null;
+    return { label, ...coords };
   }
 
   return null;
@@ -81,7 +87,7 @@ export function pushDeparturePlaceRecent(
   entry: DepartureRecentEntry,
 ): DepartureRecentEntry[] {
   const label = normalizeDepartureLabel(entry.label);
-  if (!label || !hasValidCoords(entry.lat, entry.lng)) return items;
+  if (!label || !toCoordPair(entry.lat, entry.lng)) return items;
   const normalized = { label, lat: entry.lat, lng: entry.lng };
   return [normalized, ...items.filter((item) => item.label !== label)];
 }

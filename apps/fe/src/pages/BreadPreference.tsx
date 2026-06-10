@@ -209,7 +209,7 @@ export default function BreadPreference() {
     const entry: DepartureRecentEntry = { label: t, lat: coords.lat, lng: coords.lng };
     const next = pushDeparturePlaceRecent(recentPlaces, entry);
     setRecentPlaces(next);
-    saveDepartureRecents(next);
+    saveDeparturePlaceRecents(next);
     closeDepartureSheet();
   };
 
