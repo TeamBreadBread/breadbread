@@ -7,6 +7,16 @@ export function formatDeparturePlaceDisplay(place: KakaoSearchPlace): string {
   return place.name.trim();
 }
 
+/** API·sessionStorage에 저장하는 출발지 문자열 (좌표 포함) */
+export function formatDeparturePlaceWithCoords(
+  label: string,
+  coords: { lat: number; lng: number },
+): string {
+  const normalized = normalizeDepartureLabel(label);
+  if (!normalized) return "";
+  return `${normalized} (${coords.lat}, ${coords.lng})`;
+}
+
 /** 예전 `(lat, lng)` / `이름 · 주소` 형식 정리 */
 export function normalizeDepartureLabel(raw: string): string {
   let label = raw.trim();

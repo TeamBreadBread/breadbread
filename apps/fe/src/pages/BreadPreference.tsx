@@ -17,8 +17,13 @@ import { cn } from "@/utils/cn";
 import { setAiCourseDepartureCoords } from "@/lib/aiCourseDepartureCoords";
 import { saveAiCoursePreferenceDraft } from "@/utils/aiCourseStorage";
 import { formatDeparturePlaceDisplay, normalizeDepartureLabel } from "@/utils/formatDeparturePlace";
+import {
+  loadDeparturePlaceRecents,
+  pushDeparturePlaceRecent,
+  saveDeparturePlaceRecents,
+  type DepartureRecentEntry,
+} from "@/utils/departurePlaceRecents";
 import type { KakaoSearchPlace } from "@/lib/kakaoPlaceSearch";
-import { parseLatLngFromPlace } from "@/utils/parseLatLngFromPlace";
 import AloneCategoryImg from "@/assets/icons/Img_alone.svg";
 import CoupleCategoryImg from "@/assets/icons/Img_couple.svg";
 import FriendCategoryImg from "@/assets/icons/Img_friend.svg";
@@ -72,58 +77,7 @@ const QUESTION_SECTIONS: QuestionItem[] = [
   },
 ];
 
-const DEPARTURE_RECENT_KEY = "aiCourseDepartureRecent";
-
-type DepartureRecentEntry = {
-  label: string;
-  lat?: number;
-  lng?: number;
-};
-
 type SelectedBySection = Record<string, string[]>;
-
-function hasValidCoords(lat?: number, lng?: number): lat is number {
-  return Number.isFinite(lat) && Number.isFinite(lng);
-}
-
-function loadDepartureRecents(): DepartureRecentEntry[] {
-  try {
-    const raw = localStorage.getItem(DEPARTURE_RECENT_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed
-      .map((item): DepartureRecentEntry | null => {
-        if (typeof item === "string" && item.trim()) {
-          const { lat, lng } = parseLatLngFromPlace(item);
-          const label = normalizeDepartureLabel(item);
-          if (!label || !hasValidCoords(lat, lng)) return null;
-          return { label, lat, lng };
-        }
-        if (item && typeof item === "object" && "label" in item) {
-          const row = item as DepartureRecentEntry;
-          const label = normalizeDepartureLabel(String(row.label ?? ""));
-          const lat = typeof row.lat === "number" ? row.lat : undefined;
-          const lng = typeof row.lng === "number" ? row.lng : undefined;
-          if (!label || !hasValidCoords(lat, lng)) return null;
-          return { label, lat, lng };
-        }
-        return null;
-      })
-      .filter((x): x is DepartureRecentEntry => x !== null);
-  } catch {
-    return [];
-  }
-}
-
-function saveDepartureRecents(items: DepartureRecentEntry[]) {
-  try {
-    localStorage.setItem(DEPARTURE_RECENT_KEY, JSON.stringify(items.slice(0, 15)));
-  } catch {
-    /* ignore */
-  }
-}
 
 function CircleIcon() {
   return <div className="h-x14 w-x14 rounded-full bg-gray-400" />;
@@ -198,7 +152,7 @@ export default function BreadPreference() {
   const [isDepartureSheetOpen, setIsDepartureSheetOpen] = useState(false);
   const [sheetQuery, setSheetQuery] = useState("");
   const [recentPlaces, setRecentPlaces] = useState<DepartureRecentEntry[]>(() =>
-    loadDepartureRecents(),
+    loadDeparturePlaceRecents(),
   );
   const [isResolvingLocation, setIsResolvingLocation] = useState(false);
   const navigate = useNavigate();
@@ -225,7 +179,7 @@ export default function BreadPreference() {
 
   const openDepartureSheet = () => {
     setSheetQuery(departureKeyword);
-    setRecentPlaces(loadDepartureRecents());
+    setRecentPlaces(loadDeparturePlaceRecents());
     setIsDepartureSheetOpen(true);
   };
 
@@ -237,7 +191,7 @@ export default function BreadPreference() {
     e.stopPropagation();
     setRecentPlaces((prev) => {
       const next = prev.filter((item) => item.label !== label);
-      saveDepartureRecents(next);
+      saveDeparturePlaceRecents(next);
       return next;
     });
   };
@@ -252,10 +206,10 @@ export default function BreadPreference() {
     setDepartureKeyword(t);
     setDepartureCoords(coords);
     setDepartureMarkerLabel(markerLabel);
-    const entry: DepartureRecentEntry = { label: t, ...coords };
-    const next = [entry, ...recentPlaces.filter((x) => x.label !== t)];
+    const entry: DepartureRecentEntry = { label: t, lat: coords.lat, lng: coords.lng };
+    const next = pushDeparturePlaceRecent(recentPlaces, entry);
     setRecentPlaces(next);
-    saveDepartureRecents(next);
+    saveDeparturePlaceRecents(next);
     closeDepartureSheet();
   };
 
