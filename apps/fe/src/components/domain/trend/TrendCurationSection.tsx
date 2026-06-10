@@ -9,6 +9,7 @@ import { useBakeriesSummary } from "@/hooks/useBakeriesSummary";
 import { CURATION_BAKERY_LIST_PARAMS } from "@/components/domain/home/curationBakeryContentParams";
 import { buildTrendCurationTitle, hasTrendBakeryId } from "@/utils/trendCuration";
 import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
+import { buildBbakeryDetailSearch } from "@/utils/bakeryListEntry";
 import { cn } from "@/utils/cn";
 import { APP_SHELL_MAX_WIDTH } from "@/components/layout/layout.constants";
 
@@ -74,13 +75,10 @@ export default function TrendCurationSection({
     if (typeof bakeryId !== "number" || bakeryId <= 0) return;
     void navigate({
       to: "/bbangteo-bakery-detail",
-      search: {
+      search: buildBbakeryDetailSearch({
         bakeryId,
         from: bakeryListEntryFrom,
-        courseId: undefined,
-        reviewUploaded: undefined,
-        reviewTab: undefined,
-      },
+      }),
     });
   };
 

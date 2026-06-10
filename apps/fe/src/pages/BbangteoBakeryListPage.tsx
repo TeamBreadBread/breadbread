@@ -25,6 +25,7 @@ import {
   subscribeBakeryLikeOverlayChange,
 } from "@/lib/bakeryLikeLocalCache";
 import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
+import { buildBbakeryDetailSearch } from "@/utils/bakeryListEntry";
 import { buildTrendBreadListTitle, resolveBakeryIdsForKeyword } from "@/utils/trendCuration";
 import { cn } from "@/utils/cn";
 import { resolveThumbnailDongAddress } from "@/utils/formatCurationAddress";
@@ -851,14 +852,11 @@ const BbangteoBakeryListPage = ({
   const handleBakeryClick = (bakery: BakeryRow) => {
     void navigate({
       to: "/bbangteo-bakery-detail",
-      search: {
+      search: buildBbakeryDetailSearch({
         bakeryId: bakery.id,
         from: listEntryFrom,
         trendBread: isTrendBreadList ? breadKeywordTrimmed : undefined,
-        courseId: undefined,
-        reviewUploaded: undefined,
-        reviewTab: undefined,
-      },
+      }),
     });
   };
 

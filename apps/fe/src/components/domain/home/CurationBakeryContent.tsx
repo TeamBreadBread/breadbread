@@ -8,7 +8,7 @@ import { useBakeriesSummary } from "@/hooks/useBakeriesSummary";
 import { resolveThumbnailDongAddress } from "@/utils/formatCurationAddress";
 import { resolveBakeryRating } from "@/utils/bakeryRating";
 import { getSafeImageUrl } from "@/utils/safeImageUrl";
-import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
+import { buildBbakeryDetailSearch, type BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import {
   CURATION_BAKERY_LIST_PARAMS,
   CURATION_DISPLAY_COUNT,
@@ -240,13 +240,10 @@ export function CurationBakeryContent({
     if (item.bakeryId != null) {
       void navigate({
         to: "/bbangteo-bakery-detail",
-        search: {
+        search: buildBbakeryDetailSearch({
           bakeryId: item.bakeryId,
           from: bakeryListEntryFrom,
-          courseId: undefined,
-          reviewUploaded: undefined,
-          reviewTab: undefined,
-        },
+        }),
       });
     }
   };

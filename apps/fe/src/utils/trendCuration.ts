@@ -229,10 +229,12 @@ export async function resolveBakeryIdsForKeyword(
   const merged = new Map<number, TrendBakery>();
 
   for (const bakery of trendBakeries) {
-    merged.set(bakery.bakeryId, bakery);
+    if (hasTrendBakeryId(bakery)) {
+      merged.set(bakery.bakeryId, bakery);
+    }
   }
-  for (const bakery of menuMatched.filter(hasTrendBakeryId)) {
-    if (!merged.has(bakery.bakeryId)) {
+  for (const bakery of menuMatched) {
+    if (hasTrendBakeryId(bakery) && !merged.has(bakery.bakeryId)) {
       merged.set(bakery.bakeryId, bakery);
     }
   }

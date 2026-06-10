@@ -92,6 +92,28 @@ export function parseBreadKeywordParam(value: unknown): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
+export type BbakeryDetailSearch = {
+  bakeryId?: number;
+  from?: BakeryListEntryFrom;
+  courseId?: number;
+  reviewUploaded?: boolean;
+  reviewTab?: boolean;
+  trendBread?: string;
+};
+
+/** `/bbangteo-bakery-detail` 이동 시 검색 파라미터 기본값 채우기 */
+export function buildBbakeryDetailSearch(search: BbakeryDetailSearch = {}) {
+  const trendBread = search.trendBread?.trim();
+  return {
+    bakeryId: search.bakeryId,
+    from: search.from,
+    courseId: search.courseId,
+    reviewUploaded: search.reviewUploaded,
+    reviewTab: search.reviewTab,
+    trendBread: trendBread || undefined,
+  };
+}
+
 export function parseCurationOnlyParam(value: unknown): boolean {
   return value === true || value === "true" || value === 1 || value === "1";
 }

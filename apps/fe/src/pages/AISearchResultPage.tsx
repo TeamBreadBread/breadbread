@@ -31,6 +31,7 @@ import { startTour } from "@/api/tours";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import { mapCongestionByBakeryId } from "@/utils/congestionCheck";
 import { AI_COURSE_RESULT_STORAGE_KEY, saveRouteFocusCourseId } from "@/utils/aiCourseStorage";
+import { buildBbakeryDetailSearch } from "@/utils/bakeryListEntry";
 import ResultCTASection from "@/components/domain/ai-course/ResultCTASection";
 import SaveRouteBanner from "@/components/domain/ai-course/SaveRouteBanner";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
@@ -250,13 +251,11 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     if (!Number.isFinite(bakeryId) || bakeryId <= 0) return;
     void navigate({
       to: "/bbangteo-bakery-detail",
-      search: {
+      search: buildBbakeryDetailSearch({
         bakeryId,
         from: "ai-result",
         courseId: effectiveCourseId ?? undefined,
-        reviewUploaded: undefined,
-        reviewTab: undefined,
-      },
+      }),
     });
   };
 
