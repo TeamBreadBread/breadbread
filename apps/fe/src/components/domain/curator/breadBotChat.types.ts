@@ -20,7 +20,6 @@ export type ChatMessage = {
   quickReplies?: string[];
   showCourseMap?: boolean;
   showSadBread?: boolean;
-  showBackToStart?: boolean;
   showBakeryInfoId?: number;
   congestionContext?: CongestionChatContext;
   showCelebration?: boolean;
@@ -41,7 +40,6 @@ export const QUICK_REPLIES = [
 
 export const WELCOME_TITLE = "안녕하세요! 빵빵 AI 큐레이터입니다.";
 export const WELCOME_SUBTITLE = "궁금한 것을 클릭해보세요!";
-export const BACK_TO_START_LABEL = "처음으로";
 export const BACK_TO_START_FOOTER_LABEL = "처음으로 돌아가기";
 export const COURSE_NOT_IN_PROGRESS_MESSAGE = "현재 코스 진행중이 아닙니다!";
 

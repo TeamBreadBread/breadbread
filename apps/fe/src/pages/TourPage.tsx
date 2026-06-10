@@ -21,7 +21,7 @@ import {
   buildBakeryNameLookup,
   mapCongestionByBakeryId,
 } from "@/utils/congestionCheck";
-import { notifyTourCompleteCelebration } from "@/utils/tourCelebration";
+import { markTourCompleteCelebration } from "@/utils/tourCelebration";
 import { cn } from "@/utils/cn";
 
 interface TourPageProps {
@@ -150,7 +150,8 @@ export default function TourPage({ courseId }: TourPageProps) {
       setTour(updated);
       if (updated.status === "COMPLETED") {
         endCourseGuide();
-        notifyTourCompleteCelebration(courseId);
+        // 홈으로 이동하면 챗봇이 컨페티와 함께 축하하도록 보류 마크만 남긴다
+        markTourCompleteCelebration(courseId);
       }
     } catch (e) {
       setError(getErrorMessage(e));
@@ -168,7 +169,7 @@ export default function TourPage({ courseId }: TourPageProps) {
       setTour(updated);
       if (updated.status === "COMPLETED") {
         endCourseGuide();
-        notifyTourCompleteCelebration(courseId);
+        markTourCompleteCelebration(courseId);
       }
     } catch (e) {
       setError(getErrorMessage(e));

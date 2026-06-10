@@ -19,7 +19,12 @@ function sleep(ms: number): Promise<void> {
   });
 }
 
-export async function pollAiCourseStatus(jobId: string): Promise<number> {
+/**
+ * COMPLETED가 될 때까지 상태를 폴링한다.
+ * BE가 결과를 Redis에 임시 저장하는 구조로 바뀌어 courseId는 더 이상 status 응답에 없다.
+ * COMPLETED 후 `POST /courses/ai/{jobId}/save`를 호출해 courseId를 받아야 한다.
+ */
+export async function pollAiCourseStatus(jobId: string): Promise<void> {
   const maxTryCount = AI_COURSE_POLL_MAX_ATTEMPTS;
   const intervalMs = AI_COURSE_POLL_INTERVAL_MS;
 
@@ -27,10 +32,7 @@ export async function pollAiCourseStatus(jobId: string): Promise<number> {
     const statusResult = await getAiCourseStatus(jobId);
 
     if (statusResult.status === "COMPLETED") {
-      if (!statusResult.courseId) {
-        throw new Error("courseId가 없습니다.");
-      }
-      return statusResult.courseId;
+      return;
     }
 
     if (statusResult.status === "FAILED") {

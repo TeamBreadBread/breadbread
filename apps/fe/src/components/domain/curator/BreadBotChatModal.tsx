@@ -1,11 +1,13 @@
-import type { ReactNode, RefObject } from "react";
+import { useState, type ReactNode, type RefObject } from "react";
 import { TypingIndicator } from "@chatscope/chat-ui-kit-react";
 import DefaultBreadImage from "@/assets/images/Default_Bread.svg";
 import SadBreadImage from "@/assets/images/Sad_Bread.svg";
+import CelebrateImage from "@/assets/icons/Img_Celebrate.svg";
 import type { ChatActionButton } from "@/types/curatorActions";
 import { cn } from "@/utils/cn";
 import BreadBotBakeryInfoCard from "./BreadBotBakeryInfoCard";
 import BreadBotCourseMapCard from "./BreadBotCourseMapCard";
+import BreadBotTourPanel from "./BreadBotTourPanel";
 import {
   QUICK_REPLIES,
   WELCOME_SUBTITLE,
@@ -22,12 +24,54 @@ type BreadBotChatModalProps = {
   courseId?: number | null;
   courseMovementBubble: CourseMovementBubble | null;
   courseGuideActive: boolean;
+  /** 진행 중인 투어의 courseId — 있으면 채팅/투어 진행 탭이 표시된다 */
+  activeTourCourseId?: number | null;
   onClose: () => void;
   onQuickReply: (label: string) => void;
   onAction: (button: ChatActionButton) => void;
   onCourseDetail: () => void;
   onBackToStart: () => void;
+  /** 투어 탭에서 "전체 화면으로 보기" — 모달 닫고 /tour 이동 */
+  onOpenTourPage: () => void;
 };
+
+const CHAT_TABS = ["채팅", "투어 진행"] as const;
+type ChatTab = (typeof CHAT_TABS)[number];
+
+/** 자유 게시판/빵티클 게시판과 동일한 패턴의 상단 탭 */
+function ChatModalTabs({
+  activeTab,
+  onChange,
+}: {
+  activeTab: ChatTab;
+  onChange: (tab: ChatTab) => void;
+}) {
+  return (
+    // relative z-[1]: 헤더 빵 마스코트(아래로 1/4 내려옴)가 탭을 가리지 않고 뒤로 깔리도록
+    <div className="relative z-[1] flex shrink-0 items-center justify-between border-b border-gray-100 bg-gray-00">
+      {CHAT_TABS.map((tab) => (
+        <button
+          key={tab}
+          type="button"
+          onClick={() => onChange(tab)}
+          className={cn(
+            "h-[44px] flex-1 shrink-0 border-b-2 px-x4",
+            activeTab === tab ? "border-gray-1000" : "border-transparent",
+          )}
+        >
+          <span
+            className={cn(
+              "font-pretendard text-size-3 leading-t4 text-gray-1000",
+              activeTab === tab ? "font-bold" : "font-medium text-gray-500",
+            )}
+          >
+            {tab}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function isCongestionBubble(bubble: CourseMovementBubble) {
   return bubble.title.includes("혼잡");
@@ -207,7 +251,6 @@ function BotMessageBlock({
   onQuickReply,
   onAction,
   onCourseDetail,
-  onBackToStart,
 }: {
   message: ChatMessage;
   loading: boolean;
@@ -215,11 +258,19 @@ function BotMessageBlock({
   onQuickReply: (label: string) => void;
   onAction: (button: ChatActionButton) => void;
   onCourseDetail: () => void;
-  onBackToStart: () => void;
 }) {
   return (
     <div className="flex w-full max-w-[92%] flex-col items-start">
       <BotSpeechBubble tone={message.showSadBread ? "warm" : "default"}>
+        {message.showCelebration ? (
+          <img
+            src={CelebrateImage}
+            alt=""
+            aria-hidden
+            className="mx-auto mb-x3 h-[96px] w-[96px] object-contain"
+          />
+        ) : null}
+
         <p className="whitespace-pre-wrap font-pretendard text-size-3 leading-t5 text-gray-1000">
           {message.text}
         </p>
@@ -253,11 +304,7 @@ function BotMessageBlock({
 
         {message.showCourseMap && courseId && courseId > 0 ? (
           <div className="mt-x3 border-t border-gray-300/50 pt-x3">
-            <BreadBotCourseMapCard
-              courseId={courseId}
-              onDetailClick={onCourseDetail}
-              onBackToStart={message.showBackToStart ? onBackToStart : undefined}
-            />
+            <BreadBotCourseMapCard courseId={courseId} onDetailClick={onCourseDetail} />
           </div>
         ) : null}
       </BotSpeechBubble>
@@ -272,14 +319,22 @@ export default function BreadBotChatModal({
   courseId,
   courseMovementBubble,
   courseGuideActive,
+  activeTourCourseId,
   onClose,
   onQuickReply,
   onAction,
   onCourseDetail,
   onBackToStart,
+  onOpenTourPage,
 }: BreadBotChatModalProps) {
+  const showTourTab = activeTourCourseId != null && activeTourCourseId > 0;
+  const [selectedTab, setSelectedTab] = useState<ChatTab>("채팅");
+
+  // 투어가 끝나면(탭 숨김) 자동으로 채팅 뷰로 복귀 — 완료 축하 메시지가 채팅에 표시됨
+  const activeTab: ChatTab = showTourTab ? selectedTab : "채팅";
+  const isTourTab = showTourTab && activeTab === "투어 진행";
   const showWelcomeButtons = messages.length === 0 && !loading;
-  const showBackToStartFooter = messages.length > 0 || loading;
+  const showBackToStartFooter = !isTourTab && (messages.length > 0 || loading);
   const showCongestionHeader =
     courseGuideActive && courseMovementBubble != null && isCongestionBubble(courseMovementBubble);
 
@@ -306,44 +361,51 @@ export default function BreadBotChatModal({
             <HeaderBreadMascot src={showCongestionHeader ? SadBreadImage : DefaultBreadImage} />
           </div>
 
-          <div
-            ref={listRef}
-            className="relative z-[1] flex min-h-0 flex-1 flex-col gap-x4 overflow-y-auto bg-gray-100 px-x5 pb-x5 pt-x4"
-          >
-            <WelcomeSpeechBubble
-              showButtons={showWelcomeButtons}
-              disabled={loading}
-              onQuickReply={onQuickReply}
-            />
+          {showTourTab ? <ChatModalTabs activeTab={activeTab} onChange={setSelectedTab} /> : null}
 
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={cn(
-                  "flex w-full",
-                  message.role === "user" ? "justify-end" : "justify-start",
-                )}
-              >
-                {message.role === "user" ? (
-                  <div className="max-w-[88%] rounded-r4 rounded-tr-r1 bg-orange-600 px-x4 py-x3 font-pretendard text-size-3 leading-t5 text-gray-00 shadow-[0_4px_14px_rgba(255,134,72,0.24)]">
-                    {message.text}
-                  </div>
-                ) : (
-                  <BotMessageBlock
-                    message={message}
-                    loading={loading}
-                    courseId={courseId}
-                    onQuickReply={onQuickReply}
-                    onAction={onAction}
-                    onCourseDetail={onCourseDetail}
-                    onBackToStart={onBackToStart}
-                  />
-                )}
-              </div>
-            ))}
+          {isTourTab && activeTourCourseId ? (
+            <div className="relative z-[1] flex min-h-0 flex-1 flex-col overflow-y-auto bg-gray-100 px-x4 pb-x5 pt-x4">
+              <BreadBotTourPanel courseId={activeTourCourseId} onOpenFullPage={onOpenTourPage} />
+            </div>
+          ) : (
+            <div
+              ref={listRef}
+              className="relative z-[1] flex min-h-0 flex-1 flex-col gap-x4 overflow-y-auto bg-gray-100 px-x5 pb-x5 pt-x4"
+            >
+              <WelcomeSpeechBubble
+                showButtons={showWelcomeButtons}
+                disabled={loading}
+                onQuickReply={onQuickReply}
+              />
 
-            {loading ? <ChatbotTypingIndicator /> : null}
-          </div>
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={cn(
+                    "flex w-full",
+                    message.role === "user" ? "justify-end" : "justify-start",
+                  )}
+                >
+                  {message.role === "user" ? (
+                    <div className="max-w-[88%] rounded-r4 rounded-tr-r1 bg-orange-600 px-x4 py-x3 font-pretendard text-size-3 leading-t5 text-gray-00 shadow-[0_4px_14px_rgba(255,134,72,0.24)]">
+                      {message.text}
+                    </div>
+                  ) : (
+                    <BotMessageBlock
+                      message={message}
+                      loading={loading}
+                      courseId={courseId}
+                      onQuickReply={onQuickReply}
+                      onAction={onAction}
+                      onCourseDetail={onCourseDetail}
+                    />
+                  )}
+                </div>
+              ))}
+
+              {loading ? <ChatbotTypingIndicator /> : null}
+            </div>
+          )}
 
           {showBackToStartFooter ? (
             <div className="shrink-0 border-t border-gray-300/60 bg-gray-100 px-x5 py-x3">

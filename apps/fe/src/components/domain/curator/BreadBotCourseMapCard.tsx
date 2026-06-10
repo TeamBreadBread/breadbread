@@ -7,18 +7,15 @@ import {
   getAiCourseDepartureMarkerLabel,
   getLatestAiCourseDepartureCoords,
 } from "@/lib/aiCourseDepartureCoords";
-import { BACK_TO_START_LABEL } from "./breadBotChat.types";
 
 type BreadBotCourseMapCardProps = {
   courseId: number;
   onDetailClick: () => void;
-  onBackToStart?: () => void;
 };
 
 export default function BreadBotCourseMapCard({
   courseId,
   onDetailClick,
-  onBackToStart,
 }: BreadBotCourseMapCardProps) {
   const [courseName, setCourseName] = useState("");
   const [bakeries, setBakeries] = useState<CourseMapBakery[]>([]);
@@ -82,15 +79,6 @@ export default function BreadBotCourseMapCard({
         >
           코스 상세정보 더보기
         </button>
-        {onBackToStart ? (
-          <button
-            type="button"
-            onClick={onBackToStart}
-            className="flex h-[47px] w-[231px] max-w-full items-center justify-center rounded-r3 bg-gray-100 font-pretendard text-size-3 leading-t4 text-gray-1000 transition-colors hover:bg-gray-200"
-          >
-            {BACK_TO_START_LABEL}
-          </button>
-        ) : null}
       </div>
     </div>
   );

@@ -116,8 +116,32 @@ export type AiCourseRequest = {
 
 export type AiCourseStatusResponse = {
   status: "PENDING" | "COMPLETED" | "FAILED";
-  courseId: number | null;
   errorMessage: string | null;
+};
+
+/** Swagger `GET /courses/ai/{jobId}/preview` 응답 빵집 항목 */
+export type AiCoursePreviewBakery = {
+  id: number;
+  order: number;
+  name: string;
+  recommendedBread: string | null;
+  reason: string | null;
+  address: string;
+  latitude: number;
+  longitude: number;
+  rating: number | null;
+};
+
+/** Swagger `GET /courses/ai/{jobId}/preview` — Redis 임시 저장본 (24시간 내 저장 필요) */
+export type AiCoursePreview = {
+  name: string;
+  bakeryCount: number;
+  estimatedTime: string;
+  estimatedCost: number;
+  theme: string | null;
+  summary: string | null;
+  recommendReason: string | null;
+  bakeries: AiCoursePreviewBakery[];
 };
 
 export type MyRouteCourse = {
@@ -226,6 +250,24 @@ export async function requestAiCourse(body: AiCourseRequest): Promise<string> {
 export async function getAiCourseStatus(jobId: string): Promise<AiCourseStatusResponse> {
   const response = await apiClient.get<ApiEnvelope<AiCourseStatusResponse>>(
     `${PATH}/ai/status/${jobId}`,
+  );
+  return extractData(response.data);
+}
+
+/** `GET /courses/ai/{jobId}/preview` — 추천 완료 후 저장 전 미리보기 */
+export async function getAiCoursePreview(jobId: string): Promise<AiCoursePreview> {
+  const response = await apiClient.get<ApiEnvelope<AiCoursePreview>>(`${PATH}/ai/${jobId}/preview`);
+  return extractData(response.data);
+}
+
+/**
+ * `POST /courses/ai/{jobId}/save` — 미리보기 확인 후 코스를 내 목록에 저장.
+ * bakeryOrder 미전달 시 AI 추천 순서 그대로 저장. 저장된 courseId 반환.
+ */
+export async function saveAiCourse(jobId: string, bakeryOrder?: number[]): Promise<number> {
+  const response = await apiClient.post<ApiEnvelope<number>>(
+    `${PATH}/ai/${jobId}/save`,
+    bakeryOrder && bakeryOrder.length > 0 ? { bakeryOrder } : {},
   );
   return extractData(response.data);
 }
