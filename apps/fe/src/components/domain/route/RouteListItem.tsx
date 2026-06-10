@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { AppIcon, IconAssets } from "@/components/icons";
+import { ToastBanner } from "@/components/common";
 import CourseBreadThumbnail from "@/components/domain/ai-course/CourseBreadThumbnail";
+import icCheckCircleGreen from "@/assets/icons/Ic_CheckCircle_Green.svg";
 import { formatCourseEstimatedTime } from "@/utils/formatCourseEstimatedTime";
 import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
 import { cn } from "@/utils/cn";
@@ -28,7 +31,14 @@ export default function RouteListItem({
 }: RouteListItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+  const [showCopyToast, setShowCopyToast] = useState(false);
   const durationLabel = formatCourseEstimatedTime(course.duration) || course.duration;
+
+  useEffect(() => {
+    if (!showCopyToast) return;
+    const timer = window.setTimeout(() => setShowCopyToast(false), 2000);
+    return () => window.clearTimeout(timer);
+  }, [showCopyToast]);
 
   const handleItemClick = () => {
     setIsExpanded((prev) => !prev);
@@ -54,10 +64,12 @@ export default function RouteListItem({
     const link = buildCourseShareLink(course.id);
     try {
       await navigator.clipboard.writeText(link);
+      closeSheet();
+      setShowCopyToast(true);
     } catch {
       window.prompt("링크를 복사하세요", link);
+      closeSheet();
     }
-    closeSheet();
   };
 
   const handleKakaoShare = async (event: React.MouseEvent) => {
@@ -199,7 +211,7 @@ export default function RouteListItem({
 
       {isBottomSheetOpen ? (
         <div
-          className="fixed inset-x-0 top-0 bottom-[56px] z-[60] sm:bottom-[60px]"
+          className="fixed inset-0 z-[100]"
           role="dialog"
           aria-modal="true"
           aria-label="코스 옵션"
@@ -269,6 +281,19 @@ export default function RouteListItem({
           </div>
         </div>
       ) : null}
+
+      {showCopyToast && typeof document !== "undefined"
+        ? createPortal(
+            <div className="fixed bottom-[68px] left-1/2 z-[110] w-full max-w-[402px] -translate-x-1/2 sm:bottom-[72px]">
+              <ToastBanner
+                message="링크가 복사되었습니다."
+                iconSrc={icCheckCircleGreen}
+                iconClassName=""
+              />
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
