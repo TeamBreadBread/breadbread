@@ -27,7 +27,7 @@ import { patchBakeryInListCaches } from "@/hooks/useBakeries";
 import { useBakeryDetail } from "@/hooks/useBakeryDetail";
 import { getUserProfile } from "@/lib/userProfileCache";
 import type { BakeryDetail, BakeryDetailBread } from "@/api/types/bakery";
-import { buildBbangteoBakeryListSearch, type BakeryListEntryFrom } from "@/utils/bakeryListEntry";
+import { getBakeryDetailBackTarget, type BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import { formatInstantInSeoul } from "@/utils/formatSeoulDateTime";
 import { buildWeeklyHoursRows, getBakeryHoursStatusLabel } from "@/utils/bakeryBusinessHours";
 import BakeryKakaoMapPreview from "@/components/domain/bbangteo/BakeryKakaoMapPreview";
@@ -68,23 +68,16 @@ function breadsToMenus(breads: BakeryDetailBread[], bakeryName?: string): MenuRo
 const BackHeader = ({
   listEntryFrom,
   returnCourseId,
+  trendBreadKeyword,
 }: {
   listEntryFrom?: BakeryListEntryFrom;
   returnCourseId?: number;
+  trendBreadKeyword?: string;
 }) => {
   const navigate = useNavigate();
   const goToList = () => {
-    if (listEntryFrom === "ai-result") {
-      void navigate({
-        to: "/ai-search-result",
-        search: { courseId: returnCourseId ?? null },
-      });
-      return;
-    }
-    void navigate({
-      to: "/bbangteo-bakery-list",
-      search: buildBbangteoBakeryListSearch({ from: listEntryFrom }),
-    });
+    const target = getBakeryDetailBackTarget(listEntryFrom, returnCourseId, trendBreadKeyword);
+    void navigate(target);
   };
 
   return (
@@ -747,12 +740,15 @@ const BakeryTabSection = ({
 const MissingBakeryId = ({
   listEntryFrom,
   returnCourseId,
+  trendBreadKeyword,
 }: {
   listEntryFrom?: BakeryListEntryFrom;
   returnCourseId?: number;
+  trendBreadKeyword?: string;
 }) => {
   const navigate = useNavigate();
   const isAiEntry = listEntryFrom === "ai-result";
+  const hasTrendBreadList = listEntryFrom === "bbangteo-home" && Boolean(trendBreadKeyword?.trim());
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 px-[24px] pb-[56px] text-center">
       <p className="text-[15px] leading-[22px] text-[#1a1c20]">빵집을 찾을 수 없습니다.</p>
@@ -763,20 +759,18 @@ const MissingBakeryId = ({
         type="button"
         className="rounded-[10px] bg-[#1a1c20] px-5 py-3 text-[15px] font-semibold text-white"
         onClick={() => {
-          if (isAiEntry) {
-            void navigate({
-              to: "/ai-search-result",
-              search: { courseId: returnCourseId ?? null },
-            });
-            return;
-          }
-          void navigate({
-            to: "/bbangteo-bakery-list",
-            search: buildBbangteoBakeryListSearch({ from: listEntryFrom }),
-          });
+          void navigate(
+            getBakeryDetailBackTarget(listEntryFrom, returnCourseId, trendBreadKeyword),
+          );
         }}
       >
-        {isAiEntry ? "AI 추천 코스로" : "빵집 리스트로"}
+        {isAiEntry
+          ? "AI 추천 코스로"
+          : hasTrendBreadList
+            ? "빵집 목록으로"
+            : listEntryFrom === "bbangteo-home"
+              ? "빵터로"
+              : "빵집 리스트로"}
       </button>
     </div>
   );
@@ -786,6 +780,8 @@ type BbangteoBakeryDetailPageProps = {
   bakeryId?: number;
   listEntryFrom?: BakeryListEntryFrom;
   returnCourseId?: number;
+  /** SNS 트렌드 빵 키워드 — 빵집 목록으로 돌아갈 때 사용 */
+  trendBreadKeyword?: string;
   /** 후기 등록 성공 시에만 true — "후기 업로드됨" 토스트 노출 */
   reviewUploaded?: boolean;
   /** 후기 탭을 기본 선택 상태로 열지 여부 (나가기 등 토스트와 무관) */
@@ -796,6 +792,7 @@ const BbangteoBakeryDetailPage = ({
   bakeryId,
   listEntryFrom,
   returnCourseId,
+  trendBreadKeyword,
   reviewUploaded = false,
   reviewTab = false,
 }: BbangteoBakeryDetailPageProps) => {
@@ -913,8 +910,16 @@ const BbangteoBakeryDetailPage = ({
     return (
       <MobileFrame className="bg-white">
         <div className="flex min-h-screen flex-1 flex-col bg-white">
-          <BackHeader listEntryFrom={listEntryFrom} returnCourseId={returnCourseId} />
-          <MissingBakeryId listEntryFrom={listEntryFrom} returnCourseId={returnCourseId} />
+          <BackHeader
+            listEntryFrom={listEntryFrom}
+            returnCourseId={returnCourseId}
+            trendBreadKeyword={trendBreadKeyword}
+          />
+          <MissingBakeryId
+            listEntryFrom={listEntryFrom}
+            returnCourseId={returnCourseId}
+            trendBreadKeyword={trendBreadKeyword}
+          />
         </div>
         <BottomNav />
       </MobileFrame>
@@ -924,7 +929,11 @@ const BbangteoBakeryDetailPage = ({
   return (
     <MobileFrame className="bg-white">
       <div className="flex min-h-screen flex-1 flex-col bg-white">
-        <BackHeader listEntryFrom={listEntryFrom} returnCourseId={returnCourseId} />
+        <BackHeader
+          listEntryFrom={listEntryFrom}
+          returnCourseId={returnCourseId}
+          trendBreadKeyword={trendBreadKeyword}
+        />
         <main className="flex flex-1 flex-col pb-[56px] sm:pb-[60px]">
           {loading ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 px-[20px] py-[40px] text-[14px] text-[#868b94]">
@@ -937,17 +946,9 @@ const BbangteoBakeryDetailPage = ({
                 type="button"
                 className="rounded-[10px] bg-[#f3f4f5] px-4 py-2 text-[14px] font-semibold text-[#1a1c20]"
                 onClick={() => {
-                  if (listEntryFrom === "ai-result") {
-                    void navigate({
-                      to: "/ai-search-result",
-                      search: { courseId: returnCourseId ?? null },
-                    });
-                    return;
-                  }
-                  void navigate({
-                    to: "/bbangteo-bakery-list",
-                    search: buildBbangteoBakeryListSearch({ from: listEntryFrom }),
-                  });
+                  void navigate(
+                    getBakeryDetailBackTarget(listEntryFrom, returnCourseId, trendBreadKeyword),
+                  );
                 }}
               >
                 목록으로

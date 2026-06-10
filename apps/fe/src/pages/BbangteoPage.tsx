@@ -66,6 +66,7 @@ const BbangteoPage = () => {
           <TrendCurationSection
             compact
             title="요즘 핫한 빵집"
+            randomTopKeywordCount={5}
             bakeryListEntryFrom="bbangteo"
             onMoreClick={goToBakeryList}
             onDisplayedBakeryIdsChange={setCurationDisplayedBakeryIds}

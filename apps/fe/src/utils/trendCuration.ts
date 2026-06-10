@@ -1,5 +1,6 @@
 import type { BakeryForAI } from "@/api/types/bakery";
-import type { TrendBakery, TrendStatus } from "@/types/trend";
+import { fetchTrendBakeries } from "@/services/trends";
+import type { TrendBakery, TrendBread, TrendStatus } from "@/types/trend";
 
 export function formatTrendStatusLabel(status: TrendStatus | string | null | undefined): string {
   switch (status) {
@@ -43,6 +44,41 @@ export function formatTrendGrowthCaption(
   }
 }
 
+const BREAD_EMOJI_RULES: { pattern: RegExp; emoji: string }[] = [
+  { pattern: /케이크|cake/i, emoji: "🎂" },
+  { pattern: /크로와상|크루아상|croissant/i, emoji: "🥐" },
+  { pattern: /소금빵|salt bread/i, emoji: "🥖" },
+  { pattern: /바게트|baguette/i, emoji: "🥖" },
+  { pattern: /베이글|bagel/i, emoji: "🥯" },
+  { pattern: /도넛|donut|doughnut/i, emoji: "🍩" },
+  { pattern: /쿠키|cookie/i, emoji: "🍪" },
+  { pattern: /마카롱|macaron/i, emoji: "🧁" },
+  { pattern: /붕어빵|잉어빵/i, emoji: "🐟" },
+  { pattern: /타르트|tart/i, emoji: "🥧" },
+  { pattern: /스콘|scone/i, emoji: "🥮" },
+  { pattern: /와플|waffle/i, emoji: "🧇" },
+  { pattern: /프레첼|pretzel/i, emoji: "🥨" },
+  { pattern: /샌드위치|sandwich/i, emoji: "🥪" },
+  { pattern: /피자|pizza/i, emoji: "🍕" },
+  { pattern: /식빵|toast bread/i, emoji: "🍞" },
+  { pattern: /단팥|팥빵|호빵/i, emoji: "🫘" },
+  { pattern: /빵/, emoji: "🍞" },
+];
+
+/** SNS 트렌드 빵 키워드에 맞는 이모티콘 */
+export function getTrendBreadEmoji(keyword: string | null | undefined): string {
+  const normalized = keyword?.trim() ?? "";
+  if (!normalized) return "🍞";
+
+  for (const rule of BREAD_EMOJI_RULES) {
+    if (rule.pattern.test(normalized)) {
+      return rule.emoji;
+    }
+  }
+
+  return "🍞";
+}
+
 export function buildTrendCurationTitle(
   keyword: string | null | undefined,
   bakeryCount: number,
@@ -53,6 +89,52 @@ export function buildTrendCurationTitle(
     return `요즘 핫한 대전 맛집 ${count}곳`;
   }
   return `요즘 핫한 대전 "${trimmedKeyword}" 맛집 ${count}곳`;
+}
+
+export function buildTrendBreadListTitle(keyword: string | null | undefined): string {
+  const trimmedKeyword = keyword?.trim() ?? "";
+  if (!trimmedKeyword) {
+    return "빵집 리스트";
+  }
+  return `'${trimmedKeyword}' 빵집`;
+}
+
+/** 트렌드 순위 상위 N개 키워드 중 매칭 빵집이 있는 것을 무작위로 선택 */
+export function pickRandomTopTrendKeyword(
+  keywordChips: TrendBread[],
+  aiBakeries: BakeryForAI[],
+  maxRank = 5,
+  randomSeed = Math.random(),
+): string {
+  const pool = keywordChips
+    .slice(0, Math.max(1, maxRank))
+    .map((chip) => chip.keyword?.trim())
+    .filter((keyword): keyword is string => Boolean(keyword));
+
+  if (pool.length === 0) return "";
+
+  const shuffled = shuffleWithSeed(pool, randomSeed);
+
+  for (const keyword of shuffled) {
+    if (matchBakeriesByBreadKeyword(aiBakeries, keyword).length > 0) {
+      return keyword;
+    }
+  }
+
+  return shuffled[0];
+}
+
+function shuffleWithSeed<T>(items: T[], seed: number): T[] {
+  const result = [...items];
+  let state = Math.floor(Math.abs(seed) * 2 ** 31) || 1;
+
+  for (let i = result.length - 1; i > 0; i--) {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    const j = state % (i + 1);
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+
+  return result;
 }
 
 export function findMostPopularBreadKeyword(aiBakeries: BakeryForAI[]): string | null {
@@ -125,4 +207,46 @@ export function hasTrendBakeryId(
   bakery: TrendBakery,
 ): bakery is TrendBakery & { bakeryId: number } {
   return typeof bakery.bakeryId === "number" && bakery.bakeryId > 0;
+}
+
+/** 키워드에 맞는 빵집 ID 목록 — 트렌드 API 우선, 없으면 메뉴 DB 매칭 */
+export async function resolveBakeryIdsForKeyword(
+  keyword: string,
+  aiBakeries: BakeryForAI[],
+): Promise<number[]> {
+  const trimmed = keyword.trim();
+  if (!trimmed) return [];
+
+  let trendBakeries: TrendBakery[] = [];
+  try {
+    const trend = await fetchTrendBakeries({ keyword: trimmed, page: 0, size: 50 });
+    trendBakeries = trend.bakeries.filter(hasTrendBakeryId);
+  } catch {
+    // 트렌드 API 실패 시 메뉴 매칭만 사용
+  }
+
+  const menuMatched = matchBakeriesByBreadKeyword(aiBakeries, trimmed);
+  const merged = new Map<number, TrendBakery>();
+
+  for (const bakery of trendBakeries) {
+    if (hasTrendBakeryId(bakery)) {
+      merged.set(bakery.bakeryId, bakery);
+    }
+  }
+  for (const bakery of menuMatched) {
+    if (hasTrendBakeryId(bakery) && !merged.has(bakery.bakeryId)) {
+      merged.set(bakery.bakeryId, bakery);
+    }
+  }
+
+  return [...merged.keys()];
+}
+
+/** 키워드에 맞는 대표 빵집 ID — 트렌드 API 우선, 없으면 메뉴 DB 매칭 */
+export async function resolvePrimaryBakeryIdForKeyword(
+  keyword: string,
+  aiBakeries: BakeryForAI[],
+): Promise<number | null> {
+  const ids = await resolveBakeryIdsForKeyword(keyword, aiBakeries);
+  return ids[0] ?? null;
 }

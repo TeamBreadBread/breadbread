@@ -11,7 +11,7 @@ import {
   BBANGTEO_FIXED_HEADER_OUTER_CLASS,
   FIXED_TOP_BAR_SPACER_CLASS,
 } from "@/components/layout/layout.constants";
-import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
+import { buildBbakeryDetailSearch, type BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 
 interface BbangteoBakeryReviewWritePageProps {
   bakeryId?: number;
@@ -112,13 +112,12 @@ export default function BbangteoBakeryReviewWritePage({
   const goToBakeryDetail = (reviewUploaded: boolean) => {
     void navigate({
       to: "/bbangteo-bakery-detail",
-      search: {
+      search: buildBbakeryDetailSearch({
         bakeryId,
         from: listEntryFrom,
-        courseId: undefined,
         reviewTab: true,
         reviewUploaded,
-      },
+      }),
     });
   };
 

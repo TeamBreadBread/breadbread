@@ -6,6 +6,8 @@ import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { useNavigate } from "@tanstack/react-router";
 
+import { buildBbakeryDetailSearch } from "@/utils/bakeryListEntry";
+
 const PAGE_SIZE = 10;
 
 function formatDate(value: string): string {
@@ -81,13 +83,10 @@ export default function MyReviewsPage() {
               onClick={() =>
                 navigate({
                   to: "/bbangteo-bakery-detail",
-                  search: {
+                  search: buildBbakeryDetailSearch({
                     bakeryId: review.bakeryId,
-                    from: undefined,
-                    courseId: undefined,
-                    reviewUploaded: undefined,
                     reviewTab: true,
-                  },
+                  }),
                 })
               }
               className="rounded-r4 bg-white px-x5 py-x5 text-left"

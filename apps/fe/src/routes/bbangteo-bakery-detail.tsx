@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import BbangteoBakeryDetailPage from "@/pages/BbangteoBakeryDetailPage";
-import { parseBakeryListEntryFrom } from "@/utils/bakeryListEntry";
+import { parseBakeryListEntryFrom, parseBreadKeywordParam } from "@/utils/bakeryListEntry";
 
 function parseBakeryId(value: unknown): number | undefined {
   if (typeof value === "number" && Number.isFinite(value) && value > 0) {
@@ -38,12 +38,13 @@ export const Route = createFileRoute("/bbangteo-bakery-detail")({
     courseId: parseBakeryId(search.courseId),
     reviewUploaded: parseBoolean(search.reviewUploaded),
     reviewTab: parseBoolean(search.reviewTab),
+    trendBread: parseBreadKeywordParam(search.trendBread),
   }),
   component: BbangteoBakeryDetailRoute,
 });
 
 function BbangteoBakeryDetailRoute() {
-  const { bakeryId, from, courseId, reviewUploaded, reviewTab } = Route.useSearch();
+  const { bakeryId, from, courseId, reviewUploaded, reviewTab, trendBread } = Route.useSearch();
   return (
     <BbangteoBakeryDetailPage
       bakeryId={bakeryId}
@@ -51,6 +52,7 @@ function BbangteoBakeryDetailRoute() {
       returnCourseId={courseId}
       reviewUploaded={Boolean(reviewUploaded)}
       reviewTab={Boolean(reviewTab || reviewUploaded)}
+      trendBreadKeyword={trendBread}
     />
   );
 }

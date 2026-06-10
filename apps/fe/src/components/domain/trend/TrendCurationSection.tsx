@@ -9,6 +9,7 @@ import { useBakeriesSummary } from "@/hooks/useBakeriesSummary";
 import { CURATION_BAKERY_LIST_PARAMS } from "@/components/domain/home/curationBakeryContentParams";
 import { buildTrendCurationTitle, hasTrendBakeryId } from "@/utils/trendCuration";
 import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
+import { buildBbakeryDetailSearch } from "@/utils/bakeryListEntry";
 import { cn } from "@/utils/cn";
 import { APP_SHELL_MAX_WIDTH } from "@/components/layout/layout.constants";
 
@@ -18,6 +19,7 @@ type TrendCurationSectionProps = {
   title?: string;
   compact?: boolean;
   bakeryListEntryFrom: BakeryListEntryFrom;
+  randomTopKeywordCount?: number;
   onMoreClick?: () => void;
   onDisplayedBakeryIdsChange?: (ids: number[]) => void;
   className?: string;
@@ -27,12 +29,13 @@ export default function TrendCurationSection({
   title = "요즘 뜨는 빵",
   compact = false,
   bakeryListEntryFrom,
+  randomTopKeywordCount,
   onMoreClick,
   onDisplayedBakeryIdsChange,
   className,
 }: TrendCurationSectionProps) {
   const navigate = useNavigate();
-  const { viewModel, loading, error } = useTrendCuration();
+  const { viewModel, loading, error } = useTrendCuration({ randomTopKeywordCount });
 
   const summaryQuery = useBakeriesSummary(
     { ...CURATION_BAKERY_LIST_PARAMS, page: 0, size: 50 },
@@ -72,13 +75,10 @@ export default function TrendCurationSection({
     if (typeof bakeryId !== "number" || bakeryId <= 0) return;
     void navigate({
       to: "/bbangteo-bakery-detail",
-      search: {
+      search: buildBbakeryDetailSearch({
         bakeryId,
         from: bakeryListEntryFrom,
-        courseId: undefined,
-        reviewUploaded: undefined,
-        reviewTab: undefined,
-      },
+      }),
     });
   };
 

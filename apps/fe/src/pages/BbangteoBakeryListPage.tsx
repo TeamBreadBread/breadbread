@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { getBakeryById } from "@/api/bakery";
 import type { BakeryDetail, BakeryListItem, BakerySortType } from "@/api/types/bakery";
@@ -15,6 +16,8 @@ import {
   DONG_REGION_FALLBACK,
   shouldExcludeFromDongCuration,
 } from "@/components/domain/home/dongCurationParams";
+import { useTrendMenuIndex } from "@/hooks/trend/useTrendMenuFallback";
+import { trendQueryKeys } from "@/hooks/trend/trendQueryKeys";
 import { useBakeries } from "@/hooks/useBakeries";
 import {
   getBakeryLikeOverlay,
@@ -22,6 +25,8 @@ import {
   subscribeBakeryLikeOverlayChange,
 } from "@/lib/bakeryLikeLocalCache";
 import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
+import { buildBbakeryDetailSearch } from "@/utils/bakeryListEntry";
+import { buildTrendBreadListTitle, resolveBakeryIdsForKeyword } from "@/utils/trendCuration";
 import { cn } from "@/utils/cn";
 import { resolveThumbnailDongAddress } from "@/utils/formatCurationAddress";
 import {
@@ -158,7 +163,7 @@ const PageHeader = ({
       void navigate({ to: "/home" });
       return;
     }
-    if (listEntryFrom === "bbangteo") {
+    if (listEntryFrom === "bbangteo" || listEntryFrom === "bbangteo-home") {
       void navigate({ to: "/bbangteo" });
       return;
     }
@@ -293,6 +298,7 @@ const SearchFilterSection = ({
   onSortChange,
   openOnly,
   onOpenOnlyToggle,
+  hideKeywordSearch = false,
 }: {
   keyword: string;
   onKeywordChange: (value: string) => void;
@@ -300,18 +306,21 @@ const SearchFilterSection = ({
   onSortChange: (sort: BakeryListSort) => void;
   openOnly: boolean;
   onOpenOnlyToggle: () => void;
+  hideKeywordSearch?: boolean;
 }) => (
   <section className="flex flex-col gap-[16px] bg-white px-[20px] py-[12px]">
-    <div className="flex h-[56px] items-center gap-x1-5 rounded-[12px] border border-[#dcdee3] px-[20px] py-[16px]">
-      <input
-        type="search"
-        value={keyword}
-        onChange={(event) => onKeywordChange(event.target.value)}
-        placeholder="빵집을 검색해보세요"
-        className="flex-1 bg-transparent text-[16px] leading-[22px] text-[#1a1c20] placeholder:text-[#d1d3d8] outline-none"
-      />
-      <AppIcon src={IconAssets.IcSearch} size="x6" />
-    </div>
+    {hideKeywordSearch ? null : (
+      <div className="flex h-[56px] items-center gap-x1-5 rounded-[12px] border border-[#dcdee3] px-[20px] py-[16px]">
+        <input
+          type="search"
+          value={keyword}
+          onChange={(event) => onKeywordChange(event.target.value)}
+          placeholder="빵집을 검색해보세요"
+          className="flex-1 bg-transparent text-[16px] leading-[22px] text-[#1a1c20] placeholder:text-[#d1d3d8] outline-none"
+        />
+        <AppIcon src={IconAssets.IcSearch} size="x6" />
+      </div>
+    )}
     <div className="flex items-center gap-[8px]">
       <button
         type="button"
@@ -512,6 +521,8 @@ type BbangteoBakeryListPageProps = {
   dongFilter?: string;
   /** 동 큐레이션에서 제외할 빵집 id (홈 1번 큐레이션과 중복 방지) */
   excludePinIds?: number[];
+  /** SNS 트렌드 빵 키워드 — 해당 빵을 파는 빵집만 표시 */
+  breadKeyword?: string;
 };
 
 const BbangteoBakeryListPage = ({
@@ -520,8 +531,21 @@ const BbangteoBakeryListPage = ({
   curationOnly = false,
   dongFilter,
   excludePinIds,
+  breadKeyword,
 }: BbangteoBakeryListPageProps) => {
   const navigate = useNavigate();
+  const breadKeywordTrimmed = breadKeyword?.trim() ?? "";
+  const isTrendBreadList = Boolean(breadKeywordTrimmed);
+  const menuIndexQuery = useTrendMenuIndex({ enabled: isTrendBreadList });
+  const breadBakeriesQuery = useQuery({
+    queryKey: trendQueryKeys.breadBakeries(breadKeywordTrimmed),
+    queryFn: () => resolveBakeryIdsForKeyword(breadKeywordTrimmed, menuIndexQuery.data!.aiBakeries),
+    enabled: isTrendBreadList && Boolean(menuIndexQuery.data?.aiBakeries.length),
+    staleTime: 60_000,
+  });
+  const breadListPinIds = breadBakeriesQuery.data ?? [];
+  const breadListResolving =
+    isTrendBreadList && (menuIndexQuery.isLoading || breadBakeriesQuery.isLoading);
   const [keyword, setKeyword] = useState("");
   const [listSort, setListSort] = useState<BakeryListSort>("RATING");
   const [openOnly, setOpenOnly] = useState(false);
@@ -533,25 +557,29 @@ const BbangteoBakeryListPage = ({
 
   useEffect(() => subscribeBakeryLikeOverlayChange(() => setLikeOverlayTick((t) => t + 1)), []);
 
+  const effectiveCurationPinIds = isTrendBreadList ? breadListPinIds : (curationPinIds ?? []);
+  const effectiveCurationOnly = curationOnly || isTrendBreadList;
+  const pageTitle = buildTrendBreadListTitle(isTrendBreadList ? breadKeywordTrimmed : undefined);
+
   const dongFilterTrimmed = dongFilter?.trim() ?? "";
   const isDongCurationList = curationOnly && Boolean(dongFilterTrimmed);
 
-  const pinIdsKey = (curationPinIds ?? []).join(",");
+  const pinIdsKey = effectiveCurationPinIds.join(",");
   const pins = useMemo(() => {
     if (!pinIdsKey) return [];
     const ids = pinIdsKey
       .split(",")
       .map((segment) => Number.parseInt(segment.trim(), 10))
       .filter((n) => Number.isFinite(n) && n > 0);
-    if (listEntryFrom === "bbangteo") {
+    if (listEntryFrom === "bbangteo" && !isTrendBreadList) {
       return ids.slice(0, CURATION_BBANGTEO_DISPLAY_COUNT);
     }
     return ids;
-  }, [pinIdsKey, listEntryFrom]);
+  }, [pinIdsKey, listEntryFrom, isTrendBreadList]);
 
   const isPinOnlyList =
     !isDongCurationList &&
-    (curationOnly || listEntryFrom === "bbangteo") &&
+    (effectiveCurationOnly || listEntryFrom === "bbangteo") &&
     pins.length > 0 &&
     !keyword.trim();
 
@@ -585,7 +613,7 @@ const BbangteoBakeryListPage = ({
       open: openOnly,
       keyword: queryKeyword,
     },
-    { enabled: !isDongCurationList },
+    { enabled: !isDongCurationList && !(isTrendBreadList && pins.length === 0) },
   );
 
   const regionFallback = dongFilterTrimmed ? DONG_REGION_FALLBACK[dongFilterTrimmed] : undefined;
@@ -807,7 +835,9 @@ const BbangteoBakeryListPage = ({
     openFilteredRows,
   ]);
 
-  const listLoading = isDongCurationList ? dongLoading : loading;
+  const listLoading =
+    (isTrendBreadList && (menuIndexQuery.isLoading || breadListResolving)) ||
+    (isDongCurationList ? dongLoading : loading);
   const listError = isDongCurationList ? dongError : error;
   const isCurationScopedList = isDongCurationList || isPinOnlyList;
 
@@ -822,20 +852,18 @@ const BbangteoBakeryListPage = ({
   const handleBakeryClick = (bakery: BakeryRow) => {
     void navigate({
       to: "/bbangteo-bakery-detail",
-      search: {
+      search: buildBbakeryDetailSearch({
         bakeryId: bakery.id,
         from: listEntryFrom,
-        courseId: undefined,
-        reviewUploaded: undefined,
-        reviewTab: undefined,
-      },
+        trendBread: isTrendBreadList ? breadKeywordTrimmed : undefined,
+      }),
     });
   };
 
   return (
     <MobileFrame className="bg-white">
       <div className="flex min-h-screen flex-1 flex-col bg-white">
-        <PageHeader title="빵집 리스트" listEntryFrom={listEntryFrom} />
+        <PageHeader title={pageTitle} listEntryFrom={listEntryFrom} />
         <main className="flex flex-1 flex-col pb-[56px] sm:pb-[60px]">
           <SearchFilterSection
             keyword={keyword}
@@ -844,6 +872,7 @@ const BbangteoBakeryListPage = ({
             onSortChange={handleSortChange}
             openOnly={openOnly}
             onOpenOnlyToggle={handleOpenOnlyToggle}
+            hideKeywordSearch={isTrendBreadList}
           />
           {listLoading ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 px-[20px] py-[40px] text-[14px] text-[#868b94]">
@@ -855,7 +884,11 @@ const BbangteoBakeryListPage = ({
             </div>
           ) : rows.length === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center px-[20px] py-[40px] text-[14px] text-[#868b94]">
-              {openOnly ? "영업 중인 빵집이 없어요." : "빵집이 없습니다."}
+              {isTrendBreadList
+                ? `'${breadKeywordTrimmed}'을 파는 빵집이 없어요.`
+                : openOnly
+                  ? "영업 중인 빵집이 없어요."
+                  : "빵집이 없습니다."}
             </div>
           ) : (
             <>

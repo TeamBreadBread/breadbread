@@ -5,6 +5,7 @@ import { AppTopBar } from "@/components/common";
 import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { useNavigate } from "@tanstack/react-router";
+import { buildBbakeryDetailSearch } from "@/utils/bakeryListEntry";
 import { resolveThumbnailDongAddress } from "@/utils/formatCurationAddress";
 
 const PAGE_SIZE = 10;
@@ -77,13 +78,7 @@ export default function LikedBakeriesPage() {
               onClick={() =>
                 navigate({
                   to: "/bbangteo-bakery-detail",
-                  search: {
-                    bakeryId: bakery.id,
-                    from: undefined,
-                    courseId: undefined,
-                    reviewUploaded: undefined,
-                    reviewTab: undefined,
-                  },
+                  search: buildBbakeryDetailSearch({ bakeryId: bakery.id }),
                 })
               }
             >
