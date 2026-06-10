@@ -105,6 +105,10 @@ export default defineConfig(({ mode }) => {
         target: 'https://api.breadbread.io',
         changeOrigin: true,
       },
+      '/trends': {
+        target: 'https://api.breadbread.io',
+        changeOrigin: true,
+      },
       '/curator': {
         target: 'https://api.breadbread.io',
         changeOrigin: true,

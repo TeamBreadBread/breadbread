@@ -1,6 +1,8 @@
 import BbangteoCommunitySection from "@/components/domain/bbangteo/BbangteoCommunitySection";
 import BbangteoHeader from "@/components/domain/bbangteo/BbangteoHeader";
 import BbangteoSearchSection from "@/components/domain/bbangteo/BbangteoSearchSection";
+import TrendHotBreadsSection from "@/components/domain/trend/TrendHotBreadsSection";
+import TrendCurationSection from "@/components/domain/trend/TrendCurationSection";
 import BottomNav from "@/components/layout/BottomNav";
 import type { CommunitySectionItem } from "@/components/domain/bbangteo/types";
 import MobileFrame from "@/components/layout/MobileFrame";
@@ -15,15 +17,7 @@ import {
   QUICK_MENU_ROUTE_BY_LABEL,
   type QuickMenuCategoryLabel,
 } from "@/components/domain/home/quickMenuCategories";
-import { BBANGTEO_CURATION_SECTION_TITLE } from "@/components/domain/bbangteo/bbangteoCuration.constants";
-
 const sections: CommunitySectionItem[] = [
-  {
-    title: BBANGTEO_CURATION_SECTION_TITLE,
-    /** 헤더·패딩·축소 미리보기 카드(이미지 92 + 텍스트) 합에 맞춘 최소 높이 — 데이터는 홈과 동일 API */
-    sectionHeight: 280,
-    contentType: "curationApi",
-  },
   {
     title: "자유 게시판",
     contentType: "postList",
@@ -68,24 +62,27 @@ const BbangteoPage = () => {
 
         <main className="flex flex-1 flex-col gap-[10px] pb-[114px] sm:pb-[118px]">
           <BbangteoSearchSection onCategoryClick={handleCategoryClick} />
+          <TrendHotBreadsSection compact />
+          <TrendCurationSection
+            compact
+            title="요즘 핫한 빵집"
+            bakeryListEntryFrom="bbangteo"
+            onMoreClick={goToBakeryList}
+            onDisplayedBakeryIdsChange={setCurationDisplayedBakeryIds}
+          />
           {sections.map((section) => (
             <BbangteoCommunitySection
               key={section.title}
               section={section}
-              onCurationDisplayedBakeryIdsChange={
-                section.contentType === "curationApi" ? setCurationDisplayedBakeryIds : undefined
-              }
               onSectionTitleAreaClick={
                 section.title === "빵빵 소식" ? goToArticleBoardList : undefined
               }
               onMoreClick={
-                section.title === BBANGTEO_CURATION_SECTION_TITLE
-                  ? goToBakeryList
-                  : section.title === "자유 게시판"
-                    ? goToBoardList
-                    : section.title === "빵빵 소식"
-                      ? goToArticleBoardList
-                      : undefined
+                section.title === "자유 게시판"
+                  ? goToBoardList
+                  : section.title === "빵빵 소식"
+                    ? goToArticleBoardList
+                    : undefined
               }
               onPostItemClick={
                 section.title === "자유 게시판"
