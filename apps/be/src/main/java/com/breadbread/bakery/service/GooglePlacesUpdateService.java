@@ -114,7 +114,7 @@ public class GooglePlacesUpdateService {
         }
     }
 
-    @Scheduled(cron = "0 0 4 * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 0 4 */2 * *", zone = "Asia/Seoul")
     public void warmAllPhotoCaches() {
         List<Long> bakeryIds =
                 bakeryRepository.findAllByActiveTrue().stream().map(Bakery::getId).toList();

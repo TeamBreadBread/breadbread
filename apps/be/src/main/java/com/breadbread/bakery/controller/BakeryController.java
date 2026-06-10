@@ -61,17 +61,30 @@ public class BakeryController {
         @Parameter(name = "keyword", description = "빵집 이름 검색어", example = "성심당"),
         @Parameter(
                 name = "sort",
-                description = "정렬 기준 (RATING: 별점순 / REVIEW_COUNT: 리뷰순 / LIKE_COUNT: 하트순)"),
+                description =
+                        "정렬 기준 (RATING: 별점순 / REVIEW_COUNT: 리뷰순 / LIKE_COUNT: 하트순 / NEARBY: 가까운순)"),
         @Parameter(name = "open", description = "true 시 영업 중인 빵집을 상단에 우선 배치 (기본값: false)"),
         @Parameter(name = "region", description = "지역구 필터", example = "대전 중구"),
         @Parameter(name = "dong", description = "행정동 필터", example = "은행동"),
+        @Parameter(
+                name = "userLat",
+                description = "사용자 위도 (sort=NEARBY 또는 radiusMeters 사용 시 필수)",
+                example = "36.3504"),
+        @Parameter(
+                name = "userLng",
+                description = "사용자 경도 (sort=NEARBY 또는 radiusMeters 사용 시 필수)",
+                example = "127.3845"),
+        @Parameter(
+                name = "radiusMeters",
+                description = "검색 반경 (미터 단위, userLat·userLng 필요)",
+                example = "3000"),
         @Parameter(name = "page", description = "페이지 번호 (0부터 시작, 기본값: 0)"),
         @Parameter(name = "size", description = "페이지 크기 (기본값: 10)")
     })
     @GetMapping
     public ApiResponse<BakeryListResponse> search(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @ModelAttribute BakerySearch search,
+            @Valid @ModelAttribute BakerySearch search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Long userId = userDetails != null ? userDetails.getId() : null;
@@ -83,16 +96,29 @@ public class BakeryController {
         @Parameter(name = "keyword", description = "빵집 이름 검색어", example = "성심당"),
         @Parameter(
                 name = "sort",
-                description = "정렬 기준 (RATING: 별점순 / REVIEW_COUNT: 리뷰순 / LIKE_COUNT: 하트순)"),
+                description =
+                        "정렬 기준 (RATING: 별점순 / REVIEW_COUNT: 리뷰순 / LIKE_COUNT: 하트순 / NEARBY: 가까운순)"),
         @Parameter(name = "open", description = "true 시 영업 중인 빵집을 상단에 우선 배치 (기본값: false)"),
         @Parameter(name = "region", description = "지역구 필터", example = "대전 중구"),
         @Parameter(name = "dong", description = "행정동 필터", example = "은행동"),
+        @Parameter(
+                name = "userLat",
+                description = "사용자 위도 (sort=NEARBY 또는 radiusMeters 사용 시 필수)",
+                example = "36.3504"),
+        @Parameter(
+                name = "userLng",
+                description = "사용자 경도 (sort=NEARBY 또는 radiusMeters 사용 시 필수)",
+                example = "127.3845"),
+        @Parameter(
+                name = "radiusMeters",
+                description = "검색 반경 (미터 단위, userLat·userLng 필요)",
+                example = "3000"),
         @Parameter(name = "page", description = "페이지 번호 (0부터 시작, 기본값: 0)"),
         @Parameter(name = "size", description = "페이지 크기 (기본값: 10)")
     })
     @GetMapping("/summary")
     public ApiResponse<BakerySimpleListResponse> searchSimple(
-            @ModelAttribute BakerySearch search,
+            @Valid @ModelAttribute BakerySearch search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ApiResponse.ok(bakeryService.searchSimple(search, PageRequest.of(page, size)));
