@@ -1,10 +1,10 @@
-package com.breadbread.global.controller;
+package com.breadbread.image.controller;
 
 import com.breadbread.auth.dto.CustomUserDetails;
 import com.breadbread.global.dto.ApiResponse;
 import com.breadbread.global.dto.UploadFolder;
-import com.breadbread.global.service.GcsService;
-import com.breadbread.global.tempimage.service.TempImageService;
+import com.breadbread.image.service.GcsService;
+import com.breadbread.image.service.TempImageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;

@@ -1,4 +1,4 @@
-package com.breadbread.global.service;
+package com.breadbread.image.service;
 
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
