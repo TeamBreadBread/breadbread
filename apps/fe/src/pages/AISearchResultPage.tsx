@@ -20,12 +20,13 @@ import handleArrow from "@/assets/icons/handle_arrowup.png";
 import { useAiSearchBottomSheet } from "@/hooks/useAiSearchBottomSheet";
 import {
   getCourseDetail,
+  getMyCourseRoutes,
   reorderCourseBakeries,
   saveCourseRoute,
   type CourseDetail,
 } from "@/api/courses";
 import { getBakeriesCongestion } from "@/api/bakery";
-import { getErrorMessage } from "@/api/types/common";
+import { ApiBusinessError, getErrorMessage } from "@/api/types/common";
 import { startTour } from "@/api/tours";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import { mapCongestionByBakeryId } from "@/utils/congestionCheck";
@@ -33,6 +34,7 @@ import { AI_COURSE_RESULT_STORAGE_KEY, saveRouteFocusCourseId } from "@/utils/ai
 import ResultCTASection from "@/components/domain/ai-course/ResultCTASection";
 import SaveRouteBanner from "@/components/domain/ai-course/SaveRouteBanner";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
+import { findMatchingSavedRoute, isSameCourseRouteContent } from "@/utils/courseRouteCompare";
 
 const summary: CourseSummary = {
   title: "커플을 위한 달콤한 빵투어",
@@ -260,11 +262,44 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
 
   const handleSaveCourse = () => {
     requireLogin(async () => {
-      if (!effectiveCourseId) return;
+      if (!effectiveCourseId || !courseDetail) return;
+
       try {
+        const savedRoutes = await getMyCourseRoutes();
+
+        // 같은 courseId가 이미 저장됨 (생성 직후 자동 저장 포함)
+        if (savedRoutes.some((route) => route.courseId === effectiveCourseId)) {
+          setShowSavedBanner(true);
+          return;
+        }
+
+        const sameNameRoute = savedRoutes.find(
+          (route) =>
+            route.name.trim() === (courseDetail.name?.trim() ?? "") && route.name.trim() !== "",
+        );
+
+        // 이름만 같고 빵집 구성이 다르면 별도 코스로 저장
+        if (sameNameRoute && !isSameCourseRouteContent(courseDetail, sameNameRoute)) {
+          await saveCourseRoute(effectiveCourseId);
+          setShowSavedBanner(true);
+          return;
+        }
+
+        // 이름·빵집 구성까지 동일한 코스가 이미 있으면 저장 성공으로 처리
+        const equivalentRoute = findMatchingSavedRoute(savedRoutes, courseDetail);
+        if (equivalentRoute) {
+          setShowSavedBanner(true);
+          return;
+        }
+
         await saveCourseRoute(effectiveCourseId);
         setShowSavedBanner(true);
       } catch (error) {
+        // 동일 courseId 재저장(409)은 팝업 대신 저장 완료 배너
+        if (error instanceof ApiBusinessError && (error.code === "E0408" || error.status === 409)) {
+          setShowSavedBanner(true);
+          return;
+        }
         window.alert(getErrorMessage(error));
       }
     }, "/ai-search-result");

@@ -1,36 +1,31 @@
 import type { MouseEvent } from "react";
-import { useCallback, useDeferredValue, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import type { BakeryListItem } from "@/api/types/bakery";
 import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
-import { useBakeries } from "@/hooks/useBakeries";
+import { useKakaoPlaceSearch } from "@/hooks/useKakaoPlaceSearch";
+import { getAccuratePosition } from "@/lib/getAccuratePosition";
+import {
+  isKakaoPlaceSearchConfigured,
+  resolveCurrentLocationPlace,
+  type KakaoSearchPlace,
+} from "@/lib/kakaoPlaceSearch";
 import { cn } from "@/utils/cn";
-import { formatCurationAddress } from "@/utils/formatCurationAddress";
+import {
+  formatDeparturePlaceDisplay,
+  formatDeparturePlaceWithCoords,
+} from "@/utils/formatDeparturePlace";
+import {
+  loadDeparturePlaceRecents,
+  pushDeparturePlaceRecent,
+  saveDeparturePlaceRecents,
+  type DepartureRecentEntry,
+} from "@/utils/departurePlaceRecents";
 
 export interface DeparturePlaceBottomSheetProps {
   open: boolean;
   value: string;
   onClose: () => void;
   onConfirm: (place: string) => void;
-}
-
-const STORAGE_KEY = "taxiReserveDepartureRecent";
-
-function formatPlaceFromBakery(bakery: BakeryListItem): string {
-  const name = bakery.name.trim();
-  const addr = bakery.address?.trim() ?? "";
-  const lat = bakery.lat;
-  const lng = bakery.lng;
-  if (
-    typeof lat === "number" &&
-    typeof lng === "number" &&
-    Number.isFinite(lat) &&
-    Number.isFinite(lng)
-  ) {
-    const label = addr ? `${name} · ${addr}` : name;
-    return `${label} (${lat}, ${lng})`;
-  }
-  return addr ? `${name} · ${addr}` : name;
 }
 
 function CloseIcon() {
@@ -81,136 +76,103 @@ function LocationPinGlyph() {
   );
 }
 
-function loadRecents(): string[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((x): x is string => typeof x === "string" && x.trim().length > 0);
-  } catch {
-    return [];
-  }
-}
-
-function saveRecents(items: string[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, 20)));
-  } catch {
-    /* ignore */
-  }
-}
-
-function pushRecent(items: string[], place: string): string[] {
-  const t = place.trim();
-  if (!t) return items;
-  const without = items.filter((x) => x !== t);
-  return [t, ...without];
-}
-
 export default function DeparturePlaceBottomSheet({
   open,
   onClose,
   onConfirm,
 }: DeparturePlaceBottomSheetProps) {
   const [query, setQuery] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [recentItems, setRecentItems] = useState<string[]>(() => loadRecents());
+  const [recentItems, setRecentItems] = useState<DepartureRecentEntry[]>(() =>
+    loadDeparturePlaceRecents(),
+  );
+  const [isResolvingLocation, setIsResolvingLocation] = useState(false);
   const wasOpenRef = useRef(false);
-  const deferredSearchKeyword = useDeferredValue(query);
 
   const refreshRecents = useCallback(() => {
-    setRecentItems(loadRecents());
+    setRecentItems(loadDeparturePlaceRecents());
   }, []);
 
   useEffect(() => {
     if (open && !wasOpenRef.current) {
       queueMicrotask(() => {
         setQuery("");
-        setDebouncedSearch("");
         refreshRecents();
       });
     }
     wasOpenRef.current = open;
   }, [open, refreshRecents]);
 
-  useEffect(() => {
-    if (!open) return;
-    const id = window.setTimeout(() => setDebouncedSearch(deferredSearchKeyword.trim()), 300);
-    return () => window.clearTimeout(id);
-  }, [deferredSearchKeyword, open]);
-
-  const trimmedSearch = debouncedSearch.trim();
-  const searchQuery = trimmedSearch.length >= 2 ? trimmedSearch : "";
-
+  const queryTrimmed = query.trim();
   const {
-    data: bakerySearchData,
-    loading: bakerySearchLoading,
-    error: bakerySearchError,
-  } = useBakeries(
-    {
-      page: 0,
-      size: 20,
-      sort: "RATING",
-      open: false,
-      keyword: searchQuery || undefined,
-    },
-    { enabled: open && searchQuery.length > 0 },
+    results: kakaoPlaces,
+    loading: kakaoSearchLoading,
+    error: kakaoSearchError,
+  } = useKakaoPlaceSearch(query, open);
+  const showKakaoSearch = queryTrimmed.length > 0 && isKakaoPlaceSearchConfigured();
+
+  const filteredRecents = recentItems.filter((item) =>
+    item.label.toLowerCase().includes(queryTrimmed.toLowerCase()),
   );
 
-  const bakeryResults: BakeryListItem[] = bakerySearchData?.bakeries ?? [];
-  const listTitle = searchQuery.length > 0 ? "검색 결과" : "최근 검색어";
+  const confirmDeparture = (label: string, coords: { lat: number; lng: number }) => {
+    const place = formatDeparturePlaceWithCoords(label, coords);
+    if (!place) return;
 
-  const filtered = recentItems.filter((item) =>
-    item.toLowerCase().includes(query.trim().toLowerCase()),
-  );
-
-  const pickPlace = (place: string) => {
-    const t = place.trim();
-    if (!t) return;
-    onConfirm(t);
+    onConfirm(place);
     setRecentItems((prev) => {
-      const next = pushRecent(prev, t);
-      saveRecents(next);
+      const next = pushDeparturePlaceRecent(prev, { label, ...coords });
+      saveDeparturePlaceRecents(next);
       return next;
     });
     onClose();
   };
 
-  const pickBakery = (bakery: BakeryListItem) => {
-    pickPlace(formatPlaceFromBakery(bakery));
+  const confirmDepartureFromPlace = (place: KakaoSearchPlace) => {
+    confirmDeparture(formatDeparturePlaceDisplay(place), { lat: place.lat, lng: place.lng });
   };
 
-  const removeRecent = (item: string, e: MouseEvent) => {
+  const pickRecent = (entry: DepartureRecentEntry) => {
+    confirmDeparture(entry.label, { lat: entry.lat, lng: entry.lng });
+  };
+
+  const removeRecent = (label: string, e: MouseEvent) => {
     e.stopPropagation();
     setRecentItems((prev) => {
-      const next = prev.filter((x) => x !== item);
-      saveRecents(next);
+      const next = prev.filter((item) => item.label !== label);
+      saveDeparturePlaceRecents(next);
       return next;
     });
   };
 
   const submitSearch = () => {
-    const t = query.trim();
-    if (!t) return;
-    pickPlace(t);
+    if (!queryTrimmed) return;
+    window.alert("출발지는 아래 카카오 장소 검색 결과나 현재 위치에서 선택해 주세요.");
   };
 
   const useCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      pickPlace("현재 위치");
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        pickPlace(`현재 위치 (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`);
-      },
-      () => {
-        pickPlace("현재 위치");
-      },
-      { enableHighAccuracy: false, timeout: 12_000, maximumAge: 60_000 },
-    );
+    setIsResolvingLocation(true);
+    void (async () => {
+      try {
+        const { latitude, longitude, accuracy } = await getAccuratePosition();
+        const place = await resolveCurrentLocationPlace(latitude, longitude);
+        confirmDeparture(formatDeparturePlaceDisplay(place), {
+          lat: place.lat,
+          lng: place.lng,
+        });
+
+        if (accuracy !== null && accuracy > 120) {
+          window.alert(
+            `GPS 정확도가 약 ${Math.round(accuracy)}m입니다. PC·실내에서는 오차가 클 수 있어, 정확한 출발지는 검색으로 선택해 주세요.`,
+          );
+        }
+      } catch {
+        window.alert(
+          "현재 위치를 가져오지 못했습니다. 브라우저 위치 권한을 허용했는지 확인하거나, 출발지를 직접 검색해 주세요.",
+        );
+      } finally {
+        setIsResolvingLocation(false);
+      }
+    })();
   };
 
   if (!open) return null;
@@ -251,7 +213,7 @@ export default function DeparturePlaceBottomSheet({
                 출발 장소
               </div>
               <div className="w-full text-left font-['Pretendard',sans-serif] text-[14px] leading-[19px] tracking-normal text-[#555d6d]">
-                빵집을 검색해 출발 장소를 선택해 주세요
+                카카오 장소 검색으로 출발지를 선택해 주세요
               </div>
             </div>
             <button
@@ -269,10 +231,14 @@ export default function DeparturePlaceBottomSheet({
               <div className="flex h-[min(592px,calc(90vh-200px))] min-h-[320px] w-full shrink-0 flex-col items-start justify-start gap-[10px] overflow-hidden bg-white">
                 <div className="flex h-[56px] w-full shrink-0 flex-row items-center justify-start gap-[8px] overflow-hidden rounded-[12px] border border-solid border-[#dcdee3] px-[20px] py-[16px]">
                   <input
+                    autoFocus
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") submitSearch();
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        submitSearch();
+                      }
                     }}
                     placeholder="빵집 이름이나 동네를 입력해보세요"
                     className="min-w-0 flex-1 bg-transparent font-['Pretendard',sans-serif] text-[16px] leading-[22px] tracking-normal text-[#1a1c20] outline-none placeholder:text-[#d1d3d8]"
@@ -287,93 +253,102 @@ export default function DeparturePlaceBottomSheet({
                   </button>
                 </div>
 
+                {queryTrimmed.length > 0 ? (
+                  <p className="px-[4px] font-['Pretendard',sans-serif] text-[13px] leading-[18px] text-[#555d6d]">
+                    엔터로 바로 확정되지 않습니다. 아래 카카오 장소 검색 결과에서 출발지를 선택해
+                    주세요.
+                  </p>
+                ) : null}
+
                 <div className="flex min-h-0 w-full flex-1 flex-col items-start justify-start">
                   <div className="flex w-full shrink-0 flex-row items-center justify-between border-b border-solid border-[#eeeff1] px-[10px] pb-[12px] pt-[20px]">
                     <div className="whitespace-nowrap font-['Pretendard',sans-serif] text-[13px] font-bold leading-[18px] text-[#555d6d]">
-                      {listTitle}
+                      {showKakaoSearch ? "장소 검색" : "최근 검색"}
                     </div>
                     <button
                       type="button"
-                      className="flex flex-row items-end justify-start gap-[4px]"
+                      className="flex flex-row items-end justify-start gap-[4px] disabled:opacity-50"
+                      disabled={isResolvingLocation}
                       onClick={useCurrentLocation}
                     >
                       <LocationPinGlyph />
                       <span className="whitespace-nowrap font-['Pretendard',sans-serif] text-[14px] font-medium leading-[19px] tracking-normal text-[#217cf9]">
-                        현재 위치
+                        {isResolvingLocation ? "위치 확인 중…" : "현재 위치"}
                       </span>
                     </button>
                   </div>
+
                   <div className="min-h-0 w-full flex-1 overflow-y-auto">
-                    {searchQuery.length > 0 ? (
-                      bakerySearchLoading ? (
-                        <div className="px-[10px] py-[16px] font-['Pretendard',sans-serif] text-[14px] leading-[19px] text-[#868b94]">
-                          검색 중…
-                        </div>
-                      ) : bakerySearchError ? (
-                        <div className="px-[10px] py-[16px] font-['Pretendard',sans-serif] text-[14px] leading-[19px] text-red-600">
-                          {bakerySearchError.message}
-                        </div>
-                      ) : bakeryResults.length === 0 ? (
-                        <div className="px-[10px] py-[16px] font-['Pretendard',sans-serif] text-[14px] leading-[19px] text-[#868b94]">
-                          검색 결과가 없습니다.
-                        </div>
-                      ) : (
-                        bakeryResults.map((bakery) => {
-                          const addr = bakery.address?.trim()
-                            ? formatCurationAddress(bakery.address.trim())
-                            : "";
-                          return (
-                            <button
-                              key={bakery.id}
-                              type="button"
-                              className="flex w-full cursor-pointer flex-col items-start justify-center gap-[4px] overflow-hidden border-b border-solid border-[#eeeff1] bg-white px-[10px] py-[16px] text-left last:border-b-0 hover:bg-[#f7f8f9]"
-                              onClick={() => pickBakery(bakery)}
-                            >
-                              <div className="flex w-full flex-row items-start justify-start gap-[8px]">
-                                <SearchGlyph />
-                                <span className="min-w-0 flex-1 font-['Pretendard',sans-serif] text-[18px] font-medium leading-[24px] tracking-normal text-[#1a1c20]">
-                                  {bakery.name}
-                                </span>
-                              </div>
-                              {addr ? (
-                                <span className="pl-[32px] font-['Pretendard',sans-serif] text-[13px] leading-[18px] text-[#555d6d]">
-                                  {addr}
-                                </span>
-                              ) : null}
-                            </button>
-                          );
-                        })
-                      )
-                    ) : query.trim().length > 0 ? (
+                    {filteredRecents.length === 0 && !showKakaoSearch ? (
                       <div className="px-[10px] py-[16px] font-['Pretendard',sans-serif] text-[14px] leading-[19px] text-[#868b94]">
-                        두 글자 이상 입력해 주세요.
-                      </div>
-                    ) : filtered.length === 0 ? (
-                      <div className="px-[10px] py-[16px] font-['Pretendard',sans-serif] text-[14px] leading-[19px] text-[#868b94]">
-                        이름이나 동네를 입력하면 빵집을 찾아드려요.
+                        최근 검색한 출발지가 여기에 표시됩니다.
                       </div>
                     ) : (
-                      filtered.map((item) => (
+                      filteredRecents.map((item) => (
                         <div
-                          key={item}
+                          key={item.label}
                           className="flex w-full cursor-pointer flex-row items-center justify-start gap-[4px] overflow-hidden bg-white px-[10px] py-[16px] hover:bg-[#f7f8f9]"
-                          onClick={() => pickPlace(item)}
+                          onClick={() => pickRecent(item)}
                         >
                           <HistoryGlyph />
                           <div className="min-w-0 flex-1 font-['Pretendard',sans-serif] text-[18px] leading-[24px] tracking-normal text-[#1a1c20]">
-                            {item}
+                            {item.label}
                           </div>
                           <button
                             type="button"
                             className="flex shrink-0 items-center justify-center p-0"
-                            aria-label={`${item} 삭제`}
-                            onClick={(e) => removeRecent(item, e)}
+                            aria-label={`${item.label} 삭제`}
+                            onClick={(e) => removeRecent(item.label, e)}
                           >
                             <RemoveRowGlyph />
                           </button>
                         </div>
                       ))
                     )}
+
+                    {showKakaoSearch ? (
+                      <>
+                        {kakaoSearchLoading ? (
+                          <div className="px-[10px] py-[16px] font-['Pretendard',sans-serif] text-[14px] leading-[19px] text-[#868b94]">
+                            검색 중…
+                          </div>
+                        ) : null}
+                        {kakaoSearchError ? (
+                          <div className="px-[10px] py-[16px] font-['Pretendard',sans-serif] text-[14px] leading-[19px] text-red-600">
+                            {kakaoSearchError}
+                          </div>
+                        ) : null}
+                        {!kakaoSearchLoading && !kakaoSearchError && kakaoPlaces.length === 0 ? (
+                          <div className="px-[10px] py-[16px] font-['Pretendard',sans-serif] text-[14px] leading-[19px] text-[#868b94]">
+                            검색 결과가 없습니다.
+                          </div>
+                        ) : null}
+                        {kakaoPlaces.map((place) => (
+                          <button
+                            key={place.id}
+                            type="button"
+                            className="flex w-full cursor-pointer flex-col items-start justify-center gap-[4px] overflow-hidden border-b border-solid border-[#eeeff1] bg-white px-[10px] py-[16px] text-left last:border-b-0 hover:bg-[#f7f8f9]"
+                            onClick={() => confirmDepartureFromPlace(place)}
+                          >
+                            <div className="flex w-full flex-row items-start justify-start gap-[8px]">
+                              <SearchGlyph />
+                              <span className="min-w-0 flex-1 font-['Pretendard',sans-serif] text-[18px] font-medium leading-[24px] tracking-normal text-[#1a1c20]">
+                                {place.name}
+                              </span>
+                            </div>
+                            {place.address ? (
+                              <span className="pl-[32px] font-['Pretendard',sans-serif] text-[13px] leading-[18px] text-[#555d6d]">
+                                {place.address}
+                              </span>
+                            ) : null}
+                          </button>
+                        ))}
+                      </>
+                    ) : queryTrimmed.length > 0 ? (
+                      <div className="px-[10px] py-[16px] font-['Pretendard',sans-serif] text-[14px] leading-[19px] text-[#868b94]">
+                        카카오 API 키를 설정하면 장소 검색을 사용할 수 있습니다.
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </div>

@@ -15,6 +15,7 @@ import { getUnavailableTimes } from "@/api/reservation";
 import { getDevFallbackCourseId } from "@/lib/courseIdFallback";
 import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
 import { cn } from "@/utils/cn";
+import { formatDeparturePlaceLabel } from "@/utils/parseLatLngFromPlace";
 
 const FIELD_MAX = "w-full max-w-[362px] shrink-0 md:max-w-full";
 
@@ -139,6 +140,8 @@ export default function TaxiReservePage({ courseId }: TaxiReservePageProps) {
       cancelled = true;
     };
   }, [departureDate]);
+
+  const departurePlaceLabel = formatDeparturePlaceLabel(departurePlace);
 
   const isCheckoutEnabled =
     departureDate.length > 0 && departureTime.length > 0 && departurePlace.trim().length > 0;
@@ -327,7 +330,7 @@ export default function TaxiReservePage({ courseId }: TaxiReservePageProps) {
                     departurePlace.trim() ? "text-[#1a1c20]" : "text-[#d1d3d8]",
                   )}
                 >
-                  {departurePlace.trim() ? departurePlace : "출발 장소를 선택해주세요"}
+                  {departurePlaceLabel || "출발 장소를 선택해주세요"}
                 </span>
               </button>
             </div>
