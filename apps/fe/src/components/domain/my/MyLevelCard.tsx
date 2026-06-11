@@ -37,9 +37,16 @@ export default function MyLevelCard({
         </div>
 
         <div className="mt-[14px] flex flex-col gap-x2">
-          <p className="text-size-1 font-regular leading-t2 tracking-0 text-[#868b94]">
-            {description}
-          </p>
+          <div className="flex flex-col gap-[5px]">
+            {description.split("\n").map((line, index) => (
+              <p
+                key={index}
+                className="text-size-1 font-regular leading-t2 tracking-0 text-[#868b94]"
+              >
+                {line}
+              </p>
+            ))}
+          </div>
 
           <div className="h-x3 overflow-hidden rounded-full bg-[#f3f4f5]">
             <div
