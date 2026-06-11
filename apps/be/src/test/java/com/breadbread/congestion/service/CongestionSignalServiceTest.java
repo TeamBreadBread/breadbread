@@ -40,7 +40,9 @@ class CongestionSignalServiceTest {
     @Test
     void save_saves_validSignal() {
         Bakery bakery = bakery(1L, "파리바게뜨");
-        when(bakeryRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
+                        1L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+                .thenReturn(Optional.of(bakery));
 
         service.save(signalRequest(1L, "파리바게뜨"));
 
@@ -49,7 +51,9 @@ class CongestionSignalServiceTest {
 
     @Test
     void save_skips_whenBakeryIdNotFound() {
-        when(bakeryRepository.findByIdAndActiveTrue(99L)).thenReturn(Optional.empty());
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
+                        99L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+                .thenReturn(Optional.empty());
 
         service.save(signalRequest(99L, "없는빵집"));
 
@@ -59,7 +63,9 @@ class CongestionSignalServiceTest {
     @Test
     void save_saves_withNameMismatchWarning() {
         Bakery bakery = bakery(1L, "파리바게뜨");
-        when(bakeryRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
+                        1L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+                .thenReturn(Optional.of(bakery));
 
         service.save(signalRequest(1L, "틀린이름"));
 
@@ -71,7 +77,9 @@ class CongestionSignalServiceTest {
     @Test
     void saveAll_saves_validSignals() {
         Bakery bakery = bakery(1L, "파리바게뜨");
-        when(bakeryRepository.findAllByIdInAndActiveTrue(List.of(1L))).thenReturn(List.of(bakery));
+        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
+                        List.of(1L), com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+                .thenReturn(List.of(bakery));
 
         service.saveAll(List.of(signalRequest(1L, "파리바게뜨")));
 
@@ -83,7 +91,9 @@ class CongestionSignalServiceTest {
 
     @Test
     void saveAll_skips_whenBakeryIdNotFound() {
-        when(bakeryRepository.findAllByIdInAndActiveTrue(List.of(99L))).thenReturn(List.of());
+        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
+                        List.of(99L), com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+                .thenReturn(List.of());
 
         service.saveAll(List.of(signalRequest(99L, "없는빵집")));
 
@@ -93,7 +103,9 @@ class CongestionSignalServiceTest {
     @Test
     void saveAll_saves_withNameMismatchWarning() {
         Bakery bakery = bakery(1L, "파리바게뜨");
-        when(bakeryRepository.findAllByIdInAndActiveTrue(List.of(1L))).thenReturn(List.of(bakery));
+        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
+                        List.of(1L), com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+                .thenReturn(List.of(bakery));
 
         // n8n이 잘못된 이름을 보내도 저장은 됨
         service.saveAll(List.of(signalRequest(1L, "틀린이름")));
@@ -106,7 +118,8 @@ class CongestionSignalServiceTest {
     @Test
     void saveAll_skipsInvalid_andSavesValid_inMixedList() {
         Bakery bakery = bakery(1L, "파리바게뜨");
-        when(bakeryRepository.findAllByIdInAndActiveTrue(List.of(1L, 99L)))
+        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
+                        List.of(1L, 99L), com.breadbread.bakery.entity.BakeryStatus.APPROVED))
                 .thenReturn(List.of(bakery));
 
         service.saveAll(List.of(signalRequest(1L, "파리바게뜨"), signalRequest(99L, "없는빵집")));

@@ -140,7 +140,7 @@ public class BakeryController {
         return ApiResponse.ok(bakeryService.findOne(id, userId));
     }
 
-    @Operation(summary = "빵집 등록")
+    @Operation(summary = "빵집 등록", description = "관리자 또는 빵집 사장님만 가능")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<Long> createBakery(
@@ -150,7 +150,7 @@ public class BakeryController {
         return ApiResponse.ok(id);
     }
 
-    @Operation(summary = "빵집 수정")
+    @Operation(summary = "빵집 수정", description = "관리자 또는 빵집 사장님만 가능")
     @PatchMapping("/{id}")
     public ApiResponse<Void> updateBakery(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -160,7 +160,7 @@ public class BakeryController {
         return ApiResponse.ok();
     }
 
-    @Operation(summary = "빵집 삭제")
+    @Operation(summary = "빵집 삭제", description = "관리자 또는 빵집 사장님만 가능")
     @DeleteMapping("/{id}")
     public ApiResponse<Void> deleteBakery(
             @AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable Long id) {
@@ -168,7 +168,7 @@ public class BakeryController {
         return ApiResponse.ok();
     }
 
-    @Operation(summary = "빵집 메뉴 등록")
+    @Operation(summary = "빵집 메뉴 등록", description = "관리자 또는 빵집 사장님만 가능")
     @PostMapping("/{bakeryId}/breads")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<Long> createBread(
@@ -181,7 +181,7 @@ public class BakeryController {
         return ApiResponse.ok(id);
     }
 
-    @Operation(summary = "빵집 메뉴 수정")
+    @Operation(summary = "빵집 메뉴 수정", description = "관리자 또는 빵집 사장님만 가능")
     @PatchMapping("/{bakeryId}/breads/{breadId}")
     public ApiResponse<Void> updateBread(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -193,7 +193,7 @@ public class BakeryController {
         return ApiResponse.ok();
     }
 
-    @Operation(summary = "빵집 메뉴 삭제")
+    @Operation(summary = "빵집 메뉴 삭제", description = "관리자 또는 빵집 사장님만 가능")
     @DeleteMapping("/{bakeryId}/breads/{breadId}")
     public ApiResponse<Void> deleteBread(
             @AuthenticationPrincipal CustomUserDetails userDetails,

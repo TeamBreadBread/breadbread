@@ -1,6 +1,7 @@
 package com.breadbread.congestion.service;
 
 import com.breadbread.bakery.entity.Bakery;
+import com.breadbread.bakery.entity.BakeryStatus;
 import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.congestion.dto.CongestionResponse;
 import com.breadbread.congestion.dto.CongestionSignalRequest;
@@ -30,7 +31,8 @@ public class CongestionSignalService {
     public void save(CongestionSignalRequest request) {
         String actualName =
                 bakeryRepository
-                        .findByIdAndActiveTrue(request.getBakeryId())
+                        .findByIdAndActiveTrueAndStatus(
+                                request.getBakeryId(), BakeryStatus.APPROVED)
                         .map(Bakery::getName)
                         .orElse(null);
 
@@ -59,7 +61,9 @@ public class CongestionSignalService {
         // bakeryId 기준으로 실제 빵집 일괄 조회
         List<Long> bakeryIds = requests.stream().map(CongestionSignalRequest::getBakeryId).toList();
         Map<Long, String> bakeryNameMap =
-                bakeryRepository.findAllByIdInAndActiveTrue(bakeryIds).stream()
+                bakeryRepository
+                        .findAllByIdInAndActiveTrueAndStatus(bakeryIds, BakeryStatus.APPROVED)
+                        .stream()
                         .collect(Collectors.toMap(Bakery::getId, Bakery::getName));
 
         List<BakeryCongestionSignal> signals = new ArrayList<>();

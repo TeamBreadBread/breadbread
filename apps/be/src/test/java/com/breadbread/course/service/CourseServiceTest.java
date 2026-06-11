@@ -210,7 +210,8 @@ class CourseServiceTest {
                             ReflectionTestUtils.setField(c, "id", 100L);
                             return c;
                         });
-        when(bakeryRepository.findAllByIdInAndActiveTrue(List.of(1L, 1L)))
+        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
+                        List.of(1L, 1L), com.breadbread.bakery.entity.BakeryStatus.APPROVED))
                 .thenReturn(List.of(bakery(1L, "B")));
 
         assertThatThrownBy(() -> courseService.createManual(1L, request))
@@ -229,7 +230,8 @@ class CourseServiceTest {
                             ReflectionTestUtils.setField(c, "id", 100L);
                             return c;
                         });
-        when(bakeryRepository.findAllByIdInAndActiveTrue(List.of(1L, 2L)))
+        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
+                        List.of(1L, 2L), com.breadbread.bakery.entity.BakeryStatus.APPROVED))
                 .thenReturn(List.of(bakery(1L, "B")));
 
         assertThatThrownBy(() -> courseService.createManual(1L, request))
@@ -250,7 +252,8 @@ class CourseServiceTest {
                             ReflectionTestUtils.setField(c, "id", 55L);
                             return c;
                         });
-        when(bakeryRepository.findAllByIdInAndActiveTrue(List.of(10L, 20L)))
+        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
+                        List.of(10L, 20L), com.breadbread.bakery.entity.BakeryStatus.APPROVED))
                 .thenReturn(List.of(b1, b2));
 
         Long id = courseService.createManual(9L, request);
@@ -282,7 +285,9 @@ class CourseServiceTest {
         Course course = manualCourse(3L, "수정");
         when(courseRepository.findByIdAndActiveTrue(3L)).thenReturn(Optional.of(course));
         Bakery b = bakery(30L, "새빵집");
-        when(bakeryRepository.findAllByIdInAndActiveTrue(List.of(30L))).thenReturn(List.of(b));
+        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
+                        List.of(30L), com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+                .thenReturn(List.of(b));
 
         UpdateCourseRequest request = new UpdateCourseRequest();
         ReflectionTestUtils.setField(request, "bakeryIds", List.of(30L));
@@ -312,7 +317,8 @@ class CourseServiceTest {
     void updateManual_throws_whenBakeryMissing() {
         Course course = manualCourse(3L, "수정");
         when(courseRepository.findByIdAndActiveTrue(3L)).thenReturn(Optional.of(course));
-        when(bakeryRepository.findAllByIdInAndActiveTrue(List.of(30L, 40L)))
+        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
+                        List.of(30L, 40L), com.breadbread.bakery.entity.BakeryStatus.APPROVED))
                 .thenReturn(List.of(bakery(30L, "있음")));
 
         UpdateCourseRequest request = new UpdateCourseRequest();

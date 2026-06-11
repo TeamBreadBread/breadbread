@@ -159,7 +159,9 @@ class AiCourseSaveServiceTest {
     void getAiPreview_throws_whenRecommendedBakeryMissing() {
         AiCourseResultCache cache = resultCache(1L, 10L);
         when(aiCourseResultRedisService.getResult("job-p2", 1L)).thenReturn(Optional.of(cache));
-        when(bakeryRepository.findAllByIdInAndActiveTrue(anyList())).thenReturn(List.of());
+        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
+                        anyList(), eq(com.breadbread.bakery.entity.BakeryStatus.APPROVED)))
+                .thenReturn(List.of());
 
         assertThatThrownBy(() -> aiCourseSaveService.getAiPreview("job-p2", 1L))
                 .isInstanceOf(CustomException.class)
@@ -172,7 +174,9 @@ class AiCourseSaveServiceTest {
         Bakery bakery = bakery(10L, "맛집");
         AiCourseResultCache cache = resultCache(1L, 10L);
         when(aiCourseResultRedisService.getResult("job-p3", 1L)).thenReturn(Optional.of(cache));
-        when(bakeryRepository.findAllByIdInAndActiveTrue(anyList())).thenReturn(List.of(bakery));
+        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
+                        anyList(), eq(com.breadbread.bakery.entity.BakeryStatus.APPROVED)))
+                .thenReturn(List.of(bakery));
 
         AiCoursePreviewResponse preview = aiCourseSaveService.getAiPreview("job-p3", 1L);
 
@@ -228,7 +232,9 @@ class AiCourseSaveServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
         when(userPreferenceRepository.findByUserId(1L))
                 .thenReturn(Optional.of(preference(user(1L))));
-        when(bakeryRepository.findAllByIdInAndActiveTrue(anyList())).thenReturn(List.of());
+        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
+                        anyList(), eq(com.breadbread.bakery.entity.BakeryStatus.APPROVED)))
+                .thenReturn(List.of());
 
         assertThatThrownBy(() -> aiCourseSaveService.saveAiCourse("job-s4", 1L, null))
                 .isInstanceOf(CustomException.class)
@@ -248,7 +254,9 @@ class AiCourseSaveServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
         when(userPreferenceRepository.findByUserId(1L))
                 .thenReturn(Optional.of(preference(user(1L))));
-        when(bakeryRepository.findAllByIdInAndActiveTrue(anyList())).thenReturn(List.of(bakery));
+        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
+                        anyList(), eq(com.breadbread.bakery.entity.BakeryStatus.APPROVED)))
+                .thenReturn(List.of(bakery));
         when(courseRepository.save(any(Course.class)))
                 .thenAnswer(
                         inv -> {
@@ -279,7 +287,9 @@ class AiCourseSaveServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
         when(userPreferenceRepository.findByUserId(1L))
                 .thenReturn(Optional.of(preference(user(1L))));
-        when(bakeryRepository.findAllByIdInAndActiveTrue(anyList())).thenReturn(List.of(b10, b20));
+        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
+                        anyList(), eq(com.breadbread.bakery.entity.BakeryStatus.APPROVED)))
+                .thenReturn(List.of(b10, b20));
 
         ArgumentCaptor<Course> captor = ArgumentCaptor.forClass(Course.class);
         when(courseRepository.save(captor.capture()))
@@ -310,7 +320,8 @@ class AiCourseSaveServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
         when(userPreferenceRepository.findByUserId(1L))
                 .thenReturn(Optional.of(preference(user(1L))));
-        when(bakeryRepository.findAllByIdInAndActiveTrue(anyList()))
+        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
+                        anyList(), eq(com.breadbread.bakery.entity.BakeryStatus.APPROVED)))
                 .thenReturn(List.of(bakery(10L, "빵집10"), bakery(20L, "빵집20")));
 
         assertThatThrownBy(() -> aiCourseSaveService.saveAiCourse("job-s7", 1L, List.of(10L, 99L)))

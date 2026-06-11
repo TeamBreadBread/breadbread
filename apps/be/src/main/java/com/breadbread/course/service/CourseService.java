@@ -2,6 +2,7 @@ package com.breadbread.course.service;
 
 import com.breadbread.bakery.dto.BakerySummaryResponse;
 import com.breadbread.bakery.entity.Bakery;
+import com.breadbread.bakery.entity.BakeryStatus;
 import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.course.dto.CourseBakerySummary;
 import com.breadbread.course.dto.CourseDetailResponse;
@@ -196,7 +197,9 @@ public class CourseService {
         Course saved = courseRepository.save(course);
 
         List<Long> bakeryIds = request.getBakeryIds();
-        List<Bakery> bakeries = bakeryRepository.findAllByIdInAndActiveTrue(bakeryIds);
+        List<Bakery> bakeries =
+                bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
+                        bakeryIds, BakeryStatus.APPROVED);
 
         if (bakeryIds.size() != new HashSet<>(bakeryIds).size()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
@@ -272,7 +275,9 @@ public class CourseService {
                 throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
             }
 
-            List<Bakery> bakeries = bakeryRepository.findAllByIdInAndActiveTrue(bakeryIds);
+            List<Bakery> bakeries =
+                    bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
+                            bakeryIds, BakeryStatus.APPROVED);
             Map<Long, Bakery> bakeryMap =
                     bakeries.stream().collect(Collectors.toMap(Bakery::getId, b -> b));
 

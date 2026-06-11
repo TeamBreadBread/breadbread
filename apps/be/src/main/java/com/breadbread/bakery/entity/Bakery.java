@@ -49,6 +49,9 @@ public class Bakery extends BaseEntity {
     private String dong; // 행정동 (구글 Places 동기화로 채워짐)
     private boolean active = true;
 
+    @Enumerated(EnumType.STRING)
+    private BakeryStatus status = BakeryStatus.APPROVED;
+
     @Embedded private BusinessHours businessHours; // • 운영 시간
 
     private LocalTime appearanceTime;
@@ -102,9 +105,10 @@ public class Bakery extends BaseEntity {
         if (req.getName() != null) this.name = req.getName();
         if (req.getAddress() != null) this.address = req.getAddress();
         if (req.getRegion() != null) this.region = req.getRegion();
+        if (req.getDong() != null) this.dong = req.getDong();
         if (req.getLat() != null) this.latitude = req.getLat();
         if (req.getLng() != null) this.longitude = req.getLng();
-        if (req.getLat() != null && req.getLng() != null) {
+        if (req.getLat() != null || req.getLng() != null) {
             this.location = toPoint(this.longitude, this.latitude);
         }
         if (req.getPhone() != null) this.phone = req.getPhone();
@@ -162,8 +166,24 @@ public class Bakery extends BaseEntity {
         }
     }
 
+    public void markAsPending() {
+        this.status = BakeryStatus.PENDING;
+    }
+
+    public void approve() {
+        this.status = BakeryStatus.APPROVED;
+    }
+
+    public void reject() {
+        this.status = BakeryStatus.REJECTED;
+    }
+
     public void updateDong(String dong) {
         this.dong = dong;
+    }
+
+    public void updateAddress(String address) {
+        this.address = address;
     }
 
     public void deactivate() {
@@ -202,7 +222,8 @@ public class Bakery extends BaseEntity {
             Integer estimatedStayMinutes,
             String note,
             LocalTime appearanceTime,
-            Frequency frequency) {
+            Frequency frequency,
+            String dong) {
         this.name = name;
         this.address = address;
         this.region = region;
@@ -235,5 +256,6 @@ public class Bakery extends BaseEntity {
                 bakeryPersonalities != null ? bakeryPersonalities : new ArrayList<>();
         this.appearanceTime = appearanceTime;
         this.frequency = frequency;
+        this.dong = dong;
     }
 }

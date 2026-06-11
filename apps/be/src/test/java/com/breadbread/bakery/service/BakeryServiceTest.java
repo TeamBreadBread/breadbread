@@ -249,7 +249,9 @@ class BakeryServiceTest {
         CrowdTime weekday = crowdTimeOf(b, DayType.WEEKDAY);
         CrowdTime weekend = crowdTimeOf(b, DayType.WEEKEND);
 
-        when(bakeryRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(b));
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
+                        1L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+                .thenReturn(Optional.of(b));
         when(breadRepository.findAllByBakeryIdIn(List.of(1L))).thenReturn(List.of(bread));
         when(crowdTimeRepository.findAllByBakeryIdIn(List.of(1L)))
                 .thenReturn(List.of(weekday, weekend));
@@ -263,7 +265,9 @@ class BakeryServiceTest {
 
     @Test
     void findOneForAi_throws_when_bakery_missing() {
-        when(bakeryRepository.findByIdAndActiveTrue(99L)).thenReturn(Optional.empty());
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
+                        99L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+                .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> bakeryService.findOneForAi(99L))
                 .isInstanceOf(CustomException.class)
@@ -327,7 +331,9 @@ class BakeryServiceTest {
 
     @Test
     void findOne_throws_whenMissing() {
-        when(bakeryRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.empty());
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
+                        1L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+                .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> bakeryService.findOne(1L, null))
                 .isInstanceOf(CustomException.class)
@@ -338,7 +344,9 @@ class BakeryServiceTest {
     @Test
     void findOne_setsLiked_whenUserPresent() {
         Bakery b = bakeryWithId(3L);
-        when(bakeryRepository.findByIdAndActiveTrue(3L)).thenReturn(Optional.of(b));
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
+                        3L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+                .thenReturn(Optional.of(b));
         when(bakeryLikeRepository.countByBakery(b)).thenReturn(4L);
         when(bakeryLikeRepository.existsByBakeryIdAndUserId(3L, 9L)).thenReturn(true);
         when(reviewRepository.countByBakeryIdAndActiveTrue(3L)).thenReturn(12L);
@@ -384,23 +392,17 @@ class BakeryServiceTest {
     }
 
     @Test
-    void createBakery_doesNotAssignOwner_whenRegularUser() {
+    void createBakery_throws_FORBIDDEN_whenRegularUser() {
         User user = user(11L, UserRole.ROLE_USER);
         CreateBakeryRequest request = minimalCreateBakeryRequest();
         when(userRepository.findById(11L)).thenReturn(Optional.of(user));
-        when(bakeryRepository.save(any(Bakery.class)))
-                .thenAnswer(
-                        inv -> {
-                            Bakery saved = inv.getArgument(0);
-                            ReflectionTestUtils.setField(saved, "id", 101L);
-                            return saved;
-                        });
 
-        bakeryService.createBakery(11L, request);
+        assertThatThrownBy(() -> bakeryService.createBakery(11L, request))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.FORBIDDEN);
 
-        ArgumentCaptor<Bakery> captor = ArgumentCaptor.forClass(Bakery.class);
-        verify(bakeryRepository).save(captor.capture());
-        assertThat(captor.getValue().getOwner()).isNull();
+        verify(bakeryRepository, never()).save(any(Bakery.class));
     }
 
     @Test
@@ -479,7 +481,9 @@ class BakeryServiceTest {
     @Test
     void like_throws_whenAlreadyLiked() {
         Bakery bakery = bakeryWithId(1L);
-        when(bakeryRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
+                        1L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+                .thenReturn(Optional.of(bakery));
         when(userRepository.findById(5L)).thenReturn(Optional.of(user(5L, UserRole.ROLE_USER)));
         doThrow(new DataIntegrityViolationException("dup"))
                 .when(bakeryLikeRepository)
@@ -495,7 +499,9 @@ class BakeryServiceTest {
     void like_maps_integrity_violation_when_duplicate_insert() {
         Bakery bakery = bakeryWithId(1L);
         User user = user(5L, UserRole.ROLE_USER);
-        when(bakeryRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
+                        1L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+                .thenReturn(Optional.of(bakery));
         when(userRepository.findById(5L)).thenReturn(Optional.of(user));
         doThrow(new DataIntegrityViolationException("dup"))
                 .when(bakeryLikeRepository)
@@ -535,7 +541,9 @@ class BakeryServiceTest {
     void like_savesLike_whenUserAndBakeryExist() {
         Bakery bakery = bakeryWithId(1L);
         User liker = user(5L, UserRole.ROLE_USER);
-        when(bakeryRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(bakery));
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
+                        1L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+                .thenReturn(Optional.of(bakery));
         when(userRepository.findById(5L)).thenReturn(Optional.of(liker));
 
         bakeryService.like(1L, 5L);
@@ -666,6 +674,126 @@ class BakeryServiceTest {
         var result = bakeryService.searchSimple(search, pageable);
 
         assertThat(result.getTotal()).isZero();
+    }
+
+    // ── approveBakery ─────────────────────────────────────────────────────────
+
+    @Test
+    void approveBakery_transitions_status_to_APPROVED() {
+        Bakery bakery = pendingBakeryWithId(100L);
+        when(bakeryRepository.findByIdAndActiveTrue(100L)).thenReturn(Optional.of(bakery));
+
+        bakeryService.approveBakery(100L);
+
+        assertThat(bakery.getStatus())
+                .isEqualTo(com.breadbread.bakery.entity.BakeryStatus.APPROVED);
+    }
+
+    @Test
+    void approveBakery_throws_BAKERY_APPROVE_INCOMPLETE_when_latitude_is_zero() {
+        Bakery bakery =
+                Bakery.builder()
+                        .name("빵집")
+                        .address("주소")
+                        .region("강남구")
+                        .dong("역삼동")
+                        .latitude(0.0)
+                        .longitude(127.0)
+                        .bakeryType(com.breadbread.bakery.entity.BakeryType.PLAIN)
+                        .dineInAvailable(false)
+                        .parkingAvailable(false)
+                        .drinkAvailable(false)
+                        .holidayClosed(false)
+                        .build();
+        ReflectionTestUtils.setField(bakery, "id", 100L);
+        ReflectionTestUtils.setField(
+                bakery, "status", com.breadbread.bakery.entity.BakeryStatus.PENDING);
+        when(bakeryRepository.findByIdAndActiveTrue(100L)).thenReturn(Optional.of(bakery));
+
+        assertThatThrownBy(() -> bakeryService.approveBakery(100L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.BAKERY_APPROVE_INCOMPLETE);
+    }
+
+    @Test
+    void approveBakery_throws_BAKERY_APPROVE_INCOMPLETE_when_required_fields_null() {
+        Bakery bakery =
+                Bakery.builder()
+                        .name(null)
+                        .address("주소")
+                        .latitude(37.5)
+                        .longitude(127.0)
+                        .dineInAvailable(false)
+                        .parkingAvailable(false)
+                        .drinkAvailable(false)
+                        .holidayClosed(false)
+                        .build();
+        ReflectionTestUtils.setField(bakery, "id", 101L);
+        ReflectionTestUtils.setField(
+                bakery, "status", com.breadbread.bakery.entity.BakeryStatus.PENDING);
+        when(bakeryRepository.findByIdAndActiveTrue(101L)).thenReturn(Optional.of(bakery));
+
+        assertThatThrownBy(() -> bakeryService.approveBakery(101L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.BAKERY_APPROVE_INCOMPLETE);
+    }
+
+    @Test
+    void approveBakery_throws_BAKERY_NOT_PENDING_when_already_approved() {
+        Bakery bakery = bakeryWithId(100L);
+        when(bakeryRepository.findByIdAndActiveTrue(100L)).thenReturn(Optional.of(bakery));
+
+        assertThatThrownBy(() -> bakeryService.approveBakery(100L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.BAKERY_NOT_PENDING);
+    }
+
+    // ── rejectBakery ──────────────────────────────────────────────────────────
+
+    @Test
+    void rejectBakery_transitions_status_to_REJECTED() {
+        Bakery bakery = pendingBakeryWithId(200L);
+        when(bakeryRepository.findByIdAndActiveTrue(200L)).thenReturn(Optional.of(bakery));
+
+        bakeryService.rejectBakery(200L);
+
+        assertThat(bakery.getStatus())
+                .isEqualTo(com.breadbread.bakery.entity.BakeryStatus.REJECTED);
+    }
+
+    @Test
+    void rejectBakery_throws_BAKERY_NOT_PENDING_when_already_approved() {
+        Bakery bakery = bakeryWithId(200L);
+        when(bakeryRepository.findByIdAndActiveTrue(200L)).thenReturn(Optional.of(bakery));
+
+        assertThatThrownBy(() -> bakeryService.rejectBakery(200L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.BAKERY_NOT_PENDING);
+    }
+
+    private static Bakery pendingBakeryWithId(long id) {
+        Bakery b =
+                Bakery.builder()
+                        .name("테스트빵집")
+                        .address("주소")
+                        .region("강남구")
+                        .dong("역삼동")
+                        .latitude(37.5)
+                        .longitude(127.0)
+                        .bakeryType(com.breadbread.bakery.entity.BakeryType.PLAIN)
+                        .dineInAvailable(false)
+                        .parkingAvailable(false)
+                        .drinkAvailable(false)
+                        .holidayClosed(false)
+                        .build();
+        ReflectionTestUtils.setField(b, "id", id);
+        ReflectionTestUtils.setField(
+                b, "status", com.breadbread.bakery.entity.BakeryStatus.PENDING);
+        return b;
     }
 
     private static Bakery bakeryWithId(long id) {

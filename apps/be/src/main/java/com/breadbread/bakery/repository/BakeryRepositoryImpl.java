@@ -39,6 +39,8 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
         BooleanExpression region = eqRegion(bakery, search.getRegion());
         BooleanExpression dong = eqDong(bakery, search.getDong());
         BooleanExpression active = bakery.active.isTrue();
+        BooleanExpression approved =
+                bakery.status.eq(com.breadbread.bakery.entity.BakeryStatus.APPROVED);
         BooleanExpression withinRadius = withinRadius(bakery, search);
         OrderSpecifier<Integer> openFirst = openFirstOrder(bakery, search.isOpen());
 
@@ -49,6 +51,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
                         review,
                         like,
                         active,
+                        approved,
                         keyword,
                         region,
                         dong,
@@ -60,7 +63,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
                 queryFactory
                         .select(bakery.count())
                         .from(bakery)
-                        .where(active, keyword, region, dong, withinRadius)
+                        .where(active, approved, keyword, region, dong, withinRadius)
                         .fetchOne();
 
         return new PageImpl<>(content, pageable, total != null ? total : 0L);
@@ -73,6 +76,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
             QReview review,
             QBakeryLike like,
             BooleanExpression active,
+            BooleanExpression approved,
             BooleanExpression keyword,
             BooleanExpression region,
             BooleanExpression dong,
@@ -88,7 +92,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
                             .selectFrom(bakery)
                             .leftJoin(review)
                             .on(review.bakery.eq(bakery).and(review.active.isTrue()))
-                            .where(active, keyword, region, dong, withinRadius)
+                            .where(active, approved, keyword, region, dong, withinRadius)
                             .groupBy(bakery.id)
                             .orderBy(openFirst, review.count().desc(), bakery.id.desc()),
                     pageable);
@@ -99,7 +103,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
                             .selectFrom(bakery)
                             .leftJoin(like)
                             .on(like.bakery.eq(bakery))
-                            .where(active, keyword, region, dong, withinRadius)
+                            .where(active, approved, keyword, region, dong, withinRadius)
                             .groupBy(bakery.id)
                             .orderBy(openFirst, like.count().desc(), bakery.id.desc()),
                     pageable);
@@ -110,7 +114,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
             return applyPaging(
                     queryFactory
                             .selectFrom(bakery)
-                            .where(active, keyword, region, dong, withinRadius)
+                            .where(active, approved, keyword, region, dong, withinRadius)
                             .orderBy(
                                     openFirst,
                                     distanceTemplate(
@@ -124,7 +128,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
         return applyPaging(
                 queryFactory
                         .selectFrom(bakery)
-                        .where(active, keyword, region, dong, withinRadius)
+                        .where(active, approved, keyword, region, dong, withinRadius)
                         .orderBy(openFirst, defaultOrder(sort, bakery)[0], bakery.id.desc()),
                 pageable);
     }
@@ -230,6 +234,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
 
         List<BooleanExpression> conditions = new ArrayList<>();
         conditions.add(bakery.active.isTrue());
+        conditions.add(bakery.status.eq(com.breadbread.bakery.entity.BakeryStatus.APPROVED));
         conditions.add(containKeyword(bakery, search.getKeyword()));
         conditions.add(eqRegion(bakery, search.getRegion()));
         conditions.add(eqDrinkAvailable(bakery, search.getDrinkAvailable()));
