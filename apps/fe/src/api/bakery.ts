@@ -1,6 +1,10 @@
 import { apiClient, extractData } from "@/api/client";
 import type { ApiEnvelope } from "@/api/types/common";
 import type {
+  SubmitNewBakeryReportRequest,
+  SubmitUpdateBakeryReportRequest,
+} from "@/utils/bakeryReport";
+import type {
   BakeryDetail,
   BakeryForAI,
   BakeryListResponse,
@@ -243,4 +247,18 @@ export async function getBakeriesCongestion(bakeryIds: number[]): Promise<Bakery
     params: { ids: ids.join(",") },
   });
   return extractData(data) ?? [];
+}
+
+/** `POST /bakeries/reports/new` — 새 빵집 등록 제보 */
+export async function submitNewBakeryReport(body: SubmitNewBakeryReportRequest): Promise<number> {
+  const { data } = await apiClient.post<ApiEnvelope<number>>(`${PATH}/reports/new`, body);
+  return extractData(data);
+}
+
+/** `POST /bakeries/reports/update` — 기존 빵집 정보 수정 제보 */
+export async function submitUpdateBakeryReport(
+  body: SubmitUpdateBakeryReportRequest,
+): Promise<number> {
+  const { data } = await apiClient.post<ApiEnvelope<number>>(`${PATH}/reports/update`, body);
+  return extractData(data);
 }
