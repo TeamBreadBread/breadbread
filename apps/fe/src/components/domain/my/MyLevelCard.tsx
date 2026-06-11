@@ -17,7 +17,12 @@ export default function MyLevelCard({
     <section className="bg-white px-x5 pb-x6">
       <div className="overflow-hidden rounded-r3 border border-[#eeeff1] px-x4 py-[18px]">
         <div className="flex items-center gap-x2">
-          <div className="h-x6 w-x6 rounded-r0_5 border border-[#eeeff1] bg-[#f7f8f9]" />
+          <span
+            className="flex h-x6 w-x6 shrink-0 items-center justify-center text-[24px] leading-none"
+            aria-hidden
+          >
+            🍞
+          </span>
 
           <div className="flex items-center gap-x1">
             <span className="text-size-4 font-bold leading-t5 tracking-[-0.1px] text-[#217cf9]">
@@ -38,7 +43,7 @@ export default function MyLevelCard({
 
           <div className="h-x3 overflow-hidden rounded-full bg-[#f3f4f5]">
             <div
-              className="h-full rounded-full bg-[#868b94]"
+              className="h-full rounded-full bg-orange-600"
               style={{ width: `${progressPercent}%` }}
             />
           </div>

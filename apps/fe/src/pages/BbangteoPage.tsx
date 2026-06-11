@@ -1,3 +1,4 @@
+import BbangteoBakerySuggestBanner from "@/components/domain/bbangteo/BbangteoBakerySuggestBanner";
 import BbangteoCommunitySection from "@/components/domain/bbangteo/BbangteoCommunitySection";
 import BbangteoHeader from "@/components/domain/bbangteo/BbangteoHeader";
 import BbangteoSearchSection from "@/components/domain/bbangteo/BbangteoSearchSection";
@@ -75,6 +76,9 @@ const BbangteoPage = () => {
             <BbangteoCommunitySection
               key={section.title}
               section={section}
+              topContent={
+                section.title === "자유 게시판" ? <BbangteoBakerySuggestBanner /> : undefined
+              }
               onSectionTitleAreaClick={
                 section.title === "빵빵 소식" ? goToArticleBoardList : undefined
               }

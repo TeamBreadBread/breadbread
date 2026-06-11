@@ -41,6 +41,7 @@ import { Route as BbangteoBoardWriteRouteImport } from "./routes/bbangteo-board-
 import { Route as BbangteoBoardPostDetailRouteImport } from "./routes/bbangteo-board-post-detail";
 import { Route as BbangteoBoardRouteImport } from "./routes/bbangteo-board";
 import { Route as BbangteoBbangticlePostDetailRouteImport } from "./routes/bbangteo-bbangticle-post-detail";
+import { Route as BbangteoBakerySuggestRouteImport } from "./routes/bbangteo-bakery-suggest";
 import { Route as BbangteoBakeryReviewWriteRouteImport } from "./routes/bbangteo-bakery-review-write";
 import { Route as BbangteoBakeryListRouteImport } from "./routes/bbangteo-bakery-list";
 import { Route as BbangteoBakeryDetailRouteImport } from "./routes/bbangteo-bakery-detail";
@@ -220,6 +221,11 @@ const BbangteoBbangticlePostDetailRoute = BbangteoBbangticlePostDetailRouteImpor
   path: "/bbangteo-bbangticle-post-detail",
   getParentRoute: () => rootRouteImport,
 } as any);
+const BbangteoBakerySuggestRoute = BbangteoBakerySuggestRouteImport.update({
+  id: "/bbangteo-bakery-suggest",
+  path: "/bbangteo-bakery-suggest",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const BbangteoBakeryReviewWriteRoute = BbangteoBakeryReviewWriteRouteImport.update({
   id: "/bbangteo-bakery-review-write",
   path: "/bbangteo-bakery-review-write",
@@ -321,6 +327,7 @@ export interface FileRoutesByFullPath {
   "/bbangteo-bakery-detail": typeof BbangteoBakeryDetailRoute;
   "/bbangteo-bakery-list": typeof BbangteoBakeryListRoute;
   "/bbangteo-bakery-review-write": typeof BbangteoBakeryReviewWriteRoute;
+  "/bbangteo-bakery-suggest": typeof BbangteoBakerySuggestRoute;
   "/bbangteo-bbangticle-post-detail": typeof BbangteoBbangticlePostDetailRoute;
   "/bbangteo-board": typeof BbangteoBoardRoute;
   "/bbangteo-board-post-detail": typeof BbangteoBoardPostDetailRoute;
@@ -372,6 +379,7 @@ export interface FileRoutesByTo {
   "/bbangteo-bakery-detail": typeof BbangteoBakeryDetailRoute;
   "/bbangteo-bakery-list": typeof BbangteoBakeryListRoute;
   "/bbangteo-bakery-review-write": typeof BbangteoBakeryReviewWriteRoute;
+  "/bbangteo-bakery-suggest": typeof BbangteoBakerySuggestRoute;
   "/bbangteo-bbangticle-post-detail": typeof BbangteoBbangticlePostDetailRoute;
   "/bbangteo-board": typeof BbangteoBoardRoute;
   "/bbangteo-board-post-detail": typeof BbangteoBoardPostDetailRoute;
@@ -425,6 +433,7 @@ export interface FileRoutesById {
   "/bbangteo-bakery-detail": typeof BbangteoBakeryDetailRoute;
   "/bbangteo-bakery-list": typeof BbangteoBakeryListRoute;
   "/bbangteo-bakery-review-write": typeof BbangteoBakeryReviewWriteRoute;
+  "/bbangteo-bakery-suggest": typeof BbangteoBakerySuggestRoute;
   "/bbangteo-bbangticle-post-detail": typeof BbangteoBbangticlePostDetailRoute;
   "/bbangteo-board": typeof BbangteoBoardRoute;
   "/bbangteo-board-post-detail": typeof BbangteoBoardPostDetailRoute;
@@ -479,6 +488,7 @@ export interface FileRouteTypes {
     | "/bbangteo-bakery-detail"
     | "/bbangteo-bakery-list"
     | "/bbangteo-bakery-review-write"
+    | "/bbangteo-bakery-suggest"
     | "/bbangteo-bbangticle-post-detail"
     | "/bbangteo-board"
     | "/bbangteo-board-post-detail"
@@ -530,6 +540,7 @@ export interface FileRouteTypes {
     | "/bbangteo-bakery-detail"
     | "/bbangteo-bakery-list"
     | "/bbangteo-bakery-review-write"
+    | "/bbangteo-bakery-suggest"
     | "/bbangteo-bbangticle-post-detail"
     | "/bbangteo-board"
     | "/bbangteo-board-post-detail"
@@ -582,6 +593,7 @@ export interface FileRouteTypes {
     | "/bbangteo-bakery-detail"
     | "/bbangteo-bakery-list"
     | "/bbangteo-bakery-review-write"
+    | "/bbangteo-bakery-suggest"
     | "/bbangteo-bbangticle-post-detail"
     | "/bbangteo-board"
     | "/bbangteo-board-post-detail"
@@ -635,6 +647,7 @@ export interface RootRouteChildren {
   BbangteoBakeryDetailRoute: typeof BbangteoBakeryDetailRoute;
   BbangteoBakeryListRoute: typeof BbangteoBakeryListRoute;
   BbangteoBakeryReviewWriteRoute: typeof BbangteoBakeryReviewWriteRoute;
+  BbangteoBakerySuggestRoute: typeof BbangteoBakerySuggestRoute;
   BbangteoBbangticlePostDetailRoute: typeof BbangteoBbangticlePostDetailRoute;
   BbangteoBoardRoute: typeof BbangteoBoardRoute;
   BbangteoBoardPostDetailRoute: typeof BbangteoBoardPostDetailRoute;
@@ -900,6 +913,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof BbangteoBbangticlePostDetailRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/bbangteo-bakery-suggest": {
+      id: "/bbangteo-bakery-suggest";
+      path: "/bbangteo-bakery-suggest";
+      fullPath: "/bbangteo-bakery-suggest";
+      preLoaderRoute: typeof BbangteoBakerySuggestRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/bbangteo-bakery-review-write": {
       id: "/bbangteo-bakery-review-write";
       path: "/bbangteo-bakery-review-write";
@@ -1057,6 +1077,7 @@ const rootRouteChildren: RootRouteChildren = {
   BbangteoBakeryDetailRoute: BbangteoBakeryDetailRoute,
   BbangteoBakeryListRoute: BbangteoBakeryListRoute,
   BbangteoBakeryReviewWriteRoute: BbangteoBakeryReviewWriteRoute,
+  BbangteoBakerySuggestRoute: BbangteoBakerySuggestRoute,
   BbangteoBbangticlePostDetailRoute: BbangteoBbangticlePostDetailRoute,
   BbangteoBoardRoute: BbangteoBoardRoute,
   BbangteoBoardPostDetailRoute: BbangteoBoardPostDetailRoute,

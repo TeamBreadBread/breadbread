@@ -1,17 +1,13 @@
 import type { CourseSummaryItem } from "@/api/courses";
+import SadBreadImage from "@/assets/images/Sad_Bread.svg";
 import CourseSection from "./CourseSection";
 
 type CourseListProps = {
   courses: CourseSummaryItem[];
   loading: boolean;
-  emptyMessage?: string;
 };
 
-const CourseList = ({
-  courses,
-  loading,
-  emptyMessage = "표시할 코스가 없어요.",
-}: CourseListProps) => {
+const CourseList = ({ courses, loading }: CourseListProps) => {
   if (loading) {
     return (
       <main className="flex flex-1 items-center justify-center pb-[56px] sm:pb-[60px]">
@@ -22,8 +18,9 @@ const CourseList = ({
 
   if (courses.length === 0) {
     return (
-      <main className="flex flex-1 items-center justify-center px-[20px] pb-[56px] sm:pb-[60px]">
-        <p className="text-center text-[14px] leading-[20px] text-[#868b94]">{emptyMessage}</p>
+      <main className="flex flex-1 flex-col items-center justify-center gap-[12px] px-[20px] pb-[56px] sm:pb-[60px]">
+        <img src={SadBreadImage} alt="" aria-hidden className="h-[96px] w-[96px] object-contain" />
+        <p className="text-center text-[14px] leading-[20px] text-[#868b94]">아직 준비중입니다</p>
       </main>
     );
   }

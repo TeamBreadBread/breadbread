@@ -11,6 +11,7 @@ import {
 } from "@/api/reservation";
 import {
   checkTourCongestion,
+  checkTourVisit,
   getCurrentTour,
   startTour,
   type CongestionCheckResult,
@@ -44,8 +45,13 @@ import {
   reservationStartMs,
   resolvePreDepartureReminderStage,
 } from "@/utils/tourReminders";
-import { consumeTourCompleteCelebration, TOUR_COMPLETE_EVENT } from "@/utils/tourCelebration";
+import {
+  consumeTourCompleteCelebration,
+  notifyTourCompleteCelebration,
+  TOUR_COMPLETE_EVENT,
+} from "@/utils/tourCelebration";
 import { cn } from "@/utils/cn";
+import { useTourArrivalProximity, type TourArrivalPrompt } from "@/hooks/useTourArrivalProximity";
 import ChatBotImage from "@/assets/images/Img_ChatBot.svg";
 import ChatbotCourseSpeechBubble, {
   CHATBOT_FAB_POSITION_CLASS,
@@ -372,7 +378,7 @@ export default function BreadBotWidget({
   courseId,
   showFloatingButton = true,
 }: BreadBotWidgetProps) {
-  const { startCourseGuide, courseGuideActive } = useLoginRequired();
+  const { startCourseGuide, endCourseGuide, courseGuideActive } = useLoginRequired();
   const navigate = useNavigate();
   const onTourPage = useRouterState({ select: (s) => s.location.pathname.startsWith("/tour") });
   const onRoutePage = useRouterState({ select: (s) => s.location.pathname === "/route" });
@@ -396,8 +402,12 @@ export default function BreadBotWidget({
   const [activeTourCourseId, setActiveTourCourseId] = useState<number | null>(null);
   /** 투어 완료 축하 말풍선 (홈 도착 시 컨페티와 함께 표시) */
   const [celebrationBubble, setCelebrationBubble] = useState<{ courseName: string } | null>(null);
+  const [arrivalBusy, setArrivalBusy] = useState(false);
+  const [arrivalRecheckNonce, setArrivalRecheckNonce] = useState(0);
 
   const dismissedTourRef = useRef<Set<string>>(new Set());
+  const dismissedArrivalRef = useRef<Set<string>>(new Set());
+  const arrivalVisitInFlightRef = useRef(false);
   const celebratedTourRef = useRef<Set<string>>(new Set());
   const dismissedMovementRef = useRef<Set<string>>(new Set());
   const lastCongestionResultsRef = useRef<CongestionCheckResult[]>([]);
@@ -406,6 +416,20 @@ export default function BreadBotWidget({
   const activeReservationIdRef = useRef<number | null>(null);
   const navigateRef = useRef(navigate);
   const listRef = useRef<HTMLDivElement>(null);
+
+  const effectiveTourCourseId =
+    courseGuideActive && (courseId ?? activeTourCourseId) && (courseId ?? activeTourCourseId)! > 0
+      ? (courseId ?? activeTourCourseId)!
+      : null;
+
+  const isArrivalDismissed = useCallback((key: string) => dismissedArrivalRef.current.has(key), []);
+
+  const tourArrivalPrompt = useTourArrivalProximity(
+    courseGuideActive && showFloatingButton,
+    effectiveTourCourseId,
+    isArrivalDismissed,
+    arrivalRecheckNonce,
+  );
 
   useEffect(() => {
     navigateRef.current = navigate;
@@ -1203,21 +1227,60 @@ export default function BreadBotWidget({
     setCourseMovementBubble(null);
   };
 
+  const dismissArrivalBubble = () => {
+    if (tourArrivalPrompt) {
+      dismissedArrivalRef.current.add(tourArrivalPrompt.dismissKey);
+      setArrivalRecheckNonce((value) => value + 1);
+    }
+  };
+
+  /** GPS 도착 말풍선 — 사용자가 「완료처리」를 눌렀을 때만 방문 체크 API 호출 */
+  const confirmArrivalVisitByUser = useCallback(
+    async (prompt: TourArrivalPrompt) => {
+      if (arrivalVisitInFlightRef.current || arrivalBusy) return;
+      arrivalVisitInFlightRef.current = true;
+      setArrivalBusy(true);
+      try {
+        const updated = await checkTourVisit(prompt.courseId, prompt.order);
+        dismissedArrivalRef.current.add(prompt.dismissKey);
+        setArrivalRecheckNonce((value) => value + 1);
+        if (updated.status === "COMPLETED") {
+          endCourseGuide();
+          notifyTourCompleteCelebration(updated.courseId);
+        }
+      } catch (error) {
+        appendBotMessage(getErrorMessage(error));
+      } finally {
+        arrivalVisitInFlightRef.current = false;
+        setArrivalBusy(false);
+      }
+    },
+    [appendBotMessage, arrivalBusy, endCourseGuide],
+  );
+
   const showCelebrationBubble = celebrationBubble !== null && !open;
+  const showTourArrivalBubble =
+    tourArrivalPrompt !== null && showFloatingButton && !open && courseGuideActive;
   const showCourseMovementBubble =
-    courseMovementBubble !== null && showFloatingButton && !open && courseGuideActive;
+    !showTourArrivalBubble &&
+    courseMovementBubble !== null &&
+    showFloatingButton &&
+    !open &&
+    courseGuideActive;
   const showTourBubble =
     tourBubble !== null &&
     !open &&
     !onTourPage &&
     (tourBubble.mode !== "resume" || courseGuideActive);
   const showChangeBubble =
+    !showTourArrivalBubble &&
     !showCourseMovementBubble &&
     tourBubble === null &&
     reserveNudgeBubble === null &&
     changeBubble !== null &&
     !open;
   const showReserveNudgeBubble =
+    !showTourArrivalBubble &&
     tourBubble === null &&
     changeBubble === null &&
     reserveNudgeBubble !== null &&
@@ -1364,6 +1427,29 @@ export default function BreadBotWidget({
 
             <div className="absolute -bottom-[7px] right-[28px] h-[14px] w-[14px] rotate-45 bg-white shadow-[3px_3px_6px_rgba(0,0,0,0.06)]" />
           </div>
+        </div>
+      ) : null}
+
+      {showTourArrivalBubble && tourArrivalPrompt ? (
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[73] mx-auto w-full max-w-[402px]">
+          <ChatbotCourseSpeechBubble
+            title={`곧 코스 ${tourArrivalPrompt.order}번 빵집에 도착할 것 같아요!`}
+            subtitle="방문완료 처리 해드릴까요?"
+            actions={[
+              {
+                label: arrivalBusy ? "처리 중…" : "완료처리",
+                variant: "primary",
+                disabled: arrivalBusy,
+                onClick: () => void confirmArrivalVisitByUser(tourArrivalPrompt),
+              },
+              {
+                label: "무시하기",
+                variant: "secondary",
+                disabled: arrivalBusy,
+                onClick: dismissArrivalBubble,
+              },
+            ]}
+          />
         </div>
       ) : null}
 
