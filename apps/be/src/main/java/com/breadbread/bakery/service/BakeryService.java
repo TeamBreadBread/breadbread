@@ -91,7 +91,7 @@ public class BakeryService {
     public BakeryAiResponse findOneForAi(Long id) {
         Bakery bakery =
                 bakeryRepository
-                        .findByIdAndActiveTrue(id)
+                        .findByIdAndActiveTrueAndStatus(id, BakeryStatus.APPROVED)
                         .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
         List<Long> ids = List.of(id);
         List<Bread> breads = breadRepository.findAllByBakeryIdIn(ids);
@@ -205,7 +205,7 @@ public class BakeryService {
     public BakeryDetailResponse findOne(Long bakeryId, Long userId) {
         Bakery bakery =
                 bakeryRepository
-                        .findByIdAndActiveTrue(bakeryId)
+                        .findByIdAndActiveTrueAndStatus(bakeryId, BakeryStatus.APPROVED)
                         .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
         Long likeCount = bakeryLikeRepository.countByBakery(bakery);
         boolean liked =
@@ -240,6 +240,10 @@ public class BakeryService {
                 userRepository
                         .findById(userId)
                         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        if (user.getRole() != UserRole.ROLE_ADMIN && user.getRole() != UserRole.ROLE_BUSINESS) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
 
         Bakery bakery =
                 Bakery.builder()
@@ -332,7 +336,7 @@ public class BakeryService {
     public void like(Long bakeryId, Long userId) {
         Bakery bakery =
                 bakeryRepository
-                        .findByIdAndActiveTrue(bakeryId)
+                        .findByIdAndActiveTrueAndStatus(bakeryId, BakeryStatus.APPROVED)
                         .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
 
         User user =
@@ -360,6 +364,56 @@ public class BakeryService {
                         .findByBakeryIdAndUserId(bakeryId, userId)
                         .orElseThrow(() -> new CustomException(ErrorCode.NOT_LIKED));
         bakeryLikeRepository.delete(like);
+    }
+
+    @Transactional(readOnly = true)
+    public BakeryAdminListResponse getBakeriesByStatus(BakeryStatus status, Pageable pageable) {
+        Page<Bakery> page =
+                status != null
+                        ? bakeryRepository.findAllByActiveTrueAndStatus(status, pageable)
+                        : bakeryRepository.findAllByActiveTrue(pageable);
+        return BakeryAdminListResponse.builder()
+                .bakeries(page.getContent().stream().map(BakeryAdminResponse::from).toList())
+                .total((int) page.getTotalElements())
+                .page(pageable.getPageNumber())
+                .size(pageable.getPageSize())
+                .hasNext(page.hasNext())
+                .build();
+    }
+
+    @Transactional
+    public void approveBakery(Long bakeryId) {
+        Bakery bakery =
+                bakeryRepository
+                        .findByIdAndActiveTrue(bakeryId)
+                        .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
+        if (bakery.getStatus() != BakeryStatus.PENDING) {
+            throw new CustomException(ErrorCode.BAKERY_NOT_PENDING);
+        }
+        if (bakery.getName() == null
+                || bakery.getAddress() == null
+                || bakery.getLatitude() == 0.0
+                || bakery.getLongitude() == 0.0
+                || bakery.getRegion() == null
+                || bakery.getDong() == null
+                || bakery.getBakeryType() == null) {
+            throw new CustomException(ErrorCode.BAKERY_APPROVE_INCOMPLETE);
+        }
+        bakery.approve();
+        log.info("빵집 승인: bakeryId={}", bakeryId);
+    }
+
+    @Transactional
+    public void rejectBakery(Long bakeryId) {
+        Bakery bakery =
+                bakeryRepository
+                        .findByIdAndActiveTrue(bakeryId)
+                        .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
+        if (bakery.getStatus() != BakeryStatus.PENDING) {
+            throw new CustomException(ErrorCode.BAKERY_NOT_PENDING);
+        }
+        bakery.reject();
+        log.info("빵집 거절: bakeryId={}", bakeryId);
     }
 
     private void checkAuthority(Bakery bakery, Long userId, UserRole role) {

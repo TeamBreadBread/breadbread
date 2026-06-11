@@ -2,6 +2,7 @@ package com.breadbread.course.service.ai;
 
 import com.breadbread.bakery.dto.BakeryAiResponse;
 import com.breadbread.bakery.entity.Bakery;
+import com.breadbread.bakery.entity.BakeryStatus;
 import com.breadbread.bakery.entity.Bread;
 import com.breadbread.bakery.entity.CrowdTime;
 import com.breadbread.bakery.repository.BakeryRepository;
@@ -73,7 +74,9 @@ public class AiCourseAsyncService {
                                                                         ErrorCode
                                                                                 .PREFERENCE_NOT_FOUND));
 
-                                List<Bakery> bakeries = bakeryRepository.findAllByActiveTrue();
+                                List<Bakery> bakeries =
+                                        bakeryRepository.findAllByActiveTrueAndStatus(
+                                                BakeryStatus.APPROVED);
                                 List<Bakery> candidateBakeries =
                                         selectBakeriesNearDeparture(bakeries, request);
                                 List<Long> ids =

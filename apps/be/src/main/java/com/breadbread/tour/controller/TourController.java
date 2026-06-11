@@ -46,6 +46,7 @@ public class TourController {
             summary = "현재 투어 조회",
             description =
                     "투어 상태를 조회합니다. 앱 재접속 시 상태 복구용으로 사용합니다."
+                            + " 진행 중인 투어가 없으면 data 필드가 null로 반환됩니다."
                             + " status 필드가 IN_PROGRESS(진행 중) 또는 COMPLETED(완료 후 1시간 이내) 모두 반환될 수 있습니다.")
     @GetMapping("/current")
     public ApiResponse<TourCurrentResponse> getCurrentTour(

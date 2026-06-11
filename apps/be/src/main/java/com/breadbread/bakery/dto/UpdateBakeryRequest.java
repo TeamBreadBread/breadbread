@@ -23,6 +23,8 @@ public class UpdateBakeryRequest {
 
     @NotBlankIfPresent private String region;
 
+    @NotBlankIfPresent private String dong;
+
     @DecimalMin("-90.0")
     @DecimalMax("90.0")
     private Double lat;

@@ -47,6 +47,14 @@ public enum ErrorCode {
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "E0303", "존재하지 않는 리뷰입니다."),
     ALREADY_LIKED(HttpStatus.CONFLICT, "E0304", "이미 좋아요한 빵집입니다."),
     NOT_LIKED(HttpStatus.BAD_REQUEST, "E0305", "좋아요하지 않은 빵집입니다."),
+    BAKERY_ALREADY_PENDING(HttpStatus.CONFLICT, "E0306", "이미 등록 대기 중인 빵집입니다."),
+    BAKERY_NOT_PENDING(HttpStatus.BAD_REQUEST, "E0307", "대기 중인 빵집이 아닙니다."),
+    BAKERY_REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "E0308", "존재하지 않는 빵집 제보입니다."),
+    BAKERY_REPORT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "E0309", "이미 처리된 빵집 제보입니다."),
+    BAKERY_APPROVE_INCOMPLETE(
+            HttpStatus.BAD_REQUEST,
+            "E0310",
+            "빵집 승인에 필요한 필드가 입력되지 않았습니다. (name, address, latitude, longitude, region, dong, bakeryType)"),
 
     // 코스/AI추천 E04xx
     COURSE_NOT_FOUND(HttpStatus.NOT_FOUND, "E0401", "존재하지 않는 코스입니다."),

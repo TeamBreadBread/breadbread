@@ -113,11 +113,7 @@ public class TourService {
     }
 
     public TourCurrentResponse getCurrentTour(Long userId) {
-        TourStateCache state =
-                tourRedisService
-                        .getTourState(userId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.TOUR_NOT_FOUND));
-        return TourCurrentResponse.from(state);
+        return tourRedisService.getTourState(userId).map(TourCurrentResponse::from).orElse(null);
     }
 
     @Transactional

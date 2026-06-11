@@ -5,6 +5,7 @@ import com.breadbread.bakery.dto.ReviewListResponse;
 import com.breadbread.bakery.dto.ReviewResponse;
 import com.breadbread.bakery.dto.UpdateReviewRequest;
 import com.breadbread.bakery.entity.Bakery;
+import com.breadbread.bakery.entity.BakeryStatus;
 import com.breadbread.bakery.entity.Review;
 import com.breadbread.bakery.entity.ReviewSortType;
 import com.breadbread.bakery.repository.BakeryRepository;
@@ -41,7 +42,7 @@ public class ReviewService {
     public Long createReview(Long bakeryId, Long userId, CreateReviewRequest request) {
         Bakery bakery =
                 bakeryRepository
-                        .findByIdAndActiveTrue(bakeryId)
+                        .findByIdAndActiveTrueAndStatus(bakeryId, BakeryStatus.APPROVED)
                         .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
         User user =
                 userRepository
@@ -65,7 +66,7 @@ public class ReviewService {
     @Transactional(readOnly = true)
     public ReviewListResponse getReviews(
             Long bakeryId, ReviewSortType sort, int page, int size, Long userId) {
-        if (!bakeryRepository.existsByIdAndActiveTrue(bakeryId)) {
+        if (!bakeryRepository.existsByIdAndActiveTrueAndStatus(bakeryId, BakeryStatus.APPROVED)) {
             throw new CustomException(ErrorCode.BAKERY_NOT_FOUND);
         }
         Sort sorting =
@@ -94,7 +95,7 @@ public class ReviewService {
             Long bakeryId, Long reviewId, Long userId, UpdateReviewRequest request) {
         Bakery bakery =
                 bakeryRepository
-                        .findByIdAndActiveTrue(bakeryId)
+                        .findByIdAndActiveTrueAndStatus(bakeryId, BakeryStatus.APPROVED)
                         .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
 
         Review review =
@@ -129,7 +130,7 @@ public class ReviewService {
     public void deleteReview(Long bakeryId, Long reviewId, Long userId, UserRole role) {
         Bakery bakery =
                 bakeryRepository
-                        .findByIdAndActiveTrue(bakeryId)
+                        .findByIdAndActiveTrueAndStatus(bakeryId, BakeryStatus.APPROVED)
                         .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
 
         Review review =

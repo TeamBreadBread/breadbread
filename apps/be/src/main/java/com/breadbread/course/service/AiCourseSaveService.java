@@ -1,6 +1,7 @@
 package com.breadbread.course.service;
 
 import com.breadbread.bakery.entity.Bakery;
+import com.breadbread.bakery.entity.BakeryStatus;
 import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.course.dto.ai.AiCoursePreviewBakeryResponse;
 import com.breadbread.course.dto.ai.AiCoursePreviewResponse;
@@ -99,7 +100,9 @@ public class AiCourseSaveService {
 
         // DB에서 빵집 정보 일괄 조회 (주소·좌표·평점)
         Map<Long, Bakery> bakeryMap =
-                bakeryRepository.findAllByIdInAndActiveTrue(bakeryIds).stream()
+                bakeryRepository
+                        .findAllByIdInAndActiveTrueAndStatus(bakeryIds, BakeryStatus.APPROVED)
+                        .stream()
                         .collect(Collectors.toMap(Bakery::getId, b -> b));
 
         // 저장과 동일 기준: DB에 없거나 비활성화된 추천 빵집이 있으면 예외
@@ -145,7 +148,10 @@ public class AiCourseSaveService {
             List<Long> recommendedIds =
                     response.getBakeries().stream().map(RecommendedBakeryResponse::getId).toList();
             Map<Long, Bakery> bakeryMap =
-                    bakeryRepository.findAllByIdInAndActiveTrue(recommendedIds).stream()
+                    bakeryRepository
+                            .findAllByIdInAndActiveTrueAndStatus(
+                                    recommendedIds, BakeryStatus.APPROVED)
+                            .stream()
                             .collect(Collectors.toMap(Bakery::getId, b -> b));
 
             if (bakeryMap.size() != recommendedIds.size()) {

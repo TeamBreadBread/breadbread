@@ -267,13 +267,12 @@ class TourServiceTest {
     // ── getCurrentTour ─────────────────────────────────────────────────────────
 
     @Test
-    void getCurrentTour_throws_TOUR_NOT_FOUND_when_no_state() {
+    void getCurrentTour_returns_null_when_no_state() {
         when(tourRedisService.getTourState(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> tourService.getCurrentTour(1L))
-                .isInstanceOf(CustomException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.TOUR_NOT_FOUND);
+        TourCurrentResponse response = tourService.getCurrentTour(1L);
+
+        assertThat(response).isNull();
     }
 
     @Test

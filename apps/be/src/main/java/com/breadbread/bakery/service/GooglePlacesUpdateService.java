@@ -4,6 +4,7 @@ import com.breadbread.bakery.client.GooglePlacesClient;
 import com.breadbread.bakery.client.GooglePlacesClient.PlaceResult;
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.BakeryImage;
+import com.breadbread.bakery.entity.BakeryStatus;
 import com.breadbread.bakery.repository.BakeryImageRepository;
 import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.global.exception.CustomException;
@@ -117,7 +118,9 @@ public class GooglePlacesUpdateService {
     @Scheduled(cron = "0 0 4 */2 * *", zone = "Asia/Seoul")
     public void warmAllPhotoCaches() {
         List<Long> bakeryIds =
-                bakeryRepository.findAllByActiveTrue().stream().map(Bakery::getId).toList();
+                bakeryRepository.findAllByActiveTrueAndStatus(BakeryStatus.APPROVED).stream()
+                        .map(Bakery::getId)
+                        .toList();
         if (bakeryIds.isEmpty()) return;
 
         log.debug("[Places 캐시 워밍] 시작: count={}", bakeryIds.size());
