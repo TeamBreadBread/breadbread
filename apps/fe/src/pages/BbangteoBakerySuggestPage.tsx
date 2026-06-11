@@ -2,6 +2,8 @@ import { useState, type ReactNode } from "react";
 
 import { useNavigate } from "@tanstack/react-router";
 
+import { submitNewBakeryReport, submitUpdateBakeryReport } from "@/api/bakery";
+import { getErrorMessage } from "@/api/types/common";
 import type { BakeryListItem } from "@/api/types/bakery";
 
 import { AppIcon, IconAssets } from "@/components/icons";
@@ -23,11 +25,9 @@ import MobileFrame from "@/components/layout/MobileFrame";
 
 import { isKakaoPlaceSearchConfigured } from "@/lib/kakaoPlaceSearch";
 
-import {
-  saveBakerySuggestion,
-  type BakeryCorrectionField,
-  type BakerySuggestType,
-} from "@/lib/bakerySuggestStorage";
+import { type BakeryCorrectionField, type BakerySuggestType } from "@/lib/bakerySuggestStorage";
+
+import { mapCorrectionFieldToApi, parseRepresentativeMenus } from "@/utils/bakeryReport";
 
 import { cn } from "@/utils/cn";
 
@@ -334,43 +334,28 @@ export default function BbangteoBakerySuggestPage() {
     setIsSubmitting(true);
 
     try {
-      saveBakerySuggestion(
-        isNewType
-          ? {
-              type: form.type,
+      if (isNewType) {
+        await submitNewBakeryReport({
+          bakeryName: form.bakeryName.trim(),
+          address: form.address.trim() || undefined,
+          district: form.dong.trim() || undefined,
+          representativeMenus: parseRepresentativeMenus(form.signatureMenu.trim()),
+          recommendation: form.message.trim() || undefined,
+        });
+      } else {
+        if (form.correctionTarget == null) return;
 
-              bakeryName: form.bakeryName.trim(),
-
-              address: form.address.trim(),
-
-              dong: form.dong.trim(),
-
-              signatureMenu: form.signatureMenu.trim(),
-
-              message: form.message.trim(),
-            }
-          : {
-              type: form.type,
-
-              bakeryName: form.bakeryName.trim(),
-
-              address: form.address.trim(),
-
-              dong: form.dong.trim(),
-
-              signatureMenu: "",
-
-              message: form.message.trim(),
-
-              targetBakeryId: form.targetBakeryId ?? undefined,
-
-              correctionTarget: form.correctionTarget ?? undefined,
-
-              correctedInfo: form.correctedInfo.trim(),
-            },
-      );
+        await submitUpdateBakeryReport({
+          targetBakeryName: form.bakeryName.trim(),
+          updateField: mapCorrectionFieldToApi(form.correctionTarget),
+          correctValue: form.correctedInfo.trim(),
+          description: form.message.trim() || undefined,
+        });
+      }
 
       setSubmitted(true);
+    } catch (error) {
+      window.alert(getErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }
