@@ -674,7 +674,6 @@ const BbangteoBakeryListPage = ({
     listSort,
     openOnly,
     keyword,
-    likeOverlayTick,
   ]);
 
   const dongLoading =
@@ -883,12 +882,21 @@ const BbangteoBakeryListPage = ({
               {listError.message}
             </div>
           ) : rows.length === 0 ? (
-            <div className="flex flex-1 flex-col items-center justify-center px-[20px] py-[40px] text-[14px] text-[#868b94]">
-              {isTrendBreadList
-                ? `'${breadKeywordTrimmed}'을 파는 빵집이 없어요.`
-                : openOnly
-                  ? "영업 중인 빵집이 없어요."
-                  : "빵집이 없습니다."}
+            <div className="flex flex-1 flex-col items-center justify-center gap-[16px] px-[20px] py-[40px] text-center text-[14px] text-[#868b94]">
+              <p>
+                {isTrendBreadList
+                  ? `'${breadKeywordTrimmed}'을 파는 빵집이 없어요.`
+                  : openOnly
+                    ? "영업 중인 빵집이 없어요."
+                    : "빵집이 없습니다."}
+              </p>
+              <button
+                type="button"
+                className="rounded-[10px] border border-[#E8623A] px-[16px] py-[10px] text-[14px] font-semibold text-[#E8623A]"
+                onClick={() => void navigate({ to: "/bbangteo-bakery-suggest" })}
+              >
+                빵집 등록 건의하기
+              </button>
             </div>
           ) : (
             <>

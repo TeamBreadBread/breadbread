@@ -123,7 +123,7 @@ export default function MyPage() {
             <MyLevelCard
               level="Lv.1"
               title="갓 반죽 상태"
-              description="2번 더 뭐뭐하면 다음 등급 혜택을 받을 수 있어요!"
+              description="2번 더 예약하면 다음 등급 혜택을 받을 수 있어요!"
               progressPercent={70}
             />
           </div>

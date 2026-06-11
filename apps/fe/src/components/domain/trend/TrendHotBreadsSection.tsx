@@ -7,8 +7,9 @@ import { useTrendingBreads } from "@/hooks/trend/useTrendingBreads";
 import { cn } from "@/utils/cn";
 import { APP_SHELL_MAX_WIDTH } from "@/components/layout/layout.constants";
 import { buildBbangteoBakeryListSearch, type BakeryListEntryFrom } from "@/utils/bakeryListEntry";
+import { buildTrendBreadMedalRankMap } from "@/utils/trendCuration";
 import { useNavigate } from "@tanstack/react-router";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 const SKELETON_COUNT = 4;
 
@@ -45,11 +46,13 @@ export default function TrendHotBreadsSection({
     [bakeryListEntryFrom, navigate],
   );
 
+  const breads = useMemo(() => data?.breads ?? [], [data?.breads]);
+  const medalRankMap = useMemo(() => buildTrendBreadMedalRankMap(breads), [breads]);
+
   if (isError) {
     return null;
   }
 
-  const breads = data?.breads ?? [];
   const autoScrollBreads = breads.length > 1 ? [...breads, ...breads] : breads;
   const cardSkeletonClass = compact
     ? "h-[88px] w-[132px] flex-shrink-0 rounded-[var(--radius-r3)]"
@@ -96,6 +99,7 @@ export default function TrendHotBreadsSection({
                   key={`${bread.keyword}-${index}`}
                   bread={bread}
                   compact={compact}
+                  medalRank={medalRankMap.get(bread.keyword)}
                   onClick={() => {
                     handleBreadClick(bread.keyword);
                   }}

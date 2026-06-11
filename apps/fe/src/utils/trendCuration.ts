@@ -79,6 +79,34 @@ export function getTrendBreadEmoji(keyword: string | null | undefined): string {
   return "🍞";
 }
 
+export type TrendBreadMedalRank = 1 | 2 | 3;
+
+const TREND_BREAD_MEDAL_EMOJI: Record<TrendBreadMedalRank, string> = {
+  1: "🥇",
+  2: "🥈",
+  3: "🥉",
+};
+
+export function getTrendBreadMedalEmoji(rank: TrendBreadMedalRank): string {
+  return TREND_BREAD_MEDAL_EMOJI[rank];
+}
+
+/** trendScore 상위 3개 키워드에 금·은·동메달 순위 부여 */
+export function buildTrendBreadMedalRankMap(
+  breads: Pick<TrendBread, "keyword" | "trendScore">[],
+): Map<string, TrendBreadMedalRank> {
+  const ranked = [...breads]
+    .filter((bread) => bread.trendScore != null && Number.isFinite(bread.trendScore))
+    .sort((a, b) => (b.trendScore ?? 0) - (a.trendScore ?? 0))
+    .slice(0, 3);
+
+  const map = new Map<string, TrendBreadMedalRank>();
+  ranked.forEach((bread, index) => {
+    map.set(bread.keyword, (index + 1) as TrendBreadMedalRank);
+  });
+  return map;
+}
+
 export function buildTrendCurationTitle(
   keyword: string | null | undefined,
   bakeryCount: number,
