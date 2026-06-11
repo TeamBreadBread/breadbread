@@ -1,6 +1,6 @@
 package com.breadbread.course.converter;
 
-import com.breadbread.course.dto.Coordinate;
+import com.breadbread.course.dto.route.Coordinate;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.fasterxml.jackson.core.type.TypeReference;

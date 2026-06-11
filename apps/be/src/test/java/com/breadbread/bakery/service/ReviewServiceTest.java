@@ -8,11 +8,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.breadbread.bakery.dto.CreateReviewRequest;
-import com.breadbread.bakery.dto.UpdateReviewRequest;
+import com.breadbread.bakery.dto.request.CreateReviewRequest;
+import com.breadbread.bakery.dto.request.UpdateReviewRequest;
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.Review;
-import com.breadbread.bakery.entity.ReviewSortType;
+import com.breadbread.bakery.entity.enums.BakeryStatus;
+import com.breadbread.bakery.entity.enums.ReviewSortType;
 import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.bakery.repository.ReviewRepository;
 import com.breadbread.global.dto.UploadFolder;
@@ -53,8 +54,7 @@ class ReviewServiceTest {
         Bakery bakery = bakeryWithId(20L);
         User author = user(30L, UserRole.ROLE_USER);
         CreateReviewRequest request = createReviewRequest("좋아요", 5);
-        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
-                        20L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(20L, BakeryStatus.APPROVED))
                 .thenReturn(Optional.of(bakery));
         when(userRepository.findById(30L)).thenReturn(Optional.of(author));
         when(reviewRepository.save(any(Review.class)))
@@ -82,8 +82,7 @@ class ReviewServiceTest {
                 "imageUrls",
                 List.of(
                         "https://storage.googleapis.com/bucket/reviews/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.jpg"));
-        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
-                        20L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(20L, BakeryStatus.APPROVED))
                 .thenReturn(Optional.of(bakery));
         when(userRepository.findById(30L)).thenReturn(Optional.of(author));
         when(reviewRepository.save(any(Review.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -102,8 +101,7 @@ class ReviewServiceTest {
     @Test
     void createReview_throws_when_bakery_missing() {
         CreateReviewRequest request = createReviewRequest("nice", 5);
-        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
-                        99L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(99L, BakeryStatus.APPROVED))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> reviewService.createReview(99L, 30L, request))
@@ -117,8 +115,7 @@ class ReviewServiceTest {
     @Test
     void createReview_throws_when_user_missing() {
         CreateReviewRequest request = createReviewRequest("nice", 5);
-        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
-                        20L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(20L, BakeryStatus.APPROVED))
                 .thenReturn(Optional.of(bakeryWithId(20L)));
         when(userRepository.findById(77L)).thenReturn(Optional.empty());
 
@@ -132,8 +129,7 @@ class ReviewServiceTest {
 
     @Test
     void getReviews_throws_whenBakeryMissing() {
-        when(bakeryRepository.existsByIdAndActiveTrueAndStatus(
-                        1L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.existsByIdAndActiveTrueAndStatus(1L, BakeryStatus.APPROVED))
                 .thenReturn(false);
 
         assertThatThrownBy(() -> reviewService.getReviews(1L, ReviewSortType.LATEST, 0, 10, null))
@@ -155,8 +151,7 @@ class ReviewServiceTest {
         ReflectionTestUtils.setField(review, "id", 101L);
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        when(bakeryRepository.existsByIdAndActiveTrueAndStatus(
-                        20L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.existsByIdAndActiveTrueAndStatus(20L, BakeryStatus.APPROVED))
                 .thenReturn(true);
         when(reviewRepository.findAllByBakeryIdAndActiveTrue(eq(20L), pageableCaptor.capture()))
                 .thenReturn(new PageImpl<>(List.of(review), PageRequest.of(0, 10), 1));
@@ -175,8 +170,7 @@ class ReviewServiceTest {
     @Test
     void getReviews_sortsByRatingDescending_whenHighRatingRequested() {
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        when(bakeryRepository.existsByIdAndActiveTrueAndStatus(
-                        20L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.existsByIdAndActiveTrueAndStatus(20L, BakeryStatus.APPROVED))
                 .thenReturn(true);
         when(reviewRepository.findAllByBakeryIdAndActiveTrue(eq(20L), pageableCaptor.capture()))
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
@@ -189,8 +183,7 @@ class ReviewServiceTest {
     @Test
     void getReviews_sortsByRatingAscending_whenLowRatingRequested() {
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        when(bakeryRepository.existsByIdAndActiveTrueAndStatus(
-                        20L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.existsByIdAndActiveTrueAndStatus(20L, BakeryStatus.APPROVED))
                 .thenReturn(true);
         when(reviewRepository.findAllByBakeryIdAndActiveTrue(eq(20L), pageableCaptor.capture()))
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
@@ -203,8 +196,7 @@ class ReviewServiceTest {
     @Test
     void updateReview_throws_when_review_missing() {
         Bakery bakery = bakeryWithId(20L);
-        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
-                        20L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(20L, BakeryStatus.APPROVED))
                 .thenReturn(Optional.of(bakery));
         when(reviewRepository.findByIdAndBakeryIdAndActiveTrue(999L, 20L))
                 .thenReturn(Optional.empty());
@@ -229,8 +221,7 @@ class ReviewServiceTest {
                         .bakery(bakery)
                         .build();
         ReflectionTestUtils.setField(review, "id", 11L);
-        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
-                        20L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(20L, BakeryStatus.APPROVED))
                 .thenReturn(Optional.of(bakery));
         when(reviewRepository.findByIdAndBakeryIdAndActiveTrue(11L, 20L))
                 .thenReturn(Optional.of(review));
@@ -259,8 +250,7 @@ class ReviewServiceTest {
         ReflectionTestUtils.setField(request, "content", "after");
         ReflectionTestUtils.setField(request, "rating", 5);
         ReflectionTestUtils.setField(request, "imageUrls", List.of("new.jpg"));
-        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
-                        20L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(20L, BakeryStatus.APPROVED))
                 .thenReturn(Optional.of(bakery));
         when(reviewRepository.findByIdAndBakeryIdAndActiveTrue(11L, 20L))
                 .thenReturn(Optional.of(review));
@@ -289,8 +279,7 @@ class ReviewServiceTest {
                         .bakery(bakery)
                         .build();
         ReflectionTestUtils.setField(review, "id", 11L);
-        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
-                        20L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(20L, BakeryStatus.APPROVED))
                 .thenReturn(Optional.of(bakery));
         when(reviewRepository.findByIdAndBakeryIdAndActiveTrue(11L, 20L))
                 .thenReturn(Optional.of(review));
@@ -305,8 +294,7 @@ class ReviewServiceTest {
     @Test
     void deleteReview_throws_when_review_missing() {
         Bakery bakery = bakeryWithId(20L);
-        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
-                        20L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(20L, BakeryStatus.APPROVED))
                 .thenReturn(Optional.of(bakery));
         when(reviewRepository.findByIdAndBakeryIdAndActiveTrue(999L, 20L))
                 .thenReturn(Optional.empty());
@@ -332,8 +320,7 @@ class ReviewServiceTest {
                         .bakery(bakery)
                         .build();
         ReflectionTestUtils.setField(review, "id", 11L);
-        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
-                        20L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(20L, BakeryStatus.APPROVED))
                 .thenReturn(Optional.of(bakery));
         when(reviewRepository.findByIdAndBakeryIdAndActiveTrue(11L, 20L))
                 .thenReturn(Optional.of(review));

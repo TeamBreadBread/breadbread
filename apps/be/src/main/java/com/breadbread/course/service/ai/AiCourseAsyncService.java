@@ -1,10 +1,10 @@
 package com.breadbread.course.service.ai;
 
-import com.breadbread.bakery.dto.BakeryAiResponse;
+import com.breadbread.bakery.dto.response.BakeryAiResponse;
 import com.breadbread.bakery.entity.Bakery;
-import com.breadbread.bakery.entity.BakeryStatus;
 import com.breadbread.bakery.entity.Bread;
 import com.breadbread.bakery.entity.CrowdTime;
+import com.breadbread.bakery.entity.enums.BakeryStatus;
 import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.bakery.repository.BreadRepository;
 import com.breadbread.bakery.repository.CrowdTimeRepository;

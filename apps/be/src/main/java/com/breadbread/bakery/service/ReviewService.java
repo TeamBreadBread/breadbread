@@ -1,13 +1,13 @@
 package com.breadbread.bakery.service;
 
-import com.breadbread.bakery.dto.CreateReviewRequest;
-import com.breadbread.bakery.dto.ReviewListResponse;
-import com.breadbread.bakery.dto.ReviewResponse;
-import com.breadbread.bakery.dto.UpdateReviewRequest;
+import com.breadbread.bakery.dto.request.CreateReviewRequest;
+import com.breadbread.bakery.dto.request.UpdateReviewRequest;
+import com.breadbread.bakery.dto.response.ReviewListResponse;
+import com.breadbread.bakery.dto.response.ReviewResponse;
 import com.breadbread.bakery.entity.Bakery;
-import com.breadbread.bakery.entity.BakeryStatus;
 import com.breadbread.bakery.entity.Review;
-import com.breadbread.bakery.entity.ReviewSortType;
+import com.breadbread.bakery.entity.enums.BakeryStatus;
+import com.breadbread.bakery.entity.enums.ReviewSortType;
 import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.bakery.repository.ReviewRepository;
 import com.breadbread.global.dto.UploadFolder;

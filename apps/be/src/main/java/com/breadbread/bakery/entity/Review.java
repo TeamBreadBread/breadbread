@@ -1,6 +1,6 @@
 package com.breadbread.bakery.entity;
 
-import com.breadbread.bakery.dto.UpdateReviewRequest;
+import com.breadbread.bakery.dto.request.UpdateReviewRequest;
 import com.breadbread.global.entity.BaseEntity;
 import com.breadbread.user.entity.User;
 import jakarta.persistence.*;

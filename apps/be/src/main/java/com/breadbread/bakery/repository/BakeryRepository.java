@@ -1,7 +1,7 @@
 package com.breadbread.bakery.repository;
 
 import com.breadbread.bakery.entity.Bakery;
-import com.breadbread.bakery.entity.BakeryStatus;
+import com.breadbread.bakery.entity.enums.BakeryStatus;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;

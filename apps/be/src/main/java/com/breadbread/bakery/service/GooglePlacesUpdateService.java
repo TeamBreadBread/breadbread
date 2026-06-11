@@ -4,7 +4,7 @@ import com.breadbread.bakery.client.GooglePlacesClient;
 import com.breadbread.bakery.client.GooglePlacesClient.PlaceResult;
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.BakeryImage;
-import com.breadbread.bakery.entity.BakeryStatus;
+import com.breadbread.bakery.entity.enums.BakeryStatus;
 import com.breadbread.bakery.repository.BakeryImageRepository;
 import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.global.exception.CustomException;

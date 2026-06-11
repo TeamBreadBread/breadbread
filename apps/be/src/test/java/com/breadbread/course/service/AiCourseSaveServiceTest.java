@@ -11,7 +11,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.breadbread.bakery.entity.Bakery;
-import com.breadbread.bakery.entity.BreadType;
+import com.breadbread.bakery.entity.enums.BakeryStatus;
+import com.breadbread.bakery.entity.enums.BakeryType;
+import com.breadbread.bakery.entity.enums.BreadType;
 import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.course.dto.ai.AiCoursePreviewResponse;
 import com.breadbread.course.dto.ai.AiCourseRequest;
@@ -160,7 +162,7 @@ class AiCourseSaveServiceTest {
         AiCourseResultCache cache = resultCache(1L, 10L);
         when(aiCourseResultRedisService.getResult("job-p2", 1L)).thenReturn(Optional.of(cache));
         when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
-                        anyList(), eq(com.breadbread.bakery.entity.BakeryStatus.APPROVED)))
+                        anyList(), eq(BakeryStatus.APPROVED)))
                 .thenReturn(List.of());
 
         assertThatThrownBy(() -> aiCourseSaveService.getAiPreview("job-p2", 1L))
@@ -175,7 +177,7 @@ class AiCourseSaveServiceTest {
         AiCourseResultCache cache = resultCache(1L, 10L);
         when(aiCourseResultRedisService.getResult("job-p3", 1L)).thenReturn(Optional.of(cache));
         when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
-                        anyList(), eq(com.breadbread.bakery.entity.BakeryStatus.APPROVED)))
+                        anyList(), eq(BakeryStatus.APPROVED)))
                 .thenReturn(List.of(bakery));
 
         AiCoursePreviewResponse preview = aiCourseSaveService.getAiPreview("job-p3", 1L);
@@ -233,7 +235,7 @@ class AiCourseSaveServiceTest {
         when(userPreferenceRepository.findByUserId(1L))
                 .thenReturn(Optional.of(preference(user(1L))));
         when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
-                        anyList(), eq(com.breadbread.bakery.entity.BakeryStatus.APPROVED)))
+                        anyList(), eq(BakeryStatus.APPROVED)))
                 .thenReturn(List.of());
 
         assertThatThrownBy(() -> aiCourseSaveService.saveAiCourse("job-s4", 1L, null))
@@ -255,7 +257,7 @@ class AiCourseSaveServiceTest {
         when(userPreferenceRepository.findByUserId(1L))
                 .thenReturn(Optional.of(preference(user(1L))));
         when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
-                        anyList(), eq(com.breadbread.bakery.entity.BakeryStatus.APPROVED)))
+                        anyList(), eq(BakeryStatus.APPROVED)))
                 .thenReturn(List.of(bakery));
         when(courseRepository.save(any(Course.class)))
                 .thenAnswer(
@@ -288,7 +290,7 @@ class AiCourseSaveServiceTest {
         when(userPreferenceRepository.findByUserId(1L))
                 .thenReturn(Optional.of(preference(user(1L))));
         when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
-                        anyList(), eq(com.breadbread.bakery.entity.BakeryStatus.APPROVED)))
+                        anyList(), eq(BakeryStatus.APPROVED)))
                 .thenReturn(List.of(b10, b20));
 
         ArgumentCaptor<Course> captor = ArgumentCaptor.forClass(Course.class);
@@ -321,7 +323,7 @@ class AiCourseSaveServiceTest {
         when(userPreferenceRepository.findByUserId(1L))
                 .thenReturn(Optional.of(preference(user(1L))));
         when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
-                        anyList(), eq(com.breadbread.bakery.entity.BakeryStatus.APPROVED)))
+                        anyList(), eq(BakeryStatus.APPROVED)))
                 .thenReturn(List.of(bakery(10L, "빵집10"), bakery(20L, "빵집20")));
 
         assertThatThrownBy(() -> aiCourseSaveService.saveAiCourse("job-s7", 1L, List.of(10L, 99L)))
@@ -472,7 +474,7 @@ class AiCourseSaveServiceTest {
 
     private static UserPreference preference(User user) {
         return UserPreference.builder()
-                .bakeryTypes(List.of(com.breadbread.bakery.entity.BakeryType.CLASSIC))
+                .bakeryTypes(List.of(BakeryType.CLASSIC))
                 .bakeryPersonalities(List.of())
                 .bakeryUseTypes(List.of())
                 .waitingTolerance(WaitingTolerance.NO_WAIT)

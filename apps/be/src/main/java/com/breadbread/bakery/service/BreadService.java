@@ -1,7 +1,7 @@
 package com.breadbread.bakery.service;
 
-import com.breadbread.bakery.dto.CreateBreadRequest;
-import com.breadbread.bakery.dto.UpdateBreadRequest;
+import com.breadbread.bakery.dto.request.CreateBreadRequest;
+import com.breadbread.bakery.dto.request.UpdateBreadRequest;
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.Bread;
 import com.breadbread.bakery.repository.BakeryRepository;

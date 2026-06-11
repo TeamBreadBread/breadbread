@@ -1,7 +1,7 @@
 package com.breadbread.bakery.controller;
 
-import com.breadbread.bakery.dto.BakeryReportListResponse;
-import com.breadbread.bakery.entity.BakeryStatus;
+import com.breadbread.bakery.dto.response.BakeryReportListResponse;
+import com.breadbread.bakery.entity.enums.BakeryStatus;
 import com.breadbread.bakery.service.BakeryReportService;
 import com.breadbread.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;

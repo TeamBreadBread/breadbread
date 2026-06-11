@@ -2,7 +2,7 @@ package com.breadbread.course.entity;
 
 import com.breadbread.course.converter.CoordinateListConverter;
 import com.breadbread.course.converter.IntegerListConverter;
-import com.breadbread.course.dto.Coordinate;
+import com.breadbread.course.dto.route.Coordinate;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;

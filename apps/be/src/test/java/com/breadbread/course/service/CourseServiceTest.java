@@ -11,13 +11,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.breadbread.bakery.entity.Bakery;
-import com.breadbread.bakery.entity.BreadType;
+import com.breadbread.bakery.entity.enums.BakeryStatus;
+import com.breadbread.bakery.entity.enums.BreadType;
 import com.breadbread.bakery.repository.BakeryRepository;
-import com.breadbread.course.dto.CourseListResponse;
-import com.breadbread.course.dto.CourseSearch;
-import com.breadbread.course.dto.ManualCourseRequest;
-import com.breadbread.course.dto.RouteResponse;
-import com.breadbread.course.dto.UpdateCourseRequest;
+import com.breadbread.course.dto.request.CourseSearch;
+import com.breadbread.course.dto.request.ManualCourseRequest;
+import com.breadbread.course.dto.request.UpdateCourseRequest;
+import com.breadbread.course.dto.response.CourseListResponse;
+import com.breadbread.course.dto.response.RouteResponse;
 import com.breadbread.course.entity.AiCourseInfo;
 import com.breadbread.course.entity.BudgetRange;
 import com.breadbread.course.entity.Course;
@@ -211,7 +212,7 @@ class CourseServiceTest {
                             return c;
                         });
         when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
-                        List.of(1L, 1L), com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+                        List.of(1L, 1L), BakeryStatus.APPROVED))
                 .thenReturn(List.of(bakery(1L, "B")));
 
         assertThatThrownBy(() -> courseService.createManual(1L, request))
@@ -231,7 +232,7 @@ class CourseServiceTest {
                             return c;
                         });
         when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
-                        List.of(1L, 2L), com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+                        List.of(1L, 2L), BakeryStatus.APPROVED))
                 .thenReturn(List.of(bakery(1L, "B")));
 
         assertThatThrownBy(() -> courseService.createManual(1L, request))
@@ -253,7 +254,7 @@ class CourseServiceTest {
                             return c;
                         });
         when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
-                        List.of(10L, 20L), com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+                        List.of(10L, 20L), BakeryStatus.APPROVED))
                 .thenReturn(List.of(b1, b2));
 
         Long id = courseService.createManual(9L, request);
@@ -286,7 +287,7 @@ class CourseServiceTest {
         when(courseRepository.findByIdAndActiveTrue(3L)).thenReturn(Optional.of(course));
         Bakery b = bakery(30L, "새빵집");
         when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
-                        List.of(30L), com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+                        List.of(30L), BakeryStatus.APPROVED))
                 .thenReturn(List.of(b));
 
         UpdateCourseRequest request = new UpdateCourseRequest();
@@ -318,7 +319,7 @@ class CourseServiceTest {
         Course course = manualCourse(3L, "수정");
         when(courseRepository.findByIdAndActiveTrue(3L)).thenReturn(Optional.of(course));
         when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
-                        List.of(30L, 40L), com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+                        List.of(30L, 40L), BakeryStatus.APPROVED))
                 .thenReturn(List.of(bakery(30L, "있음")));
 
         UpdateCourseRequest request = new UpdateCourseRequest();

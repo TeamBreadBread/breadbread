@@ -1,6 +1,6 @@
 package com.breadbread.course.service;
 
-import com.breadbread.course.dto.RouteResult;
+import com.breadbread.course.dto.route.RouteResult;
 import com.breadbread.course.entity.CourseDrivingRoute;
 import com.breadbread.course.repository.CourseDrivingRouteRepository;
 import com.breadbread.course.repository.CourseRepository;

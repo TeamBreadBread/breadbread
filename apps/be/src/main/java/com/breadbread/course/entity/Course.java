@@ -1,6 +1,6 @@
 package com.breadbread.course.entity;
 
-import com.breadbread.bakery.entity.BreadType;
+import com.breadbread.bakery.entity.enums.BreadType;
 import com.breadbread.global.entity.BaseEntity;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;

@@ -2,9 +2,9 @@ package com.breadbread.course.service;
 
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.course.client.DrivingRouteClient;
-import com.breadbread.course.dto.Coordinate;
-import com.breadbread.course.dto.DrivingRouteResponse;
-import com.breadbread.course.dto.RouteResult;
+import com.breadbread.course.dto.response.DrivingRouteResponse;
+import com.breadbread.course.dto.route.Coordinate;
+import com.breadbread.course.dto.route.RouteResult;
 import com.breadbread.course.entity.AiCourseInfo;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseBakery;

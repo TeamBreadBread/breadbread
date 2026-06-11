@@ -1,8 +1,8 @@
 package com.breadbread.user.dto;
 
-import com.breadbread.bakery.entity.BakeryPersonality;
-import com.breadbread.bakery.entity.BakeryType;
-import com.breadbread.bakery.entity.BakeryUseType;
+import com.breadbread.bakery.entity.enums.BakeryPersonality;
+import com.breadbread.bakery.entity.enums.BakeryType;
+import com.breadbread.bakery.entity.enums.BakeryUseType;
 import com.breadbread.user.entity.WaitingTolerance;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;

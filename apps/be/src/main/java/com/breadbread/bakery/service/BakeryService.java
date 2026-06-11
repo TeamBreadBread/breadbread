@@ -1,7 +1,14 @@
 package com.breadbread.bakery.service;
 
-import com.breadbread.bakery.dto.*;
+import com.breadbread.bakery.dto.request.BakeryAiSearch;
+import com.breadbread.bakery.dto.request.BakerySearch;
+import com.breadbread.bakery.dto.request.CreateBakeryRequest;
+import com.breadbread.bakery.dto.request.UpdateBakeryRequest;
+import com.breadbread.bakery.dto.response.*;
 import com.breadbread.bakery.entity.*;
+import com.breadbread.bakery.entity.enums.BakerySortType;
+import com.breadbread.bakery.entity.enums.BakeryStatus;
+import com.breadbread.bakery.entity.enums.DayType;
 import com.breadbread.bakery.repository.*;
 import com.breadbread.bakery.service.BakeryImageService.PreviewBatch;
 import com.breadbread.course.repository.CourseBakeryRepository;

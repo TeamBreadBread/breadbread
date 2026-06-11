@@ -10,10 +10,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.breadbread.bakery.entity.Bakery;
+import com.breadbread.bakery.entity.enums.BreadType;
 import com.breadbread.course.client.DrivingRouteClient;
-import com.breadbread.course.dto.Coordinate;
-import com.breadbread.course.dto.DrivingRouteResponse;
-import com.breadbread.course.dto.RouteResult;
+import com.breadbread.course.dto.response.DrivingRouteResponse;
+import com.breadbread.course.dto.route.Coordinate;
+import com.breadbread.course.dto.route.RouteResult;
 import com.breadbread.course.entity.AiCourseInfo;
 import com.breadbread.course.entity.BudgetRange;
 import com.breadbread.course.entity.Course;
@@ -310,7 +311,7 @@ class CourseDrivingRouteServiceTest {
     // ── 헬퍼 ─────────────────────────────────────────────────────────────
 
     private static Course manualCourse(long id, String name) {
-        com.breadbread.bakery.entity.BreadType bt = com.breadbread.bakery.entity.BreadType.BREAD;
+        BreadType bt = BreadType.BREAD;
         ManualCourseInfo info = ManualCourseInfo.builder().editorPick(false).breadType(bt).build();
         Course course = Course.createManual(name, null, "1h", 1000L, "테마", "서울", info);
         ReflectionTestUtils.setField(course, "id", id);

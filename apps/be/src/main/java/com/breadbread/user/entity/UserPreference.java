@@ -1,8 +1,8 @@
 package com.breadbread.user.entity;
 
-import com.breadbread.bakery.entity.BakeryPersonality;
-import com.breadbread.bakery.entity.BakeryType;
-import com.breadbread.bakery.entity.BakeryUseType;
+import com.breadbread.bakery.entity.enums.BakeryPersonality;
+import com.breadbread.bakery.entity.enums.BakeryType;
+import com.breadbread.bakery.entity.enums.BakeryUseType;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;

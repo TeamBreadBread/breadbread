@@ -1,5 +1,8 @@
 package com.breadbread.bakery.entity;
 
+import com.breadbread.bakery.entity.enums.BakeryReportType;
+import com.breadbread.bakery.entity.enums.BakeryStatus;
+import com.breadbread.bakery.entity.enums.BakeryUpdateField;
 import com.breadbread.global.entity.BaseEntity;
 import com.breadbread.user.entity.User;
 import jakarta.persistence.CollectionTable;

@@ -1,8 +1,9 @@
 package com.breadbread.bakery.controller;
 
-import com.breadbread.bakery.dto.BakeryAdminListResponse;
-import com.breadbread.bakery.entity.BakeryStatus;
+import com.breadbread.bakery.dto.response.BakeryAdminListResponse;
+import com.breadbread.bakery.entity.enums.BakeryStatus;
 import com.breadbread.bakery.service.BakeryService;
+import com.breadbread.bakery.service.GooglePlacesUpdateService;
 import com.breadbread.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class AdminBakeryController {
 
     private final BakeryService bakeryService;
+    private final GooglePlacesUpdateService googlePlacesUpdateService;
 
     @Operation(summary = "빵집 목록 조회 (상태 필터)")
     @Parameter(name = "status", description = "빵집 상태 필터 (PENDING / APPROVED / REJECTED, 미입력 시 전체)")
@@ -58,6 +60,24 @@ public class AdminBakeryController {
     @PostMapping("/{id}/reject")
     public ApiResponse<Void> rejectBakery(@PathVariable Long id) {
         bakeryService.rejectBakery(id);
+        return ApiResponse.ok();
+    }
+
+    @Operation(
+            summary = "빵집 구글 Places 동기화",
+            description = "구글 Places API로 dong 및 이미지(placePhotoName)를 업데이트한다.")
+    @PostMapping("/{id}/sync-places")
+    public ApiResponse<Void> syncPlaces(@PathVariable Long id) {
+        googlePlacesUpdateService.syncBakery(id);
+        return ApiResponse.ok();
+    }
+
+    @Operation(
+            summary = "전체 빵집 구글 Places 동기화",
+            description = "활성 상태인 모든 빵집을 구글 Places API와 동기화한다. 개별 실패는 무시하고 계속 진행한다.")
+    @PostMapping("/sync-places")
+    public ApiResponse<Void> syncAllPlaces() {
+        googlePlacesUpdateService.syncAllBakeries();
         return ApiResponse.ok();
     }
 }

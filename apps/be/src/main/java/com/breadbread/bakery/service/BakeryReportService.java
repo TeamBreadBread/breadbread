@@ -1,13 +1,13 @@
 package com.breadbread.bakery.service;
 
-import com.breadbread.bakery.dto.BakeryReportListResponse;
-import com.breadbread.bakery.dto.BakeryReportResponse;
-import com.breadbread.bakery.dto.CreateNewBakeryReportRequest;
-import com.breadbread.bakery.dto.CreateUpdateBakeryReportRequest;
+import com.breadbread.bakery.dto.request.CreateNewBakeryReportRequest;
+import com.breadbread.bakery.dto.request.CreateUpdateBakeryReportRequest;
+import com.breadbread.bakery.dto.response.BakeryReportListResponse;
+import com.breadbread.bakery.dto.response.BakeryReportResponse;
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.BakeryReport;
-import com.breadbread.bakery.entity.BakeryReportType;
-import com.breadbread.bakery.entity.BakeryStatus;
+import com.breadbread.bakery.entity.enums.BakeryReportType;
+import com.breadbread.bakery.entity.enums.BakeryStatus;
 import com.breadbread.bakery.repository.BakeryReportRepository;
 import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.global.exception.CustomException;

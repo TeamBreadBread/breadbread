@@ -1,6 +1,6 @@
 package com.breadbread.course.dto.ai;
 
-import com.breadbread.bakery.dto.BakeryAiResponse;
+import com.breadbread.bakery.dto.response.BakeryAiResponse;
 import com.breadbread.user.dto.PreferenceResponse;
 import java.util.List;
 import lombok.Builder;
