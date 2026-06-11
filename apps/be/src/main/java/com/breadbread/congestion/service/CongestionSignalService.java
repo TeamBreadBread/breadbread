@@ -1,7 +1,7 @@
 package com.breadbread.congestion.service;
 
 import com.breadbread.bakery.entity.Bakery;
-import com.breadbread.bakery.entity.BakeryStatus;
+import com.breadbread.bakery.entity.enums.BakeryStatus;
 import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.congestion.dto.CongestionResponse;
 import com.breadbread.congestion.dto.CongestionSignalRequest;

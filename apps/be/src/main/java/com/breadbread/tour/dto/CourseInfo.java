@@ -1,9 +1,9 @@
 package com.breadbread.tour.dto;
 
-import com.breadbread.bakery.entity.BakeryPersonality;
-import com.breadbread.bakery.entity.BakeryType;
-import com.breadbread.bakery.entity.BakeryUseType;
-import com.breadbread.bakery.entity.BreadType;
+import com.breadbread.bakery.entity.enums.BakeryPersonality;
+import com.breadbread.bakery.entity.enums.BakeryType;
+import com.breadbread.bakery.entity.enums.BakeryUseType;
+import com.breadbread.bakery.entity.enums.BreadType;
 import com.breadbread.course.entity.AiCourseInfo;
 import com.breadbread.course.entity.BudgetRange;
 import com.breadbread.course.entity.Course;

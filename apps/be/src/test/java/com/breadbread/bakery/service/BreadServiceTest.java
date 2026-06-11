@@ -7,11 +7,11 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.breadbread.bakery.dto.CreateBreadRequest;
-import com.breadbread.bakery.dto.UpdateBreadRequest;
+import com.breadbread.bakery.dto.request.CreateBreadRequest;
+import com.breadbread.bakery.dto.request.UpdateBreadRequest;
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.Bread;
-import com.breadbread.bakery.entity.BreadType;
+import com.breadbread.bakery.entity.enums.BreadType;
 import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.bakery.repository.BreadRepository;
 import com.breadbread.global.dto.UploadFolder;

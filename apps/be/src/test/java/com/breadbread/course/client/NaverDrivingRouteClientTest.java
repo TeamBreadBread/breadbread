@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.breadbread.course.config.NaverMapsProperties;
-import com.breadbread.course.dto.Coordinate;
-import com.breadbread.course.dto.RouteResult;
+import com.breadbread.course.dto.route.Coordinate;
+import com.breadbread.course.dto.route.RouteResult;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import java.util.List;

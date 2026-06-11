@@ -1,9 +1,9 @@
 package com.breadbread.course.service;
 
 import com.breadbread.bakery.entity.Bakery;
-import com.breadbread.course.dto.DrivingRouteResponse;
-import com.breadbread.course.dto.ReorderBakeriesRequest;
-import com.breadbread.course.dto.ReorderBakeriesResponse;
+import com.breadbread.course.dto.request.ReorderBakeriesRequest;
+import com.breadbread.course.dto.response.DrivingRouteResponse;
+import com.breadbread.course.dto.response.ReorderBakeriesResponse;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseBakery;
 import com.breadbread.course.repository.CourseBakeryRepository;

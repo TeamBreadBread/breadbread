@@ -1,8 +1,8 @@
 package com.breadbread.bakery.controller;
 
 import com.breadbread.auth.dto.CustomUserDetails;
-import com.breadbread.bakery.dto.CreateNewBakeryReportRequest;
-import com.breadbread.bakery.dto.CreateUpdateBakeryReportRequest;
+import com.breadbread.bakery.dto.request.CreateNewBakeryReportRequest;
+import com.breadbread.bakery.dto.request.CreateUpdateBakeryReportRequest;
 import com.breadbread.bakery.service.BakeryReportService;
 import com.breadbread.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;

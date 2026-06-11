@@ -1,6 +1,6 @@
 package com.breadbread.reservation.dto;
 
-import com.breadbread.course.dto.CourseSummaryResponse;
+import com.breadbread.course.dto.response.CourseSummaryResponse;
 import com.breadbread.reservation.entity.Reservation;
 import com.breadbread.reservation.entity.ReservationStatus;
 import java.time.LocalDate;

@@ -1,6 +1,7 @@
 package com.breadbread.bakery.entity;
 
-import com.breadbread.bakery.dto.UpdateBreadRequest;
+import com.breadbread.bakery.dto.request.UpdateBreadRequest;
+import com.breadbread.bakery.entity.enums.BreadType;
 import jakarta.persistence.*;
 import lombok.*;
 

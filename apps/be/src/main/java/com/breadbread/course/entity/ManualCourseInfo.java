@@ -1,6 +1,6 @@
 package com.breadbread.course.entity;
 
-import com.breadbread.bakery.entity.BreadType;
+import com.breadbread.bakery.entity.enums.BreadType;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;

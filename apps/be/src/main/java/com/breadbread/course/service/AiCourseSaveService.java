@@ -1,7 +1,7 @@
 package com.breadbread.course.service;
 
 import com.breadbread.bakery.entity.Bakery;
-import com.breadbread.bakery.entity.BakeryStatus;
+import com.breadbread.bakery.entity.enums.BakeryStatus;
 import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.course.dto.ai.AiCoursePreviewBakeryResponse;
 import com.breadbread.course.dto.ai.AiCoursePreviewResponse;

@@ -4,10 +4,11 @@ import com.breadbread.auth.entity.VerificationPurpose;
 import com.breadbread.auth.redis.PhoneVerificationCache;
 import com.breadbread.auth.service.PhoneVerificationRedisService;
 import com.breadbread.auth.service.TokenService;
-import com.breadbread.bakery.dto.BakeryListResponse;
-import com.breadbread.bakery.dto.BakerySummaryResponse;
-import com.breadbread.bakery.dto.MyReviewListResponse;
-import com.breadbread.bakery.dto.MyReviewResponse;
+import com.breadbread.bakery.dto.response.BakeryCourseSummaryResponse;
+import com.breadbread.bakery.dto.response.BakeryListResponse;
+import com.breadbread.bakery.dto.response.BakerySummaryResponse;
+import com.breadbread.bakery.dto.response.MyReviewListResponse;
+import com.breadbread.bakery.dto.response.MyReviewResponse;
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.BakeryLike;
 import com.breadbread.bakery.entity.Review;
@@ -15,9 +16,8 @@ import com.breadbread.bakery.repository.BakeryImageRepository;
 import com.breadbread.bakery.repository.BakeryLikeRepository;
 import com.breadbread.bakery.repository.ReviewRepository;
 import com.breadbread.bakery.service.BakeryImageUrlResolver;
-import com.breadbread.course.dto.CourseBakerySummary;
-import com.breadbread.course.dto.CourseListResponse;
-import com.breadbread.course.dto.CourseSummaryResponse;
+import com.breadbread.course.dto.response.CourseListResponse;
+import com.breadbread.course.dto.response.CourseSummaryResponse;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseBakery;
 import com.breadbread.course.entity.CourseLike;
@@ -401,12 +401,12 @@ public class UserService {
             Map<Long, String> thumbnailMap,
             Map<Long, Integer> likeCountMap,
             HashSet<Long> savedCourseIds) {
-        List<CourseBakerySummary> bakeries =
+        List<BakeryCourseSummaryResponse> bakeries =
                 course.getCourseBakeries().stream()
                         .sorted(Comparator.comparingInt(CourseBakery::getVisitOrder))
                         .map(
                                 cb ->
-                                        CourseBakerySummary.from(
+                                        BakeryCourseSummaryResponse.from(
                                                 cb.getBakery(),
                                                 thumbnailMap.get(cb.getBakery().getId())))
                         .toList();

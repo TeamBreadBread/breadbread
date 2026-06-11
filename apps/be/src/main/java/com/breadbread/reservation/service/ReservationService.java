@@ -1,9 +1,9 @@
 package com.breadbread.reservation.service;
 
+import com.breadbread.bakery.dto.response.BakeryCourseSummaryResponse;
 import com.breadbread.bakery.repository.BakeryImageRepository;
 import com.breadbread.bakery.service.BakeryImageUrlResolver;
-import com.breadbread.course.dto.CourseBakerySummary;
-import com.breadbread.course.dto.CourseSummaryResponse;
+import com.breadbread.course.dto.response.CourseSummaryResponse;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseBakery;
 import com.breadbread.course.repository.CourseLikeRepository;
@@ -209,11 +209,11 @@ public class ReservationService {
                             String url = bakeryImageUrlResolver.resolve(img);
                             if (url != null) thumbnailMap.putIfAbsent(img.getBakery().getId(), url);
                         });
-        List<CourseBakerySummary> bakeries =
+        List<BakeryCourseSummaryResponse> bakeries =
                 courseBakeries.stream()
                         .map(
                                 cb ->
-                                        CourseBakerySummary.from(
+                                        BakeryCourseSummaryResponse.from(
                                                 cb.getBakery(),
                                                 thumbnailMap.get(cb.getBakery().getId())))
                         .toList();

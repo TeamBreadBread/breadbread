@@ -1,7 +1,7 @@
 package com.breadbread.bakery.repository;
 
 import com.breadbread.bakery.entity.BakeryReport;
-import com.breadbread.bakery.entity.BakeryStatus;
+import com.breadbread.bakery.entity.enums.BakeryStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.BakeryImage;
-import com.breadbread.bakery.entity.BakeryType;
+import com.breadbread.bakery.entity.enums.BakeryType;
 import com.breadbread.bakery.repository.BakeryImageRepository;
 import com.breadbread.bakery.service.BakeryImageUrlResolver;
 import com.breadbread.course.entity.Course;

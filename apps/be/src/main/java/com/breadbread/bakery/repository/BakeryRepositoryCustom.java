@@ -1,7 +1,7 @@
 package com.breadbread.bakery.repository;
 
-import com.breadbread.bakery.dto.BakeryAiSearch;
-import com.breadbread.bakery.dto.BakerySearch;
+import com.breadbread.bakery.dto.request.BakeryAiSearch;
+import com.breadbread.bakery.dto.request.BakerySearch;
 import com.breadbread.bakery.entity.Bakery;
 import java.util.List;
 import org.springframework.data.domain.Page;

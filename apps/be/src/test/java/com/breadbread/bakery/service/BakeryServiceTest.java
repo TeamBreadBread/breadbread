@@ -9,17 +9,20 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.breadbread.bakery.dto.BakeryAiSearch;
-import com.breadbread.bakery.dto.BakerySearch;
-import com.breadbread.bakery.dto.CreateBakeryRequest;
-import com.breadbread.bakery.dto.UpdateBakeryRequest;
+import com.breadbread.bakery.dto.request.BakeryAiSearch;
+import com.breadbread.bakery.dto.request.BakerySearch;
+import com.breadbread.bakery.dto.request.CreateBakeryRequest;
+import com.breadbread.bakery.dto.request.UpdateBakeryRequest;
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.BakeryLike;
 import com.breadbread.bakery.entity.Bread;
-import com.breadbread.bakery.entity.BreadType;
-import com.breadbread.bakery.entity.CrowdLevel;
 import com.breadbread.bakery.entity.CrowdTime;
-import com.breadbread.bakery.entity.DayType;
+import com.breadbread.bakery.entity.enums.BakerySortType;
+import com.breadbread.bakery.entity.enums.BakeryStatus;
+import com.breadbread.bakery.entity.enums.BakeryType;
+import com.breadbread.bakery.entity.enums.BreadType;
+import com.breadbread.bakery.entity.enums.CrowdLevel;
+import com.breadbread.bakery.entity.enums.DayType;
 import com.breadbread.bakery.repository.BakeryImageRepository;
 import com.breadbread.bakery.repository.BakeryLikeRepository;
 import com.breadbread.bakery.repository.BakeryRepository;
@@ -249,8 +252,7 @@ class BakeryServiceTest {
         CrowdTime weekday = crowdTimeOf(b, DayType.WEEKDAY);
         CrowdTime weekend = crowdTimeOf(b, DayType.WEEKEND);
 
-        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
-                        1L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(1L, BakeryStatus.APPROVED))
                 .thenReturn(Optional.of(b));
         when(breadRepository.findAllByBakeryIdIn(List.of(1L))).thenReturn(List.of(bread));
         when(crowdTimeRepository.findAllByBakeryIdIn(List.of(1L)))
@@ -265,8 +267,7 @@ class BakeryServiceTest {
 
     @Test
     void findOneForAi_throws_when_bakery_missing() {
-        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
-                        99L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(99L, BakeryStatus.APPROVED))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> bakeryService.findOneForAi(99L))
@@ -331,8 +332,7 @@ class BakeryServiceTest {
 
     @Test
     void findOne_throws_whenMissing() {
-        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
-                        1L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(1L, BakeryStatus.APPROVED))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> bakeryService.findOne(1L, null))
@@ -344,8 +344,7 @@ class BakeryServiceTest {
     @Test
     void findOne_setsLiked_whenUserPresent() {
         Bakery b = bakeryWithId(3L);
-        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
-                        3L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(3L, BakeryStatus.APPROVED))
                 .thenReturn(Optional.of(b));
         when(bakeryLikeRepository.countByBakery(b)).thenReturn(4L);
         when(bakeryLikeRepository.existsByBakeryIdAndUserId(3L, 9L)).thenReturn(true);
@@ -481,8 +480,7 @@ class BakeryServiceTest {
     @Test
     void like_throws_whenAlreadyLiked() {
         Bakery bakery = bakeryWithId(1L);
-        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
-                        1L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(1L, BakeryStatus.APPROVED))
                 .thenReturn(Optional.of(bakery));
         when(userRepository.findById(5L)).thenReturn(Optional.of(user(5L, UserRole.ROLE_USER)));
         doThrow(new DataIntegrityViolationException("dup"))
@@ -499,8 +497,7 @@ class BakeryServiceTest {
     void like_maps_integrity_violation_when_duplicate_insert() {
         Bakery bakery = bakeryWithId(1L);
         User user = user(5L, UserRole.ROLE_USER);
-        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
-                        1L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(1L, BakeryStatus.APPROVED))
                 .thenReturn(Optional.of(bakery));
         when(userRepository.findById(5L)).thenReturn(Optional.of(user));
         doThrow(new DataIntegrityViolationException("dup"))
@@ -541,8 +538,7 @@ class BakeryServiceTest {
     void like_savesLike_whenUserAndBakeryExist() {
         Bakery bakery = bakeryWithId(1L);
         User liker = user(5L, UserRole.ROLE_USER);
-        when(bakeryRepository.findByIdAndActiveTrueAndStatus(
-                        1L, com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(1L, BakeryStatus.APPROVED))
                 .thenReturn(Optional.of(bakery));
         when(userRepository.findById(5L)).thenReturn(Optional.of(liker));
 
@@ -588,10 +584,7 @@ class BakeryServiceTest {
 
     @Test
     void search_throws_when_NEARBY_and_no_coords() {
-        BakerySearch search =
-                BakerySearch.builder()
-                        .sort(com.breadbread.bakery.entity.BakerySortType.NEARBY)
-                        .build();
+        BakerySearch search = BakerySearch.builder().sort(BakerySortType.NEARBY).build();
 
         assertThatThrownBy(() -> bakeryService.search(search, PageRequest.of(0, 10), null))
                 .isInstanceOf(CustomException.class)
@@ -624,7 +617,7 @@ class BakeryServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         BakerySearch search =
                 BakerySearch.builder()
-                        .sort(com.breadbread.bakery.entity.BakerySortType.NEARBY)
+                        .sort(BakerySortType.NEARBY)
                         .userLat(36.35)
                         .userLng(127.38)
                         .build();
@@ -641,10 +634,7 @@ class BakeryServiceTest {
 
     @Test
     void searchSimple_throws_when_NEARBY_and_no_coords() {
-        BakerySearch search =
-                BakerySearch.builder()
-                        .sort(com.breadbread.bakery.entity.BakerySortType.NEARBY)
-                        .build();
+        BakerySearch search = BakerySearch.builder().sort(BakerySortType.NEARBY).build();
 
         assertThatThrownBy(() -> bakeryService.searchSimple(search, PageRequest.of(0, 10)))
                 .isInstanceOf(CustomException.class)
@@ -685,8 +675,7 @@ class BakeryServiceTest {
 
         bakeryService.approveBakery(100L);
 
-        assertThat(bakery.getStatus())
-                .isEqualTo(com.breadbread.bakery.entity.BakeryStatus.APPROVED);
+        assertThat(bakery.getStatus()).isEqualTo(BakeryStatus.APPROVED);
     }
 
     @Test
@@ -699,15 +688,14 @@ class BakeryServiceTest {
                         .dong("역삼동")
                         .latitude(0.0)
                         .longitude(127.0)
-                        .bakeryType(com.breadbread.bakery.entity.BakeryType.PLAIN)
+                        .bakeryType(BakeryType.PLAIN)
                         .dineInAvailable(false)
                         .parkingAvailable(false)
                         .drinkAvailable(false)
                         .holidayClosed(false)
                         .build();
         ReflectionTestUtils.setField(bakery, "id", 100L);
-        ReflectionTestUtils.setField(
-                bakery, "status", com.breadbread.bakery.entity.BakeryStatus.PENDING);
+        ReflectionTestUtils.setField(bakery, "status", BakeryStatus.PENDING);
         when(bakeryRepository.findByIdAndActiveTrue(100L)).thenReturn(Optional.of(bakery));
 
         assertThatThrownBy(() -> bakeryService.approveBakery(100L))
@@ -730,8 +718,7 @@ class BakeryServiceTest {
                         .holidayClosed(false)
                         .build();
         ReflectionTestUtils.setField(bakery, "id", 101L);
-        ReflectionTestUtils.setField(
-                bakery, "status", com.breadbread.bakery.entity.BakeryStatus.PENDING);
+        ReflectionTestUtils.setField(bakery, "status", BakeryStatus.PENDING);
         when(bakeryRepository.findByIdAndActiveTrue(101L)).thenReturn(Optional.of(bakery));
 
         assertThatThrownBy(() -> bakeryService.approveBakery(101L))
@@ -760,8 +747,7 @@ class BakeryServiceTest {
 
         bakeryService.rejectBakery(200L);
 
-        assertThat(bakery.getStatus())
-                .isEqualTo(com.breadbread.bakery.entity.BakeryStatus.REJECTED);
+        assertThat(bakery.getStatus()).isEqualTo(BakeryStatus.REJECTED);
     }
 
     @Test
@@ -784,15 +770,14 @@ class BakeryServiceTest {
                         .dong("역삼동")
                         .latitude(37.5)
                         .longitude(127.0)
-                        .bakeryType(com.breadbread.bakery.entity.BakeryType.PLAIN)
+                        .bakeryType(BakeryType.PLAIN)
                         .dineInAvailable(false)
                         .parkingAvailable(false)
                         .drinkAvailable(false)
                         .holidayClosed(false)
                         .build();
         ReflectionTestUtils.setField(b, "id", id);
-        ReflectionTestUtils.setField(
-                b, "status", com.breadbread.bakery.entity.BakeryStatus.PENDING);
+        ReflectionTestUtils.setField(b, "status", BakeryStatus.PENDING);
         return b;
     }
 

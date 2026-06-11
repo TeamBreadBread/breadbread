@@ -1,17 +1,17 @@
 package com.breadbread.course.service;
 
-import com.breadbread.bakery.dto.BakerySummaryResponse;
+import com.breadbread.bakery.dto.response.BakeryCourseSummaryResponse;
+import com.breadbread.bakery.dto.response.BakerySummaryResponse;
 import com.breadbread.bakery.entity.Bakery;
-import com.breadbread.bakery.entity.BakeryStatus;
+import com.breadbread.bakery.entity.enums.BakeryStatus;
 import com.breadbread.bakery.repository.BakeryRepository;
-import com.breadbread.course.dto.CourseBakerySummary;
-import com.breadbread.course.dto.CourseDetailResponse;
-import com.breadbread.course.dto.CourseListResponse;
-import com.breadbread.course.dto.CourseSearch;
-import com.breadbread.course.dto.CourseSummaryResponse;
-import com.breadbread.course.dto.ManualCourseRequest;
-import com.breadbread.course.dto.RouteResponse;
-import com.breadbread.course.dto.UpdateCourseRequest;
+import com.breadbread.course.dto.request.CourseSearch;
+import com.breadbread.course.dto.request.ManualCourseRequest;
+import com.breadbread.course.dto.request.UpdateCourseRequest;
+import com.breadbread.course.dto.response.CourseDetailResponse;
+import com.breadbread.course.dto.response.CourseListResponse;
+import com.breadbread.course.dto.response.CourseSummaryResponse;
+import com.breadbread.course.dto.response.RouteResponse;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseBakery;
 import com.breadbread.course.entity.CourseLike;
@@ -96,18 +96,20 @@ public class CourseService {
                 content.stream()
                         .map(
                                 course -> {
-                                    List<CourseBakerySummary> bakeries =
+                                    List<BakeryCourseSummaryResponse> bakeries =
                                             course.getCourseBakeries().stream()
                                                     .sorted(
                                                             Comparator.comparingInt(
                                                                     CourseBakery::getVisitOrder))
                                                     .map(
                                                             cb ->
-                                                                    CourseBakerySummary.from(
-                                                                            cb.getBakery(),
-                                                                            thumbnailMap.get(
-                                                                                    cb.getBakery()
-                                                                                            .getId())))
+                                                                    BakeryCourseSummaryResponse
+                                                                            .from(
+                                                                                    cb.getBakery(),
+                                                                                    thumbnailMap
+                                                                                            .get(
+                                                                                                    cb.getBakery()
+                                                                                                            .getId())))
                                                     .toList();
                                     return CourseSummaryResponse.from(
                                             course,

@@ -8,8 +8,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.breadbread.bakery.entity.Bakery;
-import com.breadbread.bakery.entity.BakeryType;
-import com.breadbread.bakery.entity.BreadType;
+import com.breadbread.bakery.entity.enums.BakeryStatus;
+import com.breadbread.bakery.entity.enums.BakeryType;
+import com.breadbread.bakery.entity.enums.BreadType;
 import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.bakery.repository.BreadRepository;
 import com.breadbread.bakery.repository.CrowdTimeRepository;
@@ -104,8 +105,7 @@ class AiCourseAsyncServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
         when(userPreferenceRepository.findByUserId(1L))
                 .thenReturn(Optional.of(preference(user(1L))));
-        when(bakeryRepository.findAllByActiveTrueAndStatus(
-                        com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findAllByActiveTrueAndStatus(BakeryStatus.APPROVED))
                 .thenReturn(List.of());
         when(breadRepository.findAllByBakeryIdIn(List.of())).thenReturn(List.of());
         when(crowdTimeRepository.findAllByBakeryIdIn(List.of())).thenReturn(List.of());
@@ -121,8 +121,7 @@ class AiCourseAsyncServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
         when(userPreferenceRepository.findByUserId(1L))
                 .thenReturn(Optional.of(preference(user(1L))));
-        when(bakeryRepository.findAllByActiveTrueAndStatus(
-                        com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findAllByActiveTrueAndStatus(BakeryStatus.APPROVED))
                 .thenReturn(List.of());
         when(breadRepository.findAllByBakeryIdIn(List.of())).thenReturn(List.of());
         when(crowdTimeRepository.findAllByBakeryIdIn(List.of())).thenReturn(List.of());
@@ -142,8 +141,7 @@ class AiCourseAsyncServiceTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userPreferenceRepository.findByUserId(1L)).thenReturn(Optional.of(preference(user)));
-        when(bakeryRepository.findAllByActiveTrueAndStatus(
-                        com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findAllByActiveTrueAndStatus(BakeryStatus.APPROVED))
                 .thenReturn(List.of(bakery));
         when(breadRepository.findAllByBakeryIdIn(List.of(10L))).thenReturn(List.of());
         when(crowdTimeRepository.findAllByBakeryIdIn(List.of(10L))).thenReturn(List.of());
@@ -166,8 +164,7 @@ class AiCourseAsyncServiceTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userPreferenceRepository.findByUserId(1L)).thenReturn(Optional.of(preference(user)));
-        when(bakeryRepository.findAllByActiveTrueAndStatus(
-                        com.breadbread.bakery.entity.BakeryStatus.APPROVED))
+        when(bakeryRepository.findAllByActiveTrueAndStatus(BakeryStatus.APPROVED))
                 .thenReturn(List.of(bakery));
         when(breadRepository.findAllByBakeryIdIn(List.of(10L))).thenReturn(List.of());
         when(crowdTimeRepository.findAllByBakeryIdIn(List.of(10L))).thenReturn(List.of());

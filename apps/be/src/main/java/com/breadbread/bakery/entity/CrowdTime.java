@@ -1,5 +1,7 @@
 package com.breadbread.bakery.entity;
 
+import com.breadbread.bakery.entity.enums.CrowdLevel;
+import com.breadbread.bakery.entity.enums.DayType;
 import com.breadbread.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import java.time.LocalTime;

@@ -1,9 +1,9 @@
 package com.breadbread.user.controller;
 
 import com.breadbread.auth.dto.CustomUserDetails;
-import com.breadbread.bakery.dto.BakeryListResponse;
-import com.breadbread.bakery.dto.MyReviewListResponse;
-import com.breadbread.course.dto.CourseListResponse;
+import com.breadbread.bakery.dto.response.BakeryListResponse;
+import com.breadbread.bakery.dto.response.MyReviewListResponse;
+import com.breadbread.course.dto.response.CourseListResponse;
 import com.breadbread.global.dto.ApiResponse;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;

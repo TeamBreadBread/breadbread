@@ -1,8 +1,9 @@
 package com.breadbread.bakery.repository;
 
-import com.breadbread.bakery.dto.BakeryAiSearch;
-import com.breadbread.bakery.dto.BakerySearch;
+import com.breadbread.bakery.dto.request.BakeryAiSearch;
+import com.breadbread.bakery.dto.request.BakerySearch;
 import com.breadbread.bakery.entity.*;
+import com.breadbread.bakery.entity.enums.*;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -39,8 +40,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
         BooleanExpression region = eqRegion(bakery, search.getRegion());
         BooleanExpression dong = eqDong(bakery, search.getDong());
         BooleanExpression active = bakery.active.isTrue();
-        BooleanExpression approved =
-                bakery.status.eq(com.breadbread.bakery.entity.BakeryStatus.APPROVED);
+        BooleanExpression approved = bakery.status.eq(BakeryStatus.APPROVED);
         BooleanExpression withinRadius = withinRadius(bakery, search);
         OrderSpecifier<Integer> openFirst = openFirstOrder(bakery, search.isOpen());
 
@@ -234,7 +234,7 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
 
         List<BooleanExpression> conditions = new ArrayList<>();
         conditions.add(bakery.active.isTrue());
-        conditions.add(bakery.status.eq(com.breadbread.bakery.entity.BakeryStatus.APPROVED));
+        conditions.add(bakery.status.eq(BakeryStatus.APPROVED));
         conditions.add(containKeyword(bakery, search.getKeyword()));
         conditions.add(eqRegion(bakery, search.getRegion()));
         conditions.add(eqDrinkAvailable(bakery, search.getDrinkAvailable()));

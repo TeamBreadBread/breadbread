@@ -1,8 +1,8 @@
 package com.breadbread.course.repository;
 
-import com.breadbread.bakery.entity.BreadType;
 import com.breadbread.bakery.entity.QBakery;
-import com.breadbread.course.dto.CourseSearch;
+import com.breadbread.bakery.entity.enums.BreadType;
+import com.breadbread.course.dto.request.CourseSearch;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.QCourse;
 import com.breadbread.course.entity.QCourseBakery;
