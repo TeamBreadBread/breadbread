@@ -36,17 +36,17 @@ export default function PwaUpdatePrompt() {
       <div
         role="alertdialog"
         aria-label="새 업데이트 알림"
-        className="pointer-events-auto flex items-center gap-x3 rounded-r4 bg-gray-1000 px-x4 py-x3 shadow-[0_8px_28px_rgba(0,0,0,0.28)]"
+        className="pointer-events-auto flex items-center gap-x3 rounded-r4 bg-gray-100 px-x4 py-x3 shadow-[0_8px_28px_rgba(0,0,0,0.12)]"
       >
-        <p className="min-w-0 flex-1 font-pretendard text-size-3 leading-t5 text-gray-00">
+        <p className="min-w-0 flex-1 font-pretendard text-size-3 leading-t5 text-gray-1000">
           새 업데이트가 있습니다!
           <br />
-          <span className="text-gray-300">새로고침하면 최신 버전이 적용돼요.</span>
+          <span className="text-gray-600">새로고침하면 최신 버전이 적용돼요.</span>
         </p>
         <button
           type="button"
           onClick={() => setNeedRefresh(false)}
-          className="shrink-0 rounded-r2 px-x2 py-x2 font-pretendard text-size-3 text-gray-400 transition-colors hover:text-gray-200"
+          className="shrink-0 rounded-r2 px-x2 py-x2 font-pretendard text-size-3 text-gray-600 transition-colors hover:text-gray-900"
         >
           나중에
         </button>

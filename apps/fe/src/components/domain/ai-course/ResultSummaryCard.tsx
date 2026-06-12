@@ -39,7 +39,7 @@ export default function ResultSummaryCard({
   const durationLabel = formatCourseEstimatedTime(summary.duration) || summary.duration;
 
   return (
-    <section className="flex items-center gap-x2_5 bg-white px-x5 pt-x9 pb-x6">
+    <section className="flex items-center gap-[10px] bg-white px-x5 pt-x9 pb-x6">
       {iconSeed != null ? (
         <CourseBreadThumbnail seed={iconSeed} size={60} />
       ) : (

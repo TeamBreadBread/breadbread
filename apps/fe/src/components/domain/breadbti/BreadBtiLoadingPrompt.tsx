@@ -29,9 +29,6 @@ export default function BreadBtiLoadingPrompt() {
       >
         BreadBTI 하러가기
       </button>
-      <p className="mt-x2 text-center font-pretendard text-size-2 leading-t4 text-[#B87333]">
-        코스 생성이 끝나면 결과 페이지로 이동해요
-      </p>
     </div>
   );
 }
