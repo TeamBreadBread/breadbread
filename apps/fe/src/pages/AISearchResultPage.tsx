@@ -34,6 +34,8 @@ import { AI_COURSE_RESULT_STORAGE_KEY, saveRouteFocusCourseId } from "@/utils/ai
 import { buildBbakeryDetailSearch } from "@/utils/bakeryListEntry";
 import ResultCTASection from "@/components/domain/ai-course/ResultCTASection";
 import SaveRouteBanner from "@/components/domain/ai-course/SaveRouteBanner";
+import ActiveTourConflictDialog from "@/components/common/dialog/ActiveTourConflictDialog";
+import { hasConflictingActiveTour } from "@/utils/activeTourGuard";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
 import { findMatchingSavedRoute, isSameCourseRouteContent } from "@/utils/courseRouteCompare";
 
@@ -209,6 +211,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
   }, []);
 
   const [showSavedBanner, setShowSavedBanner] = useState(false);
+  const [activeTourConflictOpen, setActiveTourConflictOpen] = useState(false);
 
   const { sheetRef, contentRef, liveSheetTopY, isDragging, isHalfSheet, togglePhase } =
     useAiSearchBottomSheet();
@@ -222,6 +225,10 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
   const handleCourseGuide = async () => {
     if (!effectiveCourseId) {
       window.alert("안내할 코스 정보를 찾지 못했습니다.");
+      return;
+    }
+    if (await hasConflictingActiveTour(effectiveCourseId)) {
+      setActiveTourConflictOpen(true);
       return;
     }
     if (from === "route") {
@@ -461,13 +468,18 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
       {showSavedBanner ? (
         <div
           className={cn(
-            "fixed bottom-[calc(160px+env(safe-area-inset-bottom))] left-1/2 z-30 w-full -translate-x-1/2",
+            "fixed bottom-[calc(72px+env(safe-area-inset-bottom))] left-1/2 z-30 w-full -translate-x-1/2",
             RESPONSIVE_FRAME_WIDTH,
           )}
         >
           <SaveRouteBanner />
         </div>
       ) : null}
+
+      <ActiveTourConflictDialog
+        open={activeTourConflictOpen}
+        onConfirm={() => setActiveTourConflictOpen(false)}
+      />
 
       {from === "route" ? (
         <div

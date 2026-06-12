@@ -16,6 +16,7 @@ import com.breadbread.course.entity.CourseType;
 import com.breadbread.course.repository.CourseDrivingRouteRepository;
 import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.course.service.ai.AiCourseAsyncService;
+import com.breadbread.course.service.ai.AiCourseNameResolver;
 import com.breadbread.course.service.ai.AiCourseRedisService;
 import com.breadbread.course.service.ai.AiCourseResultRedisService;
 import com.breadbread.global.exception.CustomException;
@@ -172,9 +173,11 @@ public class AiCourseSaveService {
                             .recommendReason(response.getRecommendReason())
                             .build();
 
+            String courseName = AiCourseNameResolver.resolve(response);
+
             Course course =
                     Course.createAi(
-                            response.getName(),
+                            courseName,
                             user,
                             userPreference,
                             aiCourseInfo,

@@ -71,6 +71,8 @@ import {
   type CongestionChatContext,
   type CourseMovementBubble,
 } from "@/components/domain/curator/breadBotChat.types";
+import ActiveTourConflictDialog from "@/components/common/dialog/ActiveTourConflictDialog";
+import { hasConflictingActiveTour } from "@/utils/activeTourGuard";
 
 const CHAT_STORAGE_KEY = "breadbot:chat:v1";
 const RESERVE_NUDGE_FIRED_KEY = "bbang_reserve_nudge_fired";
@@ -404,6 +406,7 @@ export default function BreadBotWidget({
   const [celebrationBubble, setCelebrationBubble] = useState<{ courseName: string } | null>(null);
   const [arrivalBusy, setArrivalBusy] = useState(false);
   const [arrivalRecheckNonce, setArrivalRecheckNonce] = useState(0);
+  const [activeTourConflictOpen, setActiveTourConflictOpen] = useState(false);
 
   const dismissedTourRef = useRef<Set<string>>(new Set());
   const dismissedArrivalRef = useRef<Set<string>>(new Set());
@@ -516,6 +519,10 @@ export default function BreadBotWidget({
 
   const handleAutoTourStart = useCallback(
     async (tourCourseId: number, reservationId: number, courseName: string) => {
+      if (await hasConflictingActiveTour(tourCourseId)) {
+        setActiveTourConflictOpen(true);
+        return;
+      }
       startCourseGuide(tourCourseId);
       await startTour(tourCourseId).catch(() => undefined);
       setActiveTourCourseId(tourCourseId);
@@ -628,15 +635,6 @@ export default function BreadBotWidget({
         }
 
         if (current?.status === "IN_PROGRESS") {
-          const key = `resume:${current.courseId}`;
-          if (!dismissedTourRef.current.has(key)) {
-            setTourBubble({
-              courseId: current.courseId,
-              courseName: "",
-              mode: "resume",
-              dismissKey: key,
-            });
-          }
           setReserveNudgeBubble(null);
           return;
         }
@@ -1189,6 +1187,12 @@ export default function BreadBotWidget({
   const handleTourStart = async () => {
     if (!tourBubble) return;
     const { courseId: tourCourseId, mode } = tourBubble;
+    if (mode === "start" || mode === "autostart") {
+      if (await hasConflictingActiveTour(tourCourseId)) {
+        setActiveTourConflictOpen(true);
+        return;
+      }
+    }
     setTourBubble(null);
     startCourseGuide(tourCourseId);
     if (mode === "start" || mode === "autostart") {
@@ -1266,12 +1270,10 @@ export default function BreadBotWidget({
     courseMovementBubble !== null &&
     showFloatingButton &&
     !open &&
+    !onTourPage &&
     courseGuideActive;
   const showTourBubble =
-    tourBubble !== null &&
-    !open &&
-    !onTourPage &&
-    (tourBubble.mode !== "resume" || courseGuideActive);
+    tourBubble !== null && !open && !onTourPage && tourBubble.mode !== "resume";
   const showChangeBubble =
     !showTourArrivalBubble &&
     !showCourseMovementBubble &&
@@ -1486,6 +1488,11 @@ export default function BreadBotWidget({
           </button>
         </div>
       ) : null}
+
+      <ActiveTourConflictDialog
+        open={activeTourConflictOpen}
+        onConfirm={() => setActiveTourConflictOpen(false)}
+      />
     </>
   );
 }

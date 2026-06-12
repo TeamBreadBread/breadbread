@@ -94,10 +94,17 @@ export function LoginRequiredProvider({ children }: { children: ReactNode }) {
   const resolvedCourseGuideId = loggedIn ? courseGuideId : null;
 
   const isHomePath = pathname === "/home";
+  const isBbangteoPath =
+    pathname === "/bbangteo" ||
+    pathname.startsWith("/bbangteo-") ||
+    pathname.startsWith("/bbangteo/");
   const isSavedRouteFlow =
     pathname === "/route" || searchCourseId != null || routeFocusCourseId != null;
-  /** 로그인 사용자: 홈·저장 루트·코스 안내 중 BreadBot 노출 */
-  const showBot = loggedIn && (isHomePath || isSavedRouteFlow || resolvedCourseGuideActive);
+  /** 로그인 사용자: 홈·저장 루트·코스 안내 중 BreadBot 노출 (코스 진행 중 빵터 제외) */
+  const showBot =
+    loggedIn &&
+    (isHomePath || isSavedRouteFlow || resolvedCourseGuideActive) &&
+    !(isBbangteoPath && resolvedCourseGuideActive);
   const showBotFloating = showBot && !isBotFloatingHiddenPath(pathname);
   const botCourseId = resolvedCourseGuideId ?? searchCourseId ?? routeFocusCourseId;
 

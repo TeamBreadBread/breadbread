@@ -26,6 +26,7 @@ const BottomNav = () => {
 
   const routeNavTooltip = (() => {
     if (!courseGuideActive) return undefined;
+    if (pathname.startsWith("/tour")) return undefined;
     if (pathname === "/route" && routeCongestionActive) return "혼잡 알림";
     return "안내 중";
   })();

@@ -137,10 +137,11 @@ public class AiCourseAsyncService {
 
             // 5. FCM 알림 (실패해도 AI 작업 결과에 영향 없음)
             try {
+                String courseName = AiCourseNameResolver.resolve(response);
                 fcmService.sendToUser(
                         userId,
                         "AI 코스 추천 완료 ✨",
-                        response.getName() + " 코스 추천이 완료됐습니다. 확인하고 저장해보세요!",
+                        courseName + " 코스 추천이 완료됐습니다. 확인하고 저장해보세요!",
                         Map.of("type", "AI_COURSE_READY", "jobId", jobId));
             } catch (Exception fcmEx) {
                 log.warn("[AI 코스 생성] FCM 알림 실패 (작업은 정상 완료): jobId={}", jobId, fcmEx);

@@ -523,6 +523,8 @@ type BbangteoBakeryListPageProps = {
   excludePinIds?: number[];
   /** SNS 트렌드 빵 키워드 — 해당 빵을 파는 빵집만 표시 */
   breadKeyword?: string;
+  /** URL에서 전달된 빵집 검색어 */
+  initialKeyword?: string;
 };
 
 const BbangteoBakeryListPage = ({
@@ -532,6 +534,7 @@ const BbangteoBakeryListPage = ({
   dongFilter,
   excludePinIds,
   breadKeyword,
+  initialKeyword,
 }: BbangteoBakeryListPageProps) => {
   const navigate = useNavigate();
   const breadKeywordTrimmed = breadKeyword?.trim() ?? "";
@@ -546,7 +549,7 @@ const BbangteoBakeryListPage = ({
   const breadListPinIds = breadBakeriesQuery.data ?? [];
   const breadListResolving =
     isTrendBreadList && (menuIndexQuery.isLoading || breadBakeriesQuery.isLoading);
-  const [keyword, setKeyword] = useState("");
+  const [keyword, setKeyword] = useState(initialKeyword?.trim() ?? "");
   const [listSort, setListSort] = useState<BakeryListSort>("RATING");
   const [openOnly, setOpenOnly] = useState(false);
   const [page, setPage] = useState(0);
