@@ -8,7 +8,6 @@ import com.breadbread.course.service.CourseBakeryOrderService;
 import com.breadbread.course.service.CourseDrivingRouteService;
 import com.breadbread.course.service.CourseService;
 import com.breadbread.global.dto.ApiResponse;
-import com.breadbread.user.entity.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -55,8 +54,7 @@ public class CourseController {
     public ApiResponse<CourseDetailResponse> findOne(
             @PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = userDetails != null ? userDetails.getId() : null;
-        UserRole role = userDetails != null ? userDetails.getRole() : null;
-        return ApiResponse.ok(courseService.findOne(id, userId, role));
+        return ApiResponse.ok(courseService.findOne(id, userId));
     }
 
     @Operation(summary = "코스 좋아요", description = "이미 좋아요한 경우 409 반환")
@@ -106,8 +104,7 @@ public class CourseController {
     public ApiResponse<DrivingRouteResponse> getDrivingRoute(
             @PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = userDetails != null ? userDetails.getId() : null;
-        UserRole role = userDetails != null ? userDetails.getRole() : null;
-        return ApiResponse.ok(courseDrivingRouteService.getDrivingRoute(id, userId, role));
+        return ApiResponse.ok(courseDrivingRouteService.getDrivingRoute(id, userId));
     }
 
     @Operation(summary = "코스 내 빵집 방문 순서 변경")

@@ -55,52 +55,10 @@ class CourseDrivingRouteServiceTest {
     void getDrivingRoute_throws_whenCourseNotFound() {
         when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(
-                        () -> courseDrivingRouteService.getDrivingRoute(1L, 1L, UserRole.ROLE_USER))
+        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.COURSE_NOT_FOUND);
-    }
-
-    @Test
-    void getDrivingRoute_throws_unauthorized_whenPrivateCourseAndAnonymous() {
-        Course course = aiPrivateCourse(1L, owner(1L));
-        when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
-
-        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L, null, null))
-                .isInstanceOf(CustomException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.UNAUTHORIZED);
-    }
-
-    @Test
-    void getDrivingRoute_throws_forbidden_whenPrivateCourseAndNotOwner() {
-        Course course = aiPrivateCourse(1L, owner(1L));
-        when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
-
-        assertThatThrownBy(
-                        () -> courseDrivingRouteService.getDrivingRoute(1L, 2L, UserRole.ROLE_USER))
-                .isInstanceOf(CustomException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.FORBIDDEN);
-    }
-
-    @Test
-    void getDrivingRoute_allows_admin_to_access_private_course() {
-        Course course = aiPrivateCourse(1L, owner(1L));
-        List<Coordinate> cachedPath =
-                List.of(new Coordinate(36.0, 127.0), new Coordinate(36.1, 127.1));
-        CourseDrivingRoute cached =
-                CourseDrivingRoute.builder().courseId(1L).path(cachedPath).build();
-
-        when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
-        when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.of(cached));
-
-        DrivingRouteResponse response =
-                courseDrivingRouteService.getDrivingRoute(1L, 999L, UserRole.ROLE_ADMIN);
-
-        assertThat(response.getPath()).isEqualTo(cachedPath);
-        verify(drivingRouteClient, never()).getPath(any());
     }
 
     @Test
@@ -114,7 +72,7 @@ class CourseDrivingRouteServiceTest {
         when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
         when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.of(cached));
 
-        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(1L, null, null);
+        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(1L, null);
 
         assertThat(response.getPath()).isEqualTo(cachedPath);
         verify(drivingRouteClient, never()).getPath(any());
@@ -136,11 +94,10 @@ class CourseDrivingRouteServiceTest {
         when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
         when(drivingRouteClient.getPath(any())).thenReturn(routeResult);
 
-        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(1L, null, null);
+        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(1L, null);
 
         assertThat(response.getPath()).isEqualTo(path);
 
-        // MANUAL 코스는 사용자 위치 미포함 — 빵집만 좌표로 전달
         ArgumentCaptor<List<Coordinate>> coordCaptor = ArgumentCaptor.forClass(List.class);
         verify(drivingRouteClient).getPath(coordCaptor.capture());
         List<Coordinate> coords = coordCaptor.getValue();
@@ -166,13 +123,12 @@ class CourseDrivingRouteServiceTest {
         when(courseDrivingRouteRepository.findById(2L)).thenReturn(Optional.empty());
         when(drivingRouteClient.getPath(any())).thenReturn(routeResult);
 
-        courseDrivingRouteService.getDrivingRoute(2L, 1L, UserRole.ROLE_USER);
+        courseDrivingRouteService.getDrivingRoute(2L, 1L);
 
-        // AI 코스는 AiCourseInfo의 유저 위치가 첫 번째 좌표로 추가되어야 함
         ArgumentCaptor<List<Coordinate>> coordCaptor = ArgumentCaptor.forClass(List.class);
         verify(drivingRouteClient).getPath(coordCaptor.capture());
         List<Coordinate> coords = coordCaptor.getValue();
-        assertThat(coords).hasSize(2); // 유저위치 + 빵집 1개
+        assertThat(coords).hasSize(2);
         assertThat(coords.get(0).getLat()).isEqualTo(35.5);
         assertThat(coords.get(0).getLng()).isEqualTo(126.5);
         assertThat(coords.get(1).getLat()).isEqualTo(36.0);
@@ -192,8 +148,7 @@ class CourseDrivingRouteServiceTest {
         when(courseDrivingRouteRepository.findById(2L)).thenReturn(Optional.empty());
         when(drivingRouteClient.getPath(any())).thenReturn(routeResult);
 
-        DrivingRouteResponse response =
-                courseDrivingRouteService.getDrivingRoute(2L, 1L, UserRole.ROLE_USER);
+        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(2L, 1L);
 
         assertThat(response.getPath()).isEqualTo(path);
         verify(drivingRouteClient).getPath(any());
@@ -208,7 +163,7 @@ class CourseDrivingRouteServiceTest {
         when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
         when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L, null, null))
+        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L, null))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROUTE_INSUFFICIENT_WAYPOINTS);
@@ -218,7 +173,6 @@ class CourseDrivingRouteServiceTest {
 
     @Test
     void getDrivingRoute_throws_whenManualCourseExceedsWaypointLimit() {
-        // 수동 코스: 빵집 8개 → coordinates 8개 > 7
         Course course = manualCourse(1L, "공유코스");
         for (int i = 0; i < 8; i++) {
             course.addCourseBakery(
@@ -231,7 +185,7 @@ class CourseDrivingRouteServiceTest {
         when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
         when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L, null, null))
+        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L, null))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROUTE_TOO_MANY_WAYPOINTS);
@@ -241,7 +195,6 @@ class CourseDrivingRouteServiceTest {
 
     @Test
     void getDrivingRoute_throws_whenAiCourseExceedsWaypointLimit() {
-        // AI 코스: 빵집 7개 + 출발 위치 1개 → coordinates 8개 > 7
         User owner = owner(1L);
         Course course = aiCourseWithLocation(2L, owner, 35.5, 126.5);
         for (int i = 0; i < 7; i++) {
@@ -255,8 +208,7 @@ class CourseDrivingRouteServiceTest {
         when(courseRepository.findActiveWithBakeriesById(2L)).thenReturn(Optional.of(course));
         when(courseDrivingRouteRepository.findById(2L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(
-                        () -> courseDrivingRouteService.getDrivingRoute(2L, 1L, UserRole.ROLE_USER))
+        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(2L, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROUTE_TOO_MANY_WAYPOINTS);
@@ -275,8 +227,7 @@ class CourseDrivingRouteServiceTest {
         when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
         when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(
-                        () -> courseDrivingRouteService.getDrivingRoute(1L, 1L, UserRole.ROLE_USER))
+        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROUTE_NOT_FOUND);
@@ -302,8 +253,7 @@ class CourseDrivingRouteServiceTest {
                 .when(courseDrivingRouteSaver)
                 .save(eq(1L), any(RouteResult.class));
 
-        // PK 충돌이 나도 경로는 정상 반환
-        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(1L, null, null);
+        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(1L, null);
 
         assertThat(response.getPath()).isEqualTo(path);
     }

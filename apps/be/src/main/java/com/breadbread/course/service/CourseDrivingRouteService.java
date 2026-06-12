@@ -14,7 +14,6 @@ import com.breadbread.course.repository.CourseDrivingRouteRepository;
 import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
-import com.breadbread.user.entity.UserRole;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -35,12 +34,11 @@ public class CourseDrivingRouteService {
     private final DrivingRouteClient drivingRouteClient;
 
     @Transactional
-    public DrivingRouteResponse getDrivingRoute(Long courseId, Long userId, UserRole role) {
+    public DrivingRouteResponse getDrivingRoute(Long courseId, Long userId) {
         Course course =
                 courseRepository
                         .findActiveWithBakeriesById(courseId)
                         .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
-        validateDrivingRouteAccess(course, userId, role);
 
         List<Bakery> orderedBakeries =
                 course.getCourseBakeries().stream()
@@ -154,17 +152,6 @@ public class CourseDrivingRouteService {
                 .totalStayMinutes(totalStayMinutes)
                 .totalMinutes(totalTravelMinutes + totalStayMinutes)
                 .build();
-    }
-
-    private void validateDrivingRouteAccess(Course course, Long userId, UserRole role) {
-        if (!course.isShared() && role != UserRole.ROLE_ADMIN) {
-            if (userId == null) {
-                throw new CustomException(ErrorCode.UNAUTHORIZED);
-            }
-            if (course.getUser() == null || !course.getUser().getId().equals(userId)) {
-                throw new CustomException(ErrorCode.FORBIDDEN);
-            }
-        }
     }
 
     private int secondsToMinutesCeil(int seconds) {
