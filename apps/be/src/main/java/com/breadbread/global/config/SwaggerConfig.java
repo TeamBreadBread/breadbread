@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 public class SwaggerConfig {
     @Bean
     public OpenAPI openAPI() {
-        SecurityScheme securityScheme =
+        SecurityScheme bearerScheme =
                 new SecurityScheme()
                         .type(SecurityScheme.Type.HTTP)
                         .scheme("bearer")
@@ -19,7 +19,14 @@ public class SwaggerConfig {
                         .in(SecurityScheme.In.HEADER)
                         .name("Authorization");
 
-        SecurityRequirement securityRequirement = new SecurityRequirement().addList("BearerAuth");
+        SecurityScheme apiKeyScheme =
+                new SecurityScheme()
+                        .type(SecurityScheme.Type.APIKEY)
+                        .in(SecurityScheme.In.HEADER)
+                        .name("X-AI-API-KEY");
+
+        SecurityRequirement securityRequirement =
+                new SecurityRequirement().addList("BearerAuth").addList("ApiKeyAuth");
 
         return new OpenAPI()
                 .info(
@@ -28,6 +35,7 @@ public class SwaggerConfig {
                                 .description("BreadBread 백엔드 API 명세서")
                                 .version("1.0.0"))
                 .addSecurityItem(securityRequirement)
-                .schemaRequirement("BearerAuth", securityScheme);
+                .schemaRequirement("BearerAuth", bearerScheme)
+                .schemaRequirement("ApiKeyAuth", apiKeyScheme);
     }
 }

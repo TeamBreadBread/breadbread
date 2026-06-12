@@ -76,6 +76,18 @@ public class BakeryOwnerController {
         return ApiResponse.ok();
     }
 
+    @Operation(summary = "빵집 메뉴 품절 상태 변경", description = "관리자 또는 빵집 사장님만 가능")
+    @PatchMapping("/{bakeryId}/breads/{breadId}/soldout")
+    public ApiResponse<Void> updateSoldOut(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long bakeryId,
+            @PathVariable Long breadId,
+            @RequestParam boolean soldOut) {
+        breadService.updateSoldOut(
+                userDetails.getId(), userDetails.getRole(), bakeryId, breadId, soldOut);
+        return ApiResponse.ok();
+    }
+
     @Operation(summary = "빵집 메뉴 삭제", description = "관리자 또는 빵집 사장님만 가능")
     @DeleteMapping("/{bakeryId}/breads/{breadId}")
     public ApiResponse<Void> deleteBread(

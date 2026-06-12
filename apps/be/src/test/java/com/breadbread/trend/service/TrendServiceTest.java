@@ -194,6 +194,56 @@ class TrendServiceTest {
         assertThat(result.getContent().get(0).getMatchedMenus()).containsExactly("소금빵", "버터소금빵");
     }
 
+    // ── findAllForAdmin ───────────────────────────────────────────────────────
+
+    @Test
+    void findAllForAdmin_returnsPagedTags() {
+        PageRequest pageable = PageRequest.of(0, 20);
+        BakeryTrendTag t1 = tag("소금빵", TrendStatus.RISING, 50.0, null, null);
+        BakeryTrendTag t2 = tag("휘낭시에", TrendStatus.STABLE, 30.0, null, null);
+        when(repository.findAllByCreatedAtRange(
+                        any(LocalDateTime.class), any(LocalDateTime.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(t1, t2), pageable, 2));
+
+        var result = service.findAllForAdmin(null, null, pageable);
+
+        assertThat(result.getTags()).hasSize(2);
+        assertThat(result.getTotal()).isEqualTo(2);
+        assertThat(result.getPage()).isEqualTo(0);
+        assertThat(result.getSize()).isEqualTo(20);
+        assertThat(result.isHasNext()).isFalse();
+        assertThat(result.getTags().get(0).getKeyword()).isEqualTo("소금빵");
+        assertThat(result.getTags().get(1).getKeyword()).isEqualTo("휘낭시에");
+    }
+
+    @Test
+    void findAllForAdmin_returnsEmptyPage_whenNoData() {
+        PageRequest pageable = PageRequest.of(0, 20);
+        when(repository.findAllByCreatedAtRange(
+                        any(LocalDateTime.class), any(LocalDateTime.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        var result = service.findAllForAdmin(null, null, pageable);
+
+        assertThat(result.getTags()).isEmpty();
+        assertThat(result.getTotal()).isEqualTo(0);
+        assertThat(result.isHasNext()).isFalse();
+    }
+
+    @Test
+    void findAllForAdmin_hasNext_whenMorePagesExist() {
+        PageRequest pageable = PageRequest.of(0, 1);
+        BakeryTrendTag t = tag("소금빵", TrendStatus.RISING, 50.0, null, null);
+        when(repository.findAllByCreatedAtRange(
+                        any(LocalDateTime.class), any(LocalDateTime.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(t), pageable, 5));
+
+        var result = service.findAllForAdmin(null, null, pageable);
+
+        assertThat(result.isHasNext()).isTrue();
+        assertThat(result.getTotal()).isEqualTo(5);
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private static TrendDiscoverRequest request(

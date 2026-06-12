@@ -108,6 +108,35 @@ public class BreadService {
         breadRepository.delete(bread);
     }
 
+    @Transactional
+    public void updateSoldOut(
+            Long userId, UserRole role, Long bakeryId, Long breadId, boolean soldOut) {
+        Bakery bakery =
+                bakeryRepository
+                        .findByIdAndActiveTrue(bakeryId)
+                        .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
+
+        checkAuthority(bakery, userId, role);
+
+        Bread bread =
+                breadRepository
+                        .findByIdAndBakeryId(breadId, bakeryId)
+                        .orElseThrow(() -> new CustomException(ErrorCode.MENU_NOT_FOUND));
+
+        if (soldOut) {
+            bread.markSoldOut();
+        } else {
+            bread.markAvailable();
+        }
+
+        log.info(
+                "빵 품절 상태 변경: breadId={}, bakeryId={}, soldOut={}, userId={}",
+                breadId,
+                bakeryId,
+                soldOut,
+                userId);
+    }
+
     private void checkAuthority(Bakery bakery, Long userId, UserRole role) {
         if (role == UserRole.ROLE_ADMIN) return;
         if (bakery.getOwner() == null || !bakery.getOwner().getId().equals(userId)) {

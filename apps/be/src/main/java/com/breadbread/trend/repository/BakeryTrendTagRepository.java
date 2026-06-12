@@ -2,6 +2,7 @@ package com.breadbread.trend.repository;
 
 import com.breadbread.trend.entity.BakeryTrendTag;
 import com.breadbread.trend.entity.TrendStatus;
+import java.time.LocalDateTime;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -80,4 +81,11 @@ public interface BakeryTrendTagRepository extends JpaRepository<BakeryTrendTag, 
             nativeQuery = true)
     Page<BakeryTrendTag> findLatestByBakeryAndKeyword(
             @Param("keyword") String keyword, Pageable pageable);
+
+    @Query(
+            "SELECT t FROM BakeryTrendTag t"
+                    + " WHERE t.createdAt >= :from AND t.createdAt <= :to"
+                    + " ORDER BY t.createdAt DESC")
+    Page<BakeryTrendTag> findAllByCreatedAtRange(
+            @Param("from") LocalDateTime from, @Param("to") LocalDateTime to, Pageable pageable);
 }

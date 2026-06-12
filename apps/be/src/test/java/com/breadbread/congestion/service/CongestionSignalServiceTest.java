@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -27,6 +28,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -203,6 +206,56 @@ class CongestionSignalServiceTest {
         CongestionResponse response = CongestionResponse.from(signal);
 
         assertThat(response.getLevel()).isNull();
+    }
+
+    // ── findAllForAdmin ───────────────────────────────────────────────────────
+
+    @Test
+    void findAllForAdmin_returnsPagedSignals() {
+        PageRequest pageable = PageRequest.of(0, 20);
+        BakeryCongestionSignal s1 = signal(1L, "파리바게뜨", CongestionLevel.HIGH);
+        BakeryCongestionSignal s2 = signal(2L, "뚜레쥬르", CongestionLevel.LOW);
+        when(repository.findAllByCreatedAtRange(
+                        any(LocalDateTime.class), any(LocalDateTime.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(s1, s2), pageable, 2));
+
+        var result = service.findAllForAdmin(null, null, pageable);
+
+        assertThat(result.getSignals()).hasSize(2);
+        assertThat(result.getTotal()).isEqualTo(2);
+        assertThat(result.getPage()).isEqualTo(0);
+        assertThat(result.getSize()).isEqualTo(20);
+        assertThat(result.isHasNext()).isFalse();
+        assertThat(result.getSignals().get(0).getBakeryId()).isEqualTo(1L);
+        assertThat(result.getSignals().get(0).getLevel()).isEqualTo(CongestionLevel.HIGH);
+    }
+
+    @Test
+    void findAllForAdmin_returnsEmptyPage_whenNoData() {
+        PageRequest pageable = PageRequest.of(0, 20);
+        when(repository.findAllByCreatedAtRange(
+                        any(LocalDateTime.class), any(LocalDateTime.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        var result = service.findAllForAdmin(null, null, pageable);
+
+        assertThat(result.getSignals()).isEmpty();
+        assertThat(result.getTotal()).isEqualTo(0);
+        assertThat(result.isHasNext()).isFalse();
+    }
+
+    @Test
+    void findAllForAdmin_hasNext_whenMorePagesExist() {
+        PageRequest pageable = PageRequest.of(0, 1);
+        BakeryCongestionSignal s = signal(1L, "파리바게뜨", CongestionLevel.MEDIUM);
+        when(repository.findAllByCreatedAtRange(
+                        any(LocalDateTime.class), any(LocalDateTime.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(s), pageable, 5));
+
+        var result = service.findAllForAdmin(null, null, pageable);
+
+        assertThat(result.isHasNext()).isTrue();
+        assertThat(result.getTotal()).isEqualTo(5);
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
