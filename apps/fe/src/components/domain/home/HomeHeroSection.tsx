@@ -4,16 +4,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { getMyProfile } from "@/api/user";
-import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
 import leadingLogo from "@/assets/icons/Leading.svg";
 import RecommendationHeroCard from "./RecommendationHeroCard";
 import QuickMenuGrid from "./QuickMenuGrid";
 import { pickRandomHomeGreetingBread } from "./homeGreetingBreads";
 import { getDisplayNameForLoginId, getUserProfile, saveUserProfile } from "@/lib/userProfileCache";
+import { navigateToAiCourseEntry } from "@/utils/navigateToAiCourseEntry";
 
 const HomeHeroSection = () => {
   const navigate = useNavigate();
   const [greetingBread] = useState(() => pickRandomHomeGreetingBread());
+  const [isAiCourseNavigating, setIsAiCourseNavigating] = useState(false);
   const [displayName, setDisplayName] = useState(() => {
     const profile = getUserProfile();
     if (profile?.name?.trim()) return profile.name.trim();
@@ -46,7 +47,11 @@ const HomeHeroSection = () => {
   }, []);
 
   const goAiCoursePreferenceFlow = () => {
-    void navigate({ to: AI_COURSE_FLOW_START });
+    if (isAiCourseNavigating) return;
+    setIsAiCourseNavigating(true);
+    void navigateToAiCourseEntry(navigate).finally(() => {
+      setIsAiCourseNavigating(false);
+    });
   };
 
   return (
@@ -63,7 +68,10 @@ const HomeHeroSection = () => {
         </div>
 
         <div className="flex gap-2">
-          <RecommendationHeroCard onClick={goAiCoursePreferenceFlow} />
+          <RecommendationHeroCard
+            onClick={goAiCoursePreferenceFlow}
+            disabled={isAiCourseNavigating}
+          />
           <QuickMenuGrid />
         </div>
       </div>
