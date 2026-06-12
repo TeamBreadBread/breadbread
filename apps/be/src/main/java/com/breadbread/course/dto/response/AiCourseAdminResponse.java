@@ -24,7 +24,6 @@ import lombok.Getter;
 public class AiCourseAdminResponse {
     private Long id;
     private Long userId;
-    private String userNickname;
 
     private Input input;
     private Result result;
@@ -117,7 +116,6 @@ public class AiCourseAdminResponse {
         return AiCourseAdminResponse.builder()
                 .id(course.getId())
                 .userId(course.getUser() != null ? course.getUser().getId() : null)
-                .userNickname(course.getUser() != null ? course.getUser().getNickname() : null)
                 .input(input)
                 .result(result)
                 .build();

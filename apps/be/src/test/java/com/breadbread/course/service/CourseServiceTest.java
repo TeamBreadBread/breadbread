@@ -124,36 +124,14 @@ class CourseServiceTest {
     void findOne_throws_whenCourseMissing() {
         when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> courseService.findOne(1L, 1L, UserRole.ROLE_USER))
+        assertThatThrownBy(() -> courseService.findOne(1L, 1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.COURSE_NOT_FOUND);
     }
 
     @Test
-    void findOne_privateCourse_throwsUnauthorized_whenUserMissing() {
-        Course course = aiPrivateCourse(5L, owner(1L));
-        when(courseRepository.findByIdAndActiveTrue(5L)).thenReturn(Optional.of(course));
-
-        assertThatThrownBy(() -> courseService.findOne(5L, null, null))
-                .isInstanceOf(CustomException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.UNAUTHORIZED);
-    }
-
-    @Test
-    void findOne_privateCourse_throwsForbidden_whenNotOwner() {
-        Course course = aiPrivateCourse(5L, owner(1L));
-        when(courseRepository.findByIdAndActiveTrue(5L)).thenReturn(Optional.of(course));
-
-        assertThatThrownBy(() -> courseService.findOne(5L, 2L, UserRole.ROLE_USER))
-                .isInstanceOf(CustomException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.FORBIDDEN);
-    }
-
-    @Test
-    void findOne_returns_private_course_when_owner() {
+    void findOne_returns_course_for_any_user() {
         User owner = owner(1L);
         Course course = aiPrivateCourse(7L, owner);
         syncCourseBakeriesForDetail(course);
@@ -166,7 +144,7 @@ class CourseServiceTest {
         when(courseLikeRepository.existsByCourseIdAndUserId(7L, 1L)).thenReturn(false);
         when(routeRepository.existsByCourseIdAndUserId(7L, 1L)).thenReturn(true);
 
-        var detail = courseService.findOne(7L, 1L, UserRole.ROLE_USER);
+        var detail = courseService.findOne(7L, 1L);
 
         assertThat(detail.getId()).isEqualTo(7L);
         assertThat(detail.getBakeries()).hasSize(1);
@@ -174,7 +152,7 @@ class CourseServiceTest {
     }
 
     @Test
-    void findOne_returns_private_course_when_admin() {
+    void findOne_returns_course_for_anonymous() {
         Course course = aiPrivateCourse(8L, owner(3L));
         syncCourseBakeriesForDetail(course);
 
@@ -183,13 +161,12 @@ class CourseServiceTest {
                 .thenReturn(new ArrayList<>(course.getCourseBakeries()));
         when(courseSummaryAssembler.buildThumbnailMap(anyList())).thenReturn(Map.of());
         when(courseLikeRepository.countByCourse(course)).thenReturn(1L);
-        when(courseLikeRepository.existsByCourseIdAndUserId(8L, 999L)).thenReturn(false);
-        when(routeRepository.existsByCourseIdAndUserId(8L, 999L)).thenReturn(false);
 
-        var detail = courseService.findOne(8L, 999L, UserRole.ROLE_ADMIN);
+        var detail = courseService.findOne(8L, null);
 
         assertThat(detail.getLikeCount()).isEqualTo(1);
         assertThat(detail.isSaved()).isFalse();
+        assertThat(detail.isLiked()).isFalse();
     }
 
     @Test
@@ -342,17 +319,6 @@ class CourseServiceTest {
         courseService.delete(4L);
 
         assertThat(course.isActive()).isFalse();
-    }
-
-    @Test
-    void like_throws_whenPrivateAndNotOwner() {
-        Course course = aiPrivateCourse(1L, owner(1L));
-        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
-
-        assertThatThrownBy(() -> courseService.like(1L, 2L))
-                .isInstanceOf(CustomException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.FORBIDDEN);
     }
 
     @Test
@@ -511,17 +477,6 @@ class CourseServiceTest {
     }
 
     @Test
-    void saveRoute_throws_when_private_course_and_requester_not_owner() {
-        Course course = aiPrivateCourse(1L, owner(1L));
-        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
-
-        assertThatThrownBy(() -> courseService.saveRoute(1L, 2L))
-                .isInstanceOf(CustomException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.FORBIDDEN);
-    }
-
-    @Test
     void removeRoute_throws_when_not_routed() {
         when(routeRepository.findByCourseIdAndUserId(1L, 2L)).thenReturn(Optional.empty());
 
@@ -567,12 +522,14 @@ class CourseServiceTest {
         c1.addCourseBakery(CourseBakery.builder().visitOrder(1).bakery(bakery).build());
 
         Pageable pageable = PageRequest.of(0, 10);
-        when(courseRepository.findAllByActiveTrueAndCourseTypeAndCreatedAtRange(
+        when(courseRepository.findIdsByActiveTrueAndCourseTypeAndCreatedAtRange(
                         eq(CourseType.AI),
                         any(LocalDateTime.class),
                         any(LocalDateTime.class),
                         eq(pageable)))
-                .thenReturn(new PageImpl<>(List.of(c1, c2), pageable, 2));
+                .thenReturn(new PageImpl<>(List.of(10L, 11L), pageable, 2));
+        when(courseRepository.findAllWithDetailsByIdIn(List.of(10L, 11L)))
+                .thenReturn(List.of(c1, c2));
 
         AiCourseAdminListResponse result = courseService.findAllAiForAdmin(null, null, pageable);
 
@@ -587,7 +544,7 @@ class CourseServiceTest {
     @Test
     void findAllAiForAdmin_returnsEmptyPage_whenNoData() {
         Pageable pageable = PageRequest.of(0, 10);
-        when(courseRepository.findAllByActiveTrueAndCourseTypeAndCreatedAtRange(
+        when(courseRepository.findIdsByActiveTrueAndCourseTypeAndCreatedAtRange(
                         eq(CourseType.AI),
                         any(LocalDateTime.class),
                         any(LocalDateTime.class),
@@ -606,12 +563,13 @@ class CourseServiceTest {
         User u = owner(1L);
         Course c = aiPrivateCourse(10L, u);
         Pageable pageable = PageRequest.of(0, 1);
-        when(courseRepository.findAllByActiveTrueAndCourseTypeAndCreatedAtRange(
+        when(courseRepository.findIdsByActiveTrueAndCourseTypeAndCreatedAtRange(
                         eq(CourseType.AI),
                         any(LocalDateTime.class),
                         any(LocalDateTime.class),
                         eq(pageable)))
-                .thenReturn(new PageImpl<>(List.of(c), pageable, 5));
+                .thenReturn(new PageImpl<>(List.of(10L), pageable, 5));
+        when(courseRepository.findAllWithDetailsByIdIn(List.of(10L))).thenReturn(List.of(c));
 
         AiCourseAdminListResponse result = courseService.findAllAiForAdmin(null, null, pageable);
 

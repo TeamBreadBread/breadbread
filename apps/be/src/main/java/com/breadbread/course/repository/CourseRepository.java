@@ -50,22 +50,25 @@ public interface CourseRepository extends JpaRepository<Course, Long>, CourseRep
     Page<Course> findAllByActiveTrueAndCourseType(
             @Param("type") CourseType type, Pageable pageable);
 
+    // 1단계: ID + 페이징만 (컬렉션 fetch join 없음 → DB 레벨 페이징 보장)
     @Query(
-            value =
-                    "SELECT DISTINCT c FROM Course c "
-                            + "LEFT JOIN FETCH c.courseBakeries cb "
-                            + "LEFT JOIN FETCH cb.bakery "
-                            + "LEFT JOIN FETCH c.user "
-                            + "LEFT JOIN FETCH c.userPreference "
-                            + "WHERE c.courseType = :type AND c.active = true "
-                            + "AND c.createdAt >= :from AND c.createdAt <= :to",
-            countQuery =
-                    "SELECT COUNT(c) FROM Course c "
-                            + "WHERE c.courseType = :type AND c.active = true "
-                            + "AND c.createdAt >= :from AND c.createdAt <= :to")
-    Page<Course> findAllByActiveTrueAndCourseTypeAndCreatedAtRange(
+            "SELECT c.id FROM Course c "
+                    + "WHERE c.courseType = :type AND c.active = true "
+                    + "AND c.createdAt >= :from AND c.createdAt <= :to "
+                    + "ORDER BY c.createdAt DESC")
+    Page<Long> findIdsByActiveTrueAndCourseTypeAndCreatedAtRange(
             @Param("type") CourseType type,
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to,
             Pageable pageable);
+
+    // 2단계: ID 목록으로 상세 fetch (컬렉션 fetch join, 페이징 없음)
+    @Query(
+            "SELECT DISTINCT c FROM Course c "
+                    + "LEFT JOIN FETCH c.courseBakeries cb "
+                    + "LEFT JOIN FETCH cb.bakery "
+                    + "LEFT JOIN FETCH c.user "
+                    + "LEFT JOIN FETCH c.userPreference "
+                    + "WHERE c.id IN :ids")
+    List<Course> findAllWithDetailsByIdIn(@Param("ids") List<Long> ids);
 }

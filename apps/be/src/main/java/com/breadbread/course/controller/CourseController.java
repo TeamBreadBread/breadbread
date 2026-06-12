@@ -8,7 +8,6 @@ import com.breadbread.course.service.CourseBakeryOrderService;
 import com.breadbread.course.service.CourseDrivingRouteService;
 import com.breadbread.course.service.CourseService;
 import com.breadbread.global.dto.ApiResponse;
-import com.breadbread.user.entity.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -55,8 +54,7 @@ public class CourseController {
     public ApiResponse<CourseDetailResponse> findOne(
             @PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = userDetails != null ? userDetails.getId() : null;
-        UserRole role = userDetails != null ? userDetails.getRole() : null;
-        return ApiResponse.ok(courseService.findOne(id, userId, role));
+        return ApiResponse.ok(courseService.findOne(id, userId));
     }
 
     @Operation(summary = "코스 좋아요", description = "이미 좋아요한 경우 409 반환")
@@ -103,11 +101,8 @@ public class CourseController {
             summary = "코스 자동차 경로 조회",
             description = "코스에 포함된 빵집 순서대로 자동차 주행 경로의 vertex 좌표를 반환합니다. 비공개 AI 코스는 본인만 조회할 수 있습니다.")
     @GetMapping("/{id}/directions")
-    public ApiResponse<DrivingRouteResponse> getDrivingRoute(
-            @PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        Long userId = userDetails != null ? userDetails.getId() : null;
-        UserRole role = userDetails != null ? userDetails.getRole() : null;
-        return ApiResponse.ok(courseDrivingRouteService.getDrivingRoute(id, userId, role));
+    public ApiResponse<DrivingRouteResponse> getDrivingRoute(@PathVariable Long id) {
+        return ApiResponse.ok(courseDrivingRouteService.getDrivingRoute(id));
     }
 
     @Operation(summary = "코스 내 빵집 방문 순서 변경")

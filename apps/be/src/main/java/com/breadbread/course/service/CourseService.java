@@ -28,7 +28,6 @@ import com.breadbread.course.repository.RouteRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.entity.User;
-import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -134,20 +133,11 @@ public class CourseService {
     }
 
     @Transactional(readOnly = true)
-    public CourseDetailResponse findOne(Long id, Long userId, UserRole role) {
+    public CourseDetailResponse findOne(Long id, Long userId) {
         Course course =
                 courseRepository
                         .findByIdAndActiveTrue(id)
                         .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
-
-        if (!course.isShared() && role != UserRole.ROLE_ADMIN) {
-            if (userId == null) {
-                throw new CustomException(ErrorCode.UNAUTHORIZED);
-            }
-            if (course.getUser() == null || !course.getUser().getId().equals(userId)) {
-                throw new CustomException(ErrorCode.FORBIDDEN);
-            }
-        }
 
         List<CourseBakery> courseBakeries =
                 courseBakeryRepository.findAllByCourseIdOrderByVisitOrder(id);
@@ -319,19 +309,32 @@ public class CourseService {
             LocalDateTime from, LocalDateTime to, Pageable pageable) {
         LocalDateTime start = from != null ? from : LocalDateTime.of(2000, 1, 1, 0, 0);
         LocalDateTime end = to != null ? to : LocalDateTime.of(9999, 12, 31, 23, 59, 59);
-        Page<Course> courses =
-                courseRepository.findAllByActiveTrueAndCourseTypeAndCreatedAtRange(
+
+        // 1단계: ID만 페이지 조회 (DB 레벨 페이징)
+        Page<Long> idPage =
+                courseRepository.findIdsByActiveTrueAndCourseTypeAndCreatedAtRange(
                         CourseType.AI, start, end, pageable);
 
+        // 2단계: ID 목록으로 상세 fetch
+        List<Long> ids = idPage.getContent();
+        List<Course> courses =
+                ids.isEmpty() ? List.of() : courseRepository.findAllWithDetailsByIdIn(ids);
+
+        // ID 순서 보장 (1단계 정렬 기준 유지)
+        Map<Long, Course> courseMap =
+                courses.stream().collect(Collectors.toMap(Course::getId, c -> c));
         List<AiCourseAdminResponse> summaries =
-                courses.getContent().stream().map(AiCourseAdminResponse::from).toList();
+                ids.stream()
+                        .filter(courseMap::containsKey)
+                        .map(id -> AiCourseAdminResponse.from(courseMap.get(id)))
+                        .toList();
 
         return AiCourseAdminListResponse.builder()
                 .courses(summaries)
-                .total((int) courses.getTotalElements())
+                .total((int) idPage.getTotalElements())
                 .page(pageable.getPageNumber())
                 .size(pageable.getPageSize())
-                .hasNext(courses.hasNext())
+                .hasNext(idPage.hasNext())
                 .build();
     }
 
@@ -351,8 +354,6 @@ public class CourseService {
                 courseRepository
                         .findByIdAndActiveTrue(courseId)
                         .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
-
-        validateCourseActionAccess(course, userId);
 
         User user =
                 userRepository
@@ -394,8 +395,6 @@ public class CourseService {
                         .findByIdAndActiveTrue(courseId)
                         .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
 
-        validateCourseActionAccess(course, userId);
-
         User user =
                 userRepository
                         .findById(userId)
@@ -420,12 +419,5 @@ public class CourseService {
                         .findByCourseIdAndUserId(courseId, userId)
                         .orElseThrow(() -> new CustomException(ErrorCode.NOT_ROUTED));
         routeRepository.delete(route);
-    }
-
-    private void validateCourseActionAccess(Course course, Long userId) {
-        if (!course.isShared()
-                && (course.getUser() == null || !course.getUser().getId().equals(userId))) {
-            throw new CustomException(ErrorCode.FORBIDDEN);
-        }
     }
 }
