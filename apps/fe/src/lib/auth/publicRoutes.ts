@@ -13,7 +13,7 @@ const PUBLIC_ROUTE_EXACT = new Set([
   "/password-reset-success",
 ]);
 
-const PUBLIC_ROUTE_PREFIXES = ["/auth/", "/payment/portone-redirect"] as const;
+const PUBLIC_ROUTE_PREFIXES = ["/auth/", "/payment/portone-redirect", "/breadbti"] as const;
 
 export function isPublicPath(pathname: string): boolean {
   if (PUBLIC_ROUTE_EXACT.has(pathname)) return true;

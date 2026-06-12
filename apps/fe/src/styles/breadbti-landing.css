@@ -1,0 +1,88 @@
+.breadbti-hero-wrap {
+  position: relative;
+}
+
+.breadbti-hero-image {
+  position: relative;
+  z-index: 2;
+  transform-origin: center bottom;
+  animation: breadbtiHeroFloat 3.6s ease-in-out infinite;
+  will-change: transform;
+}
+
+.breadbti-hero-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -14px;
+  z-index: 1;
+  width: 68%;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(145, 82, 24, 0.25);
+  filter: blur(8px);
+  transform: translateX(-50%);
+  animation: breadbtiHeroShadow 3.6s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.breadbti-bounce {
+  animation-name: breadbtiBreadPop;
+  animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1);
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+@keyframes breadbtiHeroFloat {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg) scale(1);
+  }
+  25% {
+    transform: translateY(-12px) rotate(-0.8deg) scale(1.01);
+  }
+  50% {
+    transform: translateY(-18px) rotate(0.6deg) scale(1.015);
+  }
+  75% {
+    transform: translateY(-10px) rotate(-0.4deg) scale(1.005);
+  }
+}
+
+@keyframes breadbtiHeroShadow {
+  0%,
+  100% {
+    opacity: 0.24;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.14;
+    transform: translateX(-50%) scale(0.88);
+  }
+}
+
+@keyframes breadbtiBreadPop {
+  0%,
+  100% {
+    transform: translateY(5px) scale(1);
+  }
+  25% {
+    transform: translateY(-100px) scale(1.04);
+  }
+  40% {
+    transform: translateY(-10px) scale(0.98);
+  }
+  60% {
+    transform: translateY(-50px) scale(1.02);
+  }
+  80% {
+    transform: translateY(-5px) scale(0.99);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .breadbti-hero-image,
+  .breadbti-hero-shadow,
+  .breadbti-bounce {
+    animation: none;
+  }
+}
