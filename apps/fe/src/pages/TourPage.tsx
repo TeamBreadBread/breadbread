@@ -354,7 +354,7 @@ export default function TourPage({ courseId }: TourPageProps) {
             <button
               type="button"
               onClick={() => navigate({ to: "/home" })}
-              className="h-[52px] w-full rounded-[12px] bg-gray-900 text-[16px] font-bold text-white"
+              className="h-[52px] w-full rounded-[12px] bg-orange-600 text-[16px] font-bold text-white"
             >
               홈으로 돌아가기
             </button>

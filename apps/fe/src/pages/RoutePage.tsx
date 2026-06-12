@@ -9,9 +9,11 @@ import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
 import { saveRouteFocusCourseId } from "@/utils/aiCourseStorage";
 import { deleteAiCourse, getMyCourseRoutes, removeCourseRoute } from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
+import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 
 export default function RoutePage() {
   const navigate = useNavigate();
+  const { courseGuideActive, courseGuideId } = useLoginRequired();
   const [courses, setCourses] = useState<RouteCourse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -82,6 +84,7 @@ export default function RoutePage() {
           ) : null}
           <RouteListSection
             courses={courses}
+            activeGuideCourseId={courseGuideActive ? courseGuideId : null}
             onOpenCourse={handleOpenCourse}
             onDeleteCourse={handleDeleteCourse}
           />
