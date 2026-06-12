@@ -24,6 +24,7 @@ import {
 } from "@/utils/congestionCheck";
 import { markTourCompleteCelebration } from "@/utils/tourCelebration";
 import { hasConflictingActiveTour } from "@/utils/activeTourGuard";
+import { trackBakeryVisitChecked, trackTourCompleted } from "@/lib/analytics/gtag";
 import { cn } from "@/utils/cn";
 
 interface TourPageProps {
@@ -153,6 +154,7 @@ export default function TourPage({ courseId }: TourPageProps) {
     setBusyOrder(order);
     setError("");
     try {
+      trackBakeryVisitChecked(courseId, order);
       const updated = await checkTourVisit(courseId, order);
       setTour(updated);
       if (updated.status === "COMPLETED") {
@@ -172,6 +174,7 @@ export default function TourPage({ courseId }: TourPageProps) {
     setIsCompleting(true);
     setError("");
     try {
+      trackTourCompleted(courseId);
       const updated = await completeTour(courseId);
       setTour(updated);
       if (updated.status === "COMPLETED") {

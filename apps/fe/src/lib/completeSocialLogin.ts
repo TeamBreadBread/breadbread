@@ -1,4 +1,5 @@
 import { setSessionTokens, type TokenResponse } from "@/api/auth";
+import { markGa4FirstActionAfterLoginPending } from "@/lib/analytics/gtag";
 import { onAuthSessionEstablished } from "@/lib/fcm/setupFcm";
 import { hasUserPreferenceSaved } from "@/api/user";
 import { refreshProfileCacheFromServer } from "@/lib/userProfileCache";
@@ -36,6 +37,7 @@ export async function completeSocialLogin(
 ): Promise<void> {
   const postLogin = consumePostLoginRedirect(storagePrefix);
   setSessionTokens(tokens);
+  markGa4FirstActionAfterLoginPending();
   onAuthSessionEstablished();
   refreshProfileCacheFromServer();
   await goAfterLogin(navigate, postLogin);

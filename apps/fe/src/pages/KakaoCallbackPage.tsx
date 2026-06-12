@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ApiBusinessError, getErrorMessage } from "@/api/types/common";
 import { setSessionTokens } from "@/api/auth";
+import { markGa4FirstActionAfterLoginPending } from "@/lib/analytics/gtag";
 import { onAuthSessionEstablished } from "@/lib/fcm/setupFcm";
 import { exchangeKakaoSocialLogin } from "@/lib/kakaoOAuth";
 import { kakaoOAuthRedirectUri } from "@/utils/frontBase";
@@ -67,6 +68,7 @@ export default function KakaoCallbackPage(props: Props) {
         const postLogin = consumeKakaoPostLoginRedirect();
         clearKakaoPkceSession();
         setSessionTokens(tokens);
+        markGa4FirstActionAfterLoginPending();
         onAuthSessionEstablished();
         refreshProfileCacheFromServer();
         if (postLogin) {
