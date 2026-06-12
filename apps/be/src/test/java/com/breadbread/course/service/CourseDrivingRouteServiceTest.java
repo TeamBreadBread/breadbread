@@ -55,7 +55,7 @@ class CourseDrivingRouteServiceTest {
     void getDrivingRoute_throws_whenCourseNotFound() {
         when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L, 1L))
+        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.COURSE_NOT_FOUND);
@@ -72,7 +72,7 @@ class CourseDrivingRouteServiceTest {
         when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
         when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.of(cached));
 
-        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(1L, null);
+        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(1L);
 
         assertThat(response.getPath()).isEqualTo(cachedPath);
         verify(drivingRouteClient, never()).getPath(any());
@@ -94,7 +94,7 @@ class CourseDrivingRouteServiceTest {
         when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
         when(drivingRouteClient.getPath(any())).thenReturn(routeResult);
 
-        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(1L, null);
+        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(1L);
 
         assertThat(response.getPath()).isEqualTo(path);
 
@@ -123,7 +123,7 @@ class CourseDrivingRouteServiceTest {
         when(courseDrivingRouteRepository.findById(2L)).thenReturn(Optional.empty());
         when(drivingRouteClient.getPath(any())).thenReturn(routeResult);
 
-        courseDrivingRouteService.getDrivingRoute(2L, 1L);
+        courseDrivingRouteService.getDrivingRoute(2L);
 
         ArgumentCaptor<List<Coordinate>> coordCaptor = ArgumentCaptor.forClass(List.class);
         verify(drivingRouteClient).getPath(coordCaptor.capture());
@@ -148,7 +148,7 @@ class CourseDrivingRouteServiceTest {
         when(courseDrivingRouteRepository.findById(2L)).thenReturn(Optional.empty());
         when(drivingRouteClient.getPath(any())).thenReturn(routeResult);
 
-        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(2L, 1L);
+        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(2L);
 
         assertThat(response.getPath()).isEqualTo(path);
         verify(drivingRouteClient).getPath(any());
@@ -163,7 +163,7 @@ class CourseDrivingRouteServiceTest {
         when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
         when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L, null))
+        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROUTE_INSUFFICIENT_WAYPOINTS);
@@ -185,7 +185,7 @@ class CourseDrivingRouteServiceTest {
         when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
         when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L, null))
+        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROUTE_TOO_MANY_WAYPOINTS);
@@ -208,7 +208,7 @@ class CourseDrivingRouteServiceTest {
         when(courseRepository.findActiveWithBakeriesById(2L)).thenReturn(Optional.of(course));
         when(courseDrivingRouteRepository.findById(2L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(2L, 1L))
+        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(2L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROUTE_TOO_MANY_WAYPOINTS);
@@ -227,7 +227,7 @@ class CourseDrivingRouteServiceTest {
         when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
         when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L, 1L))
+        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROUTE_NOT_FOUND);
@@ -253,7 +253,7 @@ class CourseDrivingRouteServiceTest {
                 .when(courseDrivingRouteSaver)
                 .save(eq(1L), any(RouteResult.class));
 
-        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(1L, null);
+        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(1L);
 
         assertThat(response.getPath()).isEqualTo(path);
     }

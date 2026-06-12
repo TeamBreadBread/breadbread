@@ -34,7 +34,7 @@ public class CourseDrivingRouteService {
     private final DrivingRouteClient drivingRouteClient;
 
     @Transactional
-    public DrivingRouteResponse getDrivingRoute(Long courseId, Long userId) {
+    public DrivingRouteResponse getDrivingRoute(Long courseId) {
         Course course =
                 courseRepository
                         .findActiveWithBakeriesById(courseId)

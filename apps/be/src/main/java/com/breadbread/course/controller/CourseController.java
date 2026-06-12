@@ -101,10 +101,8 @@ public class CourseController {
             summary = "코스 자동차 경로 조회",
             description = "코스에 포함된 빵집 순서대로 자동차 주행 경로의 vertex 좌표를 반환합니다. 비공개 AI 코스는 본인만 조회할 수 있습니다.")
     @GetMapping("/{id}/directions")
-    public ApiResponse<DrivingRouteResponse> getDrivingRoute(
-            @PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        Long userId = userDetails != null ? userDetails.getId() : null;
-        return ApiResponse.ok(courseDrivingRouteService.getDrivingRoute(id, userId));
+    public ApiResponse<DrivingRouteResponse> getDrivingRoute(@PathVariable Long id) {
+        return ApiResponse.ok(courseDrivingRouteService.getDrivingRoute(id));
     }
 
     @Operation(summary = "코스 내 빵집 방문 순서 변경")
