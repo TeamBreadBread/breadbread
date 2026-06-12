@@ -22,14 +22,16 @@ function ChevronRight14() {
 // 왼쪽 큰 빵집 추천 카드
 type RecommendationHeroCardProps = {
   onClick?: () => void;
+  disabled?: boolean;
 };
 
-const RecommendationHeroCard = ({ onClick }: RecommendationHeroCardProps) => {
+const RecommendationHeroCard = ({ onClick, disabled }: RecommendationHeroCardProps) => {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex h-[188px] w-[177px] flex-1 flex-col overflow-hidden rounded-[var(--radius-r2)] bg-gray-100 font-sans text-left"
+      disabled={disabled}
+      className="flex h-[188px] w-[177px] flex-1 flex-col overflow-hidden rounded-[var(--radius-r2)] bg-gray-100 font-sans text-left disabled:cursor-not-allowed disabled:opacity-60"
     >
       <div className="flex flex-col gap-1 px-[14px] pt-4">
         <p className="font-sans typo-t3regular text-gray-700">내 취향 빵집 찾아보기</p>

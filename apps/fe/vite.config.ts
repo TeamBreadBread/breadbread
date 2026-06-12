@@ -4,11 +4,16 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
+import fs from 'node:fs'
 
 const feRoot = path.resolve(__dirname)
+const GA4_SNIPPET_BLOCK =
+  /<!-- GA4_SNIPPET_START -->[\s\S]*?<!-- GA4_SNIPPET_END -->/
+const GA4_INLINE_INIT_MARKER = 'function gtag(){dataLayer.push(arguments);}'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, feRoot, '')
+  const ga4MeasurementId = env.VITE_GA4_MEASUREMENT_ID?.trim() || 'G-VVHS24Q0M9'
   if (mode === 'development' && !env.VITE_FIREBASE_VAPID_KEY?.trim()) {
     process.stderr.write(
       '[vite] VITE_FIREBASE_VAPID_KEY 없음 → apps/fe/.env.local 확인 후 dev 서버를 완전히 재시작하세요.\n',
@@ -24,29 +29,40 @@ export default defineConfig(({ mode }) => {
     {
       name: 'inject-ga4-snippet',
       transformIndexHtml: {
-        order: 'pre',
+        // PWA 등 다른 transform 이후 최종 HTML에 GA4 스니펫이 남도록 post 실행
+        order: 'post',
         handler(html, ctx) {
           if (ctx.server) {
-            return html.replace('<!-- %GA4_SNIPPET% -->', '')
+            return html.replace(GA4_SNIPPET_BLOCK, '')
           }
 
-          const measurementId = env.VITE_GA4_MEASUREMENT_ID?.trim() || 'G-VVHS24Q0M9'
-          const snippet = [
-            '<!-- Google tag (gtag.js) -->',
-            `<script async id="ga4-gtag-script" src="https://www.googletagmanager.com/gtag/js?id=${measurementId}"></script>`,
-            '<script>',
-            '  window.dataLayer = window.dataLayer || [];',
-            '  function gtag(){dataLayer.push(arguments);}',
-            '  gtag("js", new Date());',
-            `  gtag("config", "${measurementId}", { send_page_view: false });`,
-            '  document.getElementById("ga4-gtag-script")?.addEventListener("load", function () {',
-            '    this.dataset.loaded = "true";',
-            '  });',
-            '</script>',
-          ].join('\n    ')
-
-          return html.replace('<!-- %GA4_SNIPPET% -->', snippet)
+          return html.replaceAll('__VITE_GA4_MEASUREMENT_ID__', ga4MeasurementId)
         },
+      },
+      closeBundle() {
+        if (mode !== 'production') return
+
+        const indexPath = path.join(feRoot, 'dist', 'index.html')
+        if (!fs.existsSync(indexPath)) {
+          throw new Error('[inject-ga4-snippet] dist/index.html not found after build')
+        }
+
+        const builtHtml = fs.readFileSync(indexPath, 'utf8')
+        if (!builtHtml.includes(GA4_INLINE_INIT_MARKER)) {
+          throw new Error(
+            '[inject-ga4-snippet] GA4 inline init script missing from dist/index.html',
+          )
+        }
+        if (!builtHtml.includes(`gtag/js?id=${ga4MeasurementId}`)) {
+          throw new Error(
+            '[inject-ga4-snippet] GA4 async script missing from dist/index.html',
+          )
+        }
+        if (builtHtml.includes('__VITE_GA4_MEASUREMENT_ID__')) {
+          throw new Error(
+            '[inject-ga4-snippet] GA4 measurement ID placeholder was not replaced in dist/index.html',
+          )
+        }
       },
     },
     VitePWA({

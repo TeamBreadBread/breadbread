@@ -34,6 +34,10 @@ function hasGtagScriptElement(): boolean {
   return typeof document !== "undefined" && document.querySelector(GTAG_SCRIPT_SELECTOR) != null;
 }
 
+function hasGtagHtmlInitScript(): boolean {
+  return typeof document !== "undefined" && document.getElementById("ga4-gtag-init") != null;
+}
+
 /** Google 공식 스니펫과 동일 — arguments 객체를 dataLayer에 push해야 gtag.js가 처리한다 */
 function ensureGtagStub(): void {
   if (typeof window === "undefined") return;
@@ -49,9 +53,9 @@ function ensureGtagStub(): void {
   } as Window["gtag"];
 }
 
-function invokeGtag(command: Gtag.GtagCommand, ...args: unknown[]): void {
+function invokeGtag(...args: unknown[]): void {
   if (!window.gtag) return;
-  (window.gtag as (...params: unknown[]) => void)(command, ...args);
+  Reflect.apply(window.gtag as (...params: unknown[]) => void, window, args);
 }
 
 function shouldSendEvent(dedupeKey: string): boolean {
@@ -147,11 +151,13 @@ export function initGtag(): Promise<void> {
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
-    ensureGtagStub();
+    if (!hasGtagHtmlInitScript()) {
+      ensureGtagStub();
 
-    if (!hasGtagScriptElement()) {
-      invokeGtag("js", new Date());
-      invokeGtag("config", GA4_MEASUREMENT_ID, { send_page_view: false });
+      if (!hasGtagScriptElement()) {
+        invokeGtag("js", new Date());
+        invokeGtag("config", GA4_MEASUREMENT_ID, { send_page_view: false });
+      }
     }
 
     await waitForGtagScript();

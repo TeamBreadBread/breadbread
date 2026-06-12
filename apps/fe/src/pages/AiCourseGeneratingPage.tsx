@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import MobileFrame from "@/components/layout/MobileFrame";
 import BreadBtiLoadingPrompt from "@/components/domain/breadbti/BreadBtiLoadingPrompt";
-import { getCourseDetail, saveAiCourse, saveCourseRoute } from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
-import { AI_COURSE_ESTIMATED_WAIT_SECONDS, pollAiCourseStatus } from "@/utils/pollAiCourseStatus";
-import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
+import { AI_COURSE_ESTIMATED_WAIT_SECONDS } from "@/utils/pollAiCourseStatus";
+import { clearAiCoursePendingJobId, saveAiCoursePendingJobId } from "@/utils/aiCourseStorage";
+import { finalizeAiCourseJob } from "@/utils/finalizeAiCourseJob";
 
 type AiCourseGeneratingPageProps = {
   jobId: string;
@@ -36,6 +36,10 @@ export default function AiCourseGeneratingPage({ jobId }: AiCourseGeneratingPage
   }, [navigate]);
 
   useEffect(() => {
+    saveAiCoursePendingJobId(jobId);
+  }, [jobId]);
+
+  useEffect(() => {
     if (errorMessage) return;
     const timer = window.setInterval(() => {
       setSecondsLeft((s) => Math.max(0, s - 1));
@@ -51,23 +55,20 @@ export default function AiCourseGeneratingPage({ jobId }: AiCourseGeneratingPage
 
     void (async () => {
       try {
-        await pollAiCourseStatus(jobId);
-        const courseId = await saveAiCourse(jobId);
-        const [, courseDetail] = await Promise.all([
-          saveCourseRoute(courseId).catch(() => undefined),
-          getCourseDetail(courseId),
-        ]);
-        sessionStorage.setItem(AI_COURSE_RESULT_STORAGE_KEY, JSON.stringify(courseDetail));
+        const courseId = await finalizeAiCourseJob(jobId);
+        if (cancelled) return;
         navigateRef.current({ to: "/ai-search-result", search: { courseId } });
       } catch (e) {
         if (cancelled) return;
         logAiCourseGenerationFailure(jobId, e);
+        clearAiCoursePendingJobId();
         setErrorMessage(getErrorMessage(e));
       }
     })();
 
     return () => {
       cancelled = true;
+      aiCoursePollStartedJobIds.delete(jobId);
     };
   }, [jobId]);
 
