@@ -41,14 +41,20 @@ export default function RouteListItem({
   }, [showCopyToast]);
 
   const handleItemClick = () => {
-    setIsExpanded((prev) => !prev);
+    onOpenCourse?.(course.id);
     onClick?.();
   };
 
-  const handleItemKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleExpandClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setIsExpanded((prev) => !prev);
+  };
+
+  const handleExpandKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      handleItemClick();
+      event.stopPropagation();
+      setIsExpanded((prev) => !prev);
     }
   };
 
@@ -101,7 +107,12 @@ export default function RouteListItem({
         role="button"
         tabIndex={0}
         onClick={handleItemClick}
-        onKeyDown={handleItemKeyDown}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            handleItemClick();
+          }
+        }}
         className="flex w-full cursor-pointer items-start gap-[10px] py-x6 text-left"
       >
         <CourseBreadThumbnail seed={course.id} />
@@ -125,7 +136,14 @@ export default function RouteListItem({
               <span className="font-pretendard typo-t3regular shrink-0 text-gray-700">
                 방문 매장 수
               </span>
-              <div className="flex items-center gap-[2px]">
+              <button
+                type="button"
+                onClick={handleExpandClick}
+                onKeyDown={handleExpandKeyDown}
+                aria-expanded={isExpanded}
+                aria-label={isExpanded ? "방문 매장 목록 접기" : "방문 매장 목록 펼치기"}
+                className="flex items-center gap-[2px]"
+              >
                 <span className="font-pretendard typo-t3regular text-gray-900">
                   {course.storeCount}곳
                 </span>
@@ -135,7 +153,7 @@ export default function RouteListItem({
                   className={cn("transition-transform", isExpanded && "rotate-180")}
                   alt=""
                 />
-              </div>
+              </button>
             </div>
           </div>
         </div>
@@ -153,18 +171,7 @@ export default function RouteListItem({
       </div>
 
       {isExpanded ? (
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => onOpenCourse?.(course.id)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              onOpenCourse?.(course.id);
-            }
-          }}
-          className="mx-auto mb-x6 flex w-full max-w-[362px] cursor-pointer flex-col items-start justify-start rounded-r2 bg-gray-100 p-[14px] md:max-w-full"
-        >
+        <div className="mx-auto mb-x6 flex w-full max-w-[362px] flex-col items-start justify-start rounded-r2 bg-gray-100 p-[14px] md:max-w-full">
           <div className="flex w-full gap-[6.5px] py-[4px]">
             <div className="relative flex w-[6px] shrink-0 flex-col items-center">
               {course.bakeryNames.length > 1 ? (

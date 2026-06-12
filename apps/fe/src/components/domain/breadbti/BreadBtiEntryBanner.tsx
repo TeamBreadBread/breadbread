@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { AppIcon, IconAssets } from "@/components/icons";
 import { BREAD_BTI_HOME_IMAGE } from "@/lib/breadbti/images";
+import { markBreadBtiEntryFrom } from "@/lib/breadbti/entryFrom";
 import { cn } from "@/utils/cn";
 
 type BreadBtiEntryBannerProps = {
@@ -15,7 +16,10 @@ export default function BreadBtiEntryBanner({ className }: BreadBtiEntryBannerPr
   return (
     <button
       type="button"
-      onClick={() => void navigate({ to: "/breadbti" })}
+      onClick={() => {
+        markBreadBtiEntryFrom("bbangteo");
+        void navigate({ to: "/breadbti", search: { from: "bbangteo" } });
+      }}
       className={cn(
         "flex w-full items-center gap-[12px] rounded-[12px] border border-[#ffd4a8] bg-gradient-to-r from-[#fff4e6] to-[#ffe8cc] px-[16px] py-[14px] text-left transition-opacity active:opacity-80",
         className,

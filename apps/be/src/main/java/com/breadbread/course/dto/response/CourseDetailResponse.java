@@ -2,6 +2,8 @@ package com.breadbread.course.dto.response;
 
 import com.breadbread.bakery.dto.response.BakerySummaryResponse;
 import com.breadbread.course.entity.Course;
+import com.breadbread.course.entity.CourseType;
+import com.breadbread.course.service.ai.AiCourseNameResolver;
 import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
@@ -28,7 +30,7 @@ public class CourseDetailResponse {
             List<BakerySummaryResponse> bakeries) {
         return CourseDetailResponse.builder()
                 .id(course.getId())
-                .name(course.getName())
+                .name(displayName(course))
                 .thumbnailUrl(course.getThumbnailUrl())
                 .bakeryCount(course.getCourseBakeries().size())
                 .estimatedTime(course.getEstimatedTime())
@@ -38,5 +40,12 @@ public class CourseDetailResponse {
                 .isSaved(isSaved)
                 .bakeries(bakeries)
                 .build();
+    }
+
+    private static String displayName(Course course) {
+        if (course.getCourseType() == CourseType.AI) {
+            return AiCourseNameResolver.resolve(course);
+        }
+        return course.getName();
     }
 }

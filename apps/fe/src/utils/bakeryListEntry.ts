@@ -34,11 +34,14 @@ export type BbangteoBakeryListSearch = {
   excludePins?: number[];
   /** SNS 트렌드 빵 키워드 — 해당 빵을 파는 빵집만 표시 */
   breadKeyword?: string;
+  /** 빵집 이름 검색어 */
+  keyword?: string;
 };
 
 /** `/bbangteo-bakery-list` 이동 시 검색 파라미터 기본값 채우기 */
 export function buildBbangteoBakeryListSearch(search: BbangteoBakeryListSearch = {}) {
   const breadKeyword = search.breadKeyword?.trim();
+  const keyword = search.keyword?.trim();
   return {
     from: search.from,
     curationOnly: search.curationOnly ?? false,
@@ -46,6 +49,7 @@ export function buildBbangteoBakeryListSearch(search: BbangteoBakeryListSearch =
     curationPins: search.curationPins ?? [],
     excludePins: search.excludePins ?? [],
     breadKeyword: breadKeyword || undefined,
+    keyword: keyword || undefined,
   };
 }
 
@@ -90,6 +94,10 @@ export function parseBreadKeywordParam(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
+}
+
+export function parseBakeryKeywordParam(value: unknown): string | undefined {
+  return parseBreadKeywordParam(value);
 }
 
 export type BbakeryDetailSearch = {

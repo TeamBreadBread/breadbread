@@ -5,6 +5,7 @@ export type CommunitySectionItem = {
   sectionHeight: number;
   contentType: "image" | "curationApi" | "postList";
   postItems?: {
+    id?: number;
     content: string;
     date: string;
   }[];

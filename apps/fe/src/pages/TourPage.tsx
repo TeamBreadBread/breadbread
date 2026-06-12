@@ -12,6 +12,7 @@ import {
 } from "@/api/tours";
 import { ApiBusinessError, getErrorMessage } from "@/api/types/common";
 import { AppTopBar } from "@/components/common";
+import ActiveTourConflictDialog from "@/components/common/dialog/ActiveTourConflictDialog";
 import CongestionBadge from "@/components/common/CongestionBadge";
 import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
@@ -22,6 +23,7 @@ import {
   mapCongestionByBakeryId,
 } from "@/utils/congestionCheck";
 import { markTourCompleteCelebration } from "@/utils/tourCelebration";
+import { hasConflictingActiveTour } from "@/utils/activeTourGuard";
 import { cn } from "@/utils/cn";
 
 interface TourPageProps {
@@ -47,6 +49,7 @@ export default function TourPage({ courseId }: TourPageProps) {
   const [congestionByBakeryId, setCongestionByBakeryId] = useState<
     Map<number, { level?: string | null; expectedWaitMin?: number | null }>
   >(new Map());
+  const [activeTourConflictOpen, setActiveTourConflictOpen] = useState(false);
 
   const init = useCallback(async () => {
     if (courseId <= 0) {
@@ -65,7 +68,11 @@ export default function TourPage({ courseId }: TourPageProps) {
       if (current && current.courseId === courseId) {
         setTour(current);
       } else if (current && current.courseId !== courseId && current.status === "IN_PROGRESS") {
-        setError("다른 코스의 투어가 진행 중이에요. 먼저 진행 중인 투어를 완료해 주세요.");
+        setActiveTourConflictOpen(true);
+        setError("");
+      } else if (await hasConflictingActiveTour(courseId)) {
+        setActiveTourConflictOpen(true);
+        setError("");
       } else {
         try {
           const started = await startTour(courseId);
@@ -362,6 +369,14 @@ export default function TourPage({ courseId }: TourPageProps) {
       ) : null}
 
       <BottomNav />
+
+      <ActiveTourConflictDialog
+        open={activeTourConflictOpen}
+        onConfirm={() => {
+          setActiveTourConflictOpen(false);
+          void navigate({ to: "/route" });
+        }}
+      />
     </MobileFrame>
   );
 }

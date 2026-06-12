@@ -1,5 +1,6 @@
 package com.breadbread.course.dto.ai;
 
+import com.breadbread.course.service.ai.AiCourseNameResolver;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,7 +25,7 @@ public class AiCoursePreviewResponse {
             AiCourseWebhookResponse response,
             List<AiCoursePreviewBakeryResponse> enrichedBakeries) {
         return AiCoursePreviewResponse.builder()
-                .name(response.getName())
+                .name(AiCourseNameResolver.resolve(response))
                 .bakeryCount(enrichedBakeries.size())
                 .estimatedTime(response.getEstimatedTime())
                 .estimatedCost(response.getEstimatedCost())

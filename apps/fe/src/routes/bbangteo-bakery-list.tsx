@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import BbangteoBakeryListPage from "@/pages/BbangteoBakeryListPage";
 import {
   parseBakeryListEntryFrom,
+  parseBakeryKeywordParam,
   parseBreadKeywordParam,
   parseCurationOnlyParam,
   parseCurationPinsParam,
@@ -16,12 +17,14 @@ export const Route = createFileRoute("/bbangteo-bakery-list")({
     curationPins: parseCurationPinsParam(search.curationPins) ?? [],
     excludePins: parseCurationPinsParam(search.excludePins) ?? [],
     breadKeyword: parseBreadKeywordParam(search.breadKeyword),
+    keyword: parseBakeryKeywordParam(search.keyword),
   }),
   component: BbangteoBakeryListRoute,
 });
 
 function BbangteoBakeryListRoute() {
-  const { from, curationOnly, dong, curationPins, excludePins, breadKeyword } = Route.useSearch();
+  const { from, curationOnly, dong, curationPins, excludePins, breadKeyword, keyword } =
+    Route.useSearch();
   return (
     <BbangteoBakeryListPage
       listEntryFrom={from}
@@ -30,6 +33,7 @@ function BbangteoBakeryListRoute() {
       curationPinIds={curationPins}
       excludePinIds={excludePins}
       breadKeyword={breadKeyword}
+      initialKeyword={keyword}
     />
   );
 }

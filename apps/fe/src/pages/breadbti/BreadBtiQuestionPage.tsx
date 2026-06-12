@@ -1,6 +1,7 @@
 import { useState, type MouseEvent } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
+import BreadBtiMobileFrame from "@/components/domain/breadbti/BreadBtiMobileFrame";
 import { getMbti, INITIAL_SCORES, MBTI_QUESTIONS, type MbtiTrait } from "@/lib/breadbti/mbti";
 import { BREAD_BTI_RESULT_STORAGE_KEY } from "@/lib/breadbti/paths";
 
@@ -34,8 +35,8 @@ export default function BreadBtiQuestionPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-[#FFF4E6] to-[#FFE8CC]">
-      <div className="mx-auto w-full max-w-6xl px-5 pt-6 lg:px-10 lg:pt-10">
+    <BreadBtiMobileFrame>
+      <div className="px-5 pt-6">
         <div className="mb-2 text-center text-sm font-semibold text-[#D86A00]">
           {currentIndex + 1} / {MBTI_QUESTIONS.length}
         </div>
@@ -47,35 +48,33 @@ export default function BreadBtiQuestionPage() {
         </div>
       </div>
 
-      <main className="flex flex-1 items-center px-6 pb-12 lg:px-10 lg:pb-20">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-center">
-          <div
-            key={currentIndex}
-            className="w-full rounded-[2rem] bg-white/40 p-6 shadow-lg backdrop-blur-sm lg:p-12"
-          >
-            <h2 className="mb-10 text-center text-3xl leading-relaxed font-bold text-[#D86A00] lg:mb-14 lg:text-5xl">
-              {currentQuestion.question}
-            </h2>
+      <main className="flex flex-1 items-center px-5 pb-12 pt-6">
+        <div
+          key={currentIndex}
+          className="w-full rounded-[2rem] bg-white/40 p-6 shadow-lg backdrop-blur-sm"
+        >
+          <h2 className="mb-8 text-center text-[26px] font-bold leading-relaxed text-[#D86A00]">
+            {currentQuestion.question}
+          </h2>
 
-            <div className="mx-auto grid w-full max-w-4xl gap-4 lg:grid-cols-2 lg:gap-6">
-              <button
-                type="button"
-                className="w-full rounded-2xl border-2 border-transparent bg-white px-8 py-6 font-semibold text-[#D86A00] shadow-lg transition-all hover:border-[#FF8C42] hover:bg-[#FFF4E6] active:scale-98 lg:min-h-[160px] lg:text-xl"
-                onClick={(event) => handleAnswer(currentQuestion.options[0].trait, event)}
-              >
-                {currentQuestion.options[0].label}
-              </button>
-              <button
-                type="button"
-                className="w-full rounded-2xl border-2 border-transparent bg-white px-8 py-6 font-semibold text-[#D86A00] shadow-lg transition-all hover:border-[#FF8C42] hover:bg-[#FFF4E6] active:scale-98 lg:min-h-[160px] lg:text-xl"
-                onClick={(event) => handleAnswer(currentQuestion.options[1].trait, event)}
-              >
-                {currentQuestion.options[1].label}
-              </button>
-            </div>
+          <div className="flex w-full flex-col gap-4">
+            <button
+              type="button"
+              className="w-full rounded-2xl border-2 border-transparent bg-white px-6 py-5 text-left font-semibold text-[#D86A00] shadow-lg transition-all hover:border-[#FF8C42] hover:bg-[#FFF4E6] active:scale-98"
+              onClick={(event) => handleAnswer(currentQuestion.options[0].trait, event)}
+            >
+              {currentQuestion.options[0].label}
+            </button>
+            <button
+              type="button"
+              className="w-full rounded-2xl border-2 border-transparent bg-white px-6 py-5 text-left font-semibold text-[#D86A00] shadow-lg transition-all hover:border-[#FF8C42] hover:bg-[#FFF4E6] active:scale-98"
+              onClick={(event) => handleAnswer(currentQuestion.options[1].trait, event)}
+            >
+              {currentQuestion.options[1].label}
+            </button>
           </div>
         </div>
       </main>
-    </div>
+    </BreadBtiMobileFrame>
   );
 }

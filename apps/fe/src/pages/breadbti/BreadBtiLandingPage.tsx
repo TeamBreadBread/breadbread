@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
+import BreadBtiMobileFrame from "@/components/domain/breadbti/BreadBtiMobileFrame";
+import { isBreadBtiFromBbangteo } from "@/lib/breadbti/entryFrom";
 import { BREAD_BTI_HOME_IMAGE } from "@/lib/breadbti/images";
 import { breadBtiAbsoluteUrl, breadBtiPath } from "@/lib/breadbti/paths";
 import {
@@ -18,15 +20,15 @@ import {
 import "@/styles/breadbti-landing.css";
 
 const bouncingBreads = [
-  { name: "🥞", left: "6%", size: "3.25rem", delay: "0s", duration: "2.4s" },
-  { name: "🥐", left: "17%", size: "3.25rem", delay: "0.2s", duration: "2.1s" },
-  { name: "🍞", left: "28%", size: "3.25rem", delay: "0.4s", duration: "2.6s" },
-  { name: "🥖", left: "39%", size: "3.25rem", delay: "0.1s", duration: "2.3s" },
-  { name: "🥨", left: "50%", size: "3.25rem", delay: "0.5s", duration: "2.7s" },
-  { name: "🥪", left: "61%", size: "3.25rem", delay: "0.3s", duration: "2.2s" },
-  { name: "🍰", left: "72%", size: "3.25rem", delay: "0.6s", duration: "2.5s" },
-  { name: "🍩", left: "83%", size: "3.25rem", delay: "0.8s", duration: "2.4s" },
-  { name: "🍪", left: "94%", size: "3.25rem", delay: "0.7s", duration: "2.6s" },
+  { name: "🥞", left: "6%", size: "2.75rem", delay: "0s", duration: "2.4s" },
+  { name: "🥐", left: "17%", size: "2.75rem", delay: "0.2s", duration: "2.1s" },
+  { name: "🍞", left: "28%", size: "2.75rem", delay: "0.4s", duration: "2.6s" },
+  { name: "🥖", left: "39%", size: "2.75rem", delay: "0.1s", duration: "2.3s" },
+  { name: "🥨", left: "50%", size: "2.75rem", delay: "0.5s", duration: "2.7s" },
+  { name: "🥪", left: "61%", size: "2.75rem", delay: "0.3s", duration: "2.2s" },
+  { name: "🍰", left: "72%", size: "2.75rem", delay: "0.6s", duration: "2.5s" },
+  { name: "🍩", left: "83%", size: "2.75rem", delay: "0.8s", duration: "2.4s" },
+  { name: "🍪", left: "94%", size: "2.75rem", delay: "0.7s", duration: "2.6s" },
 ];
 
 export default function BreadBtiLandingPage() {
@@ -75,94 +77,73 @@ export default function BreadBtiLandingPage() {
     setIsCopyModalOpen(true);
   };
 
+  const fromBbangteo = isBreadBtiFromBbangteo();
+
   const startTest = () => {
     void navigate({ to: "/breadbti/question" });
   };
 
-  const shareButtons = (
-    <>
-      <p className="mb-4 text-center text-sm font-semibold text-[#D86A00] lg:text-left">
-        테스트 공유하기
-      </p>
-      <div className="flex justify-center gap-3 lg:justify-start">
-        <button
-          type="button"
-          onClick={handleKakaoShare}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-[#FEE500] shadow-md transition-all hover:bg-[#FDD000] active:scale-95"
-        >
-          <BreadBtiMessageIcon />
-        </button>
-        <button
-          type="button"
-          onClick={handleTwitterShare}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-black text-white shadow-md transition-all hover:bg-gray-800 active:scale-95"
-        >
-          <BreadBtiTwitterIcon />
-        </button>
-        <button
-          type="button"
-          onClick={() => void handleCopyLink()}
-          className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#FF8C42] bg-white text-[#FF8C42] shadow-md transition-all hover:bg-gray-50 active:scale-95"
-        >
-          <BreadBtiLinkIcon />
-        </button>
-      </div>
-    </>
-  );
-
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-gradient-to-b from-[#FFF4E6] to-[#FFE8CC]">
-      <header className="p-5 text-center lg:py-8">
-        <div className="text-xs font-semibold text-[#FF8C42] lg:text-sm">BREAD MBTI</div>
-      </header>
+    <BreadBtiMobileFrame className="overflow-hidden">
+      {fromBbangteo ? null : (
+        <header className="p-5 text-center">
+          <div className="text-xs font-semibold text-[#FF8C42]">BREAD MBTI</div>
+        </header>
+      )}
 
-      <main className="flex-1 px-6 pb-16 lg:px-10 lg:pb-24">
-        <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col items-center justify-center gap-10 lg:grid lg:grid-cols-2 lg:gap-14">
-          <section className="order-1 flex w-full max-w-xl flex-col items-center text-center lg:order-1 lg:items-start lg:text-left">
-            <h1 className="text-5xl leading-tight font-black text-[#D86A00] lg:text-7xl">
-              나는
-              <br />
-              어떤 빵일까?
-            </h1>
-            <p className="mt-3 text-base text-[#B87333] lg:text-xl">MBTI로 알아보는 나의 빵 성격</p>
+      <main
+        className={`flex flex-1 flex-col items-center px-5 pt-2 ${fromBbangteo ? "pb-24" : "pb-36"}`}
+      >
+        <h1 className="text-center text-[44px] font-black leading-tight text-[#D86A00]">
+          나는
+          <br />
+          어떤 빵일까?
+        </h1>
+        <p className="mt-3 text-center text-base text-[#B87333]">MBTI로 알아보는 나의 빵 성격</p>
 
+        <div className="breadbti-hero-wrap mt-8 w-full max-w-[280px]">
+          <div className="breadbti-hero-shadow" />
+          <img
+            src={BREAD_BTI_HOME_IMAGE}
+            alt="Bread Character"
+            className="breadbti-hero-image mb-0 block h-auto w-full"
+          />
+        </div>
+
+        <button
+          type="button"
+          onClick={startTest}
+          className="mt-8 w-full max-w-[280px] rounded-full bg-[#FF8C42] px-12 py-4 font-bold text-white shadow-lg transition-all hover:bg-[#FF7A10] active:scale-95"
+        >
+          테스트 시작하기
+        </button>
+        <div className="mt-4 text-sm text-[#B87333]">참여자수 | 105,789명</div>
+
+        <div className="mt-8 w-full max-w-[280px]">
+          <p className="mb-4 text-center text-sm font-semibold text-[#D86A00]">테스트 공유하기</p>
+          <div className="flex justify-center gap-3">
             <button
               type="button"
-              onClick={startTest}
-              className="mt-8 hidden rounded-full bg-[#FF8C42] px-12 py-4 font-bold text-white shadow-lg transition-all hover:bg-[#FF7A10] active:scale-95 lg:inline-flex lg:px-16 lg:py-5 lg:text-lg"
+              onClick={handleKakaoShare}
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-[#FEE500] shadow-md transition-all hover:bg-[#FDD000] active:scale-95"
             >
-              테스트 시작하기
+              <BreadBtiMessageIcon />
             </button>
-
-            <div className="mt-4 hidden text-sm text-[#B87333] lg:block lg:text-base">
-              참여자수 | 105,789명
-            </div>
-
-            <div className="mt-10 hidden w-full max-w-xs lg:block lg:max-w-sm">{shareButtons}</div>
-          </section>
-
-          <section className="order-2 flex w-full justify-center lg:order-2 lg:justify-end">
-            <div className="breadbti-hero-wrap w-full max-w-md lg:max-w-xl">
-              <div className="breadbti-hero-shadow" />
-              <img
-                src={BREAD_BTI_HOME_IMAGE}
-                alt="Bread Character"
-                className="breadbti-hero-image mb-0 block h-auto w-full"
-              />
-            </div>
-          </section>
-
-          <section className="order-3 flex w-full max-w-xs flex-col items-center lg:hidden">
             <button
               type="button"
-              onClick={startTest}
-              className="w-full rounded-full bg-[#FF8C42] px-12 py-4 font-bold text-white shadow-lg transition-all hover:bg-[#FF7A10] active:scale-95"
+              onClick={handleTwitterShare}
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-black text-white shadow-md transition-all hover:bg-gray-800 active:scale-95"
             >
-              테스트 시작하기
+              <BreadBtiTwitterIcon />
             </button>
-            <div className="mt-4 text-sm text-[#B87333]">참여자수 | 105,789명</div>
-            <div className="mt-8 w-full">{shareButtons}</div>
-          </section>
+            <button
+              type="button"
+              onClick={() => void handleCopyLink()}
+              className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#FF8C42] bg-white text-[#FF8C42] shadow-md transition-all hover:bg-gray-50 active:scale-95"
+            >
+              <BreadBtiLinkIcon />
+            </button>
+          </div>
         </div>
       </main>
 
@@ -181,7 +162,7 @@ export default function BreadBtiLandingPage() {
         </div>
       ) : null}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-44 lg:h-52">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36">
         {bouncingBreads.map((bread) => (
           <div
             key={bread.name}
@@ -201,6 +182,6 @@ export default function BreadBtiLandingPage() {
           </div>
         ))}
       </div>
-    </div>
+    </BreadBtiMobileFrame>
   );
 }
