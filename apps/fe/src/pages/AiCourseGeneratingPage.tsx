@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import MobileFrame from "@/components/layout/MobileFrame";
+import BreadBtiLoadingPrompt from "@/components/domain/breadbti/BreadBtiLoadingPrompt";
 import { getCourseDetail, saveAiCourse, saveCourseRoute } from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
 import { AI_COURSE_ESTIMATED_WAIT_SECONDS, pollAiCourseStatus } from "@/utils/pollAiCourseStatus";
@@ -26,8 +27,13 @@ function logAiCourseGenerationFailure(jobId: string, error: unknown): void {
 
 export default function AiCourseGeneratingPage({ jobId }: AiCourseGeneratingPageProps) {
   const navigate = useNavigate();
+  const navigateRef = useRef(navigate);
   const [secondsLeft, setSecondsLeft] = useState(AI_COURSE_ESTIMATED_WAIT_SECONDS);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    navigateRef.current = navigate;
+  }, [navigate]);
 
   useEffect(() => {
     if (errorMessage) return;
@@ -46,19 +52,13 @@ export default function AiCourseGeneratingPage({ jobId }: AiCourseGeneratingPage
     void (async () => {
       try {
         await pollAiCourseStatus(jobId);
-        if (cancelled) return;
-        // BE가 결과를 Redis에 임시 저장하므로, save를 호출해야 DB에 코스가 생성되고 courseId를 받는다.
         const courseId = await saveAiCourse(jobId);
-        if (cancelled) return;
-        // 루트 저장과 상세 조회는 서로 독립적이라 병렬로 처리해 대기 시간을 줄인다.
-        // 루트 저장은 이미 저장된 코스거나 일시 오류여도 화면 이동을 막지 않는다.
         const [, courseDetail] = await Promise.all([
           saveCourseRoute(courseId).catch(() => undefined),
           getCourseDetail(courseId),
         ]);
-        if (cancelled) return;
         sessionStorage.setItem(AI_COURSE_RESULT_STORAGE_KEY, JSON.stringify(courseDetail));
-        navigate({ to: "/ai-search-result", search: { courseId } });
+        navigateRef.current({ to: "/ai-search-result", search: { courseId } });
       } catch (e) {
         if (cancelled) return;
         logAiCourseGenerationFailure(jobId, e);
@@ -69,7 +69,7 @@ export default function AiCourseGeneratingPage({ jobId }: AiCourseGeneratingPage
     return () => {
       cancelled = true;
     };
-  }, [jobId, navigate]);
+  }, [jobId]);
 
   if (errorMessage) {
     return (
@@ -133,6 +133,8 @@ export default function AiCourseGeneratingPage({ jobId }: AiCourseGeneratingPage
             <>거의 완료되었어요. 조금만 더 기다려 주세요.</>
           )}
         </p>
+
+        <BreadBtiLoadingPrompt />
       </main>
     </MobileFrame>
   );

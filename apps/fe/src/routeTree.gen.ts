@@ -33,6 +33,7 @@ import { Route as FindPasswordRouteImport } from "./routes/find-password";
 import { Route as FindIdResultRouteImport } from "./routes/find-id-result";
 import { Route as FindIdFailureRouteImport } from "./routes/find-id-failure";
 import { Route as FindIdRouteImport } from "./routes/find-id";
+import { Route as BreadbtiRouteImport } from "./routes/breadbti";
 import { Route as BbangteoTypeCoursesRouteImport } from "./routes/bbangteo-type-courses";
 import { Route as BbangteoThemeCoursesRouteImport } from "./routes/bbangteo-theme-courses";
 import { Route as BbangteoRegionCoursesRouteImport } from "./routes/bbangteo-region-courses";
@@ -52,8 +53,13 @@ import { Route as AiCourseGeneratingRouteImport } from "./routes/ai-course-gener
 import { Route as AccountSettingsRouteImport } from "./routes/account-settings";
 import { Route as IndexRouteImport } from "./routes/index";
 import { Route as RouteIndexRouteImport } from "./routes/route.index";
+import { Route as BreadbtiIndexRouteImport } from "./routes/breadbti.index";
 import { Route as AccountSettingsIndexRouteImport } from "./routes/account-settings.index";
 import { Route as PaymentPortoneRedirectRouteImport } from "./routes/payment.portone-redirect";
+import { Route as BreadbtiTotalresultRouteImport } from "./routes/breadbti.totalresult";
+import { Route as BreadbtiResultRouteImport } from "./routes/breadbti.result";
+import { Route as BreadbtiQuestionRouteImport } from "./routes/breadbti.question";
+import { Route as BreadbtiLoadingRouteImport } from "./routes/breadbti.loading";
 import { Route as AccountSettingsProfileRouteImport } from "./routes/account-settings.profile";
 import { Route as AccountSettingsPhoneRouteImport } from "./routes/account-settings.phone";
 import { Route as AccountSettingsPasswordRouteImport } from "./routes/account-settings.password";
@@ -181,6 +187,11 @@ const FindIdRoute = FindIdRouteImport.update({
   path: "/find-id",
   getParentRoute: () => rootRouteImport,
 } as any);
+const BreadbtiRoute = BreadbtiRouteImport.update({
+  id: "/breadbti",
+  path: "/breadbti",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const BbangteoTypeCoursesRoute = BbangteoTypeCoursesRouteImport.update({
   id: "/bbangteo-type-courses",
   path: "/bbangteo-type-courses",
@@ -276,6 +287,11 @@ const RouteIndexRoute = RouteIndexRouteImport.update({
   path: "/route/",
   getParentRoute: () => rootRouteImport,
 } as any);
+const BreadbtiIndexRoute = BreadbtiIndexRouteImport.update({
+  id: "/",
+  path: "/",
+  getParentRoute: () => BreadbtiRoute,
+} as any);
 const AccountSettingsIndexRoute = AccountSettingsIndexRouteImport.update({
   id: "/",
   path: "/",
@@ -285,6 +301,26 @@ const PaymentPortoneRedirectRoute = PaymentPortoneRedirectRouteImport.update({
   id: "/payment/portone-redirect",
   path: "/payment/portone-redirect",
   getParentRoute: () => rootRouteImport,
+} as any);
+const BreadbtiTotalresultRoute = BreadbtiTotalresultRouteImport.update({
+  id: "/totalresult",
+  path: "/totalresult",
+  getParentRoute: () => BreadbtiRoute,
+} as any);
+const BreadbtiResultRoute = BreadbtiResultRouteImport.update({
+  id: "/result",
+  path: "/result",
+  getParentRoute: () => BreadbtiRoute,
+} as any);
+const BreadbtiQuestionRoute = BreadbtiQuestionRouteImport.update({
+  id: "/question",
+  path: "/question",
+  getParentRoute: () => BreadbtiRoute,
+} as any);
+const BreadbtiLoadingRoute = BreadbtiLoadingRouteImport.update({
+  id: "/loading",
+  path: "/loading",
+  getParentRoute: () => BreadbtiRoute,
 } as any);
 const AccountSettingsProfileRoute = AccountSettingsProfileRouteImport.update({
   id: "/profile",
@@ -336,6 +372,7 @@ export interface FileRoutesByFullPath {
   "/bbangteo-region-courses": typeof BbangteoRegionCoursesRoute;
   "/bbangteo-theme-courses": typeof BbangteoThemeCoursesRoute;
   "/bbangteo-type-courses": typeof BbangteoTypeCoursesRoute;
+  "/breadbti": typeof BreadbtiRouteWithChildren;
   "/find-id": typeof FindIdRoute;
   "/find-id-failure": typeof FindIdFailureRoute;
   "/find-id-result": typeof FindIdResultRoute;
@@ -363,8 +400,13 @@ export interface FileRoutesByFullPath {
   "/account-settings/password": typeof AccountSettingsPasswordRoute;
   "/account-settings/phone": typeof AccountSettingsPhoneRoute;
   "/account-settings/profile": typeof AccountSettingsProfileRoute;
+  "/breadbti/loading": typeof BreadbtiLoadingRoute;
+  "/breadbti/question": typeof BreadbtiQuestionRoute;
+  "/breadbti/result": typeof BreadbtiResultRoute;
+  "/breadbti/totalresult": typeof BreadbtiTotalresultRoute;
   "/payment/portone-redirect": typeof PaymentPortoneRedirectRoute;
   "/account-settings/": typeof AccountSettingsIndexRoute;
+  "/breadbti/": typeof BreadbtiIndexRoute;
   "/route/": typeof RouteIndexRoute;
   "/auth/google/callback": typeof AuthGoogleCallbackRoute;
   "/auth/kakao/callback": typeof AuthKakaoCallbackRoute;
@@ -415,8 +457,13 @@ export interface FileRoutesByTo {
   "/account-settings/password": typeof AccountSettingsPasswordRoute;
   "/account-settings/phone": typeof AccountSettingsPhoneRoute;
   "/account-settings/profile": typeof AccountSettingsProfileRoute;
+  "/breadbti/loading": typeof BreadbtiLoadingRoute;
+  "/breadbti/question": typeof BreadbtiQuestionRoute;
+  "/breadbti/result": typeof BreadbtiResultRoute;
+  "/breadbti/totalresult": typeof BreadbtiTotalresultRoute;
   "/payment/portone-redirect": typeof PaymentPortoneRedirectRoute;
   "/account-settings": typeof AccountSettingsIndexRoute;
+  "/breadbti": typeof BreadbtiIndexRoute;
   "/route": typeof RouteIndexRoute;
   "/auth/google/callback": typeof AuthGoogleCallbackRoute;
   "/auth/kakao/callback": typeof AuthKakaoCallbackRoute;
@@ -442,6 +489,7 @@ export interface FileRoutesById {
   "/bbangteo-region-courses": typeof BbangteoRegionCoursesRoute;
   "/bbangteo-theme-courses": typeof BbangteoThemeCoursesRoute;
   "/bbangteo-type-courses": typeof BbangteoTypeCoursesRoute;
+  "/breadbti": typeof BreadbtiRouteWithChildren;
   "/find-id": typeof FindIdRoute;
   "/find-id-failure": typeof FindIdFailureRoute;
   "/find-id-result": typeof FindIdResultRoute;
@@ -469,8 +517,13 @@ export interface FileRoutesById {
   "/account-settings/password": typeof AccountSettingsPasswordRoute;
   "/account-settings/phone": typeof AccountSettingsPhoneRoute;
   "/account-settings/profile": typeof AccountSettingsProfileRoute;
+  "/breadbti/loading": typeof BreadbtiLoadingRoute;
+  "/breadbti/question": typeof BreadbtiQuestionRoute;
+  "/breadbti/result": typeof BreadbtiResultRoute;
+  "/breadbti/totalresult": typeof BreadbtiTotalresultRoute;
   "/payment/portone-redirect": typeof PaymentPortoneRedirectRoute;
   "/account-settings/": typeof AccountSettingsIndexRoute;
+  "/breadbti/": typeof BreadbtiIndexRoute;
   "/route/": typeof RouteIndexRoute;
   "/auth/google/callback": typeof AuthGoogleCallbackRoute;
   "/auth/kakao/callback": typeof AuthKakaoCallbackRoute;
@@ -497,6 +550,7 @@ export interface FileRouteTypes {
     | "/bbangteo-region-courses"
     | "/bbangteo-theme-courses"
     | "/bbangteo-type-courses"
+    | "/breadbti"
     | "/find-id"
     | "/find-id-failure"
     | "/find-id-result"
@@ -524,8 +578,13 @@ export interface FileRouteTypes {
     | "/account-settings/password"
     | "/account-settings/phone"
     | "/account-settings/profile"
+    | "/breadbti/loading"
+    | "/breadbti/question"
+    | "/breadbti/result"
+    | "/breadbti/totalresult"
     | "/payment/portone-redirect"
     | "/account-settings/"
+    | "/breadbti/"
     | "/route/"
     | "/auth/google/callback"
     | "/auth/kakao/callback"
@@ -576,8 +635,13 @@ export interface FileRouteTypes {
     | "/account-settings/password"
     | "/account-settings/phone"
     | "/account-settings/profile"
+    | "/breadbti/loading"
+    | "/breadbti/question"
+    | "/breadbti/result"
+    | "/breadbti/totalresult"
     | "/payment/portone-redirect"
     | "/account-settings"
+    | "/breadbti"
     | "/route"
     | "/auth/google/callback"
     | "/auth/kakao/callback"
@@ -602,6 +666,7 @@ export interface FileRouteTypes {
     | "/bbangteo-region-courses"
     | "/bbangteo-theme-courses"
     | "/bbangteo-type-courses"
+    | "/breadbti"
     | "/find-id"
     | "/find-id-failure"
     | "/find-id-result"
@@ -629,8 +694,13 @@ export interface FileRouteTypes {
     | "/account-settings/password"
     | "/account-settings/phone"
     | "/account-settings/profile"
+    | "/breadbti/loading"
+    | "/breadbti/question"
+    | "/breadbti/result"
+    | "/breadbti/totalresult"
     | "/payment/portone-redirect"
     | "/account-settings/"
+    | "/breadbti/"
     | "/route/"
     | "/auth/google/callback"
     | "/auth/kakao/callback"
@@ -656,6 +726,7 @@ export interface RootRouteChildren {
   BbangteoRegionCoursesRoute: typeof BbangteoRegionCoursesRoute;
   BbangteoThemeCoursesRoute: typeof BbangteoThemeCoursesRoute;
   BbangteoTypeCoursesRoute: typeof BbangteoTypeCoursesRoute;
+  BreadbtiRoute: typeof BreadbtiRouteWithChildren;
   FindIdRoute: typeof FindIdRoute;
   FindIdFailureRoute: typeof FindIdFailureRoute;
   FindIdResultRoute: typeof FindIdResultRoute;
@@ -857,6 +928,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof FindIdRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/breadbti": {
+      id: "/breadbti";
+      path: "/breadbti";
+      fullPath: "/breadbti";
+      preLoaderRoute: typeof BreadbtiRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/bbangteo-type-courses": {
       id: "/bbangteo-type-courses";
       path: "/bbangteo-type-courses";
@@ -990,6 +1068,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof RouteIndexRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/breadbti/": {
+      id: "/breadbti/";
+      path: "/";
+      fullPath: "/breadbti/";
+      preLoaderRoute: typeof BreadbtiIndexRouteImport;
+      parentRoute: typeof BreadbtiRoute;
+    };
     "/account-settings/": {
       id: "/account-settings/";
       path: "/";
@@ -1003,6 +1088,34 @@ declare module "@tanstack/react-router" {
       fullPath: "/payment/portone-redirect";
       preLoaderRoute: typeof PaymentPortoneRedirectRouteImport;
       parentRoute: typeof rootRouteImport;
+    };
+    "/breadbti/totalresult": {
+      id: "/breadbti/totalresult";
+      path: "/totalresult";
+      fullPath: "/breadbti/totalresult";
+      preLoaderRoute: typeof BreadbtiTotalresultRouteImport;
+      parentRoute: typeof BreadbtiRoute;
+    };
+    "/breadbti/result": {
+      id: "/breadbti/result";
+      path: "/result";
+      fullPath: "/breadbti/result";
+      preLoaderRoute: typeof BreadbtiResultRouteImport;
+      parentRoute: typeof BreadbtiRoute;
+    };
+    "/breadbti/question": {
+      id: "/breadbti/question";
+      path: "/question";
+      fullPath: "/breadbti/question";
+      preLoaderRoute: typeof BreadbtiQuestionRouteImport;
+      parentRoute: typeof BreadbtiRoute;
+    };
+    "/breadbti/loading": {
+      id: "/breadbti/loading";
+      path: "/loading";
+      fullPath: "/breadbti/loading";
+      preLoaderRoute: typeof BreadbtiLoadingRouteImport;
+      parentRoute: typeof BreadbtiRoute;
     };
     "/account-settings/profile": {
       id: "/account-settings/profile";
@@ -1067,6 +1180,24 @@ const AccountSettingsRouteWithChildren = AccountSettingsRoute._addFileChildren(
   AccountSettingsRouteChildren,
 );
 
+interface BreadbtiRouteChildren {
+  BreadbtiLoadingRoute: typeof BreadbtiLoadingRoute;
+  BreadbtiQuestionRoute: typeof BreadbtiQuestionRoute;
+  BreadbtiResultRoute: typeof BreadbtiResultRoute;
+  BreadbtiTotalresultRoute: typeof BreadbtiTotalresultRoute;
+  BreadbtiIndexRoute: typeof BreadbtiIndexRoute;
+}
+
+const BreadbtiRouteChildren: BreadbtiRouteChildren = {
+  BreadbtiLoadingRoute: BreadbtiLoadingRoute,
+  BreadbtiQuestionRoute: BreadbtiQuestionRoute,
+  BreadbtiResultRoute: BreadbtiResultRoute,
+  BreadbtiTotalresultRoute: BreadbtiTotalresultRoute,
+  BreadbtiIndexRoute: BreadbtiIndexRoute,
+};
+
+const BreadbtiRouteWithChildren = BreadbtiRoute._addFileChildren(BreadbtiRouteChildren);
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountSettingsRoute: AccountSettingsRouteWithChildren,
@@ -1086,6 +1217,7 @@ const rootRouteChildren: RootRouteChildren = {
   BbangteoRegionCoursesRoute: BbangteoRegionCoursesRoute,
   BbangteoThemeCoursesRoute: BbangteoThemeCoursesRoute,
   BbangteoTypeCoursesRoute: BbangteoTypeCoursesRoute,
+  BreadbtiRoute: BreadbtiRouteWithChildren,
   FindIdRoute: FindIdRoute,
   FindIdFailureRoute: FindIdFailureRoute,
   FindIdResultRoute: FindIdResultRoute,
