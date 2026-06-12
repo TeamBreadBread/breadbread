@@ -14,11 +14,9 @@ export default function GoogleAnalytics() {
   });
 
   useEffect(() => {
-    initGtag();
-  }, []);
-
-  useEffect(() => {
-    trackGtagPageView(pagePath);
+    void initGtag().then(() => {
+      trackGtagPageView(pagePath);
+    });
   }, [pagePath]);
 
   useEffect(() => bindGa4FirstActionAfterLoginListener(), []);

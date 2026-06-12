@@ -2,15 +2,10 @@ const GA4_MEASUREMENT_ID = import.meta.env.VITE_GA4_MEASUREMENT_ID ?? "G-VVHS24Q
 
 const FIRST_ACTION_PENDING_KEY = "ga4:first_action_after_login_pending";
 const DEDUPE_WINDOW_MS = 1000;
-
-declare global {
-  interface Window {
-    dataLayer?: unknown[];
-    gtag?: (...args: unknown[]) => void;
-  }
-}
+const GTAG_SCRIPT_SELECTOR = 'script[src*="googletagmanager.com/gtag/js"]';
 
 let initialized = false;
+let initPromise: Promise<void> | null = null;
 const dedupeTimestamps = new Map<string, number>();
 
 type Ga4EventParams = Record<string, string | number | boolean | undefined>;
@@ -25,9 +20,38 @@ function isGtagEnabled(): boolean {
   return Boolean(GA4_MEASUREMENT_ID?.trim());
 }
 
-/** 프로덕션 + localhost가 아닐 때만 GA4 전송 */
+/** 프로덕션 빌드 + localhost가 아닐 때만 GA4 전송 */
 export function isAnalyticsEnabled(): boolean {
-  return isGtagEnabled() && !import.meta.env.DEV && !isLocalhost();
+  return isGtagEnabled() && import.meta.env.PROD && !isLocalhost();
+}
+
+function isGaDebugMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).has("ga_debug");
+}
+
+function hasGtagScriptElement(): boolean {
+  return typeof document !== "undefined" && document.querySelector(GTAG_SCRIPT_SELECTOR) != null;
+}
+
+/** Google 공식 스니펫과 동일 — arguments 객체를 dataLayer에 push해야 gtag.js가 처리한다 */
+function ensureGtagStub(): void {
+  if (typeof window === "undefined") return;
+
+  window.dataLayer = window.dataLayer ?? [];
+
+  if (typeof window.gtag === "function") return;
+
+  // gtag.js는 Arguments 객체 형식의 dataLayer 큐만 처리한다 (rest params 배열은 collect 미발생)
+  window.gtag = function gtag() {
+    // eslint-disable-next-line prefer-rest-params -- GA4 공식 스니펫과 동일하게 arguments push 필요
+    window.dataLayer?.push(arguments);
+  } as Window["gtag"];
+}
+
+function invokeGtag(command: Gtag.GtagCommand, ...args: unknown[]): void {
+  if (!window.gtag) return;
+  (window.gtag as (...params: unknown[]) => void)(command, ...args);
 }
 
 function shouldSendEvent(dedupeKey: string): boolean {
@@ -49,47 +73,128 @@ function cleanParams(params?: Ga4EventParams): Record<string, string | number | 
   );
 }
 
-function sendGa4Event(eventName: string, params?: Ga4EventParams, dedupeKey?: string): void {
-  if (!isAnalyticsEnabled()) return;
-  if (!initialized) initGtag();
-  if (!window.gtag) return;
-
-  const key = dedupeKey ?? eventName;
-  if (!shouldSendEvent(key)) return;
-
-  window.gtag("event", eventName, cleanParams(params));
+function applyDebugModeIfRequested(): void {
+  if (!isGaDebugMode()) return;
+  invokeGtag("config", GA4_MEASUREMENT_ID, { debug_mode: true });
 }
 
-export function initGtag(): void {
-  if (initialized || typeof window === "undefined" || !isAnalyticsEnabled()) return;
+function waitForGtagScript(timeoutMs = 10_000): Promise<void> {
+  if (hasGtagScriptElement()) {
+    const script = document.querySelector<HTMLScriptElement>(GTAG_SCRIPT_SELECTOR);
+    if (
+      script &&
+      (script.dataset.loaded === "true" || script.getAttribute("data-loaded") === "true")
+    ) {
+      return Promise.resolve();
+    }
 
-  initialized = true;
-  window.dataLayer = window.dataLayer ?? [];
-  window.gtag = function gtag(...args: unknown[]) {
-    window.dataLayer?.push(args);
-  };
+    return new Promise((resolve) => {
+      if (!script) {
+        resolve();
+        return;
+      }
 
-  const script = document.createElement("script");
-  script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${GA4_MEASUREMENT_ID}`;
-  document.head.appendChild(script);
+      const finish = () => {
+        script.dataset.loaded = "true";
+        resolve();
+      };
 
-  window.gtag("js", new Date());
-  window.gtag("config", GA4_MEASUREMENT_ID, { send_page_view: false });
+      if (script.dataset.loaded === "true") {
+        resolve();
+        return;
+      }
+
+      script.addEventListener("load", finish, { once: true });
+      script.addEventListener("error", finish, { once: true });
+
+      // index.html async 스크립트가 이미 로드된 경우 load 이벤트가 재발생하지 않음
+      if (document.readyState === "complete") {
+        window.setTimeout(finish, 50);
+      }
+
+      window.setTimeout(finish, timeoutMs);
+    });
+  }
+
+  return new Promise((resolve) => {
+    ensureGtagStub();
+
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA4_MEASUREMENT_ID}`;
+
+    const finish = () => {
+      script.dataset.loaded = "true";
+      resolve();
+    };
+
+    script.addEventListener("load", finish, { once: true });
+    script.addEventListener("error", finish, { once: true });
+    document.head.appendChild(script);
+
+    invokeGtag("js", new Date());
+    invokeGtag("config", GA4_MEASUREMENT_ID, { send_page_view: false });
+
+    window.setTimeout(finish, timeoutMs);
+  });
+}
+
+export function initGtag(): Promise<void> {
+  if (typeof window === "undefined" || !isAnalyticsEnabled()) {
+    return Promise.resolve();
+  }
+
+  if (initPromise) return initPromise;
+
+  initPromise = (async () => {
+    ensureGtagStub();
+
+    if (!hasGtagScriptElement()) {
+      invokeGtag("js", new Date());
+      invokeGtag("config", GA4_MEASUREMENT_ID, { send_page_view: false });
+    }
+
+    await waitForGtagScript();
+    initialized = true;
+    applyDebugModeIfRequested();
+  })();
+
+  return initPromise;
+}
+
+function sendGa4Event(eventName: string, params?: Ga4EventParams, dedupeKey?: string): void {
+  if (!isAnalyticsEnabled()) return;
+
+  void initGtag().then(() => {
+    if (!window.gtag) return;
+
+    const key = dedupeKey ?? eventName;
+    if (!shouldSendEvent(key)) return;
+
+    invokeGtag("event", eventName, cleanParams(params));
+  });
 }
 
 export function trackGtagPageView(path: string): void {
   if (!isAnalyticsEnabled()) return;
-  if (!initialized) initGtag();
-  if (!window.gtag) return;
 
-  window.gtag("config", GA4_MEASUREMENT_ID, {
-    page_path: path,
+  void initGtag().then(() => {
+    if (!window.gtag) return;
+
+    invokeGtag("event", "page_view", {
+      page_path: path,
+      page_location: `${window.location.origin}${path}`,
+      page_title: document.title,
+    });
   });
 }
 
 export function getGa4MeasurementId(): string | undefined {
   return isGtagEnabled() ? GA4_MEASUREMENT_ID : undefined;
+}
+
+export function isGa4Initialized(): boolean {
+  return initialized;
 }
 
 export function markGa4FirstActionAfterLoginPending(): void {

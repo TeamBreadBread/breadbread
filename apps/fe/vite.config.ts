@@ -21,6 +21,34 @@ export default defineConfig(({ mode }) => {
     TanStackRouterVite({ routesDirectory: './src/routes' }),
     react(),
     tailwindcss(),
+    {
+      name: 'inject-ga4-snippet',
+      transformIndexHtml: {
+        order: 'pre',
+        handler(html, ctx) {
+          if (ctx.server) {
+            return html.replace('<!-- %GA4_SNIPPET% -->', '')
+          }
+
+          const measurementId = env.VITE_GA4_MEASUREMENT_ID?.trim() || 'G-VVHS24Q0M9'
+          const snippet = [
+            '<!-- Google tag (gtag.js) -->',
+            `<script async id="ga4-gtag-script" src="https://www.googletagmanager.com/gtag/js?id=${measurementId}"></script>`,
+            '<script>',
+            '  window.dataLayer = window.dataLayer || [];',
+            '  function gtag(){dataLayer.push(arguments);}',
+            '  gtag("js", new Date());',
+            `  gtag("config", "${measurementId}", { send_page_view: false });`,
+            '  document.getElementById("ga4-gtag-script")?.addEventListener("load", function () {',
+            '    this.dataset.loaded = "true";',
+            '  });',
+            '</script>',
+          ].join('\n    ')
+
+          return html.replace('<!-- %GA4_SNIPPET% -->', snippet)
+        },
+      },
+    },
     VitePWA({
       // prompt: 새 버전 감지 시 자동 적용하지 않고 PwaUpdatePrompt 팝업에서 사용자가 새로고침
       registerType: 'prompt',
