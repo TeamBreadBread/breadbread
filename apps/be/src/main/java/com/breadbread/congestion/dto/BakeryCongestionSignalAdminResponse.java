@@ -1,27 +1,27 @@
 package com.breadbread.congestion.dto;
 
 import com.breadbread.congestion.entity.BakeryCongestionSignal;
+import com.breadbread.congestion.entity.CongestionLevel;
 import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.ToString;
 
 @Getter
 @Builder
-public class CongestionResponse {
-
+public class BakeryCongestionSignalAdminResponse {
+    private Long id;
     private Long bakeryId;
     private String bakeryName;
-    private String level;
     private Double congestionScore;
+    private CongestionLevel level;
     private Integer expectedWaitMin;
     private String reason;
     private Signals signals;
-    private LocalDateTime updatedAt;
+    private LocalDateTime collectedAt;
+    private LocalDateTime createdAt;
 
     @Getter
     @Builder
-    @ToString
     public static class Signals {
         private Integer waitingKeywordCount;
         private Integer openRunKeywordCount;
@@ -32,12 +32,13 @@ public class CongestionResponse {
         private Integer eveningMentions;
     }
 
-    public static CongestionResponse from(BakeryCongestionSignal signal) {
-        return CongestionResponse.builder()
+    public static BakeryCongestionSignalAdminResponse from(BakeryCongestionSignal signal) {
+        return BakeryCongestionSignalAdminResponse.builder()
+                .id(signal.getId())
                 .bakeryId(signal.getBakeryId())
                 .bakeryName(signal.getBakeryName())
-                .level(signal.getLevel() != null ? signal.getLevel().name() : null)
                 .congestionScore(signal.getCongestionScore())
+                .level(signal.getLevel())
                 .expectedWaitMin(signal.getExpectedWaitMin())
                 .reason(signal.getReason())
                 .signals(
@@ -50,7 +51,8 @@ public class CongestionResponse {
                                 .afternoonMentions(signal.getAfternoonMentions())
                                 .eveningMentions(signal.getEveningMentions())
                                 .build())
-                .updatedAt(signal.getUpdatedAt())
+                .collectedAt(signal.getCollectedAt())
+                .createdAt(signal.getCreatedAt())
                 .build();
     }
 }

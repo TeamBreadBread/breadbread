@@ -3,6 +3,8 @@ package com.breadbread.congestion.service;
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.enums.BakeryStatus;
 import com.breadbread.bakery.repository.BakeryRepository;
+import com.breadbread.congestion.dto.BakeryCongestionSignalAdminListResponse;
+import com.breadbread.congestion.dto.BakeryCongestionSignalAdminResponse;
 import com.breadbread.congestion.dto.CongestionResponse;
 import com.breadbread.congestion.dto.CongestionSignalRequest;
 import com.breadbread.congestion.entity.BakeryCongestionSignal;
@@ -10,12 +12,15 @@ import com.breadbread.congestion.entity.CongestionLevel;
 import com.breadbread.congestion.repository.BakeryCongestionSignalRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -144,5 +149,24 @@ public class CongestionSignalService {
             log.warn("[혼잡도 신호] 알 수 없는 level 값: {}", level);
             return null;
         }
+    }
+
+    @Transactional(readOnly = true)
+    public BakeryCongestionSignalAdminListResponse findAllForAdmin(
+            LocalDateTime from, LocalDateTime to, Pageable pageable) {
+        LocalDateTime start = from != null ? from : LocalDateTime.of(2000, 1, 1, 0, 0);
+        LocalDateTime end = to != null ? to : LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+        Page<BakeryCongestionSignal> page =
+                repository.findAllByCreatedAtRange(start, end, pageable);
+        return BakeryCongestionSignalAdminListResponse.builder()
+                .signals(
+                        page.getContent().stream()
+                                .map(BakeryCongestionSignalAdminResponse::from)
+                                .toList())
+                .total((int) page.getTotalElements())
+                .page(pageable.getPageNumber())
+                .size(pageable.getPageSize())
+                .hasNext(page.hasNext())
+                .build();
     }
 }

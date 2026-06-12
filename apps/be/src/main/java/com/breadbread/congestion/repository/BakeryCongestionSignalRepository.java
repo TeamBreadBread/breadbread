@@ -1,8 +1,11 @@
 package com.breadbread.congestion.repository;
 
 import com.breadbread.congestion.entity.BakeryCongestionSignal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,4 +27,11 @@ public interface BakeryCongestionSignalRepository
                             + " ORDER BY b.congestion_score ASC",
             nativeQuery = true)
     List<BakeryCongestionSignal> findLatestByBakeryIds(@Param("bakeryIds") List<Long> bakeryIds);
+
+    @Query(
+            "SELECT s FROM BakeryCongestionSignal s"
+                    + " WHERE s.createdAt >= :from AND s.createdAt <= :to"
+                    + " ORDER BY s.createdAt DESC")
+    Page<BakeryCongestionSignal> findAllByCreatedAtRange(
+            @Param("from") LocalDateTime from, @Param("to") LocalDateTime to, Pageable pageable);
 }

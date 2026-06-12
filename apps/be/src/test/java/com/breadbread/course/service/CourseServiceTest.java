@@ -17,6 +17,7 @@ import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.course.dto.request.CourseSearch;
 import com.breadbread.course.dto.request.ManualCourseRequest;
 import com.breadbread.course.dto.request.UpdateCourseRequest;
+import com.breadbread.course.dto.response.AiCourseAdminListResponse;
 import com.breadbread.course.dto.response.CourseListResponse;
 import com.breadbread.course.dto.response.RouteResponse;
 import com.breadbread.course.entity.AiCourseInfo;
@@ -24,6 +25,7 @@ import com.breadbread.course.entity.BudgetRange;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseBakery;
 import com.breadbread.course.entity.CourseLike;
+import com.breadbread.course.entity.CourseType;
 import com.breadbread.course.entity.FlexibilityLevel;
 import com.breadbread.course.entity.ManualCourseInfo;
 import com.breadbread.course.entity.Route;
@@ -38,6 +40,7 @@ import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -551,6 +554,69 @@ class CourseServiceTest {
         courseService.updateManual(1L, request);
 
         verify(courseDrivingRouteRepository, never()).deleteAllByCourseIdIn(any());
+    }
+
+    // ── findAllAiForAdmin ─────────────────────────────────────────────────────
+
+    @Test
+    void findAllAiForAdmin_returnsPagedAiCourses() {
+        User u = owner(1L);
+        Course c1 = aiPrivateCourse(10L, u);
+        Course c2 = aiPrivateCourse(11L, u);
+        Bakery bakery = bakery(20L, "A빵집");
+        c1.addCourseBakery(CourseBakery.builder().visitOrder(1).bakery(bakery).build());
+
+        Pageable pageable = PageRequest.of(0, 10);
+        when(courseRepository.findAllByActiveTrueAndCourseTypeAndCreatedAtRange(
+                        eq(CourseType.AI),
+                        any(LocalDateTime.class),
+                        any(LocalDateTime.class),
+                        eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(c1, c2), pageable, 2));
+
+        AiCourseAdminListResponse result = courseService.findAllAiForAdmin(null, null, pageable);
+
+        assertThat(result.getCourses()).hasSize(2);
+        assertThat(result.getTotal()).isEqualTo(2);
+        assertThat(result.getPage()).isEqualTo(0);
+        assertThat(result.getSize()).isEqualTo(10);
+        assertThat(result.isHasNext()).isFalse();
+        assertThat(result.getCourses().get(0).getUserId()).isEqualTo(1L);
+    }
+
+    @Test
+    void findAllAiForAdmin_returnsEmptyPage_whenNoData() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(courseRepository.findAllByActiveTrueAndCourseTypeAndCreatedAtRange(
+                        eq(CourseType.AI),
+                        any(LocalDateTime.class),
+                        any(LocalDateTime.class),
+                        eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        AiCourseAdminListResponse result = courseService.findAllAiForAdmin(null, null, pageable);
+
+        assertThat(result.getCourses()).isEmpty();
+        assertThat(result.getTotal()).isEqualTo(0);
+        assertThat(result.isHasNext()).isFalse();
+    }
+
+    @Test
+    void findAllAiForAdmin_hasNext_whenMorePagesExist() {
+        User u = owner(1L);
+        Course c = aiPrivateCourse(10L, u);
+        Pageable pageable = PageRequest.of(0, 1);
+        when(courseRepository.findAllByActiveTrueAndCourseTypeAndCreatedAtRange(
+                        eq(CourseType.AI),
+                        any(LocalDateTime.class),
+                        any(LocalDateTime.class),
+                        eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(c), pageable, 5));
+
+        AiCourseAdminListResponse result = courseService.findAllAiForAdmin(null, null, pageable);
+
+        assertThat(result.isHasNext()).isTrue();
+        assertThat(result.getTotal()).isEqualTo(5);
     }
 
     // ── 헬퍼 ─────────────────────────────────────────────────────────────

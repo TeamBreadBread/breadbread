@@ -8,6 +8,8 @@ import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.course.dto.request.CourseSearch;
 import com.breadbread.course.dto.request.ManualCourseRequest;
 import com.breadbread.course.dto.request.UpdateCourseRequest;
+import com.breadbread.course.dto.response.AiCourseAdminListResponse;
+import com.breadbread.course.dto.response.AiCourseAdminResponse;
 import com.breadbread.course.dto.response.CourseDetailResponse;
 import com.breadbread.course.dto.response.CourseListResponse;
 import com.breadbread.course.dto.response.CourseSummaryResponse;
@@ -15,6 +17,7 @@ import com.breadbread.course.dto.response.RouteResponse;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseBakery;
 import com.breadbread.course.entity.CourseLike;
+import com.breadbread.course.entity.CourseType;
 import com.breadbread.course.entity.ManualCourseInfo;
 import com.breadbread.course.entity.Route;
 import com.breadbread.course.repository.CourseBakeryRepository;
@@ -27,6 +30,7 @@ import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -310,7 +314,27 @@ public class CourseService {
         log.info("MANUAL 코스 수정: courseId={}", courseId);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
+    public AiCourseAdminListResponse findAllAiForAdmin(
+            LocalDateTime from, LocalDateTime to, Pageable pageable) {
+        LocalDateTime start = from != null ? from : LocalDateTime.of(2000, 1, 1, 0, 0);
+        LocalDateTime end = to != null ? to : LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+        Page<Course> courses =
+                courseRepository.findAllByActiveTrueAndCourseTypeAndCreatedAtRange(
+                        CourseType.AI, start, end, pageable);
+
+        List<AiCourseAdminResponse> summaries =
+                courses.getContent().stream().map(AiCourseAdminResponse::from).toList();
+
+        return AiCourseAdminListResponse.builder()
+                .courses(summaries)
+                .total((int) courses.getTotalElements())
+                .page(pageable.getPageNumber())
+                .size(pageable.getPageSize())
+                .hasNext(courses.hasNext())
+                .build();
+    }
+
     public void delete(Long courseId) {
         Course course =
                 courseRepository

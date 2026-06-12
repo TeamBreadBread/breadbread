@@ -27,8 +27,8 @@ public class AiApiKeyFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String uri = request.getRequestURI();
         String method = request.getMethod();
-        return !(uri.startsWith("/admin/congestion")
-                || uri.startsWith("/admin/trends")
+        return !((uri.startsWith("/admin/congestion") && !"GET".equals(method))
+                || (uri.startsWith("/admin/trends") && !"GET".equals(method))
                 || uri.startsWith("/admin/tours/active")
                 || (uri.startsWith("/notifications/curator") && "POST".equals(method)));
     }

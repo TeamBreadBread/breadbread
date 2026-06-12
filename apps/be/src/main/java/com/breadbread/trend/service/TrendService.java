@@ -1,5 +1,7 @@
 package com.breadbread.trend.service;
 
+import com.breadbread.trend.dto.BakeryTrendTagAdminListResponse;
+import com.breadbread.trend.dto.BakeryTrendTagAdminResponse;
 import com.breadbread.trend.dto.TrendBakeryResponse;
 import com.breadbread.trend.dto.TrendBreadResponse;
 import com.breadbread.trend.dto.TrendDiscoverRequest;
@@ -8,11 +10,13 @@ import com.breadbread.trend.entity.TrendStatus;
 import com.breadbread.trend.repository.BakeryTrendTagRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -85,5 +89,20 @@ public class TrendService {
             log.warn("[트렌드] JSON 직렬화 실패: {}", list);
             return null;
         }
+    }
+
+    @Transactional(readOnly = true)
+    public BakeryTrendTagAdminListResponse findAllForAdmin(
+            LocalDateTime from, LocalDateTime to, Pageable pageable) {
+        LocalDateTime start = from != null ? from : LocalDateTime.of(2000, 1, 1, 0, 0);
+        LocalDateTime end = to != null ? to : LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+        Page<BakeryTrendTag> page = repository.findAllByCreatedAtRange(start, end, pageable);
+        return BakeryTrendTagAdminListResponse.builder()
+                .tags(page.getContent().stream().map(BakeryTrendTagAdminResponse::from).toList())
+                .total((int) page.getTotalElements())
+                .page(pageable.getPageNumber())
+                .size(pageable.getPageSize())
+                .hasNext(page.hasNext())
+                .build();
     }
 }
