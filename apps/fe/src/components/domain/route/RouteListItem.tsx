@@ -12,6 +12,7 @@ import type { RouteCourse } from "./types";
 
 interface RouteListItemProps {
   course: RouteCourse;
+  isActiveGuide?: boolean;
   onClick?: () => void;
   onOpenCourse?: (courseId: string) => void;
   onDeleteCourse?: (courseId: string) => void;
@@ -26,6 +27,7 @@ function buildCourseShareLink(courseId: string): string {
 
 export default function RouteListItem({
   course,
+  isActiveGuide = false,
   onClick,
   onOpenCourse,
   onDeleteCourse,
@@ -106,7 +108,14 @@ export default function RouteListItem({
   };
 
   return (
-    <div className="w-full border-b border-gray-100 bg-gray-00">
+    <div
+      className={cn(
+        "w-full bg-gray-00",
+        isActiveGuide
+          ? "my-x2 rounded-r2 border-2 border-orange-600 px-x3"
+          : "border-b border-gray-100",
+      )}
+    >
       <div
         role="button"
         tabIndex={0}

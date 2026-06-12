@@ -56,6 +56,7 @@ import {
   notifyTourCompleteCelebration,
   TOUR_COMPLETE_EVENT,
 } from "@/utils/tourCelebration";
+import { saveRouteFocusCourseId } from "@/utils/aiCourseStorage";
 import { cn } from "@/utils/cn";
 import { useTourArrivalProximity, type TourArrivalPrompt } from "@/hooks/useTourArrivalProximity";
 import ChatBotImage from "@/assets/images/Img_ChatBot.svg";
@@ -1171,8 +1172,13 @@ export default function BreadBotWidget({
   };
 
   const handleCourseDetail = () => {
-    if (!courseId || courseId <= 0) return;
-    void navigate({ to: "/ai-search-result", search: { courseId, from: undefined } });
+    if (!effectiveTourCourseId) return;
+    setOpen(false);
+    saveRouteFocusCourseId(effectiveTourCourseId);
+    void navigate({
+      to: "/ai-search-result",
+      search: { courseId: effectiveTourCourseId, from: "route" },
+    });
   };
 
   const handleBackToStart = () => {
