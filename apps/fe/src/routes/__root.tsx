@@ -1,6 +1,7 @@
 import { createRootRoute, Outlet, redirect } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import FcmNotificationListener from "@/components/FcmNotificationListener";
+import GoogleAnalytics from "@/components/common/GoogleAnalytics";
 import { isLoggedIn } from "@/lib/auth/isLoggedIn";
 import { isPublicPath } from "@/lib/auth/publicRoutes";
 import { LoginRequiredProvider } from "@/lib/auth/LoginRequiredProvider";
@@ -42,6 +43,7 @@ export const Route = createRootRoute({
   errorComponent: RootErrorBoundary,
   component: () => (
     <>
+      <GoogleAnalytics />
       <FcmNotificationListener />
       <div className="flex min-h-screen w-full items-center justify-center bg-gray-100">
         <div className="w-full max-w-[402px] bg-gray-00">

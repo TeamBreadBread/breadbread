@@ -8,6 +8,7 @@ import { AppTopBar, Button } from "@/components/common";
 import { PasswordToggleIcon } from "@/components/icons";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { onAuthSessionEstablished } from "@/lib/fcm/setupFcm";
+import { markGa4FirstActionAfterLoginPending } from "@/lib/analytics/gtag";
 import { tryPostLoginRedirectPath } from "@/lib/postLoginRedirect";
 import { cn } from "@/utils/cn";
 
@@ -43,6 +44,7 @@ const LoginPage = () => {
       const id = userId.trim();
       const tokens = await login({ loginId: id, password });
       setSessionTokens(tokens);
+      markGa4FirstActionAfterLoginPending();
       onAuthSessionEstablished();
       seedProfileCacheThenRefreshFromServer(id);
       try {

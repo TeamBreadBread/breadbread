@@ -7,6 +7,7 @@ import icCheckCircleGreen from "@/assets/icons/Ic_CheckCircle_Green.svg";
 import { formatCourseEstimatedTime } from "@/utils/formatCourseEstimatedTime";
 import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
 import { cn } from "@/utils/cn";
+import { trackRouteLinkCopied, trackRouteShared } from "@/lib/analytics/gtag";
 import type { RouteCourse } from "./types";
 
 interface RouteListItemProps {
@@ -67,6 +68,7 @@ export default function RouteListItem({
 
   const handleCopyLink = async (event: React.MouseEvent) => {
     event.stopPropagation();
+    trackRouteLinkCopied(course.id);
     const link = buildCourseShareLink(course.id);
     try {
       await navigator.clipboard.writeText(link);
@@ -83,6 +85,7 @@ export default function RouteListItem({
     const link = buildCourseShareLink(course.id);
     const text = `${course.title}\n${link}`;
     if (typeof navigator.share === "function") {
+      trackRouteShared(course.id, "native");
       try {
         await navigator.share({ title: course.title, text, url: link });
       } catch {
@@ -91,6 +94,7 @@ export default function RouteListItem({
       closeSheet();
       return;
     }
+    trackRouteShared(course.id, "kakao_scheme");
     window.location.href = `kakaotalk://send?text=${encodeURIComponent(text)}`;
     closeSheet();
   };

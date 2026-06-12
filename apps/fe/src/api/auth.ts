@@ -1,5 +1,6 @@
 import { apiClient, extractData } from "@/api/client";
 import type { ApiEnvelope } from "@/api/types/common";
+import { clearGa4FirstActionAfterLoginPending } from "@/lib/analytics/gtag";
 
 const PATH = "/auth";
 
@@ -131,6 +132,7 @@ export function setSessionTokens(tokens: TokenResponse): void {
 export function clearSessionTokens(): void {
   localStorage.removeItem(SESSION_ACCESS_KEY);
   localStorage.removeItem(SESSION_REFRESH_KEY);
+  clearGa4FirstActionAfterLoginPending();
 }
 
 /** API `Authorization` 헤더에 쓰는 액세스 토큰 (없으면 보호 API는 401) */

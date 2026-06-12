@@ -12,6 +12,7 @@ import CongestionBadge from "@/components/common/CongestionBadge";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import { mapCongestionByBakeryId } from "@/utils/congestionCheck";
 import { notifyTourCompleteCelebration } from "@/utils/tourCelebration";
+import { trackBakeryVisitChecked, trackTourCompleted } from "@/lib/analytics/gtag";
 import { cn } from "@/utils/cn";
 
 type BreadBotTourPanelProps = {
@@ -109,6 +110,7 @@ export default function BreadBotTourPanel({ courseId, onOpenFullPage }: BreadBot
     setBusyOrder(order);
     setError("");
     try {
+      trackBakeryVisitChecked(courseId, order);
       handleTourUpdated(await checkTourVisit(courseId, order));
     } catch (e) {
       setError(getErrorMessage(e));
@@ -122,6 +124,7 @@ export default function BreadBotTourPanel({ courseId, onOpenFullPage }: BreadBot
     setIsCompleting(true);
     setError("");
     try {
+      trackTourCompleted(courseId);
       handleTourUpdated(await completeTour(courseId));
     } catch (e) {
       setError(getErrorMessage(e));

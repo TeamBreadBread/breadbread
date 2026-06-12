@@ -38,6 +38,11 @@ import ActiveTourConflictDialog from "@/components/common/dialog/ActiveTourConfl
 import { hasConflictingActiveTour } from "@/utils/activeTourGuard";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
 import { findMatchingSavedRoute, isSameCourseRouteContent } from "@/utils/courseRouteCompare";
+import {
+  trackAiCourseRegenerated,
+  trackRouteDetailViewed,
+  trackTourStarted,
+} from "@/lib/analytics/gtag";
 
 const summary: CourseSummary = {
   title: "커플을 위한 달콤한 빵투어",
@@ -117,6 +122,11 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
       cancelled = true;
     };
   }, [effectiveCourseId]);
+
+  useEffect(() => {
+    if (from !== "route" || !effectiveCourseId) return;
+    trackRouteDetailViewed(effectiveCourseId);
+  }, [from, effectiveCourseId]);
 
   const courseDetail: CourseDetail | null = useMemo(() => {
     if (apiCourseDetail?.courseId === effectiveCourseId) return apiCourseDetail.detail;
@@ -234,6 +244,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     if (from === "route") {
       saveRouteFocusCourseId(effectiveCourseId);
     }
+    trackTourStarted(effectiveCourseId);
     startCourseGuide(effectiveCourseId);
     try {
       await startTour(effectiveCourseId);
@@ -322,6 +333,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
   }, [showSavedBanner]);
 
   const handleRetryRecommendation = () => {
+    trackAiCourseRegenerated();
     requireLogin(() => {
       void navigate({ to: AI_COURSE_FLOW_START });
     }, "/preference");

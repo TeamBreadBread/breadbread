@@ -20,6 +20,12 @@ import { getErrorMessage } from "@/api/types/common";
 import { isLoggedIn } from "@/lib/auth/isLoggedIn";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import {
+  trackBakeryVisitChecked,
+  trackCuratorGuideClicked,
+  trackCuratorOpened,
+  trackTourStarted,
+} from "@/lib/analytics/gtag";
+import {
   CONGESTION_ACTION_BUTTONS,
   RESERVE_NUDGE_ACTION_BUTTONS,
   buildCongestionChatButtons,
@@ -524,6 +530,7 @@ export default function BreadBotWidget({
         return;
       }
       startCourseGuide(tourCourseId);
+      trackTourStarted(tourCourseId);
       await startTour(tourCourseId).catch(() => undefined);
       setActiveTourCourseId(tourCourseId);
       celebratedTourRef.current.delete(`celebrated:${tourCourseId}`);
@@ -957,6 +964,7 @@ export default function BreadBotWidget({
   );
 
   const openChat = () => {
+    trackCuratorOpened();
     setChangeBubble(null);
     setCelebrationBubble(null);
     setOpen(true);
@@ -1158,6 +1166,7 @@ export default function BreadBotWidget({
   };
 
   const handleQuickReply = (label: string) => {
+    trackCuratorGuideClicked(label);
     sendMessage(label);
   };
 
@@ -1180,6 +1189,7 @@ export default function BreadBotWidget({
 
   const handleChangeAction = (button: ChatActionButton) => {
     setChangeBubble(null);
+    trackCuratorOpened();
     setOpen(true);
     void handleButtonAction(button);
   };
@@ -1196,6 +1206,7 @@ export default function BreadBotWidget({
     setTourBubble(null);
     startCourseGuide(tourCourseId);
     if (mode === "start" || mode === "autostart") {
+      trackTourStarted(tourCourseId);
       await startTour(tourCourseId).catch(() => undefined);
     }
     setActiveTourCourseId(tourCourseId);
@@ -1245,6 +1256,7 @@ export default function BreadBotWidget({
       arrivalVisitInFlightRef.current = true;
       setArrivalBusy(true);
       try {
+        trackBakeryVisitChecked(prompt.courseId, prompt.order);
         const updated = await checkTourVisit(prompt.courseId, prompt.order);
         dismissedArrivalRef.current.add(prompt.dismissKey);
         setArrivalRecheckNonce((value) => value + 1);
