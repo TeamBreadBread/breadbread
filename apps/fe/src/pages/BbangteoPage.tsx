@@ -2,7 +2,6 @@ import BbangteoBakerySuggestBanner from "@/components/domain/bbangteo/BbangteoBa
 import BbangteoCommunitySection from "@/components/domain/bbangteo/BbangteoCommunitySection";
 import BbangteoHeader from "@/components/domain/bbangteo/BbangteoHeader";
 import BbangteoSearchSection from "@/components/domain/bbangteo/BbangteoSearchSection";
-import BreadBtiEntryBanner from "@/components/domain/breadbti/BreadBtiEntryBanner";
 import TrendHotBreadsSection from "@/components/domain/trend/TrendHotBreadsSection";
 import TrendCurationSection from "@/components/domain/trend/TrendCurationSection";
 import BottomNav from "@/components/layout/BottomNav";
@@ -108,9 +107,6 @@ const BbangteoPage = () => {
             onCategoryClick={handleCategoryClick}
             onSearch={handleBakerySearch}
           />
-          <div className="px-[20px]">
-            <BreadBtiEntryBanner />
-          </div>
           <TrendHotBreadsSection compact />
           <TrendCurationSection
             compact

@@ -73,8 +73,7 @@ public final class AiCourseNameResolver {
         if (bakeryNames.size() == 1) {
             return truncate(bakeryNames.get(0) + " 빵투어");
         }
-        String joined =
-                String.join(" · ", bakeryNames.subList(0, Math.min(2, bakeryNames.size())));
+        String joined = String.join(" · ", bakeryNames.subList(0, Math.min(2, bakeryNames.size())));
         return truncate(joined + " 코스");
     }
 

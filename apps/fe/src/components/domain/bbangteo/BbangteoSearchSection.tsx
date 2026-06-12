@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AppIcon, IconAssets } from "@/components/icons";
+import BreadBtiEntryBanner from "@/components/domain/breadbti/BreadBtiEntryBanner";
 import {
   QUICK_MENU_CATEGORIES,
   type QuickMenuCategoryLabel,
@@ -41,10 +42,16 @@ const SearchBox = ({ onSearch }: SearchBoxProps) => {
     onSearch?.(trimmed);
   };
 
+  const clear = () => {
+    setSearchText("");
+  };
+
   return (
     <div className="flex h-[56px] shrink-0 items-center gap-x1-5 rounded-[12px] border border-[#dcdee3] px-[20px] py-[16px]">
       <input
-        type="search"
+        type="text"
+        inputMode="search"
+        enterKeyHint="search"
         value={searchText}
         onChange={(event) => setSearchText(event.target.value)}
         onKeyDown={(event) => {
@@ -54,8 +61,18 @@ const SearchBox = ({ onSearch }: SearchBoxProps) => {
           }
         }}
         placeholder="빵집을 검색해보세요"
-        className="flex-1 bg-transparent text-[16px] leading-[22px] text-[#1a1c20] placeholder:text-[#d1d3d8] outline-none"
+        className="min-w-0 flex-1 bg-transparent text-[16px] leading-[22px] text-[#1a1c20] placeholder:text-[#d1d3d8] outline-none"
       />
+      {searchText.length > 0 ? (
+        <button
+          type="button"
+          aria-label="검색어 지우기"
+          onClick={clear}
+          className="flex shrink-0 items-center justify-center"
+        >
+          <AppIcon src={IconAssets.IcClose} size="x5" className="opacity-45" alt="" />
+        </button>
+      ) : null}
       <button
         type="button"
         aria-label="검색"
@@ -87,6 +104,7 @@ const BbangteoSearchSection = ({ onCategoryClick, onSearch }: BbangteoSearchSect
           />
         ))}
       </div>
+      <BreadBtiEntryBanner />
     </section>
   );
 };

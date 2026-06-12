@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
+import BreadBtiMobileFrame from "@/components/domain/breadbti/BreadBtiMobileFrame";
 import {
   BreadBtiLinkIcon,
   BreadBtiMessageIcon,
@@ -81,21 +82,21 @@ export default function BreadBtiTotalResultPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#FFF4E6] to-[#FFE8CC] pb-10">
-      <header className="px-6 pt-10 pb-6">
+    <BreadBtiMobileFrame>
+      <header className="px-5 pb-4 pt-8">
         <h1 className="mb-2 text-center text-3xl font-bold text-[#D86A00]">전체 유형 순위</h1>
         <p className="text-center text-[#B87333]">가장 많이 나온 빵 유형은?</p>
       </header>
 
-      <main className="px-6 lg:px-130">
+      <main className="flex-1 px-5 pb-10">
         <div className="mb-8 space-y-3">
           {allResults.map((result) => (
             <div
               key={result.rank}
-              className="flex items-center gap-3 rounded-2xl bg-white p-5 shadow-lg"
+              className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-lg"
             >
               <div
-                className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-base font-bold ${
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
                   result.rank === 1
                     ? "bg-gradient-to-br from-yellow-400 to-yellow-600 text-white"
                     : result.rank === 2
@@ -110,18 +111,18 @@ export default function BreadBtiTotalResultPage() {
 
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex flex-wrap items-center gap-2">
-                  <span className="text-base font-bold whitespace-nowrap text-[#D86A00]">
+                  <span className="whitespace-nowrap text-base font-bold text-[#D86A00]">
                     {result.emoji}
                     {result.bread}
                   </span>
-                  <span className="rounded-full bg-[#FF8C42] px-2 py-0.5 text-xs font-bold whitespace-nowrap text-white">
+                  <span className="whitespace-nowrap rounded-full bg-[#FF8C42] px-2 py-0.5 text-xs font-bold text-white">
                     {result.mbti}
                   </span>
                 </div>
                 <div className="text-xs text-[#B87333]">{result.count.toLocaleString()}명 참여</div>
               </div>
 
-              <div className="flex-shrink-0 text-right">
+              <div className="shrink-0 text-right">
                 <div className="text-xl font-bold text-[#FF8C42]">{result.percentage}%</div>
               </div>
             </div>
@@ -178,6 +179,6 @@ export default function BreadBtiTotalResultPage() {
           </div>
         ) : null}
       </main>
-    </div>
+    </BreadBtiMobileFrame>
   );
 }

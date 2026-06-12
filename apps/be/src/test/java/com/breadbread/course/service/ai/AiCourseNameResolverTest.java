@@ -19,11 +19,9 @@ class AiCourseNameResolverTest {
 
     @Test
     void falls_back_to_theme_when_name_is_generic() {
-        AiCourseWebhookResponse response =
-                webhook("빵텔리전스 추천", "혼자 즐기는 조용한 빵 산책", "요약", List.of());
+        AiCourseWebhookResponse response = webhook("빵텔리전스 추천", "혼자 즐기는 조용한 빵 산책", "요약", List.of());
 
-        assertThat(AiCourseNameResolver.resolve(response))
-                .isEqualTo("혼자 즐기는 조용한 빵 산책");
+        assertThat(AiCourseNameResolver.resolve(response)).isEqualTo("혼자 즐기는 조용한 빵 산책");
     }
 
     @Test
