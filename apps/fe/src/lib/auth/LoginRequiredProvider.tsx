@@ -79,16 +79,13 @@ export function LoginRequiredProvider({ children }: { children: ReactNode }) {
   const resolvedCourseGuideActive = loggedIn && courseGuideActive;
   const resolvedCourseGuideId = loggedIn ? courseGuideId : null;
 
-  const isHomePath = pathname === "/home";
   const isBbangteoPath =
     pathname === "/bbangteo" ||
     pathname.startsWith("/bbangteo-") ||
     pathname.startsWith("/bbangteo/");
-  /** 홈에서는 항상, 그 외에는 투어 진행 중일 때 BreadBot 노출 (투어 중 빵터 제외) */
+  /** 코스 안내 시작 후에만 BreadBot 노출 (투어 중 빵터 제외) */
   const showBot =
-    loggedIn &&
-    (isHomePath || resolvedCourseGuideActive) &&
-    !(isBbangteoPath && resolvedCourseGuideActive);
+    loggedIn && resolvedCourseGuideActive && !(isBbangteoPath && resolvedCourseGuideActive);
   const showBotFloating = showBot && !isBotFloatingHiddenPath(pathname);
   const botCourseId = resolvedCourseGuideId;
 

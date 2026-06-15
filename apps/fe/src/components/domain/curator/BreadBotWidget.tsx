@@ -12,6 +12,7 @@ import {
 import {
   checkTourCongestion,
   checkTourVisit,
+  completeTour,
   getCurrentTour,
   startTour,
   type CongestionCheckResult,
@@ -71,6 +72,7 @@ import {
   buildTourCompleteCelebrationMessage,
   COURSE_NOT_IN_PROGRESS_MESSAGE,
   getBreadBotErrorMessage,
+  isCourseCancelIntent,
   isCourseExplainIntent,
   isCourseReorderIntent,
   isNextBakeryRecommendIntent,
@@ -321,7 +323,7 @@ async function buildNextBakeryRecommendReply(
       };
     }
 
-    lines.push("", "코스 순서를 바꿀까요? '코스 순서 바꿀까?'를 눌러주세요.");
+    lines.push("", "코스를 중단하고 싶다면 '코스 취소하기'를 눌러주세요.");
   } else {
     lines.push("", "지금은 웨이팅이 길지 않아 보여요. 편하게 방문해 보세요!");
   }
@@ -1001,6 +1003,48 @@ export default function BreadBotWidget({
               role: "bot",
               text: buildCourseExplainMessage(course),
               showCourseMap: true,
+            },
+          ]);
+          return;
+        }
+
+        if (isCourseCancelIntent(text)) {
+          if (!courseGuideActive) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `course-not-active-${Date.now()}`,
+                role: "bot",
+                text: COURSE_NOT_IN_PROGRESS_MESSAGE,
+              },
+            ]);
+            return;
+          }
+
+          const resolvedCourseId = await resolveChatCourseId(courseId);
+          try {
+            const tour = await getCurrentTour();
+            if (
+              resolvedCourseId &&
+              tour?.status === "IN_PROGRESS" &&
+              tour.courseId === resolvedCourseId
+            ) {
+              await completeTour(resolvedCourseId);
+            }
+          } catch {
+            /* 투어가 시작되지 않았거나 이미 종료된 경우 코스 안내 세션만 종료 */
+          }
+
+          endCourseGuide();
+          setActiveTourCourseId(null);
+          setCourseMovementBubble(null);
+          setChangeBubble(null);
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `course-cancel-${Date.now()}`,
+              role: "bot",
+              text: "진행 중이던 코스를 취소했어요. 언제든 새 코스로 다시 시작해 보세요!",
             },
           ]);
           return;
