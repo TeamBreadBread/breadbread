@@ -484,7 +484,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
             RESPONSIVE_FRAME_WIDTH,
           )}
         >
-          <SaveRouteBanner />
+          <SaveRouteBanner onActionClick={() => navigate({ to: "/route" })} />
         </div>
       ) : null}
 

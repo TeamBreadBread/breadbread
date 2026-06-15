@@ -322,7 +322,7 @@ export default function BreadPreference() {
           ))}
 
           <PreferenceQuestionSection
-            title="어디서부터 빵투어를 시작해볼까요?"
+            title="대전 빵투어를 시작할 장소를 선택해주세요."
             helperText=""
             columns={1}
           >
@@ -386,8 +386,8 @@ export default function BreadPreference() {
                     >
                       출발지 검색
                     </h3>
-                    <p className="mt-x1 font-pretendard text-size-3 leading-t4 text-gray-700">
-                      선택하신 장소 주변으로 코스를 짜드려요.
+                    <p className="mt-x1 font-pretendard typo-t4regular text-gray-700">
+                      선택하신 장소를 기준으로 대전 빵투어 코스를 추천해드려요.
                     </p>
 
                     <div className="mt-x4 flex h-x14 items-center gap-x2 rounded-r3 border border-gray-300 px-x5">
@@ -401,7 +401,7 @@ export default function BreadPreference() {
                             handleManualDepartureConfirm();
                           }
                         }}
-                        placeholder="빵집 이름이나 동네를 입력해보세요"
+                        placeholder="ex) 대전역, 성심당, 소제동 등"
                         className="min-w-0 flex-1 bg-transparent font-pretendard text-size-5 leading-t6 text-gray-1000 outline-none placeholder:text-gray-400"
                       />
                       <button

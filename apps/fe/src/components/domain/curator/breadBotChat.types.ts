@@ -34,7 +34,7 @@ export type CourseMovementBubble = {
 export const QUICK_REPLIES = [
   "현재 코스 설명해줘",
   "다음 빵집 추천해줘",
-  "코스 순서 바꿀까?",
+  "코스 취소하기",
   "혼잡하면 어디가 좋아?",
 ] as const;
 
@@ -87,6 +87,10 @@ export function isCourseExplainIntent(text: string): boolean {
 
 export function isCourseReorderIntent(text: string): boolean {
   return /코스\s*순서|순서\s*바꿀|방문\s*순서|경로\s*변경|순서\s*변경/.test(text.trim());
+}
+
+export function isCourseCancelIntent(text: string): boolean {
+  return /코스\s*취소|취소\s*할게|투어\s*취소|코스\s*중단/.test(text.trim());
 }
 
 export function isNextBakeryRecommendIntent(text: string): boolean {
