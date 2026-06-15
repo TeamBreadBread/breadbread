@@ -7,6 +7,8 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface BakeryRepository extends JpaRepository<Bakery, Long>, BakeryRepositoryCustom {
     Optional<Bakery> findByIdAndActiveTrue(Long id);
@@ -17,15 +19,28 @@ public interface BakeryRepository extends JpaRepository<Bakery, Long>, BakeryRep
 
     List<Bakery> findAllByActiveTrueAndStatus(BakeryStatus status);
 
-    boolean existsByIdAndActiveTrue(Long id);
-
     boolean existsByIdAndActiveTrueAndStatus(Long id, BakeryStatus status);
 
-    List<Bakery> findAllByActiveTrue();
-
-    List<Bakery> findAllByIdInAndActiveTrue(List<Long> ids);
-
     boolean existsByNameAndAddress(String name, String address);
+
+    @Query(
+            value =
+                    """
+                    SELECT * FROM bakery
+                    WHERE active = true
+                      AND ST_DWithin(
+                          location::geography,
+                          ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326)::geography,
+                          :radiusMeters
+                      )
+                    """,
+            nativeQuery = true)
+    List<Bakery> findAllNearby(
+            @Param("latitude") double latitude,
+            @Param("longitude") double longitude,
+            @Param("radiusMeters") double radiusMeters);
+
+    boolean existsByPlaceId(String placeId);
 
     Optional<Bakery> findFirstByNameAndActiveTrue(String name);
 

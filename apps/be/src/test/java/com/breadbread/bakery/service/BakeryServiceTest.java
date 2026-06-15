@@ -798,6 +798,7 @@ class BakeryServiceTest {
                         .note("")
                         .build();
         ReflectionTestUtils.setField(b, "id", id);
+        ReflectionTestUtils.setField(b, "status", BakeryStatus.APPROVED);
         return b;
     }
 

@@ -10,9 +10,9 @@ import com.breadbread.bakery.repository.BakeryRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,20 +46,46 @@ public class GooglePlacesUpdateService {
                         .findByIdAndActiveTrue(bakeryId)
                         .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
 
-        Optional<PlaceResult> placeOpt =
+        List<PlaceResult> candidates =
                 googlePlacesClient.searchBakeryPlace(
                         bakery.getName(), bakery.getLatitude(), bakery.getLongitude());
 
-        if (placeOpt.isEmpty()) {
+        PlaceResult place =
+                candidates.stream()
+                        .filter(p -> p.getLocation() != null)
+                        .min(
+                                Comparator.comparingDouble(
+                                        p ->
+                                                distanceMeters(
+                                                        bakery.getLatitude(),
+                                                        bakery.getLongitude(),
+                                                        p.getLocation().getLatitude(),
+                                                        p.getLocation().getLongitude())))
+                        .orElse(null);
+
+        if (place == null) {
             log.warn("[Places 동기화] 장소 검색 결과 없음: bakeryId={}, name={}", bakeryId, bakery.getName());
             return false;
         }
 
-        PlaceResult place = placeOpt.get();
+        double distance =
+                distanceMeters(
+                        bakery.getLatitude(),
+                        bakery.getLongitude(),
+                        place.getLocation().getLatitude(),
+                        place.getLocation().getLongitude());
 
-        String dong = extractDong(place);
-        if (dong != null) {
-            bakery.updateDong(dong);
+        if (distance > 300) {
+            log.warn(
+                    "[Places 동기화] 가장 가까운 후보도 300m 초과, 스킵: bakeryId={}, name={}, distance={}m",
+                    bakeryId,
+                    bakery.getName(),
+                    (int) distance);
+            return false;
+        }
+
+        if (bakery.getPlaceId() == null) {
+            bakery.updatePlaceId(place.getId());
         }
 
         int photoCount =
@@ -76,12 +102,7 @@ public class GooglePlacesUpdateService {
 
             List<BakeryImage> newImages = new ArrayList<>();
             for (int i = 0; i < photoCount; i++) {
-                newImages.add(
-                        BakeryImage.builder()
-                                .placeId(place.getId())
-                                .displayOrder(i + 1)
-                                .bakery(bakery)
-                                .build());
+                newImages.add(BakeryImage.builder().displayOrder(i + 1).bakery(bakery).build());
             }
             bakeryImageRepository.saveAll(newImages);
 
@@ -96,7 +117,8 @@ public class GooglePlacesUpdateService {
     }
 
     public void syncAllBakeries() {
-        List<Bakery> bakeries = bakeryRepository.findAllByActiveTrue();
+        List<Bakery> bakeries =
+                bakeryRepository.findAllByActiveTrueAndStatus(BakeryStatus.APPROVED);
         log.debug("[Places 동기화] 전체 동기화 시작: count={}", bakeries.size());
         int success = 0, skip = 0, fail = 0;
         for (Bakery bakery : bakeries) {
@@ -115,13 +137,17 @@ public class GooglePlacesUpdateService {
         }
     }
 
-    @Scheduled(cron = "0 0 4 */2 * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 0 4 */4 * *", zone = "Asia/Seoul")
     public void warmAllPhotoCaches() {
-        List<Long> bakeryIds =
-                bakeryRepository.findAllByActiveTrueAndStatus(BakeryStatus.APPROVED).stream()
-                        .map(Bakery::getId)
-                        .toList();
-        if (bakeryIds.isEmpty()) return;
+        List<Bakery> bakeries =
+                bakeryRepository.findAllByActiveTrueAndStatus(BakeryStatus.APPROVED);
+        if (bakeries.isEmpty()) return;
+
+        Map<Long, String> placeIdByBakeryId =
+                bakeries.stream()
+                        .filter(b -> b.getPlaceId() != null)
+                        .collect(Collectors.toMap(Bakery::getId, Bakery::getPlaceId));
+        List<Long> bakeryIds = bakeries.stream().map(Bakery::getId).toList();
 
         log.debug("[Places 캐시 워밍] 시작: count={}", bakeryIds.size());
         int success = 0, skip = 0, fail = 0;
@@ -148,12 +174,7 @@ public class GooglePlacesUpdateService {
                 skip++;
                 continue;
             }
-            String placeId =
-                    images.stream()
-                            .map(BakeryImage::getPlaceId)
-                            .filter(id -> id != null)
-                            .findFirst()
-                            .orElse(null);
+            String placeId = placeIdByBakeryId.get(bakeryId);
             if (placeId == null) {
                 skip++;
                 continue;
@@ -185,15 +206,16 @@ public class GooglePlacesUpdateService {
         }
     }
 
-    private String extractDong(PlaceResult place) {
-        if (place.getAddressComponents() == null) return null;
-        return place.getAddressComponents().stream()
-                .filter(
-                        comp ->
-                                comp.getTypes() != null
-                                        && comp.getTypes().contains("sublocality_level_2"))
-                .findFirst()
-                .map(GooglePlacesClient.AddressComponent::getLongText)
-                .orElse(null);
+    private double distanceMeters(double lat1, double lon1, double lat2, double lon2) {
+        final double R = 6371000;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                        + Math.cos(Math.toRadians(lat1))
+                                * Math.cos(Math.toRadians(lat2))
+                                * Math.sin(dLon / 2)
+                                * Math.sin(dLon / 2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 }

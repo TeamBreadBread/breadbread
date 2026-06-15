@@ -3,6 +3,7 @@ package com.breadbread.bakery.controller;
 import com.breadbread.bakery.dto.response.BakeryAdminListResponse;
 import com.breadbread.bakery.entity.enums.BakeryStatus;
 import com.breadbread.bakery.service.BakeryService;
+import com.breadbread.bakery.service.GooglePlacesImportService;
 import com.breadbread.bakery.service.GooglePlacesUpdateService;
 import com.breadbread.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,6 +23,16 @@ public class AdminBakeryController {
 
     private final BakeryService bakeryService;
     private final GooglePlacesUpdateService googlePlacesUpdateService;
+    private final GooglePlacesImportService googlePlacesImportService;
+
+    @Operation(
+            summary = "구글 Places 키워드로 빵집 임포트",
+            description = "검색 결과를 PENDING 상태로 저장한다. 이미 존재하는 빵집은 스킵.")
+    @Parameter(name = "keyword", description = "검색 키워드", example = "대전 빵집")
+    @PostMapping("/import")
+    public ApiResponse<Integer> importBakeries(@RequestParam String keyword) {
+        return ApiResponse.ok(googlePlacesImportService.importByKeyword(keyword));
+    }
 
     @Operation(summary = "빵집 목록 조회 (상태 필터)")
     @Parameter(name = "status", description = "빵집 상태 필터 (PENDING / APPROVED / REJECTED, 미입력 시 전체)")
@@ -65,7 +76,7 @@ public class AdminBakeryController {
 
     @Operation(
             summary = "빵집 구글 Places 동기화",
-            description = "구글 Places API로 dong 및 이미지(placePhotoName)를 업데이트한다.")
+            description = "구글 Places API로 placeId를 동기화하고, GCS 이미지가 없으면 사진도 업데이트한다.")
     @PostMapping("/{id}/sync-places")
     public ApiResponse<Void> syncPlaces(@PathVariable Long id) {
         googlePlacesUpdateService.syncBakery(id);

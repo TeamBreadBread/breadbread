@@ -34,8 +34,48 @@ public class GooglePlacesClient {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class PlaceResult {
         private String id;
+        private DisplayName displayName;
+        private String formattedAddress;
+        private Location location;
+        private String nationalPhoneNumber;
         private List<AddressComponent> addressComponents;
         private List<PlacePhoto> photos;
+        private RegularOpeningHours regularOpeningHours;
+    }
+
+    @Getter
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class DisplayName {
+        private String text;
+        private String languageCode;
+    }
+
+    @Getter
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class RegularOpeningHours {
+        private List<OpeningPeriod> periods;
+    }
+
+    @Getter
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Location {
+        private double latitude;
+        private double longitude;
+    }
+
+    @Getter
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class OpeningPeriod {
+        private PeriodDetail open;
+        private PeriodDetail close;
+    }
+
+    @Getter
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class PeriodDetail {
+        private int day; // 0=Sunday, 1=Monday, ...
+        private int hour;
+        private int minute;
     }
 
     @Getter
@@ -57,18 +97,33 @@ public class GooglePlacesClient {
         private String photoUri;
     }
 
-    /** 빵집 이름과 좌표로 Google Places Text Search를 수행하여 첫 번째 결과를 반환한다. */
-    public Optional<PlaceResult> searchBakeryPlace(String name, double lat, double lng) {
-        if (isApiKeyMissing()) return Optional.empty();
+    /** 키워드(지역 등) + bakery 타입으로 빵집 목록을 검색한다. */
+    public List<PlaceResult> searchBakeriesByKeyword(String keyword) {
+        if (isApiKeyMissing()) return List.of();
+
+        var requestBody = new TextSearchWithTypeRequest(keyword, "bakery", true, 20, "ko");
+        try {
+            PlacesSearchResponse response = doSearchTextWithDetails(requestBody);
+            if (response == null || response.getPlaces() == null) return List.of();
+            return response.getPlaces();
+        } catch (Exception e) {
+            log.error("[구글 Places] 키워드 검색 실패: keyword={}", keyword, e);
+            return List.of();
+        }
+    }
+
+    /** 빵집 이름과 좌표로 Google Places Text Search를 수행하여 후보 목록을 반환한다. */
+    public List<PlaceResult> searchBakeryPlace(String name, double lat, double lng) {
+        if (isApiKeyMissing()) return List.of();
 
         var requestBodyWithBias =
                 new TextSearchRequest(
-                        name, new LocationBias(new Circle(new LatLng(lat, lng), 200.0)), 1, "ko");
-        var requestBodyWithoutBias = new TextSearchRequestWithoutBias(name, 1, "ko");
+                        name, new LocationBias(new Circle(new LatLng(lat, lng), 200.0)), 5, "ko");
+        var requestBodyWithoutBias = new TextSearchRequestWithoutBias(name, 5, "ko");
 
         try {
             PlacesSearchResponse response = doSearchText(requestBodyWithBias);
-            return firstPlace(response, name);
+            return placesOrEmpty(response, name);
         } catch (WebClientResponseException.BadRequest e) {
             // locationBias가 데이터와 맞지 않아 400이 발생하는 케이스가 있어, 바이어스 없이 1회 재시도한다.
             log.warn(
@@ -78,18 +133,18 @@ public class GooglePlacesClient {
                     lng);
             try {
                 PlacesSearchResponse fallback = doSearchText(requestBodyWithoutBias);
-                return firstPlace(fallback, name);
+                return placesOrEmpty(fallback, name);
             } catch (WebClientResponseException ex) {
                 log.error(
                         "[구글 Places] 검색 재시도 실패: name={}, status={}", name, ex.getStatusCode(), ex);
-                return Optional.empty();
+                return List.of();
             } catch (Exception ex) {
                 log.error("[구글 Places] 검색 재시도 실패: name={}", name, ex);
-                return Optional.empty();
+                return List.of();
             }
         } catch (Exception e) {
             log.error("[구글 Places] 장소 검색 실패: name={}", name, e);
-            return Optional.empty();
+            return List.of();
         }
     }
 
@@ -98,7 +153,9 @@ public class GooglePlacesClient {
                 .post()
                 .uri(properties.getBaseUrl() + "/v1/places:searchText")
                 .header("X-Goog-Api-Key", properties.getApiKey())
-                .header("X-Goog-FieldMask", "places.id,places.addressComponents,places.photos")
+                .header(
+                        "X-Goog-FieldMask",
+                        "places.id,places.location,places.addressComponents,places.photos")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(requestBody)
                 .retrieve()
@@ -107,12 +164,28 @@ public class GooglePlacesClient {
                 .block();
     }
 
-    private Optional<PlaceResult> firstPlace(PlacesSearchResponse response, String name) {
+    private PlacesSearchResponse doSearchTextWithDetails(Object requestBody) {
+        return webClient
+                .post()
+                .uri(properties.getBaseUrl() + "/v1/places:searchText")
+                .header("X-Goog-Api-Key", properties.getApiKey())
+                .header(
+                        "X-Goog-FieldMask",
+                        "places.id,places.displayName,places.formattedAddress,places.location,places.nationalPhoneNumber,places.addressComponents,places.photos,places.regularOpeningHours")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(PlacesSearchResponse.class)
+                .timeout(Duration.ofSeconds(10))
+                .block();
+    }
+
+    private List<PlaceResult> placesOrEmpty(PlacesSearchResponse response, String name) {
         if (response == null || response.getPlaces() == null || response.getPlaces().isEmpty()) {
             log.info("[구글 Places] 검색 결과 없음: name={}", name);
-            return Optional.empty();
+            return List.of();
         }
-        return Optional.of(response.getPlaces().get(0));
+        return response.getPlaces();
     }
 
     /** placeId로 Place Details를 조회해 photos 목록을 반환한다. URL 해석 시 photoName을 런타임에 획득하기 위해 사용한다. */
@@ -182,6 +255,13 @@ public class GooglePlacesClient {
 
     record TextSearchRequestWithoutBias(
             String textQuery, int maxResultCount, String languageCode) {}
+
+    record TextSearchWithTypeRequest(
+            String textQuery,
+            String includedType,
+            boolean strictTypeFiltering,
+            int maxResultCount,
+            String languageCode) {}
 
     record LocationBias(Circle circle) {}
 
