@@ -27,7 +27,19 @@ public class AdminBakeryController {
 
     @Operation(
             summary = "구글 Places 키워드로 빵집 임포트",
-            description = "검색 결과를 PENDING 상태로 저장한다. 이미 존재하는 빵집은 스킵.")
+            description =
+                    "검색 결과를 PENDING 상태로 저장한다. 이미 존재하는 빵집은 스킵.\n\n"
+                            + "**임포트 시 채워지는 필드**\n"
+                            + "- `name` — 빵집 이름\n"
+                            + "- `address` — 주소\n"
+                            + "- `region` — 지역구\n"
+                            + "- `latitude` / `longitude` — 위경도\n"
+                            + "- `phone` — 전화번호\n"
+                            + "- `weekdayOpen` / `weekdayClose` — 평일 영업 시간\n"
+                            + "- `weekendOpen` / `weekendClose` — 주말 영업 시간\n"
+                            + "- `closedDays` — 정기 휴무일\n"
+                            + "- `placeId` — 구글 Places ID\n\n"
+                            + "나머지 필드(`region`, `bakeryType` 등)는 승인 전 직접 입력 필요.")
     @Parameter(name = "keyword", description = "검색 키워드", example = "대전 빵집")
     @PostMapping("/import")
     public ApiResponse<Integer> importBakeries(@RequestParam String keyword) {

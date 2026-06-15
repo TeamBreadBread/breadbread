@@ -107,6 +107,7 @@ public class GooglePlacesImportService {
                     Bakery.builder()
                             .name(name)
                             .address(address)
+                            .region(extractRegion(place))
                             .latitude(place.getLocation().getLatitude())
                             .longitude(place.getLocation().getLongitude())
                             .phone(place.getNationalPhoneNumber())
@@ -127,6 +128,38 @@ public class GooglePlacesImportService {
 
         log.info("[Places 임포트] keyword={}, saved={}, total={}", keyword, saved, places.size());
         return saved;
+    }
+
+    private String extractRegion(GooglePlacesClient.PlaceResult place) {
+        if (place.getAddressComponents() == null) return null;
+
+        String gu =
+                place.getAddressComponents().stream()
+                        .filter(
+                                c ->
+                                        c.getTypes() != null
+                                                && c.getTypes().contains("sublocality_level_1"))
+                        .findFirst()
+                        .map(GooglePlacesClient.AddressComponent::getLongText)
+                        .orElse(null);
+
+        if (gu == null) return null;
+
+        String city =
+                place.getAddressComponents().stream()
+                        .filter(
+                                c ->
+                                        c.getTypes() != null
+                                                && c.getTypes().contains("locality"))
+                        .findFirst()
+                        .map(GooglePlacesClient.AddressComponent::getLongText)
+                        .map(
+                                s ->
+                                        s.replaceAll(
+                                                "(광역시|특별시|특별자치시|특별자치도|도|시)$", ""))
+                        .orElse(null);
+
+        return city != null ? city + " " + gu : gu;
     }
 
     private boolean isDuplicateNearby(String name, double lat, double lng) {
