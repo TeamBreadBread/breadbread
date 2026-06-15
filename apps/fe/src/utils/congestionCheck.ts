@@ -174,8 +174,8 @@ export function buildCongestionChatMessage(
   return [
     `지금 ${congestedName} 웨이팅이 너무 길어서 빵을 먹기 어려울 것 같아요 ㅠㅠ`,
     "",
-    "대신 고객님 취향에 맞는 다른 빵집을 찾아봤어요 !",
-    `${alternative.bakeryName}으로 변경해드릴까요?`,
+    "대신 고객님 취향에 맞는 다른 빵집을 찾아봤어요!",
+    `${alternative.bakeryName}으로 변경해볼까요?`,
   ].join("\n");
 }
 
