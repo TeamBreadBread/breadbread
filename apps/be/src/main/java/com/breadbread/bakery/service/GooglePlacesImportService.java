@@ -147,16 +147,10 @@ public class GooglePlacesImportService {
 
         String city =
                 place.getAddressComponents().stream()
-                        .filter(
-                                c ->
-                                        c.getTypes() != null
-                                                && c.getTypes().contains("locality"))
+                        .filter(c -> c.getTypes() != null && c.getTypes().contains("locality"))
                         .findFirst()
                         .map(GooglePlacesClient.AddressComponent::getLongText)
-                        .map(
-                                s ->
-                                        s.replaceAll(
-                                                "(광역시|특별시|특별자치시|특별자치도|도|시)$", ""))
+                        .map(s -> s.replaceAll("(광역시|특별시|특별자치시|특별자치도|도|시)$", ""))
                         .orElse(null);
 
         return city != null ? city + " " + gu : gu;
