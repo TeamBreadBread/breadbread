@@ -109,7 +109,6 @@ public class BakeryReportService {
                             .dineInAvailable(false)
                             .parkingAvailable(false)
                             .build();
-            pendingBakery.markAsPending();
             bakeryRepository.save(pendingBakery);
         } else if (report.getType() == BakeryReportType.UPDATE_BAKERY) {
             applyUpdateReport(report);

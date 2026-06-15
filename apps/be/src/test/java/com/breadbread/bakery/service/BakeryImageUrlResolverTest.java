@@ -5,6 +5,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.BakeryImage;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,7 +40,7 @@ class BakeryImageUrlResolverTest {
         BakeryImage image =
                 BakeryImage.builder()
                         .imageUrl("https://storage.googleapis.com/bucket/img.jpg")
-                        .placeId("ChIJ123")
+                        .bakery(bakeryWithPlaceId("ChIJ123"))
                         .displayOrder(1)
                         .build();
 
@@ -53,7 +54,8 @@ class BakeryImageUrlResolverTest {
 
     @Test
     void resolve_callsPlacesService_whenPlacesImage() {
-        BakeryImage image = BakeryImage.builder().placeId("ChIJ123").displayOrder(1).build();
+        BakeryImage image =
+                BakeryImage.builder().bakery(bakeryWithPlaceId("ChIJ123")).displayOrder(1).build();
         when(placesPhotoRedisService.getOrFetchPhotoUrl("ChIJ123", 0))
                 .thenReturn("https://places.googleapis.com/photo/abc");
 
@@ -65,7 +67,8 @@ class BakeryImageUrlResolverTest {
 
     @Test
     void resolve_usesCorrectPhotoIndex_basedOnDisplayOrder() {
-        BakeryImage image = BakeryImage.builder().placeId("ChIJ123").displayOrder(3).build();
+        BakeryImage image =
+                BakeryImage.builder().bakery(bakeryWithPlaceId("ChIJ123")).displayOrder(3).build();
         when(placesPhotoRedisService.getOrFetchPhotoUrl("ChIJ123", 2))
                 .thenReturn("https://places.googleapis.com/photo/abc");
 
@@ -76,7 +79,8 @@ class BakeryImageUrlResolverTest {
 
     @Test
     void resolve_usesZeroIndex_whenDisplayOrderIsZero() {
-        BakeryImage image = BakeryImage.builder().placeId("ChIJ123").displayOrder(0).build();
+        BakeryImage image =
+                BakeryImage.builder().bakery(bakeryWithPlaceId("ChIJ123")).displayOrder(0).build();
         when(placesPhotoRedisService.getOrFetchPhotoUrl("ChIJ123", 0)).thenReturn(null);
 
         resolver.resolve(image);
@@ -86,7 +90,8 @@ class BakeryImageUrlResolverTest {
 
     @Test
     void resolve_returnsNull_whenPlacesServiceReturnsNull() {
-        BakeryImage image = BakeryImage.builder().placeId("ChIJ123").displayOrder(1).build();
+        BakeryImage image =
+                BakeryImage.builder().bakery(bakeryWithPlaceId("ChIJ123")).displayOrder(1).build();
         when(placesPhotoRedisService.getOrFetchPhotoUrl("ChIJ123", 0)).thenReturn(null);
 
         String result = resolver.resolve(image);
@@ -104,5 +109,26 @@ class BakeryImageUrlResolverTest {
 
         assertThat(result).isNull();
         verifyNoInteractions(placesPhotoRedisService);
+    }
+
+    @Test
+    void resolve_returnsNull_whenBakeryHasNoPlaceId() {
+        BakeryImage image =
+                BakeryImage.builder().bakery(bakeryWithPlaceId(null)).displayOrder(1).build();
+
+        String result = resolver.resolve(image);
+
+        assertThat(result).isNull();
+        verifyNoInteractions(placesPhotoRedisService);
+    }
+
+    private Bakery bakeryWithPlaceId(String placeId) {
+        return Bakery.builder()
+                .name("test bakery")
+                .address("test address")
+                .latitude(36.327)
+                .longitude(127.427)
+                .placeId(placeId)
+                .build();
     }
 }

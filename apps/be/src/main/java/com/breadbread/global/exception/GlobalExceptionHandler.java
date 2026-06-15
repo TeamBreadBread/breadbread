@@ -13,6 +13,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 @Slf4j
@@ -78,6 +80,13 @@ public class GlobalExceptionHandler {
                 .body(
                         ApiResponse.fail(
                                 ErrorCode.INVALID_INPUT_VALUE.getCode(), "올바르지 않은 요청 형식입니다."));
+    }
+
+    @ExceptionHandler({NoHandlerFoundException.class, NoResourceFoundException.class})
+    public ResponseEntity<ApiResponse<Void>> handleNotFound(Exception e) {
+        log.warn("Path not found: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.fail(ErrorCode.NOT_FOUND.getCode(), "존재하지 않는 경로입니다."));
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)

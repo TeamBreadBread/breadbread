@@ -12,5 +12,5 @@ import org.springframework.stereotype.Component;
 public class GooglePlacesProperties {
     private String apiKey = "";
     private String baseUrl = "https://places.googleapis.com";
-    private long photoUrlTtlSeconds = 3000;
+    private long photoUrlTtlSeconds = 345600; // 4일
 }

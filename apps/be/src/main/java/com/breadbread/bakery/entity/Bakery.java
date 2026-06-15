@@ -48,10 +48,11 @@ public class Bakery extends BaseEntity {
     private int estimatedStayMinutes; // 예상 체류 시간 (분)
     private String note;
     private String dong; // 행정동 (구글 Places 동기화로 채워짐)
+    private String placeId; // Google Places ID (임포트 출처 식별 및 중복 방지)
     private boolean active = true;
 
     @Enumerated(EnumType.STRING)
-    private BakeryStatus status = BakeryStatus.APPROVED;
+    private BakeryStatus status = BakeryStatus.PENDING;
 
     @Embedded private BusinessHours businessHours; // • 운영 시간
 
@@ -183,6 +184,10 @@ public class Bakery extends BaseEntity {
         this.dong = dong;
     }
 
+    public void updatePlaceId(String placeId) {
+        this.placeId = placeId;
+    }
+
     public void updateAddress(String address) {
         this.address = address;
     }
@@ -224,7 +229,8 @@ public class Bakery extends BaseEntity {
             String note,
             LocalTime appearanceTime,
             Frequency frequency,
-            String dong) {
+            String dong,
+            String placeId) {
         this.name = name;
         this.address = address;
         this.region = region;
@@ -258,5 +264,6 @@ public class Bakery extends BaseEntity {
         this.appearanceTime = appearanceTime;
         this.frequency = frequency;
         this.dong = dong;
+        this.placeId = placeId;
     }
 }

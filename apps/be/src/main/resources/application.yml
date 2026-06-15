@@ -180,7 +180,7 @@ google:
   places:
     api-key: ${GOOGLE_PLACES_API_KEY}
     base-url: https://places.googleapis.com
-    photo-url-ttl-seconds: ${GOOGLE_PLACES_PHOTO_URL_TTL_SECONDS:172800}
+    photo-url-ttl-seconds: ${GOOGLE_PLACES_PHOTO_URL_TTL_SECONDS:345600}
 
 logging:
   pattern:
