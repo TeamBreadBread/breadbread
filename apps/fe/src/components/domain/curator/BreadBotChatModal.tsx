@@ -1,5 +1,4 @@
 import { useState, type ReactNode, type RefObject } from "react";
-import { TypingIndicator } from "@chatscope/chat-ui-kit-react";
 import DefaultBreadImage from "@/assets/images/Default_Bread.svg";
 import SadBreadImage from "@/assets/images/Sad_Bread.svg";
 import CelebrateImage from "@/assets/icons/Img_Celebrate.svg";
@@ -124,7 +123,13 @@ function ChatbotTypingIndicator() {
   return (
     <div className="flex w-full justify-start">
       <div className="flex h-[30px] w-[50px] items-center justify-center rounded-r4 bg-gray-00 shadow-[0_1px_3px_rgba(26,31,39,0.05)]">
-        <TypingIndicator content="" className="chatbot-typing-indicator--compact" />
+        <div className="cs-typing-indicator chatbot-typing-indicator--compact" aria-hidden>
+          <div className="cs-typing-indicator__indicator">
+            <span className="cs-typing-indicator__dot" />
+            <span className="cs-typing-indicator__dot" />
+            <span className="cs-typing-indicator__dot" />
+          </div>
+        </div>
       </div>
     </div>
   );

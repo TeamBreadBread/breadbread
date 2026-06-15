@@ -33,12 +33,14 @@ export default function SignupPage() {
   const removeKorean = (value: string) => value.replace(/[ㄱ-ㅎㅏ-ㅣ가-힣]/g, "");
 
   const handleUserIdChange = (value: string) => {
-    const sanitized = removeKorean(value)
-      .toLowerCase()
-      .replace(/[^a-z0-9_-]/g, "")
+    const next = value
+      .split("")
+      .filter((char) => /[a-zA-Z0-9_\-ㄱ-ㅎㅏ-ㅣ가-힣]/.test(char))
+      .join("")
+      .replace(/[A-Z]/g, (char) => char.toLowerCase())
       .slice(0, 20);
 
-    setUserId(sanitized);
+    setUserId(next);
     setIsUserIdDupChecked(false);
     setIsDuplicateLoginId(false);
   };
@@ -50,6 +52,7 @@ export default function SignupPage() {
   };
 
   const isUserIdFilled = userId.length > 0;
+  const userIdHasKorean = /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(userId);
   const isPasswordFilled = password.length > 0;
   const isEmailFilled = email.length > 0;
 
@@ -63,15 +66,17 @@ export default function SignupPage() {
   const isPasswordInvalid = isPasswordFilled && !isPasswordValid;
   const isEmailInvalid = isEmailFilled && !isEmailValid;
 
-  const userIdHelperText = isUserIdFilled
-    ? isUserIdValid
-      ? isDuplicateLoginId
-        ? "아이디 중복입니다."
-        : isUserIdDupChecked
-          ? "사용할 수 있는 아이디입니다."
-          : "아이디 중복확인을 해주세요."
-      : "아이디를 5자 이상 입력해주세요."
-    : "5~20자의 영문 소문자, 숫자와 특수기호(_),(-)만 사용 가능합니다.";
+  const userIdHelperText = userIdHasKorean
+    ? "아이디는 영문으로 작성해주세요."
+    : isUserIdFilled
+      ? isUserIdValid
+        ? isDuplicateLoginId
+          ? "아이디 중복입니다."
+          : isUserIdDupChecked
+            ? "사용할 수 있는 아이디입니다."
+            : "아이디 중복확인을 해주세요."
+        : "아이디를 5자 이상 입력해주세요."
+      : "5~20자의 영문 소문자, 숫자와 특수기호(_),(-)만 사용 가능합니다.";
 
   const passwordHelperText = isPasswordFilled
     ? isPasswordValid
@@ -87,8 +92,8 @@ export default function SignupPage() {
       : "올바른 이메일을 입력해주세요."
     : undefined;
 
-  const isUserIdSuccess = isUserIdValid && isUserIdDupChecked;
-  const isUserIdWarn = isUserIdInvalid || (isUserIdValid && !isUserIdDupChecked);
+  const isUserIdSuccess = isUserIdValid && isUserIdDupChecked && !userIdHasKorean;
+  const isUserIdWarn = userIdHasKorean || isUserIdInvalid || (isUserIdValid && !isUserIdDupChecked);
 
   const userIdHelperClassName = cn(
     isUserIdSuccess && "text-green-700",
@@ -131,6 +136,7 @@ export default function SignupPage() {
   const canSubmit =
     isNameValid &&
     isUserIdValid &&
+    !userIdHasKorean &&
     isUserIdDupChecked &&
     isPasswordValid &&
     isEmailValid &&
@@ -199,7 +205,7 @@ export default function SignupPage() {
             onChange={handleUserIdChange}
             onActionClick={() => {
               void (async () => {
-                if (!isUserIdValid) return;
+                if (!isUserIdValid || userIdHasKorean) return;
                 try {
                   const { available } = await checkId(userId.trim());
                   setIsUserIdDupChecked(available);
