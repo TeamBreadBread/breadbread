@@ -249,6 +249,9 @@ function WelcomeSpeechBubble({
   );
 }
 
+const CONGESTION_DISCLAIMER =
+  "※ 혼잡도 정보는 SNS 데이터를 기반으로 예측되며,\n실제 현장 상황과 다를 수 있습니다.";
+
 function BotMessageBlock({
   message,
   loading,
@@ -279,6 +282,12 @@ function BotMessageBlock({
         <p className="whitespace-pre-wrap font-pretendard text-size-3 leading-t5 text-gray-1000">
           {message.text}
         </p>
+
+        {message.showSadBread ? (
+          <p className="mt-x2 whitespace-pre-wrap font-pretendard typo-t2regular text-gray-600">
+            {CONGESTION_DISCLAIMER}
+          </p>
+        ) : null}
 
         {message.showSadBread ? (
           <img
