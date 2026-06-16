@@ -2,17 +2,23 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import MobileFrame from "@/components/layout/MobileFrame";
 import BreadBtiLoadingPrompt from "@/components/domain/breadbti/BreadBtiLoadingPrompt";
+import PreferenceTopBar from "@/components/domain/ai-course/PreferenceTopBar";
 import { getErrorMessage } from "@/api/types/common";
 import { AI_COURSE_ESTIMATED_WAIT_SECONDS } from "@/utils/pollAiCourseStatus";
-import { clearAiCoursePendingJobId, saveAiCoursePendingJobId } from "@/utils/aiCourseStorage";
-import { finalizeAiCourseJob } from "@/utils/finalizeAiCourseJob";
+import {
+  clearAiCoursePendingJobId,
+  readAiCourseJobCourseId,
+  readAiCoursePreferenceDraft,
+  saveAiCoursePendingJobId,
+} from "@/utils/aiCourseStorage";
+import { isAiJobNotFoundError, resolveAiCourseJobCourseId } from "@/utils/aiCourseJobRunner";
+import { resumeAiCourseGeneration } from "@/utils/navigateBackToAiCourseFromBreadBti";
 
 type AiCourseGeneratingPageProps = {
   jobId: string;
+  /** localhost 등에서 UI 확인용 — API 폴링 없이 로딩 화면만 표시 */
+  preview?: boolean;
 };
-
-/** React StrictMode(dev)에서 동일 jobId 폴링이 두 번 시작되는 것을 막는다. */
-const aiCoursePollStartedJobIds = new Set<string>();
 
 function logAiCourseGenerationFailure(jobId: string, error: unknown): void {
   const message = getErrorMessage(error);
@@ -25,56 +31,92 @@ function logAiCourseGenerationFailure(jobId: string, error: unknown): void {
   });
 }
 
-export default function AiCourseGeneratingPage({ jobId }: AiCourseGeneratingPageProps) {
+export default function AiCourseGeneratingPage({
+  jobId,
+  preview = false,
+}: AiCourseGeneratingPageProps) {
   const navigate = useNavigate();
   const navigateRef = useRef(navigate);
   const [secondsLeft, setSecondsLeft] = useState(AI_COURSE_ESTIMATED_WAIT_SECONDS);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const goBack = () => {
+    const hasPreferenceDraft = readAiCoursePreferenceDraft() != null;
+    void navigate({ to: hasPreferenceDraft ? "/recommendation" : "/preference" });
+  };
 
   useEffect(() => {
     navigateRef.current = navigate;
   }, [navigate]);
 
   useEffect(() => {
+    if (preview) return;
     saveAiCoursePendingJobId(jobId);
-  }, [jobId]);
+  }, [jobId, preview]);
 
   useEffect(() => {
-    if (errorMessage) return;
+    if (errorMessage || preview) return;
     const timer = window.setInterval(() => {
       setSecondsLeft((s) => Math.max(0, s - 1));
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [errorMessage]);
+  }, [errorMessage, preview]);
 
   useEffect(() => {
-    if (aiCoursePollStartedJobIds.has(jobId)) return undefined;
-    aiCoursePollStartedJobIds.add(jobId);
+    if (preview) return undefined;
+
+    const cachedCourseId = readAiCourseJobCourseId(jobId);
+    if (cachedCourseId) {
+      void navigateRef.current({
+        to: "/ai-search-result",
+        search: { courseId: cachedCourseId },
+      });
+      return undefined;
+    }
 
     let cancelled = false;
 
-    void (async () => {
-      try {
-        const courseId = await finalizeAiCourseJob(jobId);
+    void resumeAiCourseGeneration(jobId)
+      .then((courseId) => {
         if (cancelled) return;
-        navigateRef.current({ to: "/ai-search-result", search: { courseId } });
-      } catch (e) {
+        void navigateRef.current({ to: "/ai-search-result", search: { courseId } });
+      })
+      .catch((error) => {
         if (cancelled) return;
-        logAiCourseGenerationFailure(jobId, e);
-        clearAiCoursePendingJobId();
-        setErrorMessage(getErrorMessage(e));
-      }
-    })();
+
+        const recoveredCourseId = resolveAiCourseJobCourseId(jobId, error);
+        if (recoveredCourseId) {
+          void navigateRef.current({
+            to: "/ai-search-result",
+            search: { courseId: recoveredCourseId },
+          });
+          return;
+        }
+
+        logAiCourseGenerationFailure(jobId, error);
+        if (!isAiJobNotFoundError(error)) {
+          clearAiCoursePendingJobId();
+        }
+        setErrorMessage(getErrorMessage(error));
+      });
 
     return () => {
       cancelled = true;
-      aiCoursePollStartedJobIds.delete(jobId);
     };
-  }, [jobId]);
+  }, [jobId, preview]);
+
+  const handleRetry = () => {
+    goBack();
+  };
 
   if (errorMessage) {
     return (
       <MobileFrame className="flex min-h-screen flex-col bg-white">
+        <PreferenceTopBar
+          title="AI 코스 추천"
+          onBack={goBack}
+          onCancel={() => navigate({ to: "/home" })}
+        />
         <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 pb-24">
           <p className="text-center font-pretendard text-lg font-semibold text-gray-1000">
             AI 코스 생성에 실패했어요
@@ -94,7 +136,7 @@ export default function AiCourseGeneratingPage({ jobId }: AiCourseGeneratingPage
             <button
               type="button"
               className="h-[52px] w-full rounded-r2 bg-orange-600 font-pretendard text-size-4 font-semibold text-white"
-              onClick={() => navigate({ to: "/recommendation" })}
+              onClick={handleRetry}
             >
               다시 시도하기
             </button>
@@ -113,7 +155,18 @@ export default function AiCourseGeneratingPage({ jobId }: AiCourseGeneratingPage
 
   return (
     <MobileFrame className="flex min-h-screen flex-col bg-white">
+      <PreferenceTopBar
+        title="AI 코스 추천"
+        onBack={goBack}
+        onCancel={() => navigate({ to: "/home" })}
+      />
       <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 pb-24">
+        {preview ? (
+          <p className="rounded-r2 bg-amber-50 px-x3 py-x2 text-center font-pretendard text-size-3 text-amber-800">
+            dev 미리보기 — 실제 생성은 진행되지 않습니다
+          </p>
+        ) : null}
+
         <p className="text-center font-pretendard text-lg font-semibold text-gray-1000">
           AI 코스를 생성하고 있어요
         </p>
@@ -125,17 +178,21 @@ export default function AiCourseGeneratingPage({ jobId }: AiCourseGeneratingPage
         />
 
         <p className="max-w-[280px] text-center font-pretendard text-size-4 leading-t5 text-gray-700">
-          {secondsLeft > 0 ? (
+          {preview || secondsLeft > 0 ? (
             <>
               예상 대기 시간
-              <br />약 <span className="font-semibold text-gray-900">{secondsLeft}초</span> 남음
+              <br />약{" "}
+              <span className="font-semibold text-gray-900">
+                {preview ? AI_COURSE_ESTIMATED_WAIT_SECONDS : secondsLeft}초
+              </span>{" "}
+              남음
             </>
           ) : (
             <>거의 완료되었어요. 조금만 더 기다려 주세요.</>
           )}
         </p>
 
-        <BreadBtiLoadingPrompt />
+        <BreadBtiLoadingPrompt jobId={jobId} />
       </main>
     </MobileFrame>
   );

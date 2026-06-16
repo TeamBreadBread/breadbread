@@ -1,6 +1,11 @@
 import { getCourseDetail, saveAiCourse, saveCourseRoute } from "@/api/courses";
 import { pollAiCourseStatus } from "@/utils/pollAiCourseStatus";
-import { AI_COURSE_RESULT_STORAGE_KEY, clearAiCoursePendingJobId } from "@/utils/aiCourseStorage";
+import {
+  AI_COURSE_RESULT_STORAGE_KEY,
+  clearAiCourseBtiReturnJobId,
+  clearAiCoursePendingJobId,
+  saveAiCourseJobCourseId,
+} from "@/utils/aiCourseStorage";
 
 /** AI job 완료 대기 → 저장 → sessionStorage 반영 후 courseId 반환 */
 export async function finalizeAiCourseJob(jobId: string): Promise<number> {
@@ -11,6 +16,8 @@ export async function finalizeAiCourseJob(jobId: string): Promise<number> {
     getCourseDetail(courseId),
   ]);
   sessionStorage.setItem(AI_COURSE_RESULT_STORAGE_KEY, JSON.stringify(courseDetail));
+  saveAiCourseJobCourseId(jobId, courseId);
   clearAiCoursePendingJobId();
+  clearAiCourseBtiReturnJobId();
   return courseId;
 }

@@ -64,7 +64,7 @@ const QUESTION_SECTIONS: QuestionItem[] = [
       { label: "빵", withIcon: true, iconSrc: BreadCategoryImg },
       { label: "샌드위치", withIcon: true, iconSrc: SandwichCategoryImg },
       { label: "케이크", withIcon: true, iconSrc: CakeCategoryImg },
-      { label: "떡", withIcon: true, iconSrc: RicecakeCategoryImg },
+      { label: "전통과자", withIcon: true, iconSrc: RicecakeCategoryImg },
       { label: "쿠키", withIcon: true, iconSrc: CookieCategoryImg },
       { label: "다이어트 빵", withIcon: true, iconSrc: DietbreadCategoryImg },
     ],
@@ -184,7 +184,7 @@ export default function BreadRecommendationPreference() {
     if (value === "빵") return "BREAD";
     if (value === "샌드위치") return "SANDWICH";
     if (value === "케이크") return "CAKE";
-    if (value === "떡") return "RICE_CAKE";
+    if (value === "전통과자") return "RICE_CAKE";
     if (value === "쿠키") return "COOKIE";
     if (value === "다이어트 빵") return "DIET";
     return null;

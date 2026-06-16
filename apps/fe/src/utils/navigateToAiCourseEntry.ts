@@ -1,8 +1,16 @@
 import { getAiCourseStatus } from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
-import { clearAiCoursePendingJobId, readAiCoursePendingJobId } from "@/utils/aiCourseStorage";
-import { finalizeAiCourseJob } from "@/utils/finalizeAiCourseJob";
+import {
+  clearAiCoursePendingJobId,
+  readAiCourseJobCourseId,
+  readAiCoursePendingJobId,
+} from "@/utils/aiCourseStorage";
+import {
+  ensureAiCourseJobRunning,
+  isAiJobNotFoundError,
+  resolveAiCourseJobCourseId,
+} from "@/utils/aiCourseJobRunner";
 
 type NavigateFn = (options: {
   to: string;
@@ -17,6 +25,12 @@ export async function navigateToAiCourseEntry(navigate: NavigateFn): Promise<voi
   const pendingJobId = readAiCoursePendingJobId();
   if (!pendingJobId) {
     await navigate({ to: AI_COURSE_FLOW_START });
+    return;
+  }
+
+  const cachedCourseId = readAiCourseJobCourseId(pendingJobId);
+  if (cachedCourseId) {
+    await navigate({ to: "/ai-search-result", search: { courseId: cachedCourseId } });
     return;
   }
 
@@ -35,9 +49,19 @@ export async function navigateToAiCourseEntry(navigate: NavigateFn): Promise<voi
       return;
     }
 
-    const courseId = await finalizeAiCourseJob(pendingJobId);
+    const courseId = await ensureAiCourseJobRunning(pendingJobId);
     await navigate({ to: "/ai-search-result", search: { courseId } });
   } catch (error) {
+    const recoveredCourseId = resolveAiCourseJobCourseId(pendingJobId, error);
+    if (recoveredCourseId) {
+      await navigate({ to: "/ai-search-result", search: { courseId: recoveredCourseId } });
+      return;
+    }
+
+    if (isAiJobNotFoundError(error)) {
+      clearAiCoursePendingJobId();
+    }
+
     window.alert(getErrorMessage(error));
     await navigate({ to: AI_COURSE_FLOW_START });
   }
