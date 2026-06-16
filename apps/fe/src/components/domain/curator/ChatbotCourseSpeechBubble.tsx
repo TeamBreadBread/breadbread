@@ -1,13 +1,5 @@
 import { cn } from "@/utils/cn";
-
-/** 플로팅 버튼(right 20px, bottom 76/80px, 76px — Img_ChatBot.svg 자체) 바로 위 4px */
-export const CHATBOT_FAB_SIZE = 76;
-
-export const CHATBOT_FAB_POSITION_CLASS =
-  "fixed right-[20px] bottom-[76px] z-[70] sm:bottom-[80px] md:right-[calc((100vw-402px)/2+20px)]";
-
-export const CHATBOT_BUBBLE_ABOVE_FAB_CLASS =
-  "fixed right-[20px] bottom-[156px] z-[72] sm:bottom-[160px] md:right-[calc((100vw-402px)/2+20px)]";
+import { CHATBOT_BUBBLE_ABOVE_FAB_CLASS } from "@/components/domain/curator/chatbotFabLayout";
 
 type ChatbotAction = {
   label: string;
@@ -22,6 +14,7 @@ type ChatbotCourseSpeechBubbleProps = {
   onClose?: () => void;
   onClick?: () => void;
   actions?: ChatbotAction[];
+  bubblePositionClass?: string;
   className?: string;
 };
 
@@ -31,13 +24,14 @@ export default function ChatbotCourseSpeechBubble({
   onClose,
   onClick,
   actions,
+  bubblePositionClass = CHATBOT_BUBBLE_ABOVE_FAB_CLASS,
   className,
 }: ChatbotCourseSpeechBubbleProps) {
   return (
     <div
       className={cn(
         "pointer-events-auto w-[min(280px,calc(100%-40px))]",
-        CHATBOT_BUBBLE_ABOVE_FAB_CLASS,
+        bubblePositionClass,
         className,
       )}
     >

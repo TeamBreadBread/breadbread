@@ -1,5 +1,6 @@
 import { apiClient, extractData } from "@/api/client";
 import type { ApiEnvelope } from "@/api/types/common";
+import { publishTourStateUpdate } from "@/utils/tourStateSync";
 
 const PATH = "/tours";
 
@@ -43,7 +44,9 @@ export async function completeTour(courseId: number): Promise<TourCurrentRespons
   const { data } = await apiClient.post<ApiEnvelope<TourCurrentResponse>>(
     `${PATH}/${courseId}/complete`,
   );
-  return extractData(data);
+  const tour = extractData(data);
+  publishTourStateUpdate(tour);
+  return tour;
 }
 
 /**
@@ -57,7 +60,9 @@ export async function checkTourVisit(
   const { data } = await apiClient.patch<ApiEnvelope<TourCurrentResponse>>(
     `${PATH}/${courseId}/visit/${order}`,
   );
-  return extractData(data);
+  const tour = extractData(data);
+  publishTourStateUpdate(tour);
+  return tour;
 }
 
 /**

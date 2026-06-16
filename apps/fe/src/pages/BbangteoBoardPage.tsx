@@ -277,12 +277,6 @@ const BbangteoBoardPage = ({ initialTab = "자유 게시판" }: BbangteoBoardPag
     const isFirstPage = page === 0;
 
     void (async () => {
-      const mockLead =
-        activeTab === "자유 게시판" ? getMockFreeBoardSummaries() : getMockArticleBoardSummaries();
-      const sortedMockLead =
-        sortBy === "LIKE_COUNT"
-          ? [...mockLead].sort((a, b) => b.likeCount - a.likeCount || b.id - a.id)
-          : mockLead;
       try {
         if (isFirstPage) {
           setLoading(true);
@@ -293,8 +287,8 @@ const BbangteoBoardPage = ({ initialTab = "자유 게시판" }: BbangteoBoardPag
         const res = await getPosts({ postTypes, page, size: 10, sort: sortBy });
         if (cancelled) return;
         if (isFirstPage) {
-          reconcileOverlaysWithSummaries([...sortedMockLead, ...res.posts], false);
-          setItems([...sortedMockLead, ...res.posts].map(mergePostSummaryWithLikeOverlay));
+          reconcileOverlaysWithSummaries(res.posts, false);
+          setItems(res.posts.map(mergePostSummaryWithLikeOverlay));
         } else {
           reconcileOverlaysWithSummaries(res.posts, false);
           setItems((prev) => [...prev, ...res.posts.map(mergePostSummaryWithLikeOverlay)]);
@@ -303,6 +297,14 @@ const BbangteoBoardPage = ({ initialTab = "자유 게시판" }: BbangteoBoardPag
       } catch (e) {
         if (!cancelled) {
           if (isFirstPage) {
+            const mockLead =
+              activeTab === "자유 게시판"
+                ? getMockFreeBoardSummaries()
+                : getMockArticleBoardSummaries();
+            const sortedMockLead =
+              sortBy === "LIKE_COUNT"
+                ? [...mockLead].sort((a, b) => b.likeCount - a.likeCount || b.id - a.id)
+                : mockLead;
             setItems(sortedMockLead.map(mergePostSummaryWithLikeOverlay));
             setHasNext(false);
             setError("");
