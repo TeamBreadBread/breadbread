@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import BreadBtiMobileFrame from "@/components/domain/breadbti/BreadBtiMobileFrame";
-import { isBreadBtiFromBbangteo } from "@/lib/breadbti/entryFrom";
+import { isBreadBtiFromAiGenerating, isBreadBtiFromBbangteo } from "@/lib/breadbti/entryFrom";
 import { BREAD_BTI_HOME_IMAGE } from "@/lib/breadbti/images";
 import { breadBtiAbsoluteUrl, breadBtiPath } from "@/lib/breadbti/paths";
 import {
@@ -78,6 +78,7 @@ export default function BreadBtiLandingPage() {
   };
 
   const fromBbangteo = isBreadBtiFromBbangteo();
+  const fromAiGenerating = isBreadBtiFromAiGenerating();
 
   const startTest = () => {
     void navigate({ to: "/breadbti/question" });
@@ -85,14 +86,14 @@ export default function BreadBtiLandingPage() {
 
   return (
     <BreadBtiMobileFrame className="overflow-hidden">
-      {fromBbangteo ? null : (
+      {fromBbangteo || fromAiGenerating ? null : (
         <header className="p-5 text-center">
           <div className="text-xs font-semibold text-[#FF8C42]">BREAD MBTI</div>
         </header>
       )}
 
       <main
-        className={`flex flex-1 flex-col items-center px-5 pt-2 ${fromBbangteo ? "pb-24" : "pb-36"}`}
+        className={`flex flex-1 flex-col items-center px-5 pt-2 ${fromBbangteo ? "pb-24" : fromAiGenerating ? "pb-8" : "pb-36"}`}
       >
         <h1 className="text-center text-[44px] font-black leading-tight text-[#D86A00]">
           나는

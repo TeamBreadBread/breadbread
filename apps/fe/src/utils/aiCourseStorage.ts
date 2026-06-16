@@ -1,6 +1,7 @@
 export const AI_COURSE_PREFERENCE_STORAGE_KEY = "aiCoursePreference";
 export const AI_COURSE_RESULT_STORAGE_KEY = "aiCourseResult";
 export const AI_COURSE_PENDING_JOB_ID_KEY = "aiCoursePendingJobId";
+export const AI_COURSE_BTI_RETURN_JOB_ID_KEY = "aiCourseBtiReturnJobId";
 export const ROUTE_FOCUS_COURSE_ID_KEY = "routeFocusCourseId";
 
 export function saveRouteFocusCourseId(courseId: number): void {
@@ -67,5 +68,63 @@ export function clearAiCoursePendingJobId(): void {
     sessionStorage.removeItem(AI_COURSE_PENDING_JOB_ID_KEY);
   } catch {
     /* ignore */
+  }
+}
+
+export function saveAiCourseBtiReturnJobId(jobId: string): void {
+  const trimmed = jobId.trim();
+  if (!trimmed || trimmed === "preview") return;
+  try {
+    sessionStorage.setItem(AI_COURSE_BTI_RETURN_JOB_ID_KEY, trimmed);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function readAiCourseBtiReturnJobId(): string | null {
+  try {
+    const raw = sessionStorage.getItem(AI_COURSE_BTI_RETURN_JOB_ID_KEY)?.trim();
+    return raw && raw.length > 0 ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearAiCourseBtiReturnJobId(): void {
+  try {
+    sessionStorage.removeItem(AI_COURSE_BTI_RETURN_JOB_ID_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function resolveAiCourseActiveJobId(preferredJobId?: string | null): string | null {
+  const preferred = preferredJobId?.trim();
+  if (preferred && preferred !== "preview") return preferred;
+  return readAiCoursePendingJobId() ?? readAiCourseBtiReturnJobId();
+}
+
+const AI_COURSE_JOB_COURSE_ID_PREFIX = "aiCourseJobCourse:";
+
+export function saveAiCourseJobCourseId(jobId: string, courseId: number): void {
+  const trimmedJobId = jobId.trim();
+  if (!trimmedJobId || courseId <= 0) return;
+  try {
+    sessionStorage.setItem(`${AI_COURSE_JOB_COURSE_ID_PREFIX}${trimmedJobId}`, String(courseId));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function readAiCourseJobCourseId(jobId: string): number | null {
+  const trimmedJobId = jobId.trim();
+  if (!trimmedJobId) return null;
+  try {
+    const raw = sessionStorage.getItem(`${AI_COURSE_JOB_COURSE_ID_PREFIX}${trimmedJobId}`);
+    if (!raw) return null;
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  } catch {
+    return null;
   }
 }

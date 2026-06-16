@@ -18,7 +18,8 @@ import {
   breadBtiAbsoluteUrl,
   breadBtiPath,
 } from "@/lib/breadbti/paths";
-import { clearBreadBtiEntryFrom } from "@/lib/breadbti/entryFrom";
+import { clearBreadBtiEntryFrom, isBreadBtiFromAiGenerating } from "@/lib/breadbti/entryFrom";
+import { navigateBackToAiCourseFromBreadBti } from "@/utils/navigateBackToAiCourseFromBreadBti";
 import {
   copyBreadBtiLink,
   openBreadBtiShareWindow,
@@ -77,6 +78,14 @@ export default function BreadBtiResultPage() {
   const handleTwitterShare = () => {
     const twitterShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
     openBreadBtiShareWindow(twitterShareUrl);
+  };
+
+  const fromAiGenerating = isBreadBtiFromAiGenerating();
+
+  const handleReturnToAiCourse = () => {
+    void navigateBackToAiCourseFromBreadBti(navigate).finally(() => {
+      clearBreadBtiEntryFrom();
+    });
   };
 
   const handleCopyLink = async () => {
@@ -184,6 +193,16 @@ export default function BreadBtiResultPage() {
             다시 테스트하기
           </button>
 
+          {fromAiGenerating ? (
+            <button
+              type="button"
+              onClick={handleReturnToAiCourse}
+              className="w-full rounded-full bg-[#FF8C42] px-8 py-4 font-bold text-white shadow-lg transition-all hover:bg-[#FF7A1F] active:scale-95"
+            >
+              AI 코스 생성 화면으로 돌아가기
+            </button>
+          ) : null}
+
           <button
             type="button"
             onClick={() => {
@@ -192,7 +211,7 @@ export default function BreadBtiResultPage() {
             }}
             className="w-full rounded-full border-2 border-[#FFE8CC] bg-[#FFF4E6] px-8 py-4 font-bold text-[#D86A00] shadow-lg transition-all hover:bg-[#FFE8CC] active:scale-95"
           >
-            홈페이지로 돌아가기
+            {fromAiGenerating ? "홈으로 가기" : "홈페이지로 돌아가기"}
           </button>
         </div>
 

@@ -29,7 +29,10 @@ export default function ToastBanner({
         {actionText ? (
           <button
             type="button"
-            onClick={onActionClick}
+            onClick={(event) => {
+              event.stopPropagation();
+              onActionClick?.();
+            }}
             className="font-pretendard typo-t4bold whitespace-nowrap text-white"
           >
             {actionText}

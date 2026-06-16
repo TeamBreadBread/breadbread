@@ -2,6 +2,7 @@ import { AppTopBar, Button } from "@/components/common";
 import { AppIcon, IconAssets } from "@/components/icons";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { MobileFrame } from "@/components/layout";
 import { RESPONSIVE_FRAME_WIDTH } from "@/components/layout/layout.constants";
 import { cn } from "@/utils/cn";
@@ -332,6 +333,11 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     };
   }, [showSavedBanner]);
 
+  const handleGoToRouteList = () => {
+    setShowSavedBanner(false);
+    void navigate({ to: "/route" });
+  };
+
   const handleRetryRecommendation = () => {
     trackAiCourseRegenerated();
     requireLogin(() => {
@@ -477,16 +483,14 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
       {from === "route" ? null : (
         <ResultCTASection onRetry={handleRetryRecommendation} onSave={handleSaveCourse} />
       )}
-      {showSavedBanner ? (
-        <div
-          className={cn(
-            "fixed bottom-[calc(72px+env(safe-area-inset-bottom))] left-1/2 z-30 w-full -translate-x-1/2",
-            RESPONSIVE_FRAME_WIDTH,
-          )}
-        >
-          <SaveRouteBanner onActionClick={() => navigate({ to: "/route" })} />
-        </div>
-      ) : null}
+      {showSavedBanner && typeof document !== "undefined"
+        ? createPortal(
+            <div className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] left-1/2 z-[110] w-full max-w-[402px] -translate-x-1/2">
+              <SaveRouteBanner onActionClick={handleGoToRouteList} />
+            </div>,
+            document.body,
+          )
+        : null}
 
       <ActiveTourConflictDialog
         open={activeTourConflictOpen}

@@ -322,13 +322,6 @@ const SearchFilterSection = ({
       </div>
     )}
     <div className="flex items-center gap-[8px]">
-      <button
-        type="button"
-        className="flex max-h-[34px] items-center justify-center rounded-[9999px] bg-[#f3f4f5] p-[8px]"
-        aria-label="필터"
-      >
-        <AppIcon src={IconAssets.IcTune} size={18} alt="" />
-      </button>
       <SortFilterChip value={sort} onChange={onSortChange} />
       <OpenFilterChip active={openOnly} onToggle={onOpenOnlyToggle} />
     </div>
