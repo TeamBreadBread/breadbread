@@ -5,10 +5,12 @@ import com.breadbread.bakery.entity.enums.BakeryStatus;
 import com.breadbread.bakery.service.BakeryService;
 import com.breadbread.bakery.service.GooglePlacesImportService;
 import com.breadbread.bakery.service.GooglePlacesUpdateService;
+import com.breadbread.bakery.service.KakaoLocalImportService;
 import com.breadbread.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,6 +26,7 @@ public class AdminBakeryController {
     private final BakeryService bakeryService;
     private final GooglePlacesUpdateService googlePlacesUpdateService;
     private final GooglePlacesImportService googlePlacesImportService;
+    private final KakaoLocalImportService kakaoLocalImportService;
 
     @Operation(
             summary = "구글 Places 키워드로 빵집 임포트",
@@ -42,19 +45,38 @@ public class AdminBakeryController {
                             + "나머지 필드(`region`, `bakeryType` 등)는 승인 전 직접 입력 필요.")
     @Parameter(name = "keyword", description = "검색 키워드", example = "대전 빵집")
     @PostMapping("/import")
-    public ApiResponse<Integer> importBakeries(@RequestParam String keyword) {
+    public ApiResponse<List<String>> importBakeries(@RequestParam String keyword) {
         return ApiResponse.ok(googlePlacesImportService.importByKeyword(keyword));
+    }
+
+    @Operation(
+            summary = "카카오 로컬 키워드로 빵집 임포트",
+            description =
+                    "카카오 로컬 API 검색 결과를 PENDING 상태로 저장한다. 이미 존재하는 빵집은 스킵.\n\n"
+                            + "**임포트 시 채워지는 필드**\n"
+                            + "- `name` — 빵집 이름\n"
+                            + "- `address` — 도로명 주소 (없으면 지번 주소)\n"
+                            + "- `region` — 지역구\n"
+                            + "- `latitude` / `longitude` — 위경도\n"
+                            + "- `phone` — 전화번호\n\n"
+                            + "영업시간 등 나머지 필드는 승인 전 직접 입력 필요.")
+    @Parameter(name = "keyword", description = "검색 키워드", example = "대전 빵집")
+    @PostMapping("/import/kakao")
+    public ApiResponse<List<String>> importBakeriesFromKakao(@RequestParam String keyword) {
+        return ApiResponse.ok(kakaoLocalImportService.importByKeyword(keyword));
     }
 
     @Operation(summary = "빵집 목록 조회 (상태 필터)")
     @Parameter(name = "status", description = "빵집 상태 필터 (PENDING / APPROVED / REJECTED, 미입력 시 전체)")
+    @Parameter(name = "active", description = "활성 여부 (true: 정상, false: 소프트삭제된 빵집, 기본값 true)")
     @GetMapping
     public ApiResponse<BakeryAdminListResponse> getBakeries(
             @RequestParam(required = false) BakeryStatus status,
+            @RequestParam(defaultValue = "true") boolean active,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ApiResponse.ok(
-                bakeryService.getBakeriesByStatus(status, PageRequest.of(page, size)));
+                bakeryService.getBakeriesByStatus(status, active, PageRequest.of(page, size)));
     }
 
     @Operation(
@@ -83,6 +105,25 @@ public class AdminBakeryController {
     @PostMapping("/{id}/reject")
     public ApiResponse<Void> rejectBakery(@PathVariable Long id) {
         bakeryService.rejectBakery(id);
+        return ApiResponse.ok();
+    }
+
+    @Operation(
+            summary = "PENDING/REJECTED 빵집 전체 영구 삭제",
+            description = "PENDING 또는 REJECTED 상태의 빵집을 DB에서 완전히 삭제한다. APPROVED 상태는 삭제 불가.")
+    @Parameter(name = "status", description = "삭제할 상태 (PENDING 또는 REJECTED)")
+    @DeleteMapping
+    public ApiResponse<Integer> hardDeleteByStatus(@RequestParam BakeryStatus status) {
+        return ApiResponse.ok(bakeryService.hardDeleteByStatus(status));
+    }
+
+    @Operation(
+            summary = "특정 빵집 영구 삭제",
+            description =
+                    "PENDING 또는 REJECTED 상태의 특정 빵집을 DB에서 완전히 삭제한다. 소프트삭제된 빵집도 삭제 가능. APPROVED 상태는 삭제 불가.")
+    @DeleteMapping("/{id}/hard")
+    public ApiResponse<Void> hardDeleteBakery(@PathVariable Long id) {
+        bakeryService.hardDeleteBakery(id);
         return ApiResponse.ok();
     }
 

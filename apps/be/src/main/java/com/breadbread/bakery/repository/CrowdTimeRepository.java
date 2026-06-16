@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CrowdTimeRepository extends JpaRepository<CrowdTime, Long> {
     List<CrowdTime> findAllByBakeryIdIn(Collection<Long> bakeryIds);
+
+    void deleteAllByBakeryId(Long bakeryId);
 }

@@ -32,6 +32,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
                     + "GROUP BY r.bakery.id")
     List<Object[]> averageRatingByBakeryIdIn(@Param("bakeryIds") List<Long> bakeryIds);
 
+    void deleteAllByBakeryId(Long bakeryId);
+
     List<Review> findAllByUserIdAndActiveTrueOrderByCreatedAtDesc(Long userId);
 
     @Query(

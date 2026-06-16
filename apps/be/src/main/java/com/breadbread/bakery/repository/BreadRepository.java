@@ -10,4 +10,6 @@ public interface BreadRepository extends JpaRepository<Bread, Long> {
     List<Bread> findAllByBakeryIdIn(Collection<Long> bakeryIds);
 
     Optional<Bread> findByIdAndBakeryId(Long id, Long bakeryId);
+
+    void deleteAllByBakeryId(Long bakeryId);
 }

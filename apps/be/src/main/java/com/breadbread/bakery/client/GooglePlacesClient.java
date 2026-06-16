@@ -41,6 +41,7 @@ public class GooglePlacesClient {
         private List<AddressComponent> addressComponents;
         private List<PlacePhoto> photos;
         private RegularOpeningHours regularOpeningHours;
+        private String googleMapsUri;
     }
 
     @Getter
@@ -171,7 +172,7 @@ public class GooglePlacesClient {
                 .header("X-Goog-Api-Key", properties.getApiKey())
                 .header(
                         "X-Goog-FieldMask",
-                        "places.id,places.displayName,places.formattedAddress,places.location,places.nationalPhoneNumber,places.addressComponents,places.photos,places.regularOpeningHours")
+                        "places.id,places.displayName,places.formattedAddress,places.location,places.nationalPhoneNumber,places.addressComponents,places.photos,places.regularOpeningHours,places.googleMapsUri")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(requestBody)
                 .retrieve()
