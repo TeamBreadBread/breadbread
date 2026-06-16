@@ -1,5 +1,6 @@
 package com.breadbread.bakery.repository;
 
+import com.breadbread.bakery.dto.request.BakeryAdminSearch;
 import com.breadbread.bakery.dto.request.BakeryAiSearch;
 import com.breadbread.bakery.dto.request.BakerySearch;
 import com.breadbread.bakery.entity.*;
@@ -290,5 +291,43 @@ public class BakeryRepositoryImpl implements BakeryRepositoryCustom {
             expr = expr.or(bakery.bakeryPersonalities.any().eq(personalities.get(i)));
         }
         return expr;
+    }
+
+    @Override
+    public Page<Bakery> searchAdmin(BakeryAdminSearch search, Pageable pageable) {
+        QBakery bakery = QBakery.bakery;
+
+        BooleanExpression statusCond =
+                search.getStatus() != null ? bakery.status.eq(search.getStatus()) : null;
+        BooleanExpression activeCond =
+                search.getActive() != null
+                        ? (search.getActive() ? bakery.active.isTrue() : bakery.active.isFalse())
+                        : null;
+        BooleanExpression keywordCond = containKeyword(bakery, search.getKeyword());
+
+        OrderSpecifier<?> order =
+                switch (search.getSort()) {
+                    case CREATED_AT_ASC -> bakery.createdAt.asc();
+                    case NAME_ASC -> bakery.name.asc();
+                    default -> bakery.createdAt.desc();
+                };
+
+        List<Bakery> content =
+                queryFactory
+                        .selectFrom(bakery)
+                        .where(statusCond, activeCond, keywordCond)
+                        .orderBy(order, bakery.id.desc())
+                        .offset(pageable.getOffset())
+                        .limit(pageable.getPageSize())
+                        .fetch();
+
+        Long total =
+                queryFactory
+                        .select(bakery.count())
+                        .from(bakery)
+                        .where(statusCond, activeCond, keywordCond)
+                        .fetchOne();
+
+        return new PageImpl<>(content, pageable, total != null ? total : 0L);
     }
 }
