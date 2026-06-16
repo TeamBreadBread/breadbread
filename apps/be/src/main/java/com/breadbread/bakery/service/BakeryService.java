@@ -1,11 +1,13 @@
 package com.breadbread.bakery.service;
 
+import com.breadbread.bakery.dto.request.BakeryAdminSearch;
 import com.breadbread.bakery.dto.request.BakeryAiSearch;
 import com.breadbread.bakery.dto.request.BakerySearch;
 import com.breadbread.bakery.dto.request.CreateBakeryRequest;
 import com.breadbread.bakery.dto.request.UpdateBakeryRequest;
 import com.breadbread.bakery.dto.response.*;
 import com.breadbread.bakery.entity.*;
+import com.breadbread.bakery.entity.enums.AdminBakerySortType;
 import com.breadbread.bakery.entity.enums.BakerySortType;
 import com.breadbread.bakery.entity.enums.BakeryStatus;
 import com.breadbread.bakery.entity.enums.DayType;
@@ -375,26 +377,57 @@ public class BakeryService {
 
     @Transactional(readOnly = true)
     public BakeryAdminListResponse getBakeriesByStatus(
-            BakeryStatus status, boolean active, Pageable pageable) {
-        Page<Bakery> page;
-        if (active) {
-            page =
-                    status != null
-                            ? bakeryRepository.findAllByActiveTrueAndStatus(status, pageable)
-                            : bakeryRepository.findAllByActiveTrue(pageable);
-        } else {
-            page =
-                    status != null
-                            ? bakeryRepository.findAllByActiveFalseAndStatus(status, pageable)
-                            : bakeryRepository.findAllByActiveFalse(pageable);
-        }
+            BakeryStatus status,
+            boolean active,
+            String keyword,
+            AdminBakerySortType sort,
+            Pageable pageable) {
+        BakeryAdminSearch search =
+                BakeryAdminSearch.builder()
+                        .status(status)
+                        .active(active)
+                        .keyword(keyword)
+                        .sort(sort)
+                        .build();
+        Page<Bakery> page = bakeryRepository.searchAdmin(search, pageable);
+
+        List<Long> bakeryIds = page.getContent().stream().map(Bakery::getId).toList();
+        Map<Long, List<Bread>> breadMap =
+                breadRepository.findAllByBakeryIdIn(bakeryIds).stream()
+                        .collect(Collectors.groupingBy(b -> b.getBakery().getId()));
+        Map<Long, List<CrowdTime>> crowdTimeMap =
+                crowdTimeRepository.findAllByBakeryIdIn(bakeryIds).stream()
+                        .collect(Collectors.groupingBy(ct -> ct.getBakery().getId()));
+
+        List<BakeryAdminResponse> bakeries =
+                page.getContent().stream()
+                        .map(
+                                bakery ->
+                                        BakeryAdminResponse.from(
+                                                bakery,
+                                                breadMap.getOrDefault(bakery.getId(), List.of()),
+                                                crowdTimeMap.getOrDefault(
+                                                        bakery.getId(), List.of())))
+                        .toList();
+
         return BakeryAdminListResponse.builder()
-                .bakeries(page.getContent().stream().map(BakeryAdminResponse::from).toList())
+                .bakeries(bakeries)
                 .total((int) page.getTotalElements())
                 .page(pageable.getPageNumber())
                 .size(pageable.getPageSize())
                 .hasNext(page.hasNext())
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public BakeryAdminResponse getBakeryAdmin(Long bakeryId) {
+        Bakery bakery =
+                bakeryRepository
+                        .findById(bakeryId)
+                        .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
+        List<Bread> breads = breadRepository.findAllByBakeryIdIn(List.of(bakeryId));
+        List<CrowdTime> crowdTimes = crowdTimeRepository.findAllByBakeryIdIn(List.of(bakeryId));
+        return BakeryAdminResponse.from(bakery, breads, crowdTimes);
     }
 
     @Transactional

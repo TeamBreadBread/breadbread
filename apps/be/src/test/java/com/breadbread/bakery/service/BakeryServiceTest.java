@@ -10,6 +10,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.breadbread.bakery.dto.request.BakeryAdminSearch;
 import com.breadbread.bakery.dto.request.BakeryAiSearch;
 import com.breadbread.bakery.dto.request.BakerySearch;
 import com.breadbread.bakery.dto.request.CreateBakeryRequest;
@@ -19,6 +20,7 @@ import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.BakeryLike;
 import com.breadbread.bakery.entity.Bread;
 import com.breadbread.bakery.entity.CrowdTime;
+import com.breadbread.bakery.entity.enums.AdminBakerySortType;
 import com.breadbread.bakery.entity.enums.BakerySortType;
 import com.breadbread.bakery.entity.enums.BakeryStatus;
 import com.breadbread.bakery.entity.enums.BakeryType;
@@ -860,34 +862,148 @@ class BakeryServiceTest {
         verify(bakeryRepository, never()).deleteAll(any());
     }
 
-    // ── getBakeriesByStatus (active=false) ────────────────────────────────────
+    // ── getBakeryAdmin ────────────────────────────────────
 
     @Test
-    void getBakeriesByStatus_returns_soft_deleted_when_active_false() {
+    void getBakeryAdmin_returns_detail_with_breads_and_crowdTimes() {
         Bakery bakery = bakeryWithId(10L);
-        Pageable pageable = PageRequest.of(0, 10);
-        when(bakeryRepository.findAllByActiveFalse(pageable))
-                .thenReturn(new PageImpl<>(List.of(bakery), pageable, 1));
+        Bread b = bread(bakery);
+        when(bakeryRepository.findById(10L)).thenReturn(Optional.of(bakery));
+        when(breadRepository.findAllByBakeryIdIn(List.of(10L))).thenReturn(List.of(b));
+        when(crowdTimeRepository.findAllByBakeryIdIn(List.of(10L))).thenReturn(List.of());
 
-        BakeryAdminListResponse response = bakeryService.getBakeriesByStatus(null, false, pageable);
+        var result = bakeryService.getBakeryAdmin(10L);
 
-        assertThat(response.getTotal()).isEqualTo(1);
-        verify(bakeryRepository).findAllByActiveFalse(pageable);
-        verify(bakeryRepository, never()).findAllByActiveTrue(any());
+        assertThat(result.getId()).isEqualTo(10L);
+        assertThat(result.getName()).isEqualTo("테스트빵집");
+        assertThat(result.getBreads()).hasSize(1);
+        assertThat(result.getCrowdTimes()).isEmpty();
     }
 
     @Test
-    void getBakeriesByStatus_filters_by_status_when_active_false() {
-        Bakery bakery = pendingBakeryWithId(11L);
+    void getBakeryAdmin_throws_when_not_found() {
+        when(bakeryRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> bakeryService.getBakeryAdmin(99L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.BAKERY_NOT_FOUND);
+    }
+
+    @Test
+    void getBakeryAdmin_returns_pending_bakery() {
+        Bakery bakery = pendingBakeryWithId(20L);
+        when(bakeryRepository.findById(20L)).thenReturn(Optional.of(bakery));
+        when(breadRepository.findAllByBakeryIdIn(List.of(20L))).thenReturn(List.of());
+        when(crowdTimeRepository.findAllByBakeryIdIn(List.of(20L))).thenReturn(List.of());
+
+        var result = bakeryService.getBakeryAdmin(20L);
+
+        assertThat(result.getStatus()).isEqualTo(BakeryStatus.PENDING);
+    }
+
+    // ── getBakeriesByStatus ────────────────────────────────────
+
+    @Test
+    void getBakeriesByStatus_returns_bakeries_via_searchAdmin() {
+        Bakery bakery = bakeryWithId(10L);
         Pageable pageable = PageRequest.of(0, 10);
-        when(bakeryRepository.findAllByActiveFalseAndStatus(BakeryStatus.PENDING, pageable))
+        when(bakeryRepository.searchAdmin(any(BakeryAdminSearch.class), eq(pageable)))
                 .thenReturn(new PageImpl<>(List.of(bakery), pageable, 1));
+        when(breadRepository.findAllByBakeryIdIn(List.of(10L))).thenReturn(List.of());
+        when(crowdTimeRepository.findAllByBakeryIdIn(List.of(10L))).thenReturn(List.of());
 
         BakeryAdminListResponse response =
-                bakeryService.getBakeriesByStatus(BakeryStatus.PENDING, false, pageable);
+                bakeryService.getBakeriesByStatus(
+                        null, true, null, AdminBakerySortType.CREATED_AT_DESC, pageable);
 
         assertThat(response.getTotal()).isEqualTo(1);
-        verify(bakeryRepository).findAllByActiveFalseAndStatus(BakeryStatus.PENDING, pageable);
+        assertThat(response.getBakeries()).hasSize(1);
+    }
+
+    @Test
+    void getBakeriesByStatus_passes_status_and_active_to_search() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(bakeryRepository.searchAdmin(any(BakeryAdminSearch.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+        when(breadRepository.findAllByBakeryIdIn(List.of())).thenReturn(List.of());
+        when(crowdTimeRepository.findAllByBakeryIdIn(List.of())).thenReturn(List.of());
+
+        bakeryService.getBakeriesByStatus(
+                BakeryStatus.PENDING, false, null, AdminBakerySortType.CREATED_AT_DESC, pageable);
+
+        verify(bakeryRepository)
+                .searchAdmin(
+                        argThat(
+                                s ->
+                                        s.getStatus() == BakeryStatus.PENDING
+                                                && Boolean.FALSE.equals(s.getActive())),
+                        eq(pageable));
+    }
+
+    @Test
+    void getBakeriesByStatus_passes_keyword_to_search() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(bakeryRepository.searchAdmin(any(BakeryAdminSearch.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+        when(breadRepository.findAllByBakeryIdIn(List.of())).thenReturn(List.of());
+        when(crowdTimeRepository.findAllByBakeryIdIn(List.of())).thenReturn(List.of());
+
+        bakeryService.getBakeriesByStatus(
+                null, true, "성심당", AdminBakerySortType.CREATED_AT_DESC, pageable);
+
+        verify(bakeryRepository)
+                .searchAdmin(argThat(s -> "성심당".equals(s.getKeyword())), eq(pageable));
+    }
+
+    @Test
+    void getBakeriesByStatus_includes_breads_and_crowdTimes_per_bakery() {
+        Bakery bakery = bakeryWithId(20L);
+        Bread bread = bread(bakery);
+        Pageable pageable = PageRequest.of(0, 10);
+        when(bakeryRepository.searchAdmin(any(BakeryAdminSearch.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(bakery), pageable, 1));
+        when(breadRepository.findAllByBakeryIdIn(List.of(20L))).thenReturn(List.of(bread));
+        when(crowdTimeRepository.findAllByBakeryIdIn(List.of(20L))).thenReturn(List.of());
+
+        BakeryAdminListResponse response =
+                bakeryService.getBakeriesByStatus(
+                        null, true, null, AdminBakerySortType.CREATED_AT_DESC, pageable);
+
+        assertThat(response.getBakeries().get(0).getBreads()).hasSize(1);
+        assertThat(response.getBakeries().get(0).getBreads().get(0).getName()).isEqualTo("소금빵");
+    }
+
+    @Test
+    void getBakeriesByStatus_reflects_hasNext_and_pagination() {
+        Bakery bakery = bakeryWithId(30L);
+        Pageable pageable = PageRequest.of(0, 1);
+        when(bakeryRepository.searchAdmin(any(BakeryAdminSearch.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(bakery), pageable, 5));
+        when(breadRepository.findAllByBakeryIdIn(any())).thenReturn(List.of());
+        when(crowdTimeRepository.findAllByBakeryIdIn(any())).thenReturn(List.of());
+
+        BakeryAdminListResponse response =
+                bakeryService.getBakeriesByStatus(
+                        null, true, null, AdminBakerySortType.CREATED_AT_DESC, pageable);
+
+        assertThat(response.isHasNext()).isTrue();
+        assertThat(response.getTotal()).isEqualTo(5);
+        assertThat(response.getPage()).isZero();
+        assertThat(response.getSize()).isEqualTo(1);
+    }
+
+    private static Bread bread(Bakery bakery) {
+        Bread b =
+                Bread.builder()
+                        .name("소금빵")
+                        .price(3500)
+                        .signature(true)
+                        .selloutMin(0)
+                        .bakery(bakery)
+                        .build();
+        ReflectionTestUtils.setField(b, "id", 100L);
+        return b;
     }
 
     private static Bakery pendingBakeryWithId(long id) {

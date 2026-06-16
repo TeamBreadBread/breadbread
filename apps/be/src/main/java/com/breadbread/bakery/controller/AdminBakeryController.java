@@ -1,6 +1,8 @@
 package com.breadbread.bakery.controller;
 
 import com.breadbread.bakery.dto.response.BakeryAdminListResponse;
+import com.breadbread.bakery.dto.response.BakeryAdminResponse;
+import com.breadbread.bakery.entity.enums.AdminBakerySortType;
 import com.breadbread.bakery.entity.enums.BakeryStatus;
 import com.breadbread.bakery.service.BakeryService;
 import com.breadbread.bakery.service.GooglePlacesImportService;
@@ -66,17 +68,33 @@ public class AdminBakeryController {
         return ApiResponse.ok(kakaoLocalImportService.importByKeyword(keyword));
     }
 
-    @Operation(summary = "빵집 목록 조회 (상태 필터)")
+    @Operation(summary = "빵집 목록 조회 (상태 필터 / 키워드 검색 / 정렬)")
     @Parameter(name = "status", description = "빵집 상태 필터 (PENDING / APPROVED / REJECTED, 미입력 시 전체)")
     @Parameter(name = "active", description = "활성 여부 (true: 정상, false: 소프트삭제된 빵집, 기본값 true)")
+    @Parameter(name = "keyword", description = "빵집 이름 키워드 검색")
+    @Parameter(
+            name = "sort",
+            description =
+                    "정렬 기준 (CREATED_AT_DESC: 최신순(기본값) / CREATED_AT_ASC: 오래된순 / NAME_ASC: 이름순)")
     @GetMapping
     public ApiResponse<BakeryAdminListResponse> getBakeries(
             @RequestParam(required = false) BakeryStatus status,
             @RequestParam(defaultValue = "true") boolean active,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "CREATED_AT_DESC") AdminBakerySortType sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ApiResponse.ok(
-                bakeryService.getBakeriesByStatus(status, active, PageRequest.of(page, size)));
+                bakeryService.getBakeriesByStatus(
+                        status, active, keyword, sort, PageRequest.of(page, size)));
+    }
+
+    @Operation(
+            summary = "빵집 상세 조회 (관리자)",
+            description = "PENDING / REJECTED 포함 모든 상태의 빵집 상세를 조회합니다.")
+    @GetMapping("/{id}")
+    public ApiResponse<BakeryAdminResponse> getBakery(@PathVariable Long id) {
+        return ApiResponse.ok(bakeryService.getBakeryAdmin(id));
     }
 
     @Operation(
