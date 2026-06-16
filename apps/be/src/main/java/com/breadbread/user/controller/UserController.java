@@ -3,6 +3,7 @@ package com.breadbread.user.controller;
 import com.breadbread.auth.dto.CustomUserDetails;
 import com.breadbread.bakery.dto.response.BakeryListResponse;
 import com.breadbread.bakery.dto.response.MyReviewListResponse;
+import com.breadbread.community.dto.PostListResponse;
 import com.breadbread.course.dto.response.CourseListResponse;
 import com.breadbread.global.dto.ApiResponse;
 import com.breadbread.global.exception.CustomException;
@@ -127,6 +128,24 @@ public class UserController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Positive int size) {
         return ApiResponse.ok(userService.getLikedCourses(userDetails.getId(), page, size));
+    }
+
+    @Operation(summary = "내가 쓴 게시글 목록 조회")
+    @GetMapping("/me/posts")
+    public ApiResponse<PostListResponse> getMyPosts(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Positive int size) {
+        return ApiResponse.ok(userService.getMyPosts(userDetails.getId(), page, size));
+    }
+
+    @Operation(summary = "좋아요한 게시글 목록 조회")
+    @GetMapping("/me/liked/posts")
+    public ApiResponse<PostListResponse> getLikedPosts(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Positive int size) {
+        return ApiResponse.ok(userService.getLikedPosts(userDetails.getId(), page, size));
     }
 
     @Operation(summary = "선호도 수정")
