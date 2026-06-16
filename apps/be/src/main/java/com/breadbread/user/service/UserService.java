@@ -16,6 +16,13 @@ import com.breadbread.bakery.repository.BakeryImageRepository;
 import com.breadbread.bakery.repository.BakeryLikeRepository;
 import com.breadbread.bakery.repository.ReviewRepository;
 import com.breadbread.bakery.service.BakeryImageUrlResolver;
+import com.breadbread.community.dto.PostListResponse;
+import com.breadbread.community.dto.PostSummaryResponse;
+import com.breadbread.community.entity.Post;
+import com.breadbread.community.entity.PostLike;
+import com.breadbread.community.repository.CommentRepository;
+import com.breadbread.community.repository.PostLikeRepository;
+import com.breadbread.community.repository.PostRepository;
 import com.breadbread.course.dto.response.CourseListResponse;
 import com.breadbread.course.dto.response.CourseSummaryResponse;
 import com.breadbread.course.entity.Course;
@@ -76,6 +83,9 @@ public class UserService {
     private final BakeryImageUrlResolver bakeryImageUrlResolver;
     private final GcsService gcsService;
     private final TempImageService tempImageService;
+    private final PostRepository postRepository;
+    private final PostLikeRepository postLikeRepository;
+    private final CommentRepository commentRepository;
 
     @Transactional
     public void savePreference(Long userId, CreatePreferenceRequest request) {
@@ -394,6 +404,79 @@ public class UserService {
                 .size(size)
                 .hasNext(likes.hasNext())
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public PostListResponse getMyPosts(Long userId, int page, int size) {
+        PaginationValidator.validate(page, size);
+
+        Page<Post> result =
+                postRepository.findAllByUserIdAndActiveTrueOrderByCreatedAtDesc(
+                        userId, PageRequest.of(page, size));
+        List<Long> postIds = result.getContent().stream().map(Post::getId).toList();
+
+        Map<Long, Post> postWithImages =
+                postRepository.findAllByIdInWithImageUrls(postIds).stream()
+                        .collect(Collectors.toMap(Post::getId, p -> p));
+        Map<Long, Long> likeCountMap =
+                postLikeRepository.countByPostIdIn(postIds).stream()
+                        .collect(Collectors.toMap(r -> (Long) r[0], r -> (Long) r[1]));
+        Map<Long, Long> commentCountMap =
+                commentRepository.countByPostIdIn(postIds).stream()
+                        .collect(Collectors.toMap(r -> (Long) r[0], r -> (Long) r[1]));
+
+        List<PostSummaryResponse> posts =
+                result.getContent().stream()
+                        .map(
+                                post ->
+                                        PostSummaryResponse.from(
+                                                postWithImages.getOrDefault(post.getId(), post),
+                                                likeCountMap
+                                                        .getOrDefault(post.getId(), 0L)
+                                                        .intValue(),
+                                                commentCountMap
+                                                        .getOrDefault(post.getId(), 0L)
+                                                        .intValue()))
+                        .toList();
+
+        return PostListResponse.from(result, posts);
+    }
+
+    @Transactional(readOnly = true)
+    public PostListResponse getLikedPosts(Long userId, int page, int size) {
+        PaginationValidator.validate(page, size);
+
+        Page<PostLike> likedPage =
+                postLikeRepository.findByUserIdWithActivePost(userId, PageRequest.of(page, size));
+        List<Long> postIds =
+                likedPage.getContent().stream().map(pl -> pl.getPost().getId()).toList();
+
+        Map<Long, Post> postWithImages =
+                postRepository.findAllByIdInWithImageUrls(postIds).stream()
+                        .collect(Collectors.toMap(Post::getId, p -> p));
+        Map<Long, Long> likeCountMap =
+                postLikeRepository.countByPostIdIn(postIds).stream()
+                        .collect(Collectors.toMap(r -> (Long) r[0], r -> (Long) r[1]));
+        Map<Long, Long> commentCountMap =
+                commentRepository.countByPostIdIn(postIds).stream()
+                        .collect(Collectors.toMap(r -> (Long) r[0], r -> (Long) r[1]));
+
+        List<PostSummaryResponse> posts =
+                likedPage.getContent().stream()
+                        .map(pl -> pl.getPost())
+                        .map(
+                                post ->
+                                        PostSummaryResponse.from(
+                                                postWithImages.getOrDefault(post.getId(), post),
+                                                likeCountMap
+                                                        .getOrDefault(post.getId(), 0L)
+                                                        .intValue(),
+                                                commentCountMap
+                                                        .getOrDefault(post.getId(), 0L)
+                                                        .intValue()))
+                        .toList();
+
+        return PostListResponse.from(likedPage, posts);
     }
 
     private CourseSummaryResponse toCourseSummary(

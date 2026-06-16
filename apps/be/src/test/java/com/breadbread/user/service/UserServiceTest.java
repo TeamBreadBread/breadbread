@@ -25,6 +25,12 @@ import com.breadbread.bakery.repository.BakeryImageRepository;
 import com.breadbread.bakery.repository.BakeryLikeRepository;
 import com.breadbread.bakery.repository.ReviewRepository;
 import com.breadbread.bakery.service.BakeryImageUrlResolver;
+import com.breadbread.community.entity.Post;
+import com.breadbread.community.entity.PostLike;
+import com.breadbread.community.entity.PostType;
+import com.breadbread.community.repository.CommentRepository;
+import com.breadbread.community.repository.PostLikeRepository;
+import com.breadbread.community.repository.PostRepository;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseBakery;
 import com.breadbread.course.entity.CourseLike;
@@ -76,6 +82,9 @@ class UserServiceTest {
     @Mock private CourseRepository courseRepository;
     @Mock private RouteRepository routeRepository;
     @Mock private BakeryImageUrlResolver bakeryImageUrlResolver;
+    @Mock private PostRepository postRepository;
+    @Mock private PostLikeRepository postLikeRepository;
+    @Mock private CommentRepository commentRepository;
 
     @InjectMocks private UserService userService;
 
@@ -891,5 +900,219 @@ class UserServiceTest {
                         ManualCourseInfo.builder().editorPick(false).build());
         ReflectionTestUtils.setField(c, "id", id);
         return c;
+    }
+
+    // ───────────────────────────── getMyPosts ─────────────────────────────
+
+    @Test
+    void getMyPosts_returns_empty_page_when_no_posts() {
+        when(postRepository.findAllByUserIdAndActiveTrueOrderByCreatedAtDesc(
+                        eq(1L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
+        when(postRepository.findAllByIdInWithImageUrls(List.of())).thenReturn(List.of());
+        when(postLikeRepository.countByPostIdIn(List.of())).thenReturn(List.of());
+        when(commentRepository.countByPostIdIn(List.of())).thenReturn(List.of());
+
+        var result = userService.getMyPosts(1L, 0, 10);
+
+        assertThat(result.getPosts()).isEmpty();
+        assertThat(result.getTotal()).isZero();
+        assertThat(result.isHasNext()).isFalse();
+    }
+
+    @Test
+    void getMyPosts_maps_likeCount_commentCount_thumbnail() {
+        User user = user(1L);
+        Post post = post(10L, user, List.of("img1.jpg", "img2.jpg"));
+        when(postRepository.findAllByUserIdAndActiveTrueOrderByCreatedAtDesc(
+                        eq(1L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(post), PageRequest.of(0, 10), 1));
+        when(postRepository.findAllByIdInWithImageUrls(List.of(10L))).thenReturn(List.of(post));
+        when(postLikeRepository.countByPostIdIn(List.of(10L)))
+                .thenReturn(Collections.singletonList(new Object[] {10L, 7L}));
+        when(commentRepository.countByPostIdIn(List.of(10L)))
+                .thenReturn(Collections.singletonList(new Object[] {10L, 3L}));
+
+        var result = userService.getMyPosts(1L, 0, 10);
+
+        assertThat(result.getPosts()).hasSize(1);
+        assertThat(result.getPosts().get(0).getId()).isEqualTo(10L);
+        assertThat(result.getPosts().get(0).getLikeCount()).isEqualTo(7);
+        assertThat(result.getPosts().get(0).getCommentCount()).isEqualTo(3);
+        assertThat(result.getPosts().get(0).getThumbnailImageUrl()).isEqualTo("img1.jpg");
+        assertThat(result.getTotal()).isEqualTo(1);
+    }
+
+    @Test
+    void getMyPosts_thumbnail_null_when_no_images() {
+        User user = user(1L);
+        Post post = post(11L, user, List.of());
+        when(postRepository.findAllByUserIdAndActiveTrueOrderByCreatedAtDesc(
+                        eq(1L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(post), PageRequest.of(0, 10), 1));
+        when(postRepository.findAllByIdInWithImageUrls(List.of(11L))).thenReturn(List.of(post));
+        when(postLikeRepository.countByPostIdIn(anyList())).thenReturn(List.of());
+        when(commentRepository.countByPostIdIn(anyList())).thenReturn(List.of());
+
+        var result = userService.getMyPosts(1L, 0, 10);
+
+        assertThat(result.getPosts().get(0).getThumbnailImageUrl()).isNull();
+    }
+
+    @Test
+    void getMyPosts_defaults_to_zero_when_no_counts() {
+        User user = user(1L);
+        Post post = post(12L, user, List.of());
+        when(postRepository.findAllByUserIdAndActiveTrueOrderByCreatedAtDesc(
+                        eq(1L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(post), PageRequest.of(0, 10), 1));
+        when(postRepository.findAllByIdInWithImageUrls(anyList())).thenReturn(List.of(post));
+        when(postLikeRepository.countByPostIdIn(anyList())).thenReturn(List.of());
+        when(commentRepository.countByPostIdIn(anyList())).thenReturn(List.of());
+
+        var result = userService.getMyPosts(1L, 0, 10);
+
+        assertThat(result.getPosts().get(0).getLikeCount()).isZero();
+        assertThat(result.getPosts().get(0).getCommentCount()).isZero();
+    }
+
+    @Test
+    void getMyPosts_reflects_hasNext_when_more_pages_exist() {
+        User user = user(1L);
+        Post post = post(13L, user, List.of());
+        when(postRepository.findAllByUserIdAndActiveTrueOrderByCreatedAtDesc(
+                        eq(1L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(post), PageRequest.of(0, 1), 5));
+        when(postRepository.findAllByIdInWithImageUrls(anyList())).thenReturn(List.of(post));
+        when(postLikeRepository.countByPostIdIn(anyList())).thenReturn(List.of());
+        when(commentRepository.countByPostIdIn(anyList())).thenReturn(List.of());
+
+        var result = userService.getMyPosts(1L, 0, 1);
+
+        assertThat(result.isHasNext()).isTrue();
+        assertThat(result.getTotal()).isEqualTo(5);
+    }
+
+    @Test
+    void getMyPosts_fetches_imageUrls_via_batch_query() {
+        User user = user(1L);
+        Post post = post(14L, user, List.of("a.jpg"));
+        when(postRepository.findAllByUserIdAndActiveTrueOrderByCreatedAtDesc(
+                        eq(1L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(post), PageRequest.of(0, 10), 1));
+        when(postRepository.findAllByIdInWithImageUrls(List.of(14L))).thenReturn(List.of(post));
+        when(postLikeRepository.countByPostIdIn(anyList())).thenReturn(List.of());
+        when(commentRepository.countByPostIdIn(anyList())).thenReturn(List.of());
+
+        userService.getMyPosts(1L, 0, 10);
+
+        verify(postRepository).findAllByIdInWithImageUrls(List.of(14L));
+    }
+
+    // ───────────────────────────── getLikedPosts ─────────────────────────────
+
+    @Test
+    void getLikedPosts_returns_empty_page_when_no_likes() {
+        when(postLikeRepository.findByUserIdWithActivePost(eq(1L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
+        when(postRepository.findAllByIdInWithImageUrls(List.of())).thenReturn(List.of());
+        when(postLikeRepository.countByPostIdIn(List.of())).thenReturn(List.of());
+        when(commentRepository.countByPostIdIn(List.of())).thenReturn(List.of());
+
+        var result = userService.getLikedPosts(1L, 0, 10);
+
+        assertThat(result.getPosts()).isEmpty();
+        assertThat(result.getTotal()).isZero();
+        assertThat(result.isHasNext()).isFalse();
+    }
+
+    @Test
+    void getLikedPosts_maps_likeCount_commentCount_thumbnail() {
+        User user = user(2L);
+        Post post = post(20L, user, List.of("thumb.jpg"));
+        PostLike like = postLike(post, user);
+        when(postLikeRepository.findByUserIdWithActivePost(eq(2L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(like), PageRequest.of(0, 10), 1));
+        when(postRepository.findAllByIdInWithImageUrls(List.of(20L))).thenReturn(List.of(post));
+        when(postLikeRepository.countByPostIdIn(List.of(20L)))
+                .thenReturn(Collections.singletonList(new Object[] {20L, 5L}));
+        when(commentRepository.countByPostIdIn(List.of(20L)))
+                .thenReturn(Collections.singletonList(new Object[] {20L, 2L}));
+
+        var result = userService.getLikedPosts(2L, 0, 10);
+
+        assertThat(result.getPosts()).hasSize(1);
+        assertThat(result.getPosts().get(0).getId()).isEqualTo(20L);
+        assertThat(result.getPosts().get(0).getLikeCount()).isEqualTo(5);
+        assertThat(result.getPosts().get(0).getCommentCount()).isEqualTo(2);
+        assertThat(result.getPosts().get(0).getThumbnailImageUrl()).isEqualTo("thumb.jpg");
+        assertThat(result.getTotal()).isEqualTo(1);
+    }
+
+    @Test
+    void getLikedPosts_thumbnail_null_when_no_images() {
+        User user = user(2L);
+        Post post = post(21L, user, List.of());
+        PostLike like = postLike(post, user);
+        when(postLikeRepository.findByUserIdWithActivePost(eq(2L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(like), PageRequest.of(0, 10), 1));
+        when(postRepository.findAllByIdInWithImageUrls(anyList())).thenReturn(List.of(post));
+        when(postLikeRepository.countByPostIdIn(anyList())).thenReturn(List.of());
+        when(commentRepository.countByPostIdIn(anyList())).thenReturn(List.of());
+
+        var result = userService.getLikedPosts(2L, 0, 10);
+
+        assertThat(result.getPosts().get(0).getThumbnailImageUrl()).isNull();
+    }
+
+    @Test
+    void getLikedPosts_reflects_hasNext_when_more_pages_exist() {
+        User user = user(2L);
+        Post post = post(22L, user, List.of());
+        PostLike like = postLike(post, user);
+        when(postLikeRepository.findByUserIdWithActivePost(eq(2L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(like), PageRequest.of(0, 1), 4));
+        when(postRepository.findAllByIdInWithImageUrls(anyList())).thenReturn(List.of(post));
+        when(postLikeRepository.countByPostIdIn(anyList())).thenReturn(List.of());
+        when(commentRepository.countByPostIdIn(anyList())).thenReturn(List.of());
+
+        var result = userService.getLikedPosts(2L, 0, 1);
+
+        assertThat(result.isHasNext()).isTrue();
+        assertThat(result.getTotal()).isEqualTo(4);
+    }
+
+    @Test
+    void getLikedPosts_fetches_imageUrls_via_batch_query() {
+        User user = user(2L);
+        Post post = post(23L, user, List.of("b.jpg"));
+        PostLike like = postLike(post, user);
+        when(postLikeRepository.findByUserIdWithActivePost(eq(2L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(like), PageRequest.of(0, 10), 1));
+        when(postRepository.findAllByIdInWithImageUrls(List.of(23L))).thenReturn(List.of(post));
+        when(postLikeRepository.countByPostIdIn(anyList())).thenReturn(List.of());
+        when(commentRepository.countByPostIdIn(anyList())).thenReturn(List.of());
+
+        userService.getLikedPosts(2L, 0, 10);
+
+        verify(postRepository).findAllByIdInWithImageUrls(List.of(23L));
+    }
+
+    private static Post post(long id, User user, List<String> imageUrls) {
+        Post post =
+                Post.builder()
+                        .title("제목" + id)
+                        .content("내용")
+                        .postType(PostType.FREE)
+                        .imageUrls(imageUrls)
+                        .user(user)
+                        .build();
+        ReflectionTestUtils.setField(post, "id", id);
+        return post;
+    }
+
+    private static PostLike postLike(Post post, User user) {
+        PostLike like = PostLike.builder().post(post).user(user).build();
+        return like;
     }
 }
