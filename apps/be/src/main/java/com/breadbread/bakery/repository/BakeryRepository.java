@@ -19,6 +19,8 @@ public interface BakeryRepository extends JpaRepository<Bakery, Long>, BakeryRep
 
     List<Bakery> findAllByActiveTrueAndStatus(BakeryStatus status);
 
+    List<Bakery> findAllByActiveFalseAndStatus(BakeryStatus status);
+
     boolean existsByIdAndActiveTrueAndStatus(Long id, BakeryStatus status);
 
     boolean existsByNameAndAddress(String name, String address);
@@ -27,8 +29,7 @@ public interface BakeryRepository extends JpaRepository<Bakery, Long>, BakeryRep
             value =
                     """
                     SELECT * FROM bakery
-                    WHERE active = true
-                      AND ST_DWithin(
+                    WHERE ST_DWithin(
                           location::geography,
                           ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326)::geography,
                           :radiusMeters
@@ -47,4 +48,8 @@ public interface BakeryRepository extends JpaRepository<Bakery, Long>, BakeryRep
     Page<Bakery> findAllByActiveTrueAndStatus(BakeryStatus status, Pageable pageable);
 
     Page<Bakery> findAllByActiveTrue(Pageable pageable);
+
+    Page<Bakery> findAllByActiveFalseAndStatus(BakeryStatus status, Pageable pageable);
+
+    Page<Bakery> findAllByActiveFalse(Pageable pageable);
 }

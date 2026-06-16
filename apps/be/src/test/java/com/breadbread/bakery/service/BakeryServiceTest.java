@@ -3,6 +3,7 @@ package com.breadbread.bakery.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -13,6 +14,7 @@ import com.breadbread.bakery.dto.request.BakeryAiSearch;
 import com.breadbread.bakery.dto.request.BakerySearch;
 import com.breadbread.bakery.dto.request.CreateBakeryRequest;
 import com.breadbread.bakery.dto.request.UpdateBakeryRequest;
+import com.breadbread.bakery.dto.response.BakeryAdminListResponse;
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.BakeryLike;
 import com.breadbread.bakery.entity.Bread;
@@ -759,6 +761,133 @@ class BakeryServiceTest {
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.BAKERY_NOT_PENDING);
+    }
+
+    // ── hardDeleteBakery ──────────────────────────────────────────────────────
+
+    @Test
+    void hardDeleteBakery_deletes_when_PENDING() {
+        Bakery bakery = pendingBakeryWithId(300L);
+        when(bakeryRepository.findById(300L)).thenReturn(Optional.of(bakery));
+        when(courseBakeryRepository.findCourseIdsByBakeryId(300L)).thenReturn(List.of());
+
+        bakeryService.hardDeleteBakery(300L);
+
+        verify(bakeryImageService).deleteAllImages(bakery);
+        verify(bakeryRepository).delete(bakery);
+    }
+
+    @Test
+    void hardDeleteBakery_deletes_when_REJECTED() {
+        Bakery bakery = pendingBakeryWithId(301L);
+        ReflectionTestUtils.setField(bakery, "status", BakeryStatus.REJECTED);
+        when(bakeryRepository.findById(301L)).thenReturn(Optional.of(bakery));
+        when(courseBakeryRepository.findCourseIdsByBakeryId(301L)).thenReturn(List.of());
+
+        bakeryService.hardDeleteBakery(301L);
+
+        verify(bakeryImageService).deleteAllImages(bakery);
+        verify(bakeryRepository).delete(bakery);
+    }
+
+    @Test
+    void hardDeleteBakery_deletes_related_data_before_delete() {
+        Bakery bakery = pendingBakeryWithId(303L);
+        when(bakeryRepository.findById(303L)).thenReturn(Optional.of(bakery));
+        when(courseBakeryRepository.findCourseIdsByBakeryId(303L)).thenReturn(List.of(10L));
+
+        bakeryService.hardDeleteBakery(303L);
+
+        verify(courseDrivingRouteRepository).deleteAllByCourseIdIn(List.of(10L));
+        verify(courseBakeryRepository).deleteAllByBakeryId(303L);
+        verify(breadRepository).deleteAllByBakeryId(303L);
+        verify(crowdTimeRepository).deleteAllByBakeryId(303L);
+        verify(reviewRepository).deleteAllByBakeryId(303L);
+        verify(bakeryLikeRepository).deleteAllByBakeryId(303L);
+        verify(bakeryRepository).delete(bakery);
+    }
+
+    @Test
+    void hardDeleteBakery_throws_FORBIDDEN_when_APPROVED() {
+        Bakery bakery = bakeryWithId(302L);
+        when(bakeryRepository.findById(302L)).thenReturn(Optional.of(bakery));
+
+        assertThatThrownBy(() -> bakeryService.hardDeleteBakery(302L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.FORBIDDEN);
+
+        verify(bakeryRepository, never()).delete(any());
+    }
+
+    @Test
+    void hardDeleteBakery_throws_BAKERY_NOT_FOUND_when_missing() {
+        when(bakeryRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> bakeryService.hardDeleteBakery(999L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.BAKERY_NOT_FOUND);
+    }
+
+    // ── hardDeleteByStatus ────────────────────────────────────────────────────
+
+    @Test
+    void hardDeleteByStatus_deletes_all_PENDING_including_inactive() {
+        List<Bakery> active = List.of(pendingBakeryWithId(1L));
+        List<Bakery> inactive = List.of(pendingBakeryWithId(2L));
+        when(bakeryRepository.findAllByActiveTrueAndStatus(BakeryStatus.PENDING))
+                .thenReturn(active);
+        when(bakeryRepository.findAllByActiveFalseAndStatus(BakeryStatus.PENDING))
+                .thenReturn(inactive);
+        when(courseBakeryRepository.findCourseIdsByBakeryId(any())).thenReturn(List.of());
+
+        int count = bakeryService.hardDeleteByStatus(BakeryStatus.PENDING);
+
+        assertThat(count).isEqualTo(2);
+        verify(bakeryImageService).deleteAllImages(active.get(0));
+        verify(bakeryImageService).deleteAllImages(inactive.get(0));
+        verify(bakeryRepository).deleteAll(argThat(list -> ((List<?>) list).size() == 2));
+    }
+
+    @Test
+    void hardDeleteByStatus_throws_FORBIDDEN_when_APPROVED() {
+        assertThatThrownBy(() -> bakeryService.hardDeleteByStatus(BakeryStatus.APPROVED))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.FORBIDDEN);
+
+        verify(bakeryRepository, never()).deleteAll(any());
+    }
+
+    // ── getBakeriesByStatus (active=false) ────────────────────────────────────
+
+    @Test
+    void getBakeriesByStatus_returns_soft_deleted_when_active_false() {
+        Bakery bakery = bakeryWithId(10L);
+        Pageable pageable = PageRequest.of(0, 10);
+        when(bakeryRepository.findAllByActiveFalse(pageable))
+                .thenReturn(new PageImpl<>(List.of(bakery), pageable, 1));
+
+        BakeryAdminListResponse response = bakeryService.getBakeriesByStatus(null, false, pageable);
+
+        assertThat(response.getTotal()).isEqualTo(1);
+        verify(bakeryRepository).findAllByActiveFalse(pageable);
+        verify(bakeryRepository, never()).findAllByActiveTrue(any());
+    }
+
+    @Test
+    void getBakeriesByStatus_filters_by_status_when_active_false() {
+        Bakery bakery = pendingBakeryWithId(11L);
+        Pageable pageable = PageRequest.of(0, 10);
+        when(bakeryRepository.findAllByActiveFalseAndStatus(BakeryStatus.PENDING, pageable))
+                .thenReturn(new PageImpl<>(List.of(bakery), pageable, 1));
+
+        BakeryAdminListResponse response =
+                bakeryService.getBakeriesByStatus(BakeryStatus.PENDING, false, pageable);
+
+        assertThat(response.getTotal()).isEqualTo(1);
+        verify(bakeryRepository).findAllByActiveFalseAndStatus(BakeryStatus.PENDING, pageable);
     }
 
     private static Bakery pendingBakeryWithId(long id) {

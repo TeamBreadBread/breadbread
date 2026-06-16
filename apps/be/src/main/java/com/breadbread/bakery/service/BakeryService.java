@@ -374,11 +374,20 @@ public class BakeryService {
     }
 
     @Transactional(readOnly = true)
-    public BakeryAdminListResponse getBakeriesByStatus(BakeryStatus status, Pageable pageable) {
-        Page<Bakery> page =
-                status != null
-                        ? bakeryRepository.findAllByActiveTrueAndStatus(status, pageable)
-                        : bakeryRepository.findAllByActiveTrue(pageable);
+    public BakeryAdminListResponse getBakeriesByStatus(
+            BakeryStatus status, boolean active, Pageable pageable) {
+        Page<Bakery> page;
+        if (active) {
+            page =
+                    status != null
+                            ? bakeryRepository.findAllByActiveTrueAndStatus(status, pageable)
+                            : bakeryRepository.findAllByActiveTrue(pageable);
+        } else {
+            page =
+                    status != null
+                            ? bakeryRepository.findAllByActiveFalseAndStatus(status, pageable)
+                            : bakeryRepository.findAllByActiveFalse(pageable);
+        }
         return BakeryAdminListResponse.builder()
                 .bakeries(page.getContent().stream().map(BakeryAdminResponse::from).toList())
                 .total((int) page.getTotalElements())
@@ -421,6 +430,50 @@ public class BakeryService {
         }
         bakery.reject();
         log.info("빵집 거절: bakeryId={}", bakeryId);
+    }
+
+    @Transactional
+    public int hardDeleteByStatus(BakeryStatus status) {
+        if (status == BakeryStatus.APPROVED) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
+        List<Bakery> active = bakeryRepository.findAllByActiveTrueAndStatus(status);
+        List<Bakery> inactive = bakeryRepository.findAllByActiveFalseAndStatus(status);
+        List<Bakery> targets = new ArrayList<>();
+        targets.addAll(active);
+        targets.addAll(inactive);
+        targets.forEach(b -> deleteRelatedData(b.getId()));
+        targets.forEach(bakeryImageService::deleteAllImages);
+        bakeryRepository.deleteAll(targets);
+        log.info("빵집 전체 영구삭제: status={}, count={}", status, targets.size());
+        return targets.size();
+    }
+
+    @Transactional
+    public void hardDeleteBakery(Long bakeryId) {
+        Bakery bakery =
+                bakeryRepository
+                        .findById(bakeryId)
+                        .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
+        if (bakery.getStatus() == BakeryStatus.APPROVED) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
+        deleteRelatedData(bakeryId);
+        bakeryImageService.deleteAllImages(bakery);
+        bakeryRepository.delete(bakery);
+        log.info("빵집 영구삭제: bakeryId={}", bakeryId);
+    }
+
+    private void deleteRelatedData(Long bakeryId) {
+        List<Long> courseIds = courseBakeryRepository.findCourseIdsByBakeryId(bakeryId);
+        if (!courseIds.isEmpty()) {
+            courseDrivingRouteRepository.deleteAllByCourseIdIn(courseIds);
+        }
+        courseBakeryRepository.deleteAllByBakeryId(bakeryId);
+        breadRepository.deleteAllByBakeryId(bakeryId);
+        crowdTimeRepository.deleteAllByBakeryId(bakeryId);
+        reviewRepository.deleteAllByBakeryId(bakeryId);
+        bakeryLikeRepository.deleteAllByBakeryId(bakeryId);
     }
 
     private void checkAuthority(Bakery bakery, Long userId, UserRole role) {

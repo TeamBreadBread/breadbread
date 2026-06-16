@@ -1,11 +1,14 @@
 package com.breadbread.bakery.service;
 
+import static com.breadbread.bakery.service.BakeryImportConstants.FRANCHISE_NAMES;
+
 import com.breadbread.bakery.client.GooglePlacesClient;
 import com.breadbread.bakery.client.GooglePlacesClient.PlaceResult;
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.repository.BakeryRepository;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -30,18 +33,13 @@ public class GooglePlacesImportService {
         DayOfWeek.SATURDAY
     };
 
-    private static final Set<String> FRANCHISE_NAMES =
-            Set.of(
-                    "파리바게뜨", "뚜레쥬르", "던킨", "스타벅스", "투썸플레이스", "메가커피", "메가MGC커피", "이디야", "컴포즈커피",
-                    "빽다방", "공차", "할리스커피", "블루보틀", "더벤티", "아마스빈", "엔젤리너스", "탐앤탐스");
-
     private final GooglePlacesClient googlePlacesClient;
     private final BakeryRepository bakeryRepository;
 
     @Transactional
-    public int importByKeyword(String keyword) {
+    public List<String> importByKeyword(String keyword) {
         List<PlaceResult> places = googlePlacesClient.searchBakeriesByKeyword(keyword);
-        int saved = 0;
+        List<String> savedNames = new ArrayList<>();
 
         for (PlaceResult place : places) {
             if (place.getDisplayName() == null || place.getDisplayName().getText() == null)
@@ -108,6 +106,8 @@ public class GooglePlacesImportService {
                             .name(name)
                             .address(address)
                             .region(extractRegion(place))
+                            .dong(extractDong(place))
+                            .mapLink(place.getGoogleMapsUri())
                             .latitude(place.getLocation().getLatitude())
                             .longitude(place.getLocation().getLongitude())
                             .phone(place.getNationalPhoneNumber())
@@ -123,11 +123,26 @@ public class GooglePlacesImportService {
                             .placeId(place.getId())
                             .build();
             bakeryRepository.save(bakery);
-            saved++;
+            savedNames.add(name);
         }
 
-        log.info("[Places 임포트] keyword={}, saved={}, total={}", keyword, saved, places.size());
-        return saved;
+        log.info(
+                "[Places 임포트] keyword={}, saved={}, total={}",
+                keyword,
+                savedNames.size(),
+                places.size());
+        return savedNames;
+    }
+
+    private String extractDong(GooglePlacesClient.PlaceResult place) {
+        if (place.getAddressComponents() == null) return null;
+        return place.getAddressComponents().stream()
+                .filter(c -> c.getTypes() != null && c.getTypes().contains("sublocality_level_2"))
+                .findFirst()
+                .map(GooglePlacesClient.AddressComponent::getLongText)
+                .map(s -> s.replaceAll("[^가-힣]", ""))
+                .filter(s -> !s.isEmpty())
+                .orElse(null);
     }
 
     private String extractRegion(GooglePlacesClient.PlaceResult place) {

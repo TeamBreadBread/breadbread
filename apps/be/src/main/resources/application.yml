@@ -145,6 +145,9 @@ naver:
     timeout-seconds: ${NAVER_MAPS_TIMEOUT_SECONDS:10}
 
 kakao:
+  local:
+    api-key: ${KAKAO_CLIENT_ID}
+    base-url: https://dapi.kakao.com
   mobility:
     app-key: ${KAKAO_MOBILITY_APP_KEY:}
     base-url: https://apis-navi.kakaomobility.com

@@ -13,6 +13,8 @@ import org.springframework.data.repository.query.Param;
 public interface BakeryLikeRepository extends JpaRepository<BakeryLike, Long> {
     Optional<BakeryLike> findByBakeryIdAndUserId(Long bakeryId, Long userId);
 
+    void deleteAllByBakeryId(Long bakeryId);
+
     boolean existsByBakeryIdAndUserId(Long bakeryId, Long userId);
 
     long countByBakery(Bakery bakery);
