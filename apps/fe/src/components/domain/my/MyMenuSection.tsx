@@ -9,7 +9,12 @@ export default function MyMenuSection({ items }: MyMenuSectionProps) {
   return (
     <section className="w-full">
       {items.map((item) => (
-        <MyMenuItem key={item.id} label={item.label} onClick={item.onClick} />
+        <MyMenuItem
+          key={item.id}
+          label={item.label}
+          iconSrc={item.iconSrc}
+          onClick={item.onClick}
+        />
       ))}
     </section>
   );

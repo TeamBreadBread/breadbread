@@ -16,6 +16,7 @@ import ActiveTourConflictDialog from "@/components/common/dialog/ActiveTourConfl
 import CongestionBadge from "@/components/common/CongestionBadge";
 import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
+import { useTourStateSync } from "@/hooks/useTourStateSync";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import {
   buildCongestionCheckReply,
@@ -111,6 +112,23 @@ export default function TourPage({ courseId }: TourPageProps) {
   useEffect(() => {
     if (courseId > 0) startCourseGuide(courseId);
   }, [courseId, startCourseGuide]);
+
+  const applyRemoteTourUpdate = useCallback(
+    (updated: TourCurrentResponse) => {
+      setTour(updated);
+      if (updated.status === "COMPLETED") {
+        endCourseGuide();
+        markTourCompleteCelebration(courseId);
+      }
+    },
+    [courseId, endCourseGuide],
+  );
+
+  useTourStateSync({
+    courseId,
+    active: true,
+    onRemoteUpdate: applyRemoteTourUpdate,
+  });
 
   useEffect(() => {
     const bakeryIds = course?.bakeries?.map((bakery) => bakery.id).filter((id) => id > 0) ?? [];

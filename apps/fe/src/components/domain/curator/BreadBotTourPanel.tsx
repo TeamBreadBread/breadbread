@@ -9,6 +9,7 @@ import {
 } from "@/api/tours";
 import { getErrorMessage } from "@/api/types/common";
 import CongestionBadge from "@/components/common/CongestionBadge";
+import { useTourStateSync } from "@/hooks/useTourStateSync";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import { mapCongestionByBakeryId } from "@/utils/congestionCheck";
 import { notifyTourCompleteCelebration } from "@/utils/tourCelebration";
@@ -17,6 +18,8 @@ import { cn } from "@/utils/cn";
 
 type BreadBotTourPanelProps = {
   courseId: number;
+  /** 투어 진행 탭이 보일 때만 원격 상태·재조회 반영 */
+  active?: boolean;
   /** "전체 화면으로 보기" — 모달을 닫고 /tour 페이지로 이동 */
   onOpenFullPage: () => void;
 };
@@ -27,7 +30,11 @@ type CongestionInfo = { level?: string | null; expectedWaitMin?: number | null }
  * 챗봇 모달 안에서 보여주는 컴팩트 투어 진행 패널.
  * TourPage와 동일한 API(현재 투어/방문 체크/완료)를 사용한다.
  */
-export default function BreadBotTourPanel({ courseId, onOpenFullPage }: BreadBotTourPanelProps) {
+export default function BreadBotTourPanel({
+  courseId,
+  active = true,
+  onOpenFullPage,
+}: BreadBotTourPanelProps) {
   const { endCourseGuide } = useLoginRequired();
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [tour, setTour] = useState<TourCurrentResponse | null>(null);
@@ -104,6 +111,12 @@ export default function BreadBotTourPanel({ courseId, onOpenFullPage }: BreadBot
     },
     [courseId, endCourseGuide],
   );
+
+  useTourStateSync({
+    courseId,
+    active,
+    onRemoteUpdate: handleTourUpdated,
+  });
 
   const handleVisit = async (order: number) => {
     if (busyOrder != null || isCompleting) return;

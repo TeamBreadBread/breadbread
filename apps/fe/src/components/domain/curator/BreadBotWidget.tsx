@@ -61,10 +61,13 @@ import { saveRouteFocusCourseId } from "@/utils/aiCourseStorage";
 import { cn } from "@/utils/cn";
 import { useTourArrivalProximity, type TourArrivalPrompt } from "@/hooks/useTourArrivalProximity";
 import ChatBotImage from "@/assets/images/Img_ChatBot.svg";
-import ChatbotCourseSpeechBubble, {
-  CHATBOT_FAB_POSITION_CLASS,
+import ChatbotCourseSpeechBubble from "@/components/domain/curator/ChatbotCourseSpeechBubble";
+import {
   CHATBOT_FAB_SIZE,
-} from "@/components/domain/curator/ChatbotCourseSpeechBubble";
+  resolveChatbotBubblePositionClass,
+  resolveChatbotFabPositionClass,
+  resolveChatbotInlineBubblePositionClass,
+} from "@/components/domain/curator/chatbotFabLayout";
 import BreadBotChatModal from "@/components/domain/curator/BreadBotChatModal";
 import BreadBotConfetti from "@/components/domain/curator/BreadBotConfetti";
 import {
@@ -391,9 +394,13 @@ export default function BreadBotWidget({
 }: BreadBotWidgetProps) {
   const { startCourseGuide, endCourseGuide, courseGuideActive } = useLoginRequired();
   const navigate = useNavigate();
-  const onTourPage = useRouterState({ select: (s) => s.location.pathname.startsWith("/tour") });
-  const onRoutePage = useRouterState({ select: (s) => s.location.pathname === "/route" });
-  const onHomePage = useRouterState({ select: (s) => s.location.pathname === "/home" });
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const onTourPage = pathname.startsWith("/tour");
+  const onRoutePage = pathname === "/route";
+  const onHomePage = pathname === "/home";
+  const fabPositionClass = resolveChatbotFabPositionClass(pathname);
+  const bubblePositionClass = resolveChatbotBubblePositionClass(pathname);
+  const inlineBubblePositionClass = resolveChatbotInlineBubblePositionClass(pathname);
 
   const [open, setOpen] = useState(false);
   const [persisted] = useState(loadPersistedChat);
@@ -1225,14 +1232,22 @@ export default function BreadBotWidget({
     });
   };
 
-  const handleBackToStart = () => {
+  const clearChatHistory = () => {
     setMessages([]);
     setConversationId(undefined);
     setLoading(false);
+    try {
+      localStorage.removeItem(CHAT_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const handleBackToStart = () => {
+    clearChatHistory();
   };
 
   const closeChat = () => {
-    handleBackToStart();
     setCelebrationBubble(null);
     setOpen(false);
   };
@@ -1374,7 +1389,12 @@ export default function BreadBotWidget({
 
       {showCelebrationBubble && celebrationBubble ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[73] mx-auto w-full max-w-[402px]">
-          <div className="pointer-events-auto fixed right-[20px] bottom-[170px] w-[min(280px,calc(100%-40px))] rounded-r4 bg-white p-x4 shadow-[0_8px_28px_rgba(0,0,0,0.2)] md:right-[calc((100vw-402px)/2+20px)]">
+          <div
+            className={cn(
+              "pointer-events-auto w-[min(280px,calc(100%-40px))] rounded-r4 bg-white p-x4 shadow-[0_8px_28px_rgba(0,0,0,0.2)]",
+              inlineBubblePositionClass,
+            )}
+          >
             <button
               type="button"
               aria-label="축하 닫기"
@@ -1405,7 +1425,12 @@ export default function BreadBotWidget({
 
       {showTourBubble && tourBubble ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[72] mx-auto w-full max-w-[402px]">
-          <div className="pointer-events-auto fixed right-[20px] bottom-[170px] w-[min(280px,calc(100%-40px))] rounded-r4 bg-white p-x4 shadow-[0_8px_28px_rgba(0,0,0,0.2)] md:right-[calc((100vw-402px)/2+20px)]">
+          <div
+            className={cn(
+              "pointer-events-auto w-[min(280px,calc(100%-40px))] rounded-r4 bg-white p-x4 shadow-[0_8px_28px_rgba(0,0,0,0.2)]",
+              inlineBubblePositionClass,
+            )}
+          >
             <button
               type="button"
               aria-label="알림 닫기"
@@ -1439,7 +1464,12 @@ export default function BreadBotWidget({
 
       {showReserveNudgeBubble && reserveNudgeBubble ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[72] mx-auto w-full max-w-[402px]">
-          <div className="pointer-events-auto fixed right-[20px] bottom-[170px] w-[min(280px,calc(100%-40px))] rounded-r4 bg-white p-x4 shadow-[0_8px_28px_rgba(0,0,0,0.2)] md:right-[calc((100vw-402px)/2+20px)]">
+          <div
+            className={cn(
+              "pointer-events-auto w-[min(280px,calc(100%-40px))] rounded-r4 bg-white p-x4 shadow-[0_8px_28px_rgba(0,0,0,0.2)]",
+              inlineBubblePositionClass,
+            )}
+          >
             <button
               type="button"
               aria-label="알림 닫기"
@@ -1467,7 +1497,12 @@ export default function BreadBotWidget({
 
       {showChangeBubble && changeBubble ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[72] mx-auto w-full max-w-[402px]">
-          <div className="pointer-events-auto fixed right-[20px] bottom-[170px] w-[min(280px,calc(100%-40px))] rounded-r4 bg-white p-x4 shadow-[0_8px_28px_rgba(0,0,0,0.2)] md:right-[calc((100vw-402px)/2+20px)]">
+          <div
+            className={cn(
+              "pointer-events-auto w-[min(280px,calc(100%-40px))] rounded-r4 bg-white p-x4 shadow-[0_8px_28px_rgba(0,0,0,0.2)]",
+              inlineBubblePositionClass,
+            )}
+          >
             <button
               type="button"
               aria-label="알림 닫기"
@@ -1497,6 +1532,7 @@ export default function BreadBotWidget({
       {showTourArrivalBubble && tourArrivalPrompt ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[73] mx-auto w-full max-w-[402px]">
           <ChatbotCourseSpeechBubble
+            bubblePositionClass={bubblePositionClass}
             title={`곧 코스 ${tourArrivalPrompt.order}번 빵집에 도착할 것 같아요!`}
             subtitle="방문완료 처리 해드릴까요?"
             actions={[
@@ -1520,6 +1556,7 @@ export default function BreadBotWidget({
       {showCourseMovementBubble && courseMovementBubble ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[72] mx-auto w-full max-w-[402px]">
           <ChatbotCourseSpeechBubble
+            bubblePositionClass={bubblePositionClass}
             title={courseMovementBubble.title}
             subtitle={courseMovementBubble.subtitle}
             onClose={dismissCourseMovementBubble}
@@ -1536,7 +1573,7 @@ export default function BreadBotWidget({
             onClick={() => (open ? closeChat() : openChat())}
             className={cn(
               "pointer-events-auto block shrink-0 border-0 bg-transparent p-0",
-              CHATBOT_FAB_POSITION_CLASS,
+              fabPositionClass,
             )}
             style={{ width: CHATBOT_FAB_SIZE, height: CHATBOT_FAB_SIZE }}
           >

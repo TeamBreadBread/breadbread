@@ -8,6 +8,7 @@ import {
   saveUserProfile,
 } from "@/lib/userProfileCache";
 import { AppTopBar } from "@/components/common";
+import { IconAssets } from "@/components/icons";
 import MyLevelCard from "@/components/domain/my/MyLevelCard";
 import MyMenuSection from "@/components/domain/my/MyMenuSection";
 import MyProfileCard from "@/components/domain/my/MyProfileCard";
@@ -82,29 +83,61 @@ export default function MyPage() {
     {
       id: "preference",
       label: "내 선호도 조회/수정",
+      iconSrc: IconAssets.IcWrite,
       onClick: () => navigate({ to: "/user-preference", search: { mode: "edit" } }),
     },
-    { id: "my-routes", label: "내 루트 목록", onClick: () => navigate({ to: "/route" }) },
-    { id: "reservation", label: "예약 내역", onClick: () => navigate({ to: "/my-reservations" }) },
-    { id: "review", label: "내가 쓴 리뷰", onClick: () => navigate({ to: "/my-reviews" }) },
+    {
+      id: "my-routes",
+      label: "내 루트 목록",
+      iconSrc: IconAssets.IcCompass,
+      onClick: () => navigate({ to: "/route" }),
+    },
+    {
+      id: "reservation",
+      label: "예약 내역",
+      iconSrc: IconAssets.IcCalendar,
+      onClick: () => navigate({ to: "/my-reservations" }),
+    },
+    {
+      id: "review",
+      label: "내가 쓴 리뷰",
+      iconSrc: IconAssets.IcStar,
+      onClick: () => navigate({ to: "/my-reviews" }),
+    },
     {
       id: "liked-courses",
       label: "좋아요한 코스",
+      iconSrc: IconAssets.IcHeart,
       onClick: () => navigate({ to: "/my-liked-courses" }),
     },
     {
       id: "liked-bakeries",
       label: "좋아요한 빵집",
+      iconSrc: IconAssets.IcHeart,
       onClick: () => navigate({ to: "/my-liked-bakeries" }),
     },
-    { id: "badge", label: "획득한 뱃지" },
+    {
+      id: "badge",
+      label: "획득한 뱃지",
+      iconSrc: IconAssets.IcVerified,
+    },
   ];
 
   const settingMenus: MyMenu[] = [
-    { id: "account", label: "계정 설정", onClick: goToAccountSettings },
-    { id: "service", label: "서비스 설정" },
-    { id: "support", label: "고객센터" },
+    {
+      id: "account",
+      label: "계정 설정",
+      iconSrc: IconAssets.IcPerson,
+      onClick: goToAccountSettings,
+    },
+    { id: "service", label: "서비스 설정", iconSrc: IconAssets.IcSetting },
+    { id: "support", label: "고객센터", iconSrc: IconAssets.IcHeadphone },
   ];
+
+  const profileAvatarSeed =
+    profile?.userId != null
+      ? String(profile.userId)
+      : profile?.loginId?.trim() || profile?.email?.trim() || undefined;
 
   return (
     <MobileFrame>
@@ -117,13 +150,14 @@ export default function MyPage() {
               nickname={displayName}
               email={isProfileLoading ? "불러오는 중..." : displayEmail || "—"}
               profileImageUrl={profile?.profileImageUrl?.trim() || undefined}
+              profileAvatarSeed={profileAvatarSeed}
               onClick={goToAccountSettings}
             />
 
             <MyLevelCard
               level="Lv.1"
               title="갓 반죽 상태"
-              description={"1번 더 빵투어를 진행하면\n다음 등급 혜택을 받을 수 있어요!"}
+              description="1번 더 빵투어를 진행하면 다음 등급 혜택을 받을 수 있어요!"
               progressPercent={50}
             />
           </div>

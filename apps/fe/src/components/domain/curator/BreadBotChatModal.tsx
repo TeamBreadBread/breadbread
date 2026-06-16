@@ -377,49 +377,61 @@ export default function BreadBotChatModal({
 
           {showTourTab ? <ChatModalTabs activeTab={activeTab} onChange={setSelectedTab} /> : null}
 
-          {isTourTab && activeTourCourseId ? (
-            <div className="relative z-[1] flex min-h-0 flex-1 flex-col overflow-y-auto bg-gray-100 px-x4 pb-x5 pt-x4">
-              <BreadBotTourPanel courseId={activeTourCourseId} onOpenFullPage={onOpenTourPage} />
-            </div>
-          ) : (
+          {showTourTab && activeTourCourseId ? (
             <div
-              ref={listRef}
-              className="relative z-[1] flex min-h-0 flex-1 flex-col gap-x4 overflow-y-auto bg-gray-100 px-x5 pb-x5 pt-x4"
+              className={cn(
+                "relative z-[1] flex min-h-0 flex-1 flex-col overflow-y-auto bg-gray-100 px-x4 pb-x5 pt-x4",
+                !isTourTab && "hidden",
+              )}
             >
-              <WelcomeSpeechBubble
-                showButtons={showWelcomeButtons}
-                disabled={loading}
-                onQuickReply={onQuickReply}
+              <BreadBotTourPanel
+                courseId={activeTourCourseId}
+                active={isTourTab}
+                onOpenFullPage={onOpenTourPage}
               />
-
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={cn(
-                    "flex w-full",
-                    message.role === "user" ? "justify-end" : "justify-start",
-                  )}
-                >
-                  {message.role === "user" ? (
-                    <div className="max-w-[88%] rounded-r4 rounded-tr-r1 bg-orange-600 px-x4 py-x3 font-pretendard text-size-3 leading-t5 text-gray-00 shadow-[0_4px_14px_rgba(255,134,72,0.24)]">
-                      {message.text}
-                    </div>
-                  ) : (
-                    <BotMessageBlock
-                      message={message}
-                      loading={loading}
-                      courseId={courseId}
-                      onQuickReply={onQuickReply}
-                      onAction={onAction}
-                      onCourseDetail={onCourseDetail}
-                    />
-                  )}
-                </div>
-              ))}
-
-              {loading ? <ChatbotTypingIndicator /> : null}
             </div>
-          )}
+          ) : null}
+
+          <div
+            ref={listRef}
+            className={cn(
+              "relative z-[1] flex min-h-0 flex-1 flex-col gap-x4 overflow-y-auto bg-gray-100 px-x5 pb-x5 pt-x4",
+              showTourTab && isTourTab && "hidden",
+            )}
+          >
+            <WelcomeSpeechBubble
+              showButtons={showWelcomeButtons}
+              disabled={loading}
+              onQuickReply={onQuickReply}
+            />
+
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={cn(
+                  "flex w-full",
+                  message.role === "user" ? "justify-end" : "justify-start",
+                )}
+              >
+                {message.role === "user" ? (
+                  <div className="max-w-[88%] rounded-r4 rounded-tr-r1 bg-orange-600 px-x4 py-x3 font-pretendard text-size-3 leading-t5 text-gray-00 shadow-[0_4px_14px_rgba(255,134,72,0.24)]">
+                    {message.text}
+                  </div>
+                ) : (
+                  <BotMessageBlock
+                    message={message}
+                    loading={loading}
+                    courseId={courseId}
+                    onQuickReply={onQuickReply}
+                    onAction={onAction}
+                    onCourseDetail={onCourseDetail}
+                  />
+                )}
+              </div>
+            ))}
+
+            {loading ? <ChatbotTypingIndicator /> : null}
+          </div>
 
           {showBackToStartFooter ? (
             <div className="shrink-0 border-t border-gray-300/60 bg-gray-100 px-x5 py-x3">
