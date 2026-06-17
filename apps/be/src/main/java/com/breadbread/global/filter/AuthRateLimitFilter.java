@@ -47,9 +47,6 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
                     break;
                 }
             }
-
-            filterChain.doFilter(request, response);
-
         } catch (CustomException e) {
             if (e.getErrorCode() != ErrorCode.TOO_MANY_REQUESTS) {
                 throw e;
@@ -66,7 +63,10 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             String body =
                     objectMapper.writeValueAsString(ApiResponse.fail(ErrorCode.TOO_MANY_REQUESTS));
             response.getWriter().write(body);
+            return;
         }
+
+        filterChain.doFilter(request, response);
     }
 
     private String getClientIp(HttpServletRequest request) {

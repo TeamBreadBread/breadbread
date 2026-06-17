@@ -10,6 +10,7 @@ import com.breadbread.course.dto.request.ManualCourseRequest;
 import com.breadbread.course.dto.request.UpdateCourseRequest;
 import com.breadbread.course.dto.response.AiCourseAdminListResponse;
 import com.breadbread.course.dto.response.AiCourseAdminResponse;
+import com.breadbread.course.dto.response.CourseBakeryDetailResponse;
 import com.breadbread.course.dto.response.CourseDetailResponse;
 import com.breadbread.course.dto.response.CourseListResponse;
 import com.breadbread.course.dto.response.CourseSummaryResponse;
@@ -149,16 +150,18 @@ public class CourseService {
                         ? new HashMap<>()
                         : courseSummaryAssembler.buildThumbnailMap(bakeryIds);
 
-        List<BakerySummaryResponse> bakeries =
+        List<CourseBakeryDetailResponse> bakeries =
                 courseBakeries.stream()
                         .map(
                                 cb ->
-                                        BakerySummaryResponse.from(
-                                                cb.getBakery(),
-                                                thumbnailMap.get(cb.getBakery().getId()),
-                                                0L,
-                                                0L,
-                                                false))
+                                        CourseBakeryDetailResponse.of(
+                                                cb,
+                                                BakerySummaryResponse.from(
+                                                        cb.getBakery(),
+                                                        thumbnailMap.get(cb.getBakery().getId()),
+                                                        0L,
+                                                        0L,
+                                                        false)))
                         .toList();
 
         int likeCount = (int) courseLikeRepository.countByCourse(course);
@@ -338,6 +341,7 @@ public class CourseService {
                 .build();
     }
 
+    @Transactional
     public void delete(Long courseId) {
         Course course =
                 courseRepository
@@ -371,6 +375,7 @@ public class CourseService {
                     e.getMessage());
             throw new CustomException(ErrorCode.ALREADY_COURSE_LIKED);
         }
+        log.info("코스 좋아요: courseId={}, userId={}", courseId, userId);
     }
 
     @Transactional
@@ -380,6 +385,7 @@ public class CourseService {
                         .findByCourseIdAndUserId(courseId, userId)
                         .orElseThrow(() -> new CustomException(ErrorCode.NOT_COURSE_LIKED));
         courseLikeRepository.delete(like);
+        log.info("코스 좋아요 취소: courseId={}, userId={}", courseId, userId);
     }
 
     @Transactional(readOnly = true)
@@ -410,6 +416,7 @@ public class CourseService {
                     e.getMessage());
             throw new CustomException(ErrorCode.ALREADY_ROUTED);
         }
+        log.info("코스 보관: courseId={}, userId={}", courseId, userId);
     }
 
     @Transactional
@@ -419,5 +426,6 @@ public class CourseService {
                         .findByCourseIdAndUserId(courseId, userId)
                         .orElseThrow(() -> new CustomException(ErrorCode.NOT_ROUTED));
         routeRepository.delete(route);
+        log.info("코스 보관 취소: courseId={}, userId={}", courseId, userId);
     }
 }

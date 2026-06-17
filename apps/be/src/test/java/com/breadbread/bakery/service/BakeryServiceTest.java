@@ -15,6 +15,7 @@ import com.breadbread.bakery.dto.request.BakeryAiSearch;
 import com.breadbread.bakery.dto.request.BakerySearch;
 import com.breadbread.bakery.dto.request.CreateBakeryRequest;
 import com.breadbread.bakery.dto.request.UpdateBakeryRequest;
+import com.breadbread.bakery.dto.response.ApproveBakeriesResponse;
 import com.breadbread.bakery.dto.response.BakeryAdminListResponse;
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.BakeryLike;
@@ -670,20 +671,22 @@ class BakeryServiceTest {
         assertThat(result.getTotal()).isZero();
     }
 
-    // ── approveBakery ─────────────────────────────────────────────────────────
+    // ── approveBakeries ───────────────────────────────────────────────────────
 
     @Test
-    void approveBakery_transitions_status_to_APPROVED() {
+    void approveBakeries_transitions_status_to_APPROVED() {
         Bakery bakery = pendingBakeryWithId(100L);
         when(bakeryRepository.findByIdAndActiveTrue(100L)).thenReturn(Optional.of(bakery));
 
-        bakeryService.approveBakery(100L);
+        ApproveBakeriesResponse result = bakeryService.approveBakeries(List.of(100L));
 
         assertThat(bakery.getStatus()).isEqualTo(BakeryStatus.APPROVED);
+        assertThat(result.getSuccessCount()).isEqualTo(1);
+        assertThat(result.getSkipCount()).isZero();
     }
 
     @Test
-    void approveBakery_throws_BAKERY_APPROVE_INCOMPLETE_when_latitude_is_zero() {
+    void approveBakeries_skips_when_latitude_is_zero() {
         Bakery bakery =
                 Bakery.builder()
                         .name("빵집")
@@ -702,14 +705,16 @@ class BakeryServiceTest {
         ReflectionTestUtils.setField(bakery, "status", BakeryStatus.PENDING);
         when(bakeryRepository.findByIdAndActiveTrue(100L)).thenReturn(Optional.of(bakery));
 
-        assertThatThrownBy(() -> bakeryService.approveBakery(100L))
-                .isInstanceOf(CustomException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.BAKERY_APPROVE_INCOMPLETE);
+        ApproveBakeriesResponse result = bakeryService.approveBakeries(List.of(100L));
+
+        assertThat(bakery.getStatus()).isEqualTo(BakeryStatus.PENDING);
+        assertThat(result.getSuccessCount()).isZero();
+        assertThat(result.getSkipCount()).isEqualTo(1);
+        assertThat(result.getSkippedBakeries()).extracting("id").containsExactly(100L);
     }
 
     @Test
-    void approveBakery_throws_BAKERY_APPROVE_INCOMPLETE_when_required_fields_null() {
+    void approveBakeries_skips_when_required_fields_null() {
         Bakery bakery =
                 Bakery.builder()
                         .name(null)
@@ -725,21 +730,36 @@ class BakeryServiceTest {
         ReflectionTestUtils.setField(bakery, "status", BakeryStatus.PENDING);
         when(bakeryRepository.findByIdAndActiveTrue(101L)).thenReturn(Optional.of(bakery));
 
-        assertThatThrownBy(() -> bakeryService.approveBakery(101L))
-                .isInstanceOf(CustomException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.BAKERY_APPROVE_INCOMPLETE);
+        ApproveBakeriesResponse result = bakeryService.approveBakeries(List.of(101L));
+
+        assertThat(result.getSuccessCount()).isZero();
+        assertThat(result.getSkipCount()).isEqualTo(1);
     }
 
     @Test
-    void approveBakery_throws_BAKERY_NOT_PENDING_when_already_approved() {
+    void approveBakeries_skips_when_already_approved() {
         Bakery bakery = bakeryWithId(100L);
         when(bakeryRepository.findByIdAndActiveTrue(100L)).thenReturn(Optional.of(bakery));
 
-        assertThatThrownBy(() -> bakeryService.approveBakery(100L))
-                .isInstanceOf(CustomException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.BAKERY_NOT_PENDING);
+        ApproveBakeriesResponse result = bakeryService.approveBakeries(List.of(100L));
+
+        assertThat(result.getSuccessCount()).isZero();
+        assertThat(result.getSkipCount()).isEqualTo(1);
+    }
+
+    @Test
+    void approveBakeries_partialSuccess_whenMixedConditions() {
+        Bakery good = pendingBakeryWithId(1L);
+        Bakery bad = bakeryWithId(2L);
+        when(bakeryRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(good));
+        when(bakeryRepository.findByIdAndActiveTrue(2L)).thenReturn(Optional.of(bad));
+
+        ApproveBakeriesResponse result = bakeryService.approveBakeries(List.of(1L, 2L));
+
+        assertThat(good.getStatus()).isEqualTo(BakeryStatus.APPROVED);
+        assertThat(result.getSuccessCount()).isEqualTo(1);
+        assertThat(result.getSkipCount()).isEqualTo(1);
+        assertThat(result.getSkippedBakeries()).extracting("id").containsExactly(2L);
     }
 
     // ── rejectBakery ──────────────────────────────────────────────────────────

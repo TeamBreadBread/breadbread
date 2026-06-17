@@ -176,14 +176,19 @@ public class UserService {
         }
 
         String oldProfileImageUrl = user.getProfileImageUrl();
-        String newProfileImageUrl = request.getProfileImageUrl();
+        String rawNewProfileImageUrl = request.getProfileImageUrl();
+        String newProfileImageUrl =
+                rawNewProfileImageUrl != null && rawNewProfileImageUrl.isBlank()
+                        ? null
+                        : rawNewProfileImageUrl;
 
         try {
             user.updateProfile(request);
             userRepository.saveAndFlush(user);
 
-            if (newProfileImageUrl != null && !newProfileImageUrl.equals(oldProfileImageUrl)) {
-                if (!newProfileImageUrl.isBlank()) {
+            if (rawNewProfileImageUrl != null
+                    && !Objects.equals(newProfileImageUrl, oldProfileImageUrl)) {
+                if (newProfileImageUrl != null) {
                     tempImageService.consumeOwnedImages(
                             userId, List.of(newProfileImageUrl), UploadFolder.profiles);
                 }

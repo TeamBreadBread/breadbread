@@ -60,6 +60,7 @@ public class ReviewService {
         reviewRepository.save(review);
         tempImageService.consumeOwnedImages(userId, request.getImageUrls(), UploadFolder.reviews);
         bakery.updateRating(reviewRepository.findAverageRatingByBakeryId(bakeryId).orElse(null));
+        log.info("리뷰 작성: reviewId={}, bakeryId={}, userId={}", review.getId(), bakeryId, userId);
         return review.getId();
     }
 
