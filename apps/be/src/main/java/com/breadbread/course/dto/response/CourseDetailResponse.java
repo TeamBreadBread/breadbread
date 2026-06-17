@@ -1,6 +1,5 @@
 package com.breadbread.course.dto.response;
 
-import com.breadbread.bakery.dto.response.BakerySummaryResponse;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseType;
 import com.breadbread.course.service.ai.AiCourseNameResolver;
@@ -21,14 +20,15 @@ public class CourseDetailResponse {
     private boolean liked;
     private boolean isSaved;
     private String recommendReason;
-    private List<BakerySummaryResponse> bakeries;
+    private String summary;
+    private List<CourseBakeryDetailResponse> bakeries;
 
     public static CourseDetailResponse from(
             Course course,
             int likeCount,
             boolean liked,
             boolean isSaved,
-            List<BakerySummaryResponse> bakeries) {
+            List<CourseBakeryDetailResponse> bakeries) {
         return CourseDetailResponse.builder()
                 .id(course.getId())
                 .name(displayName(course))
@@ -43,6 +43,7 @@ public class CourseDetailResponse {
                         course.getAiCourseInfo() != null
                                 ? course.getAiCourseInfo().getRecommendReason()
                                 : null)
+                .summary(course.getSummary())
                 .bakeries(bakeries)
                 .build();
     }

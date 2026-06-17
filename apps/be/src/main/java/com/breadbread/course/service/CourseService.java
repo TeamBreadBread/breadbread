@@ -10,6 +10,7 @@ import com.breadbread.course.dto.request.ManualCourseRequest;
 import com.breadbread.course.dto.request.UpdateCourseRequest;
 import com.breadbread.course.dto.response.AiCourseAdminListResponse;
 import com.breadbread.course.dto.response.AiCourseAdminResponse;
+import com.breadbread.course.dto.response.CourseBakeryDetailResponse;
 import com.breadbread.course.dto.response.CourseDetailResponse;
 import com.breadbread.course.dto.response.CourseListResponse;
 import com.breadbread.course.dto.response.CourseSummaryResponse;
@@ -149,16 +150,18 @@ public class CourseService {
                         ? new HashMap<>()
                         : courseSummaryAssembler.buildThumbnailMap(bakeryIds);
 
-        List<BakerySummaryResponse> bakeries =
+        List<CourseBakeryDetailResponse> bakeries =
                 courseBakeries.stream()
                         .map(
                                 cb ->
-                                        BakerySummaryResponse.from(
-                                                cb.getBakery(),
-                                                thumbnailMap.get(cb.getBakery().getId()),
-                                                0L,
-                                                0L,
-                                                false))
+                                        CourseBakeryDetailResponse.of(
+                                                cb,
+                                                BakerySummaryResponse.from(
+                                                        cb.getBakery(),
+                                                        thumbnailMap.get(cb.getBakery().getId()),
+                                                        0L,
+                                                        0L,
+                                                        false)))
                         .toList();
 
         int likeCount = (int) courseLikeRepository.countByCourse(course);
