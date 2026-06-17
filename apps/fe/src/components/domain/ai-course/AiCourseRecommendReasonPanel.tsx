@@ -26,7 +26,7 @@ export default function AiCourseRecommendReasonPanel({
       >
         <AppIcon
           src={open ? IconAssets.IcChevronUp : IconAssets.IcChevronDown}
-          size="x4"
+          size="x3"
           className="icon-gray-600 shrink-0"
         />
         AI 코스 추천 이유 보기
