@@ -14,3 +14,9 @@ export function resolveBakeryReviewCount(reviewCount?: number | null): number {
   if (reviewCount == null || !Number.isFinite(Number(reviewCount))) return 0;
   return Math.max(0, Math.floor(Number(reviewCount)));
 }
+
+/** 후기가 1개 이상일 때만 평점 노출 (`reviewCount` 미제공 시 기존처럼 표시) */
+export function shouldShowBakeryRating(reviewCount?: number | null): boolean {
+  if (reviewCount == null) return true;
+  return resolveBakeryReviewCount(reviewCount) > 0;
+}

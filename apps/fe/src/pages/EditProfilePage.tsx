@@ -154,7 +154,7 @@ export default function EditProfilePage() {
       try {
         setIsSaving(true);
         await updateMyProfile(payload);
-        refreshProfileCacheFromServer();
+        await refreshProfileCacheFromServer();
         window.alert("프로필을 수정했어요.");
         await navigate({ to: "/account-settings" });
       } catch (error) {

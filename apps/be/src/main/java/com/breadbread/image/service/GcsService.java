@@ -151,6 +151,15 @@ public class GcsService {
         }
     }
 
+    /** 공개 URL을 검증한 뒤 객체 키로만 삭제합니다. (CodeQL 경로/URL taint 완화) */
+    public void deleteVerifiedQuietly(String fileUrl) {
+        try {
+            deleteByObjectKey(extractObjectKey(fileUrl));
+        } catch (Exception e) {
+            log.warn("GCS verified delete failed", e);
+        }
+    }
+
     /** 공개 GCS URL에서 객체 키만 추출합니다. 호스트·경로·키 형식을 모두 검증합니다. */
     public String extractObjectKey(String fileUrl) {
         return parseVerifiedObjectKeyFromPublicUrl(fileUrl);

@@ -39,6 +39,7 @@ import {
   formatBakeryRating,
   resolveBakeryRating,
   resolveBakeryReviewCount,
+  shouldShowBakeryRating,
 } from "@/utils/bakeryRating";
 
 /** 빵집 상세 제목 줄(`22px` / `leading 30px`)과 맞춘 하트 아이콘 */
@@ -186,20 +187,35 @@ const BakeryTitleInfo = ({
   liked: boolean;
   likeBusy: boolean;
   onToggleLike: () => void;
-}) => (
-  <div className="flex flex-col gap-[10px]">
-    <div className="flex items-center justify-between gap-x2">
-      <h1 className="min-w-0 flex-1 text-[22px] leading-[30px] font-bold text-[#1a1c20]">{name}</h1>
-      <BakeryLikeButton liked={liked} busy={likeBusy} onClick={onToggleLike} />
+}) => {
+  const showRating = shouldShowBakeryRating(reviewCount);
+
+  return (
+    <div className="flex flex-col gap-[10px]">
+      <div className="flex items-center justify-between gap-x2">
+        <h1 className="min-w-0 flex-1 text-[22px] leading-[30px] font-bold text-[#1a1c20]">
+          {name}
+        </h1>
+        <BakeryLikeButton liked={liked} busy={likeBusy} onClick={onToggleLike} />
+      </div>
+      <div className="flex items-center gap-x1 text-[14px] leading-[19px] font-medium text-gray-600">
+        {showRating ? (
+          <>
+            <AppIcon
+              src={IconAssets.IcStar}
+              size={18}
+              className="icon-orange-600 shrink-0"
+              alt=""
+            />
+            <span>{formatBakeryRating(rating)}</span>
+            <span>·</span>
+          </>
+        ) : null}
+        <span>후기({reviewCount.toLocaleString("ko-KR")})</span>
+      </div>
     </div>
-    <div className="flex items-center gap-x1 text-[14px] leading-[19px] font-medium text-gray-600">
-      <AppIcon src={IconAssets.IcStar} size={18} className="icon-orange-600 shrink-0" alt="" />
-      <span>{formatBakeryRating(rating)}</span>
-      <span>·</span>
-      <span>후기({reviewCount.toLocaleString("ko-KR")})</span>
-    </div>
-  </div>
-);
+  );
+};
 
 const BakeryInfoList = ({ detail }: { detail: BakeryDetail }) => {
   const [mapExpanded, setMapExpanded] = useState(false);

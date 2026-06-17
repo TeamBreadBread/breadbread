@@ -17,7 +17,7 @@ export default function CourseTimeline({
   onMoveBakery,
 }: CourseTimelineProps) {
   return (
-    <section className="relative overflow-hidden px-x5 py-x3">
+    <section className="relative px-x5 py-x3">
       <div className="absolute bottom-0 left-[39px] top-0 w-[2px] bg-[#f3f4f5]" />
 
       <div className="flex flex-col gap-x3">

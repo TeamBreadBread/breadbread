@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { getCourseDetail } from "@/api/courses";
+import { getCourseDetail, type CourseDetail } from "@/api/courses";
 import CourseKakaoMap from "@/components/domain/ai-course/CourseKakaoMap";
 import { courseBakeriesToMapPoints } from "@/components/domain/ai-course/courseMapPoints";
 import type { CourseMapBakery } from "@/components/domain/ai-course/CourseKakaoMap";
-import {
-  getAiCourseDepartureMarkerLabel,
-  getLatestAiCourseDepartureCoords,
-} from "@/lib/aiCourseDepartureCoords";
+import { resolveAiCourseDeparturePoint } from "@/lib/aiCourseDepartureCoords";
 
 type BreadBotCourseMapCardProps = {
   courseId: number;
@@ -17,33 +14,33 @@ export default function BreadBotCourseMapCard({
   courseId,
   onDetailClick,
 }: BreadBotCourseMapCardProps) {
-  const [courseName, setCourseName] = useState("");
+  const [courseDetail, setCourseDetail] = useState<CourseDetail | null>(null);
   const [bakeries, setBakeries] = useState<CourseMapBakery[]>([]);
   const [resolvedCourseId, setResolvedCourseId] = useState<number | null>(null);
   const loading = resolvedCourseId !== courseId;
 
-  const departurePoint = useMemo(() => {
-    const stored = getLatestAiCourseDepartureCoords();
-    if (!stored) return null;
-
-    return {
-      lat: stored.latitude,
-      lng: stored.longitude,
-      label: stored.markerLabel?.trim() || getAiCourseDepartureMarkerLabel() || "출발지",
-    };
-  }, []);
+  const departurePoint = useMemo(
+    () =>
+      resolveAiCourseDeparturePoint({
+        courseId,
+        departureLatitude: courseDetail?.departureLatitude,
+        departureLongitude: courseDetail?.departureLongitude,
+      }),
+    [courseId, courseDetail?.departureLatitude, courseDetail?.departureLongitude],
+  );
 
   useEffect(() => {
     let cancelled = false;
     void getCourseDetail(courseId)
       .then((detail) => {
         if (cancelled) return;
-        setCourseName(detail.name?.trim() || "추천 코스");
+        setCourseDetail(detail);
         setBakeries(courseBakeriesToMapPoints(detail.bakeries ?? []));
         setResolvedCourseId(courseId);
       })
       .catch(() => {
         if (!cancelled) {
+          setCourseDetail(null);
           setBakeries([]);
           setResolvedCourseId(courseId);
         }
@@ -56,7 +53,7 @@ export default function BreadBotCourseMapCard({
   return (
     <div className="w-full overflow-hidden rounded-r4 bg-gray-100 p-x3 shadow-[0_2px_8px_rgba(26,31,39,0.06)]">
       <p className="mb-x2 font-pretendard text-size-2 font-medium leading-t3 text-gray-700">
-        {courseName}
+        {courseDetail?.name?.trim() || "추천 코스"}
       </p>
       <div className="h-[148px] overflow-hidden rounded-r3 bg-gray-200">
         {loading ? (

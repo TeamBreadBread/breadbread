@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import type { CourseSummaryItem } from "@/api/courses";
-import CurationFooter from "@/components/domain/home/CurationFooter";
+import CurationFooter, { type CurationItem } from "@/components/domain/home/CurationFooter";
+import { buildBbakeryDetailSearch } from "@/utils/bakeryListEntry";
 
 type CourseSectionProps = {
   course: CourseSummaryItem;
@@ -21,6 +22,18 @@ const CourseSection = ({ course }: CourseSectionProps) => {
     void navigate({
       to: "/ai-search-result",
       search: { courseId: course.id, from: undefined },
+    });
+  };
+
+  const handleBakeryClick = (item: CurationItem) => {
+    if (item.bakeryId == null) return;
+    void navigate({
+      to: "/bbangteo-bakery-detail",
+      search: buildBbakeryDetailSearch({
+        bakeryId: item.bakeryId,
+        from: "ai-result",
+        courseId: course.id,
+      }),
     });
   };
 
@@ -52,6 +65,7 @@ const CourseSection = ({ course }: CourseSectionProps) => {
             itemClassName="!w-[160px]"
             cardImageClassName="!w-[160px] !h-[152px]"
             breadIconClassName="!w-[40px] !h-[39px]"
+            onItemClick={handleBakeryClick}
           />
         </div>
       </div>

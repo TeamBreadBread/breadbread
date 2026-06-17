@@ -183,18 +183,22 @@ public class UserService {
                         : rawNewProfileImageUrl;
 
         try {
+            if (rawNewProfileImageUrl != null
+                    && !Objects.equals(newProfileImageUrl, oldProfileImageUrl)
+                    && newProfileImageUrl != null) {
+                gcsService.extractObjectKey(newProfileImageUrl);
+                tempImageService.consumeOwnedImages(
+                        userId, List.of(newProfileImageUrl), UploadFolder.profiles);
+            }
+
             user.updateProfile(request);
             userRepository.saveAndFlush(user);
 
             if (rawNewProfileImageUrl != null
-                    && !Objects.equals(newProfileImageUrl, oldProfileImageUrl)) {
-                if (newProfileImageUrl != null) {
-                    tempImageService.consumeOwnedImages(
-                            userId, List.of(newProfileImageUrl), UploadFolder.profiles);
-                }
-                if (oldProfileImageUrl != null) {
-                    gcsService.deleteQuietly(oldProfileImageUrl);
-                }
+                    && !Objects.equals(newProfileImageUrl, oldProfileImageUrl)
+                    && oldProfileImageUrl != null
+                    && !oldProfileImageUrl.isBlank()) {
+                gcsService.deleteVerifiedQuietly(oldProfileImageUrl);
             }
         } catch (DataIntegrityViolationException e) {
             log.warn("[프로필 수정 중복 또는 무결성 위반] userId={}, msg={}", userId, e.getMessage());

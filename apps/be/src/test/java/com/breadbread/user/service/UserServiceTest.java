@@ -253,7 +253,7 @@ class UserServiceTest {
         userService.updateProfile(1L, request);
 
         assertThat(user.getProfileImageUrl()).isNull();
-        verify(gcsService).deleteQuietly("https://gcs/old.jpg");
+        verify(gcsService).deleteVerifiedQuietly("https://gcs/old.jpg");
         verify(tempImageService, never()).consumeOwnedImages(any(), any(), any());
     }
 
@@ -269,6 +269,7 @@ class UserServiceTest {
         userService.updateProfile(1L, request);
 
         assertThat(user.getProfileImageUrl()).isEqualTo("https://gcs/old.jpg");
+        verify(gcsService, never()).deleteVerifiedQuietly(any());
         verify(gcsService, never()).deleteQuietly(any());
         verify(tempImageService, never()).consumeOwnedImages(any(), any(), any());
     }

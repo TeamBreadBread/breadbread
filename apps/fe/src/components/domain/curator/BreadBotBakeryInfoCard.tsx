@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getBakeryById } from "@/api/bakery";
 import type { BakeryDetail } from "@/api/types/bakery";
 import { buildWeeklyHoursRows } from "@/utils/bakeryBusinessHours";
+import { resolveBakeryReviewCount, shouldShowBakeryRating } from "@/utils/bakeryRating";
 
 type BreadBotBakeryInfoCardProps = {
   bakeryId: number;
@@ -86,9 +87,11 @@ export default function BreadBotBakeryInfoCard({ bakeryId }: BreadBotBakeryInfoC
         </div>
 
         <div className="flex flex-wrap items-center gap-x2 gap-y-x1">
-          <span className="font-pretendard text-size-2 text-gray-800">
-            {formatRating(displayDetail.rating)}
-          </span>
+          {shouldShowBakeryRating(resolveBakeryReviewCount(displayDetail.reviewCount)) ? (
+            <span className="font-pretendard text-size-2 text-gray-800">
+              {formatRating(displayDetail.rating)}
+            </span>
+          ) : null}
           {displayDetail.reviewCount != null && displayDetail.reviewCount > 0 ? (
             <span className="font-pretendard text-size-2 text-gray-600">
               후기 {displayDetail.reviewCount.toLocaleString("ko-KR")}개

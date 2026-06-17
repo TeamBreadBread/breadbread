@@ -55,7 +55,13 @@ interface KakaoMapOptions {
 
 interface KakaoMap {
   setCenter(latlng: KakaoLatLng): void;
-  setBounds(bounds: KakaoLatLngBounds): void;
+  setBounds(
+    bounds: KakaoLatLngBounds,
+    paddingTop?: number,
+    paddingRight?: number,
+    paddingBottom?: number,
+    paddingLeft?: number,
+  ): void;
   setDraggable(draggable: boolean): void;
   setZoomable(zoomable: boolean): void;
   relayout(): void;

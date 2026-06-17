@@ -18,6 +18,8 @@ public class UpdateProfileRequest {
     @Email(message = "올바른 이메일 형식이 아닙니다.")
     private String email;
 
-    @Schema(description = "프로필 이미지 URL", example = "https://storage.example.com/profile/abc.jpg")
+    @Schema(
+            description = "프로필 이미지 URL (빈 문자열이면 기본 이미지로 초기화)",
+            example = "https://storage.example.com/profile/abc.jpg")
     private String profileImageUrl;
 }

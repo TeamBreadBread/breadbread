@@ -7,6 +7,7 @@ export type CurationItem = {
   title: string;
   address: string;
   rate: number;
+  reviewCount?: number | null;
   /** GET /bakeries 썸네일·미리보기 URL */
   imageUrl?: string | null;
 };
@@ -45,13 +46,14 @@ const CurationFooter = ({
             {onItemClick ? (
               <button
                 type="button"
-                className="w-full text-left"
+                className="w-full text-left [touch-action:pan-x_pan-y]"
                 onClick={() => onItemClick(item, index)}
               >
                 <CurationCard
                   title={item.title}
                   address={item.address}
                   rate={item.rate}
+                  reviewCount={item.reviewCount}
                   imageUrl={item.imageUrl}
                   imageClassName={cardImageClassName}
                   breadIconClassName={breadIconClassName}
@@ -62,6 +64,7 @@ const CurationFooter = ({
                 title={item.title}
                 address={item.address}
                 rate={item.rate}
+                reviewCount={item.reviewCount}
                 imageUrl={item.imageUrl}
                 imageClassName={cardImageClassName}
                 breadIconClassName={breadIconClassName}

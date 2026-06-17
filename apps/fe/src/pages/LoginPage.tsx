@@ -117,6 +117,7 @@ const LoginPage = () => {
             <button
               type="button"
               aria-label={isPasswordVisible ? "비밀번호 숨기기" : "비밀번호 보기"}
+              onMouseDown={(event) => event.preventDefault()}
               onClick={() => setIsPasswordVisible((prev) => !prev)}
               className="absolute right-x4 flex shrink-0 items-center justify-center"
             >

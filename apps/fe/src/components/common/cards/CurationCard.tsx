@@ -1,12 +1,13 @@
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
 import { AppIcon, IconAssets } from "@/components/icons";
 import { cn } from "@/utils/cn";
-import { formatBakeryRating } from "@/utils/bakeryRating";
+import { formatBakeryRating, shouldShowBakeryRating } from "@/utils/bakeryRating";
 
 type CurationCardProps = {
   title?: string;
   address?: string;
   rate?: number;
+  reviewCount?: number | null;
   /** 빵집 썸네일 URL (없으면 기본 빵 일러스트) */
   imageUrl?: string | null;
   className?: string;
@@ -18,12 +19,14 @@ const CurationCard = ({
   title = "빵집 이름",
   address = "소제동",
   rate = 4.5,
+  reviewCount,
   imageUrl,
   className,
   imageClassName,
   breadIconClassName,
 }: CurationCardProps) => {
   const hasPhoto = Boolean(imageUrl?.trim());
+  const showRating = shouldShowBakeryRating(reviewCount);
 
   return (
     <div className={cn("w-full flex flex-col gap-[var(--spacing-x2)]", className)}>
@@ -68,9 +71,13 @@ const CurationCard = ({
         >
           <AppIcon src={IconAssets.IcPin} size="x3" className="icon-gray-600 shrink-0" />
           <span className="min-w-0 truncate">{address}</span>
-          <span className="shrink-0">·</span>
-          <AppIcon src={IconAssets.IcStar} size="x3" className="icon-orange-600 shrink-0" />
-          <span className="shrink-0">{formatBakeryRating(rate)}</span>
+          {showRating ? (
+            <>
+              <span className="shrink-0">·</span>
+              <AppIcon src={IconAssets.IcStar} size="x3" className="icon-orange-600 shrink-0" />
+              <span className="shrink-0">{formatBakeryRating(rate)}</span>
+            </>
+          ) : null}
         </div>
       </div>
     </div>
