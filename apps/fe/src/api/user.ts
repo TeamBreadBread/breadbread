@@ -2,6 +2,7 @@ import { apiClient, extractData } from "@/api/client";
 import { ApiBusinessError, type ApiEnvelope } from "@/api/types/common";
 import type { BakeryListItem } from "@/api/types/bakery";
 import type { CourseSummaryItem } from "@/api/courses";
+import type { PostListResponse } from "@/api/posts";
 
 const PATH = "/users";
 
@@ -204,6 +205,20 @@ export async function updateMyPassword(body: ChangeMyPasswordRequest): Promise<v
 
 export async function getMyReviews(params: PaginationParams = {}): Promise<MyReviewsResponse> {
   const { data } = await apiClient.get<ApiEnvelope<MyReviewsResponse>>(`${PATH}/me/reviews`, {
+    params: { page: params.page ?? 0, size: params.size ?? 10 },
+  });
+  return extractData(data);
+}
+
+export async function getMyPosts(params: PaginationParams = {}): Promise<PostListResponse> {
+  const { data } = await apiClient.get<ApiEnvelope<PostListResponse>>(`${PATH}/me/posts`, {
+    params: { page: params.page ?? 0, size: params.size ?? 10 },
+  });
+  return extractData(data);
+}
+
+export async function getLikedPosts(params: PaginationParams = {}): Promise<PostListResponse> {
+  const { data } = await apiClient.get<ApiEnvelope<PostListResponse>>(`${PATH}/me/liked/posts`, {
     params: { page: params.page ?? 0, size: params.size ?? 10 },
   });
   return extractData(data);
