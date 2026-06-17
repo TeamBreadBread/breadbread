@@ -1,5 +1,7 @@
 package com.breadbread.bakery.controller;
 
+import com.breadbread.bakery.dto.request.ApproveBakeriesRequest;
+import com.breadbread.bakery.dto.response.ApproveBakeriesResponse;
 import com.breadbread.bakery.dto.response.BakeryAdminListResponse;
 import com.breadbread.bakery.dto.response.BakeryAdminResponse;
 import com.breadbread.bakery.entity.enums.AdminBakerySortType;
@@ -12,6 +14,7 @@ import com.breadbread.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -98,10 +101,10 @@ public class AdminBakeryController {
     }
 
     @Operation(
-            summary = "빵집 등록 승인 (PENDING → APPROVED)",
+            summary = "빵집 일괄 승인 (PENDING → APPROVED)",
             description =
                     "PENDING 상태의 빵집을 최종 승인합니다. 승인 전 아래 필드가 모두 채워졌는지 확인하세요.\n\n"
-                            + "**필수 확인 항목** (미입력 시 400 오류)\n"
+                            + "**필수 확인 항목** (미충족 시 해당 빵집만 스킵)\n"
                             + "- `name` — 빵집 이름\n"
                             + "- `address` — 주소\n"
                             + "- `latitude` / `longitude` — 위경도 (0.0이면 미입력 상태)\n"
@@ -113,10 +116,18 @@ public class AdminBakeryController {
                             + "- `mapLink` — 지도 링크\n"
                             + "- `businessHours` — 영업 시간\n\n"
                             + "승인 후 일반 사용자에게 노출되며 AI 코스 추천 대상에도 포함됩니다.")
-    @PostMapping("/{id}/approve")
-    public ApiResponse<Void> approveBakery(@PathVariable Long id) {
-        bakeryService.approveBakery(id);
-        return ApiResponse.ok();
+    @PostMapping("/approve")
+    public ApiResponse<ApproveBakeriesResponse> approveBakeries(
+            @RequestBody @Valid ApproveBakeriesRequest request) {
+        return ApiResponse.ok(bakeryService.approveBakeries(request.getIds()));
+    }
+
+    @Operation(
+            summary = "빵집 전체 일괄 승인 (PENDING → APPROVED)",
+            description = "현재 PENDING 상태인 빵집을 모두 승인합니다. " + "필수 항목 미충족 빵집은 스킵되며 응답에 포함됩니다.")
+    @PostMapping("/approve-all")
+    public ApiResponse<ApproveBakeriesResponse> approveAllBakeries() {
+        return ApiResponse.ok(bakeryService.approveAllPendingBakeries());
     }
 
     @Operation(summary = "빵집 등록 거절 (PENDING → REJECTED)")
