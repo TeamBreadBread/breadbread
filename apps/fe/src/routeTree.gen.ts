@@ -23,6 +23,8 @@ import { Route as PasswordResetSuccessRouteImport } from "./routes/password-rese
 import { Route as MyReviewsRouteImport } from "./routes/my-reviews";
 import { Route as MyReservationsRouteImport } from "./routes/my-reservations";
 import { Route as MyReservationDetailRouteImport } from "./routes/my-reservation-detail";
+import { Route as MyPostsRouteImport } from "./routes/my-posts";
+import { Route as MyLikedPostsRouteImport } from "./routes/my-liked-posts";
 import { Route as MyLikedCoursesRouteImport } from "./routes/my-liked-courses";
 import { Route as MyLikedBakeriesRouteImport } from "./routes/my-liked-bakeries";
 import { Route as MyRouteImport } from "./routes/my";
@@ -135,6 +137,16 @@ const MyReservationsRoute = MyReservationsRouteImport.update({
 const MyReservationDetailRoute = MyReservationDetailRouteImport.update({
   id: "/my-reservation-detail",
   path: "/my-reservation-detail",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const MyPostsRoute = MyPostsRouteImport.update({
+  id: "/my-posts",
+  path: "/my-posts",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const MyLikedPostsRoute = MyLikedPostsRouteImport.update({
+  id: "/my-liked-posts",
+  path: "/my-liked-posts",
   getParentRoute: () => rootRouteImport,
 } as any);
 const MyLikedCoursesRoute = MyLikedCoursesRouteImport.update({
@@ -383,6 +395,8 @@ export interface FileRoutesByFullPath {
   "/my": typeof MyRoute;
   "/my-liked-bakeries": typeof MyLikedBakeriesRoute;
   "/my-liked-courses": typeof MyLikedCoursesRoute;
+  "/my-liked-posts": typeof MyLikedPostsRoute;
+  "/my-posts": typeof MyPostsRoute;
   "/my-reservation-detail": typeof MyReservationDetailRoute;
   "/my-reservations": typeof MyReservationsRoute;
   "/my-reviews": typeof MyReviewsRoute;
@@ -440,6 +454,8 @@ export interface FileRoutesByTo {
   "/my": typeof MyRoute;
   "/my-liked-bakeries": typeof MyLikedBakeriesRoute;
   "/my-liked-courses": typeof MyLikedCoursesRoute;
+  "/my-liked-posts": typeof MyLikedPostsRoute;
+  "/my-posts": typeof MyPostsRoute;
   "/my-reservation-detail": typeof MyReservationDetailRoute;
   "/my-reservations": typeof MyReservationsRoute;
   "/my-reviews": typeof MyReviewsRoute;
@@ -500,6 +516,8 @@ export interface FileRoutesById {
   "/my": typeof MyRoute;
   "/my-liked-bakeries": typeof MyLikedBakeriesRoute;
   "/my-liked-courses": typeof MyLikedCoursesRoute;
+  "/my-liked-posts": typeof MyLikedPostsRoute;
+  "/my-posts": typeof MyPostsRoute;
   "/my-reservation-detail": typeof MyReservationDetailRoute;
   "/my-reservations": typeof MyReservationsRoute;
   "/my-reviews": typeof MyReviewsRoute;
@@ -561,6 +579,8 @@ export interface FileRouteTypes {
     | "/my"
     | "/my-liked-bakeries"
     | "/my-liked-courses"
+    | "/my-liked-posts"
+    | "/my-posts"
     | "/my-reservation-detail"
     | "/my-reservations"
     | "/my-reviews"
@@ -618,6 +638,8 @@ export interface FileRouteTypes {
     | "/my"
     | "/my-liked-bakeries"
     | "/my-liked-courses"
+    | "/my-liked-posts"
+    | "/my-posts"
     | "/my-reservation-detail"
     | "/my-reservations"
     | "/my-reviews"
@@ -677,6 +699,8 @@ export interface FileRouteTypes {
     | "/my"
     | "/my-liked-bakeries"
     | "/my-liked-courses"
+    | "/my-liked-posts"
+    | "/my-posts"
     | "/my-reservation-detail"
     | "/my-reservations"
     | "/my-reviews"
@@ -737,6 +761,8 @@ export interface RootRouteChildren {
   MyRoute: typeof MyRoute;
   MyLikedBakeriesRoute: typeof MyLikedBakeriesRoute;
   MyLikedCoursesRoute: typeof MyLikedCoursesRoute;
+  MyLikedPostsRoute: typeof MyLikedPostsRoute;
+  MyPostsRoute: typeof MyPostsRoute;
   MyReservationDetailRoute: typeof MyReservationDetailRoute;
   MyReservationsRoute: typeof MyReservationsRoute;
   MyReviewsRoute: typeof MyReviewsRoute;
@@ -856,6 +882,20 @@ declare module "@tanstack/react-router" {
       path: "/my-reservation-detail";
       fullPath: "/my-reservation-detail";
       preLoaderRoute: typeof MyReservationDetailRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/my-posts": {
+      id: "/my-posts";
+      path: "/my-posts";
+      fullPath: "/my-posts";
+      preLoaderRoute: typeof MyPostsRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/my-liked-posts": {
+      id: "/my-liked-posts";
+      path: "/my-liked-posts";
+      fullPath: "/my-liked-posts";
+      preLoaderRoute: typeof MyLikedPostsRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/my-liked-courses": {
@@ -1228,6 +1268,8 @@ const rootRouteChildren: RootRouteChildren = {
   MyRoute: MyRoute,
   MyLikedBakeriesRoute: MyLikedBakeriesRoute,
   MyLikedCoursesRoute: MyLikedCoursesRoute,
+  MyLikedPostsRoute: MyLikedPostsRoute,
+  MyPostsRoute: MyPostsRoute,
   MyReservationDetailRoute: MyReservationDetailRoute,
   MyReservationsRoute: MyReservationsRoute,
   MyReviewsRoute: MyReviewsRoute,

@@ -105,6 +105,18 @@ export default function MyPage() {
       onClick: () => navigate({ to: "/my-reviews" }),
     },
     {
+      id: "my-posts",
+      label: "내가 쓴 게시글",
+      iconSrc: IconAssets.IcWrite,
+      onClick: () => navigate({ to: "/my-posts" }),
+    },
+    {
+      id: "liked-posts",
+      label: "좋아요한 게시글",
+      iconSrc: IconAssets.IcHeart,
+      onClick: () => navigate({ to: "/my-liked-posts" }),
+    },
+    {
       id: "liked-courses",
       label: "좋아요한 코스",
       iconSrc: IconAssets.IcHeart,
