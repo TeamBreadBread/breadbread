@@ -14,9 +14,62 @@ type Props = {
   className?: string;
   /** API 조회 중 좌표가 아직 없을 때 정적 지도 대신 로딩 표시 */
   isLoading?: boolean;
+  /** 지도 영역 높이 등 레이아웃 변경 시 bounds 재적용 트리거 */
+  layoutKey?: string | number;
 };
 
 type MapStatus = "loading" | "ready" | "fallback";
+
+/** 마커·출발지가 잘리지 않도록 상하좌우 여백 */
+const MAP_BOUNDS_PADDING = 48;
+
+function fitMapToCourseBounds(map: KakaoMap, bounds: KakaoLatLngBounds): void {
+  map.relayout();
+  map.setBounds(bounds, MAP_BOUNDS_PADDING);
+}
+
+function scheduleFitMapToCourseBounds(map: KakaoMap, bounds: KakaoLatLngBounds): () => void {
+  let cancelled = false;
+  const fit = () => {
+    if (!cancelled) fitMapToCourseBounds(map, bounds);
+  };
+
+  fit();
+  const rafId = requestAnimationFrame(() => {
+    fit();
+    requestAnimationFrame(fit);
+  });
+  const timeoutIds = [120, 320].map((delay) => window.setTimeout(fit, delay));
+
+  return () => {
+    cancelled = true;
+    cancelAnimationFrame(rafId);
+    for (const timeoutId of timeoutIds) {
+      window.clearTimeout(timeoutId);
+    }
+  };
+}
+
+function buildCourseMapBounds(
+  maps: KakaoMaps,
+  orderedPoints: CourseMapBakery[],
+  departurePoint: { lat: number; lng: number } | null | undefined,
+): KakaoLatLngBounds | null {
+  const bounds = new maps.LatLngBounds();
+  let hasPoint = false;
+
+  if (departurePoint) {
+    bounds.extend(new maps.LatLng(departurePoint.lat, departurePoint.lng));
+    hasPoint = true;
+  }
+
+  for (const point of orderedPoints) {
+    bounds.extend(new maps.LatLng(point.lat, point.lng));
+    hasPoint = true;
+  }
+
+  return hasPoint ? bounds : null;
+}
 
 function mapPointsKey(points: CourseMapBakery[]): string {
   return points.map((b) => `${b.order}:${b.id}:${b.lat},${b.lng}`).join("|");
@@ -165,10 +218,12 @@ function CourseKakaoMapView({
   mapPoints,
   departurePoint,
   className,
+  layoutKey,
 }: {
   mapPoints: CourseMapBakery[];
   departurePoint?: { lat: number; lng: number; label: string } | null;
   className?: string;
+  layoutKey?: string | number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<KakaoMap | null>(null);
@@ -182,6 +237,7 @@ function CourseKakaoMapView({
 
     let cancelled = false;
     const mapObjects: Array<{ setMap: (map: null) => void }> = [];
+    let cancelScheduledFit: (() => void) | null = null;
 
     void (async () => {
       try {
@@ -203,11 +259,11 @@ function CourseKakaoMapView({
         map.setZoomable(true);
         mapRef.current = map;
 
-        if (markerPositions.length > 1) {
-          const departureOverlayPosition = departurePoint
-            ? new maps.LatLng(departurePoint.lat, departurePoint.lng)
-            : null;
+        const departureOverlayPosition = departurePoint
+          ? new maps.LatLng(departurePoint.lat, departurePoint.lng)
+          : null;
 
+        if (markerPositions.length > 1) {
           const pathPositions = buildSimplePathPositions(maps, departurePoint, markerPositions);
 
           mapObjects.push(
@@ -247,25 +303,12 @@ function CourseKakaoMapView({
               }),
             );
           }
-
-          const bounds = new maps.LatLngBounds();
-          if (departureOverlayPosition) {
-            bounds.extend(departureOverlayPosition);
-          }
-          for (const point of orderedPoints) {
-            bounds.extend(new maps.LatLng(point.lat, point.lng));
-          }
-          for (const position of pathPositions) {
-            bounds.extend(position);
-          }
-          boundsRef.current = bounds;
-          map.setBounds(bounds);
         } else {
-          if (departurePoint) {
+          if (departurePoint && departureOverlayPosition) {
             mapObjects.push(
               new maps.CustomOverlay({
                 map,
-                position: new maps.LatLng(departurePoint.lat, departurePoint.lng),
+                position: departureOverlayPosition,
                 content: createDepartureMarkerElement(departurePoint.label),
                 xAnchor: 0.5,
                 yAnchor: 1.7,
@@ -287,16 +330,14 @@ function CourseKakaoMapView({
               }),
             );
           }
+        }
 
-          if (departurePoint) {
-            const bounds = new maps.LatLngBounds();
-            bounds.extend(new maps.LatLng(departurePoint.lat, departurePoint.lng));
-            bounds.extend(center);
-            boundsRef.current = bounds;
-            map.setBounds(bounds);
-          } else {
-            boundsRef.current = null;
-          }
+        const bounds = buildCourseMapBounds(maps, orderedPoints, departurePoint);
+        if (bounds) {
+          boundsRef.current = bounds;
+          cancelScheduledFit = scheduleFitMapToCourseBounds(map, bounds);
+        } else {
+          boundsRef.current = null;
         }
 
         if (!cancelled) setStatus("ready");
@@ -307,6 +348,7 @@ function CourseKakaoMapView({
 
     return () => {
       cancelled = true;
+      cancelScheduledFit?.();
       mapRef.current = null;
       boundsRef.current = null;
       for (const mapObject of mapObjects) {
@@ -320,24 +362,24 @@ function CourseKakaoMapView({
     if (status !== "ready") return;
     const container = containerRef.current;
     const map = mapRef.current;
-    if (!container || !map) return;
+    const bounds = boundsRef.current;
+    if (!container || !map || !bounds) return;
 
     const fitMapToContainer = () => {
-      map.relayout();
-      const bounds = boundsRef.current;
-      if (bounds) {
-        map.setBounds(bounds);
-      }
+      fitMapToCourseBounds(map, bounds);
     };
 
     const observer = new ResizeObserver(() => {
       fitMapToContainer();
     });
     observer.observe(container);
-    fitMapToContainer();
+    const cancelScheduledFit = scheduleFitMapToCourseBounds(map, bounds);
 
-    return () => observer.disconnect();
-  }, [status]);
+    return () => {
+      observer.disconnect();
+      cancelScheduledFit();
+    };
+  }, [status, layoutKey]);
 
   if (status === "fallback") {
     return (
@@ -375,6 +417,7 @@ export default function CourseKakaoMap({
   departurePoint,
   className,
   isLoading = false,
+  layoutKey,
 }: Props) {
   const mapPoints = useMemo(() => filterValidMapPoints(bakeries), [bakeries]);
 
@@ -393,6 +436,7 @@ export default function CourseKakaoMap({
       mapPoints={mapPoints}
       departurePoint={departurePoint}
       className={className}
+      layoutKey={layoutKey}
     />
   );
 }

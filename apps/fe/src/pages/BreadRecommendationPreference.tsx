@@ -29,7 +29,10 @@ import {
   type FlexibilityLevel,
   type TravelType,
 } from "@/api/courses";
-import { takeAiCourseDepartureCoords } from "@/lib/aiCourseDepartureCoords";
+import {
+  takeAiCourseDepartureCoords,
+  saveAiCourseDepartureForJob,
+} from "@/lib/aiCourseDepartureCoords";
 import { readAiCoursePreferenceDraft, saveAiCoursePendingJobId } from "@/utils/aiCourseStorage";
 import { ApiBusinessError, getErrorMessage } from "@/api/types/common";
 import { getStoredAccessToken } from "@/api/auth";
@@ -239,6 +242,7 @@ export default function BreadRecommendationPreference() {
         }),
       );
       const jobId = await requestAiCourse(body);
+      saveAiCourseDepartureForJob(jobId, departure);
       saveAiCoursePendingJobId(jobId);
       navigate({ to: "/ai-course-generating", search: { jobId } });
     } catch (error) {

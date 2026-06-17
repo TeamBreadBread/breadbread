@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import MobileFrame from "@/components/layout/MobileFrame";
-import BreadBtiAiGeneratingReturnBar from "@/components/domain/breadbti/BreadBtiAiGeneratingReturnBar";
 import {
   BreadBtiAiGeneratingBackHeader,
   BreadBtiBbangteoBackHeader,
@@ -29,6 +28,7 @@ export default function BreadBtiMobileFrame({
     !isBreadBtiFromAiGenerating() &&
     (fromBbangteo ?? isBreadBtiFromBbangteo());
   const showAiGeneratingChrome = fromAiGenerating ?? isBreadBtiFromAiGenerating();
+  const showBottomNav = showBbangteoChrome || showAiGeneratingChrome;
 
   return (
     <MobileFrame
@@ -40,16 +40,11 @@ export default function BreadBtiMobileFrame({
       {showBbangteoChrome ? <BreadBtiBbangteoBackHeader /> : null}
       {showAiGeneratingChrome ? <BreadBtiAiGeneratingBackHeader /> : null}
       <div
-        className={cn(
-          "flex min-h-0 flex-1 flex-col",
-          showBbangteoChrome && "pb-[114px] sm:pb-[118px]",
-          showAiGeneratingChrome && "pb-[76px]",
-        )}
+        className={cn("flex min-h-0 flex-1 flex-col", showBottomNav && "pb-[114px] sm:pb-[118px]")}
       >
         {children}
       </div>
-      {showBbangteoChrome ? <BreadBtiBbangteoBottomNav /> : null}
-      {showAiGeneratingChrome ? <BreadBtiAiGeneratingReturnBar /> : null}
+      {showBottomNav ? <BreadBtiBbangteoBottomNav /> : null}
     </MobileFrame>
   );
 }

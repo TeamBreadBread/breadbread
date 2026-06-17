@@ -21,6 +21,8 @@ public class CourseDetailResponse {
     private boolean isSaved;
     private String recommendReason;
     private String summary;
+    private Double departureLatitude;
+    private Double departureLongitude;
     private List<CourseBakeryDetailResponse> bakeries;
 
     public static CourseDetailResponse from(
@@ -44,6 +46,14 @@ public class CourseDetailResponse {
                                 ? course.getAiCourseInfo().getRecommendReason()
                                 : null)
                 .summary(course.getSummary())
+                .departureLatitude(
+                        course.getAiCourseInfo() != null
+                                ? course.getAiCourseInfo().getLatitude()
+                                : null)
+                .departureLongitude(
+                        course.getAiCourseInfo() != null
+                                ? course.getAiCourseInfo().getLongitude()
+                                : null)
                 .bakeries(bakeries)
                 .build();
     }

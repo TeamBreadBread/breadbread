@@ -11,10 +11,7 @@ import ResultSummaryCard from "@/components/domain/ai-course/ResultSummaryCard";
 import type { CoursePlace, CourseSummary } from "@/components/domain/ai-course/types";
 import { getDevFallbackCourseId } from "@/lib/courseIdFallback";
 import { formatCourseEstimatedTime } from "@/utils/formatCourseEstimatedTime";
-import {
-  getLatestAiCourseDepartureCoords,
-  getAiCourseDepartureMarkerLabel,
-} from "@/lib/aiCourseDepartureCoords";
+import { resolveAiCourseDeparturePoint } from "@/lib/aiCourseDepartureCoords";
 import CourseKakaoMap from "@/components/domain/ai-course/CourseKakaoMap";
 import { useCourseMapPoints } from "@/hooks/useCourseMapPoints";
 import handleArrow from "@/assets/icons/handle_arrowup.png";
@@ -60,15 +57,33 @@ const places: CoursePlace[] = [
     id: "1",
     name: "성심당 본점",
     address: "대전 중구 대종로480번길 15",
+    recommendReason: "대표 메뉴와 전통 베이커리 분위기를 함께 즐길 수 있어요",
     menu: "소보로, 튀김소보로",
+    congestionLevel: "HIGH",
   },
-  { id: "2", name: "몽심 대흥점", address: "대전 중구 중교로 32 1층", menu: "크루아상, 스콘" },
-  { id: "3", name: "땡큐베리머치", address: "대전 중구 중교로 49", menu: "케이크, 마카롱" },
+  {
+    id: "2",
+    name: "몽심 대흥점",
+    address: "대전 중구 중교로 32 1층",
+    recommendReason: "바삭한 크루아상과 스콘이 인기 있는 동네 베이커리예요",
+    menu: "크루아상, 스콘",
+    congestionLevel: "MEDIUM",
+  },
+  {
+    id: "3",
+    name: "땡큐베리머치",
+    address: "대전 중구 중교로 49",
+    recommendReason: "케이크와 마카롱으로 달콤한 디저트 타임을 보내기 좋아요",
+    menu: "케이크, 마카롱",
+    congestionLevel: "LOW",
+  },
   {
     id: "4",
     name: "뮤제 베이커리",
     address: "대전 중구 대흥로121번길 44",
+    recommendReason: "감성적인 공간에서 마들렌과 샌드위치를 즐길 수 있어요",
     menu: "마들렌, 샌드위치",
+    congestionLevel: "MEDIUM",
   },
 ];
 
@@ -180,7 +195,10 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
 
   useEffect(() => {
     const bakeryIds =
-      courseDetail?.bakeries?.map((bakery) => bakery.id).filter((id) => id > 0) ?? [];
+      courseDetail?.bakeries
+        ?.filter((bakery) => !bakery.recommendedBread?.trim())
+        .map((bakery) => bakery.id)
+        .filter((id) => id > 0) ?? [];
     if (bakeryIds.length === 0) {
       setSignatureMenuByBakeryId(new Map());
       return;
@@ -228,11 +246,13 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     return courseDetail.bakeries.map((bakery, index) => {
       const congestion = congestionByBakeryId.get(bakery.id);
       const signatureMenu = signatureMenuByBakeryId.get(bakery.id)?.trim() ?? "";
+      const recommendedBread = bakery.recommendedBread?.trim() ?? "";
       return {
         id: String(bakery.id ?? index + 1),
         name: bakery.name || `빵집 ${index + 1}`,
         address: bakery.address || "",
-        menu: signatureMenu,
+        recommendReason: bakery.reason?.trim() ?? "",
+        menu: recommendedBread || signatureMenu,
         congestionLevel: congestion?.level,
         expectedWaitMin: congestion?.expectedWaitMin,
       };
@@ -251,16 +271,16 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
   const displayRecommendReason =
     courseDetail?.recommendReason?.trim() || (useDevFallbackContent ? devRecommendReason : null);
 
-  const departurePoint = useMemo(() => {
-    const stored = getLatestAiCourseDepartureCoords();
-    if (!stored) return null;
-
-    return {
-      lat: stored.latitude,
-      lng: stored.longitude,
-      label: stored.markerLabel?.trim() || getAiCourseDepartureMarkerLabel() || "출발지",
-    };
-  }, []);
+  const departurePoint = useMemo(
+    () =>
+      resolveAiCourseDeparturePoint({
+        courseId: effectiveCourseId,
+        departureLatitude: courseDetail?.departureLatitude,
+        departureLongitude: courseDetail?.departureLongitude,
+        allowLatestFallback: !effectiveCourseId,
+      }),
+    [effectiveCourseId, courseDetail?.departureLatitude, courseDetail?.departureLongitude],
+  );
 
   const [showSavedBanner, setShowSavedBanner] = useState(false);
   const [activeTourConflictOpen, setActiveTourConflictOpen] = useState(false);
@@ -447,6 +467,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
           departurePoint={departurePoint}
           className="h-full w-full"
           isLoading={mapLoading && mapBakeries.length === 0}
+          layoutKey={mapHeightPx}
         />
       </div>
 

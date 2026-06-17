@@ -3,6 +3,7 @@ export interface CoursePlace {
   name: string;
   address: string;
   menu: string;
+  recommendReason?: string;
   congestionLevel?: string | null;
   congestionLabel?: string | null;
   expectedWaitMin?: number | null;

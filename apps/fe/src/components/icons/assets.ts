@@ -35,6 +35,7 @@ export { default as IcMenu } from "@/assets/icons/Ic_Menu.svg";
 export { default as IcMinus } from "@/assets/icons/Ic_Minus.svg";
 export { default as IcNoticeCircle } from "@/assets/icons/Ic_NoticeCircle.svg";
 export { default as IcPerson } from "@/assets/icons/Ic_Person.svg";
+export { default as IcPersons } from "@/assets/icons/Ic_Persons.svg";
 export { default as IcPin } from "@/assets/icons/Ic_Pin.svg";
 export { default as IcPhone } from "@/assets/icons/Ic_Phone.svg";
 export { default as IcPlus } from "@/assets/icons/Ic_Plus.svg";

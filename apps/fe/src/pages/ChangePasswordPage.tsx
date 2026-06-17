@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getErrorMessage } from "@/api/types/common";
-import { updateMyPassword } from "@/api/user";
+import { getMyProfile, updateMyPassword } from "@/api/user";
 import { AppTopBar, BottomCTA, FieldLabel, PasswordField } from "@/components/common";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { useNavigate } from "@tanstack/react-router";
@@ -22,6 +22,28 @@ export default function ChangePasswordPage() {
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    void getMyProfile()
+      .then((profile) => {
+        if (!active) return;
+        if (profile.socialUser) {
+          window.alert("소셜 로그인 계정은 비밀번호 변경을 지원하지 않습니다.");
+          void navigate({ to: "/account-settings", replace: true });
+        }
+      })
+      .catch(() => {
+        /* 계정 설정에서 진입한 일반 회원은 그대로 진행 */
+      })
+      .finally(() => {
+        if (active) setProfileLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [navigate]);
 
   const passwordMessage = useMemo(() => {
     if (!newPassword) return "8~16자의 영문 대/소문자, 숫자, 특수문자를 사용해 주세요.";
@@ -46,6 +68,7 @@ export default function ChangePasswordPage() {
   const passwordConfirmMatches =
     newPassword.length > 0 && newPasswordConfirm.length > 0 && newPassword === newPasswordConfirm;
   const canSubmit =
+    !profileLoading &&
     currentPassword.trim().length > 0 &&
     isPasswordValid(newPassword) &&
     passwordConfirmMatches &&
@@ -87,6 +110,7 @@ export default function ChangePasswordPage() {
             placeholder="현재 비밀번호를 입력해주세요"
             value={currentPassword}
             onChange={setCurrentPassword}
+            autoComplete="current-password"
           />
         </section>
 
@@ -97,6 +121,7 @@ export default function ChangePasswordPage() {
               placeholder="새 비밀번호를 입력해주세요"
               value={newPassword}
               onChange={setNewPassword}
+              autoComplete="new-password"
               borderClassName={
                 !newPassword
                   ? "border-gray-400"
@@ -114,6 +139,7 @@ export default function ChangePasswordPage() {
               placeholder="새 비밀번호를 한 번 더 입력해주세요"
               value={newPasswordConfirm}
               onChange={setNewPasswordConfirm}
+              autoComplete="new-password"
               borderClassName={
                 !newPasswordConfirm
                   ? "border-gray-400"

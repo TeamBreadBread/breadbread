@@ -7,6 +7,7 @@ import MobileFrame from "@/components/layout/MobileFrame";
 import { useNavigate } from "@tanstack/react-router";
 import { buildBbakeryDetailSearch } from "@/utils/bakeryListEntry";
 import { resolveThumbnailDongAddress } from "@/utils/formatCurationAddress";
+import { resolveBakeryReviewCount, shouldShowBakeryRating } from "@/utils/bakeryRating";
 
 const PAGE_SIZE = 10;
 
@@ -89,9 +90,11 @@ export default function LikedBakeriesPage() {
                     {resolveThumbnailDongAddress(bakery.address, bakery.dong, bakery.name)}
                   </p>
                 </div>
-                <span className="rounded-full bg-[#fff4da] px-x3 py-x1 typo-t3medium text-[#9a5a00]">
-                  평점 {Number(bakery.rating ?? 0).toFixed(1)}
-                </span>
+                {shouldShowBakeryRating(resolveBakeryReviewCount(bakery.reviewCount)) ? (
+                  <span className="rounded-full bg-[#fff4da] px-x3 py-x1 typo-t3medium text-[#9a5a00]">
+                    평점 {Number(bakery.rating ?? 0).toFixed(1)}
+                  </span>
+                ) : null}
               </div>
 
               <p className="mt-x4 typo-t3regular text-gray-700">

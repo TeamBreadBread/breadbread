@@ -6,7 +6,7 @@ import Skeleton from "@/components/common/skeleton/Skeleton";
 import { useBakeries } from "@/hooks/useBakeries";
 import { useBakeriesSummary } from "@/hooks/useBakeriesSummary";
 import { resolveThumbnailDongAddress } from "@/utils/formatCurationAddress";
-import { resolveBakeryRating } from "@/utils/bakeryRating";
+import { resolveBakeryRating, resolveBakeryReviewCount } from "@/utils/bakeryRating";
 import { getSafeImageUrl } from "@/utils/safeImageUrl";
 import { buildBbakeryDetailSearch, type BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import {
@@ -54,6 +54,7 @@ function mapListItemToCurationItem(b: BakeryListItem, dongCardLabel?: string): C
     title: b.name,
     address,
     rate: resolveBakeryRating(b.rating),
+    reviewCount: resolveBakeryReviewCount(b.reviewCount),
     imageUrl: getSafeImageUrl(rawImage ?? undefined) ?? null,
   };
 }
@@ -66,6 +67,7 @@ function mapSummaryItemToCurationItem(b: BakerySummaryItem, dongCardLabel?: stri
     title: b.name,
     address,
     rate: resolveBakeryRating(b.rating),
+    reviewCount: undefined,
     imageUrl: getSafeImageUrl(rawImage ?? undefined) ?? null,
   };
 }

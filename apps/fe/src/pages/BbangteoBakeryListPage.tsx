@@ -33,6 +33,7 @@ import {
   formatBakeryRating,
   resolveBakeryRating,
   resolveBakeryReviewCount,
+  shouldShowBakeryRating,
 } from "@/utils/bakeryRating";
 import { isListItemOpenNow } from "@/utils/bakeryBusinessHours";
 
@@ -333,29 +334,42 @@ const BakeryMeta = ({
   reviewCount,
   bookmarkCount,
   liked,
-}: Pick<BakeryRow, "rating" | "reviewCount" | "bookmarkCount" | "liked">) => (
-  <div className="flex h-[18px] items-center gap-[4px]">
-    <div className="flex items-center gap-[2px]">
-      <AppIcon src={IconAssets.IcStar} size={14} className="icon-orange-600 shrink-0" alt="" />
-      <span className="text-[13px] leading-[18px] text-[#868b94]">
-        {formatBakeryRating(rating)}
-      </span>
-      <span className="text-[13px] leading-[18px] text-[#868b94]">
-        ({reviewCount.toLocaleString()})
-      </span>
+}: Pick<BakeryRow, "rating" | "reviewCount" | "bookmarkCount" | "liked">) => {
+  const showRating = shouldShowBakeryRating(reviewCount);
+
+  return (
+    <div className="flex h-[18px] items-center gap-[4px]">
+      {showRating ? (
+        <>
+          <div className="flex items-center gap-[2px]">
+            <AppIcon
+              src={IconAssets.IcStar}
+              size={14}
+              className="icon-orange-600 shrink-0"
+              alt=""
+            />
+            <span className="text-[13px] leading-[18px] text-[#868b94]">
+              {formatBakeryRating(rating)}
+            </span>
+            <span className="text-[13px] leading-[18px] text-[#868b94]">
+              ({reviewCount.toLocaleString()})
+            </span>
+          </div>
+          <span className="text-[13px] leading-[18px] text-[#868b94]">·</span>
+        </>
+      ) : null}
+      <div className="flex items-center gap-[2px]">
+        <AppIcon
+          src={IconAssets.IcHeart}
+          size={14}
+          className={cn("shrink-0", liked ? "icon-orange-600" : "icon-gray-600 opacity-60")}
+          alt=""
+        />
+        <span className="text-[13px] leading-[18px] text-[#868b94]">{bookmarkCount}</span>
+      </div>
     </div>
-    <span className="text-[13px] leading-[18px] text-[#868b94]">·</span>
-    <div className="flex items-center gap-[2px]">
-      <AppIcon
-        src={IconAssets.IcHeart}
-        size={14}
-        className={cn("shrink-0", liked ? "icon-orange-600" : "icon-gray-600 opacity-60")}
-        alt=""
-      />
-      <span className="text-[13px] leading-[18px] text-[#868b94]">{bookmarkCount}</span>
-    </div>
-  </div>
-);
+  );
+};
 
 const BakeryImageRow = ({
   images,

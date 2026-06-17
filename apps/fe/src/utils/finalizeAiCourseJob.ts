@@ -1,6 +1,10 @@
 import { getCourseDetail, saveAiCourse, saveCourseRoute } from "@/api/courses";
 import { pollAiCourseStatus } from "@/utils/pollAiCourseStatus";
 import {
+  readAiCourseDepartureForJob,
+  saveAiCourseDepartureForCourse,
+} from "@/lib/aiCourseDepartureCoords";
+import {
   AI_COURSE_RESULT_STORAGE_KEY,
   clearAiCoursePendingJobId,
   saveAiCourseJobCourseId,
@@ -10,6 +14,10 @@ import {
 export async function finalizeAiCourseJob(jobId: string): Promise<number> {
   await pollAiCourseStatus(jobId);
   const courseId = await saveAiCourse(jobId);
+  const departure = readAiCourseDepartureForJob(jobId);
+  if (departure) {
+    saveAiCourseDepartureForCourse(courseId, departure);
+  }
   const [, courseDetail] = await Promise.all([
     saveCourseRoute(courseId).catch(() => undefined),
     getCourseDetail(courseId),

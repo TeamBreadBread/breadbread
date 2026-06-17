@@ -13,6 +13,15 @@ const LEVEL_BADGE_CLASS: Record<string, string> = {
   HIGH: "bg-red-50 text-red-700",
 };
 
+export function formatCongestionTimelineLabel(level?: string | null): string {
+  if (!level?.trim()) return "혼잡도 정보 없음";
+  const key = level.trim().toUpperCase();
+  if (key === "LOW") return "혼잡도 낮음";
+  if (key === "MEDIUM") return "혼잡도 보통";
+  if (key === "HIGH" || key === "CRITICAL") return "혼잡도 높음";
+  return `혼잡도 ${formatCongestionLevel(level)}`;
+}
+
 export function formatCongestionLevel(level?: string | null): string {
   if (!level?.trim()) return "정보 없음";
   const key = level.trim().toUpperCase();

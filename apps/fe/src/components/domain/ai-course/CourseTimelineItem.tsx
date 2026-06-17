@@ -1,7 +1,8 @@
-import bestBreadIcon from "@/assets/icons/bestBreadIcon.svg";
-import CongestionBadge from "@/components/common/CongestionBadge";
+import type { ReactNode } from "react";
+import CongestionInfoTooltip from "@/components/domain/ai-course/CongestionInfoTooltip";
 import { AppIcon, IconAssets } from "@/components/icons";
 import { getCourseOrderBadgeBgClass } from "@/lib/courseOrderMarkerPalette";
+import { formatCongestionTimelineLabel } from "@/utils/congestionCheck";
 import { cn } from "@/utils/cn";
 
 interface CourseTimelineItemProps {
@@ -16,6 +17,23 @@ interface CourseTimelineItemProps {
   onMoveDown?: () => void;
 }
 
+function TimelineInfoRow({
+  icon,
+  iconColor,
+  children,
+}: {
+  icon: string;
+  iconColor?: "gray-600" | "orange-600";
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-x1">
+      <AppIcon src={icon} size={14} color={iconColor ?? "gray-600"} className="mt-[2px] shrink-0" />
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
+  );
+}
+
 export default function CourseTimelineItem({
   index,
   place,
@@ -27,8 +45,13 @@ export default function CourseTimelineItem({
   onMoveUp,
   onMoveDown,
 }: CourseTimelineItemProps) {
-  const clickableClass = onClick ? "cursor-pointer hover:bg-[#f0f3f7]" : "";
+  const clickableClass = onClick ? "cursor-pointer hover:bg-[#fafbfc]" : "";
   const badgeBgClass = getCourseOrderBadgeBgClass(index);
+  const recommendReason = place.recommendReason?.trim() ?? "";
+  const menuLabel = place.menu.trim();
+  const congestionLabel =
+    place.congestionLabel?.trim() || formatCongestionTimelineLabel(place.congestionLevel);
+
   return (
     <div className="flex items-start gap-x1">
       <div className="flex items-center justify-start p-x2">
@@ -45,41 +68,38 @@ export default function CourseTimelineItem({
           type="button"
           onClick={onClick}
           disabled={!onClick}
-          className={`min-w-0 flex-1 rounded-r2 border border-[#f3f4f5] bg-[#f7f8f9] p-x4 text-left ${clickableClass}`}
+          className={cn(
+            "min-w-0 flex-1 rounded-r2 border border-[#eeeff1] bg-white p-x4 text-left shadow-[0_1px_2px_rgba(26,31,39,0.04)]",
+            clickableClass,
+          )}
         >
-          <div className="flex flex-wrap items-center gap-x1">
-            <div className="font-pretendard typo-t5bold text-[#1a1c20]">{place.name}</div>
-            <CongestionBadge
-              level={place.congestionLevel}
-              expectedWaitMin={place.expectedWaitMin}
-            />
-          </div>
+          <div className="font-pretendard typo-t5bold text-[#1a1c20]">{place.name}</div>
 
-          <div className="mt-x1_5 flex flex-col gap-x1">
-            <div className="flex items-start gap-x1">
-              <AppIcon
-                src={IconAssets.IcPin}
-                size={14}
-                color="gray-600"
-                className="mt-[2px] shrink-0"
-              />
-              <span className="flex-1 font-pretendard typo-t3regular text-[#555d6d]">
-                {place.address}
-              </span>
-            </div>
-            {place.menu.trim() ? (
-              <div className="flex items-start gap-x1">
-                <img
-                  src={bestBreadIcon}
-                  alt=""
-                  aria-hidden
-                  className="icon-gray-600 h-x4 w-x4 shrink-0 object-contain"
-                />
-                <span className="flex-1 font-pretendard typo-t3regular text-[#555d6d]">
-                  {place.menu}
-                </span>
-              </div>
+          <div className="mt-x2 flex flex-col gap-x1_5">
+            {recommendReason ? (
+              <TimelineInfoRow icon={IconAssets.IcAi} iconColor="orange-600">
+                <p className="line-clamp-2 font-pretendard typo-t3regular leading-t4 text-[#555d6d]">
+                  {recommendReason}
+                </p>
+              </TimelineInfoRow>
             ) : null}
+
+            {menuLabel ? (
+              <TimelineInfoRow icon={IconAssets.IcBread}>
+                <p className="font-pretendard typo-t3regular leading-t4 text-[#555d6d]">
+                  {menuLabel}
+                </p>
+              </TimelineInfoRow>
+            ) : null}
+
+            <TimelineInfoRow icon={IconAssets.IcPersons}>
+              <div className="flex flex-wrap items-center gap-x1">
+                <span className="font-pretendard typo-t3regular leading-t4 text-[#555d6d]">
+                  {congestionLabel}
+                </span>
+                <CongestionInfoTooltip />
+              </div>
+            </TimelineInfoRow>
           </div>
         </button>
 

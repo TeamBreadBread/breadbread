@@ -52,6 +52,8 @@ export type CourseBakeryDetail = {
   closeTime: string;
   likeCount: number;
   liked: boolean;
+  reason?: string | null;
+  recommendedBread?: string | null;
 };
 
 export type CourseDetail = {
@@ -64,6 +66,9 @@ export type CourseDetail = {
   likeCount: number;
   liked: boolean;
   recommendReason?: string | null;
+  summary?: string | null;
+  departureLatitude?: number | null;
+  departureLongitude?: number | null;
   bakeries: CourseBakeryDetail[];
 };
 
