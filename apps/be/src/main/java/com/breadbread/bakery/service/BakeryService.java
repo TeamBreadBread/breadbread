@@ -364,6 +364,7 @@ public class BakeryService {
                     e.getMessage());
             throw new CustomException(ErrorCode.ALREADY_LIKED);
         }
+        log.info("빵집 좋아요: bakeryId={}, userId={}", bakeryId, userId);
     }
 
     @Transactional
@@ -373,6 +374,7 @@ public class BakeryService {
                         .findByBakeryIdAndUserId(bakeryId, userId)
                         .orElseThrow(() -> new CustomException(ErrorCode.NOT_LIKED));
         bakeryLikeRepository.delete(like);
+        log.info("빵집 좋아요 취소: bakeryId={}, userId={}", bakeryId, userId);
     }
 
     @Transactional(readOnly = true)
@@ -431,25 +433,47 @@ public class BakeryService {
     }
 
     @Transactional
-    public void approveBakery(Long bakeryId) {
-        Bakery bakery =
-                bakeryRepository
-                        .findByIdAndActiveTrue(bakeryId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
-        if (bakery.getStatus() != BakeryStatus.PENDING) {
-            throw new CustomException(ErrorCode.BAKERY_NOT_PENDING);
+    public ApproveBakeriesResponse approveAllPendingBakeries() {
+        List<Long> ids =
+                bakeryRepository.findAllByActiveTrueAndStatus(BakeryStatus.PENDING).stream()
+                        .map(Bakery::getId)
+                        .toList();
+        return approveBakeries(ids);
+    }
+
+    @Transactional
+    public ApproveBakeriesResponse approveBakeries(List<Long> bakeryIds) {
+        List<ApproveBakeriesResponse.SkippedBakery> skipped = new ArrayList<>();
+        int successCount = 0;
+        for (Long id : bakeryIds) {
+            Bakery bakery =
+                    bakeryRepository
+                            .findByIdAndActiveTrue(id)
+                            .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
+            if (bakery.getStatus() != BakeryStatus.PENDING
+                    || bakery.getName() == null
+                    || bakery.getAddress() == null
+                    || bakery.getLatitude() == 0.0
+                    || bakery.getLongitude() == 0.0
+                    || bakery.getRegion() == null
+                    || bakery.getDong() == null
+                    || bakery.getBakeryType() == null) {
+                skipped.add(
+                        ApproveBakeriesResponse.SkippedBakery.builder()
+                                .id(bakery.getId())
+                                .name(bakery.getName())
+                                .build());
+                continue;
+            }
+            bakery.approve();
+            successCount++;
         }
-        if (bakery.getName() == null
-                || bakery.getAddress() == null
-                || bakery.getLatitude() == 0.0
-                || bakery.getLongitude() == 0.0
-                || bakery.getRegion() == null
-                || bakery.getDong() == null
-                || bakery.getBakeryType() == null) {
-            throw new CustomException(ErrorCode.BAKERY_APPROVE_INCOMPLETE);
-        }
-        bakery.approve();
-        log.info("빵집 승인: bakeryId={}", bakeryId);
+        log.info("빵집 일괄 승인: 성공={}, 스킵={}", successCount, skipped.size());
+        return ApproveBakeriesResponse.builder()
+                .successCount(successCount)
+                .skipCount(skipped.size())
+                .skippedBakeries(skipped)
+                .build();
     }
 
     @Transactional

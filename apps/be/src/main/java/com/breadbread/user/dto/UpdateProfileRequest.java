@@ -19,6 +19,5 @@ public class UpdateProfileRequest {
     private String email;
 
     @Schema(description = "프로필 이미지 URL", example = "https://storage.example.com/profile/abc.jpg")
-    @NotBlankIfPresent
     private String profileImageUrl;
 }

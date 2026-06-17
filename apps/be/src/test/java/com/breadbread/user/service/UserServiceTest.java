@@ -40,6 +40,8 @@ import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.course.repository.RouteRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.image.service.GcsService;
+import com.breadbread.image.service.TempImageService;
 import com.breadbread.user.dto.ChangePasswordRequest;
 import com.breadbread.user.dto.ChangePhoneRequest;
 import com.breadbread.user.dto.CreatePreferenceRequest;
@@ -82,6 +84,8 @@ class UserServiceTest {
     @Mock private CourseRepository courseRepository;
     @Mock private RouteRepository routeRepository;
     @Mock private BakeryImageUrlResolver bakeryImageUrlResolver;
+    @Mock private GcsService gcsService;
+    @Mock private TempImageService tempImageService;
     @Mock private PostRepository postRepository;
     @Mock private PostLikeRepository postLikeRepository;
     @Mock private CommentRepository commentRepository;
@@ -235,6 +239,38 @@ class UserServiceTest {
 
         verify(userRepository, never()).existsByNicknameAndIdNot(any(), any());
         assertThat(user.getEmail()).isEqualTo("new@test.com");
+    }
+
+    @Test
+    void updateProfile_clearsProfileImage_andDeletesGcs_whenEmptyStringProvided() {
+        User user = user(1L);
+        ReflectionTestUtils.setField(user, "profileImageUrl", "https://gcs/old.jpg");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        UpdateProfileRequest request = new UpdateProfileRequest();
+        ReflectionTestUtils.setField(request, "profileImageUrl", "");
+
+        userService.updateProfile(1L, request);
+
+        assertThat(user.getProfileImageUrl()).isNull();
+        verify(gcsService).deleteQuietly("https://gcs/old.jpg");
+        verify(tempImageService, never()).consumeOwnedImages(any(), any(), any());
+    }
+
+    @Test
+    void updateProfile_doesNotTouchGcs_whenProfileImageNotProvided() {
+        User user = user(1L);
+        ReflectionTestUtils.setField(user, "profileImageUrl", "https://gcs/old.jpg");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        UpdateProfileRequest request = new UpdateProfileRequest();
+        ReflectionTestUtils.setField(request, "nickname", "newNick");
+
+        userService.updateProfile(1L, request);
+
+        assertThat(user.getProfileImageUrl()).isEqualTo("https://gcs/old.jpg");
+        verify(gcsService, never()).deleteQuietly(any());
+        verify(tempImageService, never()).consumeOwnedImages(any(), any(), any());
     }
 
     // ───────────────────────────── changePhone ─────────────────────────────
