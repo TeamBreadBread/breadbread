@@ -193,7 +193,7 @@ public class UserService {
                             userId, List.of(newProfileImageUrl), UploadFolder.profiles);
                 }
                 if (oldProfileImageUrl != null && !oldProfileImageUrl.isBlank()) {
-                    gcsService.deleteQuietly(oldProfileImageUrl);
+                    gcsService.deleteVerifiedQuietly(oldProfileImageUrl);
                 }
             }
         } catch (DataIntegrityViolationException e) {
