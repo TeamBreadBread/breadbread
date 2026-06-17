@@ -88,7 +88,10 @@ public class User extends BaseEntity {
     public void updateProfile(UpdateProfileRequest req) {
         if (req.getNickname() != null) this.nickname = req.getNickname();
         if (req.getEmail() != null) this.email = req.getEmail();
-        if (req.getProfileImageUrl() != null) this.profileImageUrl = req.getProfileImageUrl();
+        if (req.getProfileImageUrl() != null) {
+            this.profileImageUrl =
+                    req.getProfileImageUrl().isBlank() ? null : req.getProfileImageUrl();
+        }
     }
 
     public void updatePhone(String phone) {

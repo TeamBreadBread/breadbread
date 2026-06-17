@@ -16,6 +16,8 @@ export type MyProfileResponse = {
   nickname?: string | null;
   grade?: string | null;
   profileImageUrl?: string | null;
+  /** 소셜 로그인(Google/Kakao 등) 계정 — 로컬 비밀번호 없음 */
+  socialUser?: boolean;
 };
 
 export type UpdateMyProfileRequest = {
@@ -182,16 +184,31 @@ export async function getMyProfile(): Promise<MyProfileResponse> {
   return inflightMyProfile;
 }
 
-function omitBlankOptionalStrings(body: UpdateMyProfileRequest): UpdateMyProfileRequest {
-  return Object.fromEntries(
-    Object.entries(body).filter(([, value]) => typeof value !== "string" || value.trim() !== ""),
-  ) as UpdateMyProfileRequest;
+function buildUpdateMyProfilePayload(body: UpdateMyProfileRequest): UpdateMyProfileRequest {
+  const payload: UpdateMyProfileRequest = {};
+
+  if (body.nickname !== undefined) {
+    const trimmed = body.nickname.trim();
+    if (trimmed) payload.nickname = trimmed;
+  }
+
+  if (body.email !== undefined) {
+    const trimmed = body.email.trim();
+    if (trimmed) payload.email = trimmed;
+  }
+
+  // 빈 문자열은 "기본 이미지로 변경" 의도 — 서버에서 null 처리
+  if (body.profileImageUrl !== undefined) {
+    payload.profileImageUrl = body.profileImageUrl.trim();
+  }
+
+  return payload;
 }
 
 export async function updateMyProfile(body: UpdateMyProfileRequest): Promise<void> {
   const { data } = await apiClient.patch<ApiEnvelope<Record<string, never>>>(
     `${PATH}/me`,
-    omitBlankOptionalStrings(body),
+    buildUpdateMyProfilePayload(body),
   );
   extractData(data);
 }

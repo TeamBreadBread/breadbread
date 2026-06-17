@@ -63,11 +63,15 @@ export default function AccountSettingsPage() {
     { id: "payment", label: "결제 수단 관리", showArrow: false },
   ];
   const accountItems: AccountInfo[] = [
-    {
-      id: "password",
-      label: "비밀번호 변경",
-      onClick: () => navigate({ to: "/account-settings/password" }),
-    },
+    ...(profile != null && !profile.socialUser
+      ? [
+          {
+            id: "password",
+            label: "비밀번호 변경",
+            onClick: () => navigate({ to: "/account-settings/password" }),
+          },
+        ]
+      : []),
     { id: "withdraw", label: "회원 탈퇴", danger: true, showArrow: false },
   ];
 
@@ -85,9 +89,14 @@ export default function AccountSettingsPage() {
           <div className="bg-white">
             <AccountProfileSection
               profileImageUrl={
-                profile?.profileImageUrl?.trim() ||
-                cachedProfile?.profileImageUrl?.trim() ||
-                undefined
+                profile
+                  ? profile.profileImageUrl?.trim() || null
+                  : cachedProfile?.profileImageUrl?.trim() || null
+              }
+              profileAvatarSeed={
+                profile?.loginId?.trim() ||
+                cachedProfile?.loginId?.trim() ||
+                profile?.userId?.toString()
               }
               onEdit={() => navigate({ to: "/account-settings/profile" })}
             />

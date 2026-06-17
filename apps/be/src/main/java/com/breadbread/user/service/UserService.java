@@ -183,9 +183,11 @@ public class UserService {
             userRepository.saveAndFlush(user);
 
             if (newProfileImageUrl != null && !newProfileImageUrl.equals(oldProfileImageUrl)) {
-                tempImageService.consumeOwnedImages(
-                        userId, List.of(newProfileImageUrl), UploadFolder.profiles);
-                if (oldProfileImageUrl != null) {
+                if (!newProfileImageUrl.isBlank()) {
+                    tempImageService.consumeOwnedImages(
+                            userId, List.of(newProfileImageUrl), UploadFolder.profiles);
+                }
+                if (oldProfileImageUrl != null && !oldProfileImageUrl.isBlank()) {
                     gcsService.deleteQuietly(oldProfileImageUrl);
                 }
             }
