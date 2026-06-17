@@ -31,8 +31,8 @@ export type PreparePaymentResponse = {
   amount: number;
   paymentMethod: PreparePaymentMethod;
   pgProvider: string;
-  customerName: string;
-  customerPhone: string;
+  customerName: string | null;
+  customerPhone: string | null;
   storeId: string | null;
   channelKey: string | null;
 };

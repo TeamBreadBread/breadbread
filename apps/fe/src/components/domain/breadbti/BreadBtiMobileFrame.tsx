@@ -24,9 +24,11 @@ export default function BreadBtiMobileFrame({
   fromBbangteo,
   fromAiGenerating,
 }: BreadBtiMobileFrameProps) {
-  const showBbangteoChrome = fromBbangteo ?? isBreadBtiFromBbangteo();
-  const showAiGeneratingChrome =
-    !showBbangteoChrome && (fromAiGenerating ?? isBreadBtiFromAiGenerating());
+  const showBbangteoChrome =
+    !fromAiGenerating &&
+    !isBreadBtiFromAiGenerating() &&
+    (fromBbangteo ?? isBreadBtiFromBbangteo());
+  const showAiGeneratingChrome = fromAiGenerating ?? isBreadBtiFromAiGenerating();
 
   return (
     <MobileFrame

@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import BreadBtiMobileFrame from "@/components/domain/breadbti/BreadBtiMobileFrame";
+import { breadBtiFlowNavigateOptions } from "@/lib/breadbti/flowNavigation";
 import { BREAD_BTI_RESULT_STORAGE_KEY } from "@/lib/breadbti/paths";
 
 export default function BreadBtiLoadingPage() {
@@ -10,7 +11,7 @@ export default function BreadBtiLoadingPage() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      void navigate({ to: "/breadbti/result" });
+      void navigate(breadBtiFlowNavigateOptions("/breadbti/result"));
     }, 3000);
 
     return () => window.clearTimeout(timer);

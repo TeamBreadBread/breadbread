@@ -39,6 +39,6 @@ export async function completeSocialLogin(
   setSessionTokens(tokens);
   markGa4FirstActionAfterLoginPending();
   onAuthSessionEstablished();
-  refreshProfileCacheFromServer();
+  await refreshProfileCacheFromServer();
   await goAfterLogin(navigate, postLogin);
 }

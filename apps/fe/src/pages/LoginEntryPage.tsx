@@ -69,11 +69,11 @@ export default function LoginEntryPage() {
       return;
     }
     if (provider === "kakao") {
-      void startKakaoLogin();
+      void startKakaoLogin(redirect);
       return;
     }
     if (provider === "google") {
-      void startGoogleLogin();
+      void startGoogleLogin(redirect);
       return;
     }
   };

@@ -4,9 +4,14 @@ import PortOne from "@portone/browser-sdk/v2";
 import { getCourseDetail, type CourseDetail } from "@/api/courses";
 import { completePayment, preparePayment, type PreparePaymentMethodDetail } from "@/api/payments";
 import { createReservation, getReservationById, type ReservationDetail } from "@/api/reservation";
+import { getMyProfile } from "@/api/user";
 import { getErrorMessage } from "@/api/types/common";
+import ComingSoonDialog from "@/components/common/dialog/ComingSoonDialog";
 import { PortOneCredentialsModal } from "@/components/payment/PortOneCredentialsModal";
-import { buildTaxiPortOnePaymentRequest } from "@/lib/buildPortonePaymentRequest";
+import {
+  buildTaxiPortOnePaymentRequest,
+  resolvePaymentCustomerPhone,
+} from "@/lib/buildPortonePaymentRequest";
 import { resolvePortOneBrowserKeys } from "@/lib/portoneSettings";
 import { writeTaxiReturnPayload } from "@/lib/portoneTaxiReturn";
 import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
@@ -35,6 +40,11 @@ const PAYMENT_METHODS = [
   "휴대폰 결제",
 ] as const;
 
+const AVAILABLE_PAYMENT_METHOD = "토스페이";
+
+const PAYMENT_COMING_SOON_MESSAGE =
+  "해당 결제 수단은 아직 준비 중입니다. 토스페이를 이용해 주세요.";
+
 const PAYMENT_PREPARE_MAP: Record<
   (typeof PAYMENT_METHODS)[number],
   { method: "CARD" | "EASY_PAY" | "VIRTUAL_ACCOUNT" | "MOBILE"; detail: PreparePaymentMethodDetail }
@@ -46,6 +56,24 @@ const PAYMENT_PREPARE_MAP: Record<
   "무통장 입금": { method: "VIRTUAL_ACCOUNT", detail: "BANK_TRANSFER" },
   "휴대폰 결제": { method: "MOBILE", detail: "MOBILE" },
 };
+
+const MOBILE_PAYMENT_LABEL = "휴대폰 결제";
+
+const PHONE_REQUIRED_MESSAGE =
+  "휴대폰 결제에는 등록된 연락처가 필요합니다. 계정 설정에서 전화번호를 등록한 뒤 다시 시도해 주세요.";
+
+function formatPaymentSubmitError(error: unknown): string {
+  if (error instanceof TypeError || error instanceof ReferenceError) {
+    return "결제에 필요한 정보가 누락되었습니다. 계정 설정에서 연락처를 확인해 주세요.";
+  }
+  if (error instanceof Error) {
+    const msg = error.message;
+    if (/null is not an object|undefined is not an object|cannot read propert/i.test(msg)) {
+      return "결제에 필요한 정보가 누락되었습니다. 계정 설정에서 연락처를 확인해 주세요.";
+    }
+  }
+  return getErrorMessage(error);
+}
 
 function formatKoreanTime(value: string) {
   if (!value) return "";
@@ -111,6 +139,28 @@ export default function TaxiPaymentPage({
   const [reservationDetail, setReservationDetail] = useState<ReservationDetail | null>(null);
   const [courseFromApi, setCourseFromApi] = useState<CourseDetail | null>(null);
   const [portoneModalOpen, setPortoneModalOpen] = useState(false);
+  const [paymentComingSoonOpen, setPaymentComingSoonOpen] = useState(false);
+  const [profilePhone, setProfilePhone] = useState<string | null>(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    void getMyProfile()
+      .then((profile) => {
+        if (!cancelled) {
+          setProfilePhone(profile.phone?.trim() || null);
+        }
+      })
+      .catch(() => {
+        /* 결제 시 prepare 응답·프로필 재확인 */
+      })
+      .finally(() => {
+        if (!cancelled) setIsProfileLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (courseId <= 0) return;
@@ -131,7 +181,11 @@ export default function TaxiPaymentPage({
   const coursePreview = courseFromApi ?? sessionCourse;
 
   const allTermsAgreed = agreeTerms && agreePrivacy && agreeRefund;
-  const isPayEnabled = selectedMethod !== null && allTermsAgreed && !isSubmitting;
+  const isMobilePaymentSelected = selectedMethod === MOBILE_PAYMENT_LABEL;
+  const hasRegisteredPhone = Boolean(resolvePaymentCustomerPhone(undefined, profilePhone));
+  const mobilePaymentBlocked = isMobilePaymentSelected && !isProfileLoading && !hasRegisteredPhone;
+  const isPayEnabled =
+    selectedMethod !== null && allTermsAgreed && !isSubmitting && !mobilePaymentBlocked;
 
   const displayDate = formatPaymentDate(departureDate) || formatPaymentDate("2026-04-29");
   const displayTime = formatKoreanTime(departureTime) || "15:00";
@@ -155,6 +209,14 @@ export default function TaxiPaymentPage({
     setAgreeTerms(next);
     setAgreePrivacy(next);
     setAgreeRefund(next);
+  };
+
+  const handleSelectPaymentMethod = (label: (typeof PAYMENT_METHODS)[number]) => {
+    if (label !== AVAILABLE_PAYMENT_METHOD) {
+      setPaymentComingSoonOpen(true);
+      return;
+    }
+    setSelectedMethod(label);
   };
 
   return (
@@ -257,7 +319,7 @@ export default function TaxiPaymentPage({
                 <button
                   key={label}
                   type="button"
-                  onClick={() => setSelectedMethod(label)}
+                  onClick={() => handleSelectPaymentMethod(label)}
                   className={cn(
                     "flex min-h-[64px] w-full flex-col items-center justify-center rounded-[8px] border border-solid bg-white px-[20px] pt-[10px] pb-[12px] text-center transition-colors",
                     selected ? "border-[#2a3038]" : "border-[#dcdee3]",
@@ -332,6 +394,18 @@ export default function TaxiPaymentPage({
               </span>
             </div>
           ))}
+          {mobilePaymentBlocked ? (
+            <p className="font-['Pretendard',sans-serif] text-[14px] leading-[19px] text-[#555d6d]">
+              {PHONE_REQUIRED_MESSAGE}{" "}
+              <button
+                type="button"
+                className="font-medium text-orange-600 underline underline-offset-2"
+                onClick={() => navigate({ to: "/account-settings/phone" })}
+              >
+                전화번호 등록하기
+              </button>
+            </p>
+          ) : null}
           {submitError ? (
             <p className="font-['Pretendard',sans-serif] text-[14px] leading-[19px] text-[#d32f2f]">
               {submitError}
@@ -364,6 +438,14 @@ export default function TaxiPaymentPage({
                   if (!selectedMethod) {
                     return;
                   }
+                  const prepMap = PAYMENT_PREPARE_MAP[selectedMethod];
+                  if (
+                    prepMap.method === "MOBILE" &&
+                    !resolvePaymentCustomerPhone(undefined, profilePhone)
+                  ) {
+                    setSubmitError(PHONE_REQUIRED_MESSAGE);
+                    return;
+                  }
                   setIsSubmitting(true);
 
                   const reservationId = await createReservation({
@@ -389,12 +471,20 @@ export default function TaxiPaymentPage({
                     courseName: detail.course.name?.trim() ?? "",
                   });
 
-                  const prepMap = PAYMENT_PREPARE_MAP[selectedMethod];
                   const prep = await preparePayment({
                     reservationId,
                     paymentMethod: prepMap.method,
                     paymentMethodDetail: prepMap.detail,
                   });
+
+                  const resolvedCustomerPhone = resolvePaymentCustomerPhone(
+                    prep.customerPhone,
+                    profilePhone,
+                  );
+                  if (prepMap.method === "MOBILE" && !resolvedCustomerPhone) {
+                    setSubmitError(PHONE_REQUIRED_MESSAGE);
+                    return;
+                  }
 
                   const keys = resolvePortOneBrowserKeys({
                     storeId: prep.storeId,
@@ -418,7 +508,7 @@ export default function TaxiPaymentPage({
                     paymentMethod: prep.paymentMethod,
                     paymentMethodDetail: prepMap.detail,
                     customerName: prep.customerName,
-                    customerPhone: prep.customerPhone,
+                    customerPhone: resolvedCustomerPhone,
                     redirectUrl,
                   });
 
@@ -445,7 +535,7 @@ export default function TaxiPaymentPage({
                     },
                   });
                 } catch (error) {
-                  setSubmitError(getErrorMessage(error));
+                  setSubmitError(formatPaymentSubmitError(error));
                 } finally {
                   setIsSubmitting(false);
                 }
@@ -468,6 +558,11 @@ export default function TaxiPaymentPage({
       </div>
 
       <PortOneCredentialsModal open={portoneModalOpen} onClose={() => setPortoneModalOpen(false)} />
+      <ComingSoonDialog
+        open={paymentComingSoonOpen}
+        message={PAYMENT_COMING_SOON_MESSAGE}
+        onClose={() => setPaymentComingSoonOpen(false)}
+      />
     </div>
   );
 }

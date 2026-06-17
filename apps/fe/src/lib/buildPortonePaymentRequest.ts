@@ -2,6 +2,14 @@ import type { PaymentRequest } from "@portone/browser-sdk/v2";
 import { EasyPayProvider, PaymentCurrency, PaymentPayMethod } from "@portone/browser-sdk/v2";
 import type { PreparePaymentMethod, PreparePaymentMethodDetail } from "@/api/payments";
 
+export function normalizeCustomerPhone(phone: string | null | undefined): string | undefined {
+  if (phone == null) return undefined;
+  const trimmed = phone.trim();
+  if (!trimmed) return undefined;
+  const digits = trimmed.replace(/[^0-9+]/g, "");
+  return digits || undefined;
+}
+
 function mapEasyPayProvider(
   detail: PreparePaymentMethodDetail,
 ): (typeof EasyPayProvider)[keyof typeof EasyPayProvider] {
@@ -38,6 +46,13 @@ function mapPayMethod(
   }
 }
 
+export function resolvePaymentCustomerPhone(
+  prepPhone: string | null | undefined,
+  profilePhone: string | null | undefined,
+): string | undefined {
+  return normalizeCustomerPhone(prepPhone) ?? normalizeCustomerPhone(profilePhone);
+}
+
 export function buildTaxiPortOnePaymentRequest(input: {
   storeId: string;
   channelKey: string;
@@ -46,11 +61,14 @@ export function buildTaxiPortOnePaymentRequest(input: {
   totalAmount: number;
   paymentMethod: PreparePaymentMethod;
   paymentMethodDetail: PreparePaymentMethodDetail;
-  customerName: string;
-  customerPhone: string;
+  customerName: string | null | undefined;
+  customerPhone: string | null | undefined;
   redirectUrl: string;
 }): PaymentRequest {
   const payMethod = mapPayMethod(input.paymentMethod);
+  const phoneNumber = normalizeCustomerPhone(input.customerPhone);
+  const customerName = input.customerName?.trim() || undefined;
+
   const base = {
     storeId: input.storeId as PaymentRequest["storeId"],
     channelKey: input.channelKey as PaymentRequest["channelKey"],
@@ -62,8 +80,8 @@ export function buildTaxiPortOnePaymentRequest(input: {
     redirectUrl: input.redirectUrl as PaymentRequest["redirectUrl"],
     forceRedirect: true,
     customer: {
-      fullName: input.customerName,
-      phoneNumber: input.customerPhone.replace(/[^0-9+]/g, "") || undefined,
+      ...(customerName ? { fullName: customerName } : {}),
+      ...(phoneNumber ? { phoneNumber } : {}),
     },
     ...(payMethod === PaymentPayMethod.EASY_PAY ? {} : { alipayPlus: {} }),
   } as PaymentRequest;

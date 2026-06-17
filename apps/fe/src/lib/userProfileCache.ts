@@ -85,9 +85,9 @@ export function clearUserProfile(): void {
  * 로그인 직후 다음 화면 전환을 막지 않도록, 아이디 기준 낙관적 캐시를 둔 뒤
  * GET /users/me로 서버 값을 백그라운드에서 반영합니다.
  */
-export function seedProfileCacheThenRefreshFromServer(loginId: string): void {
+export function seedProfileCacheThenRefreshFromServer(loginId: string): Promise<void> {
   const trimmed = loginId.trim();
-  if (!trimmed) return;
+  if (!trimmed) return Promise.resolve();
   saveUserProfile({
     loginId: trimmed,
     name: getDisplayNameForLoginId(trimmed),
@@ -96,27 +96,12 @@ export function seedProfileCacheThenRefreshFromServer(loginId: string): void {
     phone: "",
     profileImageUrl: "",
   });
-  void getMyProfile()
-    .then((me) => {
-      const id = me.loginId?.trim() || trimmed;
-      saveUserProfile({
-        userId: me.userId != null ? Number(me.userId) : undefined,
-        loginId: id,
-        name: me.name?.trim() || getDisplayNameForLoginId(id),
-        nickname: me.nickname?.trim() || "",
-        email: me.email ?? "",
-        phone: me.phone ?? "",
-        profileImageUrl: me.profileImageUrl ?? "",
-      });
-    })
-    .catch(() => {
-      /* 낙관적 캐시 유지 */
-    });
+  return refreshProfileCacheFromServer();
 }
 
-/** 소셜 로그인 등 아이디를 미리 알 수 없을 때 — 토큰 저장 직후 비동기로 프로필만 갱신 */
-export function refreshProfileCacheFromServer(): void {
-  void getMyProfile()
+/** 소셜 로그인 등 아이디를 미리 알 수 없을 때 — 토큰 저장 직후 서버 프로필을 반영 */
+export function refreshProfileCacheFromServer(): Promise<void> {
+  return getMyProfile()
     .then((me) => {
       const id = me.loginId?.trim() ?? "";
       saveUserProfile({

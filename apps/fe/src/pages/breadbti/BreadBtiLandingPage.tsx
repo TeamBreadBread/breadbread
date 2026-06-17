@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import BreadBtiMobileFrame from "@/components/domain/breadbti/BreadBtiMobileFrame";
 import { isBreadBtiFromAiGenerating, isBreadBtiFromBbangteo } from "@/lib/breadbti/entryFrom";
+import { breadBtiFlowNavigateOptions } from "@/lib/breadbti/flowNavigation";
 import { BREAD_BTI_HOME_IMAGE } from "@/lib/breadbti/images";
 import { breadBtiAbsoluteUrl, breadBtiPath } from "@/lib/breadbti/paths";
 import {
@@ -81,7 +82,7 @@ export default function BreadBtiLandingPage() {
   const fromAiGenerating = isBreadBtiFromAiGenerating();
 
   const startTest = () => {
-    void navigate({ to: "/breadbti/question" });
+    void navigate(breadBtiFlowNavigateOptions("/breadbti/question"));
   };
 
   return (

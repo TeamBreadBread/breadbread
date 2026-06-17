@@ -1,7 +1,12 @@
 import { getAiCourseStatus } from "@/api/courses";
+import { isPreferenceNotFoundError } from "@/utils/aiCoursePreference";
+import { clearAiCourseJobContext } from "@/utils/clearAiCourseJobContext";
 import {
-  readAiCourseBtiReturnJobId,
+  clearAiCourseBtiReturnJobId,
+  findRecoverableAiCourseJob,
   readAiCourseJobCourseId,
+  readAiCoursePreferenceDraft,
+  readAiCourseBtiReturnJobId,
   readAiCoursePendingJobId,
   resolveAiCourseActiveJobId,
   saveAiCoursePendingJobId,
@@ -21,14 +26,40 @@ export function resolveAiCourseReturnJobId(preferredJobId?: string | null): stri
   return resolveAiCourseActiveJobId(preferredJobId);
 }
 
+async function finishAiCourseReturn(
+  navigate: NavigateFn,
+  options: { to: string; search?: Record<string, unknown> },
+): Promise<void> {
+  await navigate(options);
+  clearAiCourseBtiReturnJobId();
+}
+
+async function navigateToAiCourseFlowStart(navigate: NavigateFn): Promise<void> {
+  const hasPreferenceDraft = readAiCoursePreferenceDraft() != null;
+  await navigate({ to: hasPreferenceDraft ? "/recommendation" : "/preference" });
+}
+
 /** BreadBTI → AI 생성/결과 화면 복귀 (job 완료·삭제 여부에 따라 분기) */
 export async function navigateBackToAiCourseFromBreadBti(
   navigate: NavigateFn,
   preferredJobId?: string | null,
 ): Promise<void> {
-  const jobId = resolveAiCourseReturnJobId(preferredJobId);
+  let jobId = resolveAiCourseReturnJobId(preferredJobId);
+
   if (!jobId) {
-    await navigate({ to: "/home" });
+    const recovered = findRecoverableAiCourseJob();
+    if (recovered?.courseId) {
+      await finishAiCourseReturn(navigate, {
+        to: "/ai-search-result",
+        search: { courseId: recovered.courseId },
+      });
+      return;
+    }
+    jobId = recovered?.jobId ?? null;
+  }
+
+  if (!jobId) {
+    await navigateToAiCourseFlowStart(navigate);
     return;
   }
 
@@ -36,38 +67,49 @@ export async function navigateBackToAiCourseFromBreadBti(
 
   const cachedCourseId = readAiCourseJobCourseId(jobId);
   if (cachedCourseId) {
-    await navigate({ to: "/ai-search-result", search: { courseId: cachedCourseId } });
+    await finishAiCourseReturn(navigate, {
+      to: "/ai-search-result",
+      search: { courseId: cachedCourseId },
+    });
     return;
   }
 
   try {
-    const { status } = await getAiCourseStatus(jobId);
+    const { status, errorMessage } = await getAiCourseStatus(jobId);
 
     if (status === "FAILED") {
-      await navigate({ to: "/ai-course-generating", search: { jobId } });
+      if (isPreferenceNotFoundError(errorMessage ?? "")) {
+        clearAiCourseJobContext();
+        await finishAiCourseReturn(navigate, { to: "/preference" });
+        return;
+      }
+      await finishAiCourseReturn(navigate, { to: "/ai-course-generating", search: { jobId } });
       return;
     }
 
     if (status === "COMPLETED") {
       const courseId = await ensureAiCourseJobRunning(jobId);
-      await navigate({ to: "/ai-search-result", search: { courseId } });
+      await finishAiCourseReturn(navigate, { to: "/ai-search-result", search: { courseId } });
       return;
     }
 
-    await navigate({ to: "/ai-course-generating", search: { jobId } });
+    await finishAiCourseReturn(navigate, { to: "/ai-course-generating", search: { jobId } });
   } catch (error) {
     const recoveredCourseId = resolveAiCourseJobCourseId(jobId, error);
     if (recoveredCourseId) {
-      await navigate({ to: "/ai-search-result", search: { courseId: recoveredCourseId } });
+      await finishAiCourseReturn(navigate, {
+        to: "/ai-search-result",
+        search: { courseId: recoveredCourseId },
+      });
       return;
     }
 
     if (isAiJobNotFoundError(error)) {
-      await navigate({ to: "/ai-course-generating", search: { jobId } });
+      await finishAiCourseReturn(navigate, { to: "/ai-course-generating", search: { jobId } });
       return;
     }
 
-    await navigate({ to: "/ai-course-generating", search: { jobId } });
+    await finishAiCourseReturn(navigate, { to: "/ai-course-generating", search: { jobId } });
   }
 }
 

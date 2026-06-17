@@ -1,6 +1,7 @@
 import axios, { type AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from "axios";
 
 import { clearSessionTokens, refresh, SESSION_REFRESH_KEY, setSessionTokens } from "@/api/auth";
+import { waitForAuthSessionIfPending } from "@/lib/auth/authSessionGate";
 import { ApiBusinessError, type ApiEnvelope, unwrapApiBody } from "@/api/types/common";
 
 type RetryAxiosConfig = InternalAxiosRequestConfig & { _retry?: boolean };
@@ -55,7 +56,8 @@ export function setAccessTokenGetter(getter: () => string | null | undefined): v
   accessTokenGetter = getter;
 }
 
-apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+  await waitForAuthSessionIfPending();
   const token = accessTokenGetter?.();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

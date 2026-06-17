@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ApiBusinessError, getErrorMessage } from "@/api/types/common";
 import { setSessionTokens } from "@/api/auth";
+import { beginAuthEstablishment, abortAuthEstablishment } from "@/lib/auth/authSessionGate";
 import { markGa4FirstActionAfterLoginPending } from "@/lib/analytics/gtag";
 import { onAuthSessionEstablished } from "@/lib/fcm/setupFcm";
 import { exchangeKakaoSocialLogin } from "@/lib/kakaoOAuth";
@@ -60,6 +61,7 @@ export default function KakaoCallbackPage(props: Props) {
       }
 
       try {
+        beginAuthEstablishment();
         const tokens = await exchangeKakaoSocialLogin({
           code,
           codeVerifier: session.codeVerifier,
@@ -70,7 +72,7 @@ export default function KakaoCallbackPage(props: Props) {
         setSessionTokens(tokens);
         markGa4FirstActionAfterLoginPending();
         onAuthSessionEstablished();
-        refreshProfileCacheFromServer();
+        await refreshProfileCacheFromServer();
         if (postLogin) {
           if (postLogin === "/bbangteo-board-write") {
             await navigate({ to: postLogin, search: { editId: 0 } });
@@ -90,6 +92,7 @@ export default function KakaoCallbackPage(props: Props) {
           await navigate({ to: "/user-preference", search: { mode: "create" } });
         }
       } catch (e) {
+        abortAuthEstablishment(e);
         clearKakaoOAuthSession();
         const base = getErrorMessage(e);
         const isSocialFail = e instanceof ApiBusinessError && e.code === "E0113";

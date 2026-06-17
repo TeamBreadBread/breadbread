@@ -67,17 +67,19 @@ export default function CourseTimelineItem({
                 {place.address}
               </span>
             </div>
-            <div className="flex items-start gap-x1">
-              <img
-                src={bestBreadIcon}
-                alt=""
-                aria-hidden
-                className="icon-gray-600 h-x4 w-x4 shrink-0 object-contain"
-              />
-              <span className="flex-1 font-pretendard typo-t3regular text-[#555d6d]">
-                {place.menu}
-              </span>
-            </div>
+            {place.menu.trim() ? (
+              <div className="flex items-start gap-x1">
+                <img
+                  src={bestBreadIcon}
+                  alt=""
+                  aria-hidden
+                  className="icon-gray-600 h-x4 w-x4 shrink-0 object-contain"
+                />
+                <span className="flex-1 font-pretendard typo-t3regular text-[#555d6d]">
+                  {place.menu}
+                </span>
+              </div>
+            ) : null}
           </div>
         </button>
 

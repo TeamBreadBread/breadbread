@@ -33,6 +33,10 @@ import { takeAiCourseDepartureCoords } from "@/lib/aiCourseDepartureCoords";
 import { readAiCoursePreferenceDraft, saveAiCoursePendingJobId } from "@/utils/aiCourseStorage";
 import { ApiBusinessError, getErrorMessage } from "@/api/types/common";
 import { getStoredAccessToken } from "@/api/auth";
+import {
+  ensureUserPreferenceForAiCourse,
+  mapAiRecommendationToSavePreference,
+} from "@/utils/aiCoursePreference";
 
 type OptionItem = {
   label: string;
@@ -228,6 +232,12 @@ export default function BreadRecommendationPreference() {
 
     try {
       setIsSubmitting(true);
+      await ensureUserPreferenceForAiCourse(
+        mapAiRecommendationToSavePreference({
+          breadTypeLabels: selectedBySection.breadType ?? [],
+          waitingLabel: selectedBySection.waiting?.[0],
+        }),
+      );
       const jobId = await requestAiCourse(body);
       saveAiCoursePendingJobId(jobId);
       navigate({ to: "/ai-course-generating", search: { jobId } });
