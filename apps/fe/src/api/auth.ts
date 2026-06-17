@@ -1,6 +1,11 @@
 import { apiClient, extractData } from "@/api/client";
 import type { ApiEnvelope } from "@/api/types/common";
 import { clearGa4FirstActionAfterLoginPending } from "@/lib/analytics/gtag";
+import {
+  abortAuthEstablishment,
+  completeAuthEstablishment,
+  notifyAuthSessionReady,
+} from "@/lib/auth/authSessionGate";
 
 const PATH = "/auth";
 
@@ -127,11 +132,14 @@ export const SESSION_REFRESH_KEY = "breadbread_refresh_token";
 export function setSessionTokens(tokens: TokenResponse): void {
   localStorage.setItem(SESSION_ACCESS_KEY, tokens.accessToken);
   localStorage.setItem(SESSION_REFRESH_KEY, tokens.refreshToken);
+  completeAuthEstablishment();
+  notifyAuthSessionReady();
 }
 
 export function clearSessionTokens(): void {
   localStorage.removeItem(SESSION_ACCESS_KEY);
   localStorage.removeItem(SESSION_REFRESH_KEY);
+  abortAuthEstablishment();
   clearGa4FirstActionAfterLoginPending();
 }
 

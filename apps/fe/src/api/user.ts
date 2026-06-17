@@ -168,9 +168,18 @@ export async function submitUserPreference(payload: UserPreferenceRequest): Prom
   extractData(data);
 }
 
+let inflightMyProfile: Promise<MyProfileResponse> | null = null;
+
 export async function getMyProfile(): Promise<MyProfileResponse> {
-  const { data } = await apiClient.get<ApiEnvelope<MyProfileResponse>>(`${PATH}/me`);
-  return extractData(data);
+  if (!inflightMyProfile) {
+    inflightMyProfile = apiClient
+      .get<ApiEnvelope<MyProfileResponse>>(`${PATH}/me`)
+      .then((response) => extractData(response.data))
+      .finally(() => {
+        inflightMyProfile = null;
+      });
+  }
+  return inflightMyProfile;
 }
 
 function omitBlankOptionalStrings(body: UpdateMyProfileRequest): UpdateMyProfileRequest {

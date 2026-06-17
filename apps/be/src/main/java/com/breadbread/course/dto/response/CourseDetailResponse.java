@@ -20,6 +20,7 @@ public class CourseDetailResponse {
     private int likeCount;
     private boolean liked;
     private boolean isSaved;
+    private String recommendReason;
     private List<BakerySummaryResponse> bakeries;
 
     public static CourseDetailResponse from(
@@ -38,6 +39,10 @@ public class CourseDetailResponse {
                 .likeCount(likeCount)
                 .liked(liked)
                 .isSaved(isSaved)
+                .recommendReason(
+                        course.getAiCourseInfo() != null
+                                ? course.getAiCourseInfo().getRecommendReason()
+                                : null)
                 .bakeries(bakeries)
                 .build();
     }

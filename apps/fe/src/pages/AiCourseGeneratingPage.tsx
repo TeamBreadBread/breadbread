@@ -5,8 +5,10 @@ import BreadBtiLoadingPrompt from "@/components/domain/breadbti/BreadBtiLoadingP
 import PreferenceTopBar from "@/components/domain/ai-course/PreferenceTopBar";
 import { getErrorMessage } from "@/api/types/common";
 import { AI_COURSE_ESTIMATED_WAIT_SECONDS } from "@/utils/pollAiCourseStatus";
+import { isPreferenceNotFoundError } from "@/utils/aiCoursePreference";
+import { clearAiCourseJobContext } from "@/utils/clearAiCourseJobContext";
 import {
-  clearAiCoursePendingJobId,
+  readAiCourseBtiReturnJobId,
   readAiCourseJobCourseId,
   readAiCoursePreferenceDraft,
   saveAiCoursePendingJobId,
@@ -94,8 +96,14 @@ export default function AiCourseGeneratingPage({
         }
 
         logAiCourseGenerationFailure(jobId, error);
-        if (!isAiJobNotFoundError(error)) {
-          clearAiCoursePendingJobId();
+        if (isPreferenceNotFoundError(error)) {
+          clearAiCourseJobContext();
+          window.alert("선호도 정보가 필요합니다. 빵 취향을 선택해 주세요.");
+          void navigateRef.current({ to: "/preference" });
+          return;
+        }
+        if (!isAiJobNotFoundError(error) && !readAiCourseBtiReturnJobId()) {
+          clearAiCourseJobContext();
         }
         setErrorMessage(getErrorMessage(error));
       });

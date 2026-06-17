@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { getErrorMessage } from "@/api/types/common";
+import { beginAuthEstablishment, abortAuthEstablishment } from "@/lib/auth/authSessionGate";
 import { completeSocialLogin } from "@/lib/completeSocialLogin";
 import {
   clearGoogleOAuthSession,
@@ -54,6 +55,7 @@ export default function GoogleCallbackPage(props: Props) {
       }
 
       try {
+        beginAuthEstablishment();
         const tokens = await exchangeGoogleSocialLogin({
           code,
           codeVerifier: session.codeVerifier,
@@ -62,6 +64,7 @@ export default function GoogleCallbackPage(props: Props) {
         clearGoogleOAuthSession();
         await completeSocialLogin(tokens, navigate, PREFIX);
       } catch (e) {
+        abortAuthEstablishment(e);
         clearGoogleOAuthSession();
         setMessage(getErrorMessage(e));
       }

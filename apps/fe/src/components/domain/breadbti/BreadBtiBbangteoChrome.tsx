@@ -7,6 +7,7 @@ import {
   FIXED_TOP_BAR_SPACER_CLASS,
 } from "@/components/layout/layout.constants";
 import { clearBreadBtiEntryFrom } from "@/lib/breadbti/entryFrom";
+import { useBreadBtiAiReturnJobId } from "@/hooks/useBreadBtiAiReturnJobId";
 import { navigateBackToAiCourseFromBreadBti } from "@/utils/navigateBackToAiCourseFromBreadBti";
 
 export function BreadBtiBbangteoBackHeader() {
@@ -40,9 +41,10 @@ export function BreadBtiBbangteoBackHeader() {
 
 export function BreadBtiAiGeneratingBackHeader() {
   const navigate = useNavigate();
+  const returnJobId = useBreadBtiAiReturnJobId();
 
   const goBack = () => {
-    void navigateBackToAiCourseFromBreadBti(navigate).then(() => {
+    void navigateBackToAiCourseFromBreadBti(navigate, returnJobId).then(() => {
       clearBreadBtiEntryFrom();
     });
   };

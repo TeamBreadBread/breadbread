@@ -34,6 +34,7 @@ export default function AutoHorizontalScrollArea({
 
     const onWheel = (event: WheelEvent) => {
       if (el.scrollWidth <= el.clientWidth + 1) return;
+      if (!event.shiftKey) return;
       if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
 
       event.preventDefault();
@@ -109,7 +110,7 @@ export default function AutoHorizontalScrollArea({
       ref={scrollRef}
       aria-label={ariaLabel}
       className={cn(
-        "scrollbar-hide w-full min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain touch-pan-x",
+        "scrollbar-hide w-full min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain",
         className,
       )}
     >
