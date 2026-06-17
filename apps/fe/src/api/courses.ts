@@ -63,6 +63,7 @@ export type CourseDetail = {
   estimatedCost: number;
   likeCount: number;
   liked: boolean;
+  recommendReason?: string | null;
   bakeries: CourseBakeryDetail[];
 };
 

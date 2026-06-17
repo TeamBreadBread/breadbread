@@ -19,6 +19,8 @@ import {
   breadBtiPath,
 } from "@/lib/breadbti/paths";
 import { clearBreadBtiEntryFrom, isBreadBtiFromAiGenerating } from "@/lib/breadbti/entryFrom";
+import { breadBtiFlowNavigateOptions } from "@/lib/breadbti/flowNavigation";
+import { useBreadBtiAiReturnJobId } from "@/hooks/useBreadBtiAiReturnJobId";
 import { navigateBackToAiCourseFromBreadBti } from "@/utils/navigateBackToAiCourseFromBreadBti";
 import {
   copyBreadBtiLink,
@@ -81,9 +83,10 @@ export default function BreadBtiResultPage() {
   };
 
   const fromAiGenerating = isBreadBtiFromAiGenerating();
+  const returnJobId = useBreadBtiAiReturnJobId();
 
   const handleReturnToAiCourse = () => {
-    void navigateBackToAiCourseFromBreadBti(navigate).finally(() => {
+    void navigateBackToAiCourseFromBreadBti(navigate, returnJobId).finally(() => {
       clearBreadBtiEntryFrom();
     });
   };
@@ -178,7 +181,7 @@ export default function BreadBtiResultPage() {
         <div className="mt-6 space-y-3">
           <button
             type="button"
-            onClick={() => void navigate({ to: "/breadbti/totalresult" })}
+            onClick={() => void navigate(breadBtiFlowNavigateOptions("/breadbti/totalresult"))}
             className="flex w-full items-center justify-center gap-2 rounded-full bg-[#FF8C42] px-8 py-4 font-bold text-white shadow-lg transition-all hover:bg-[#FF7A1F] active:scale-95"
           >
             <BreadBtiChartIcon />
@@ -187,7 +190,7 @@ export default function BreadBtiResultPage() {
 
           <button
             type="button"
-            onClick={() => void navigate({ to: "/breadbti" })}
+            onClick={() => void navigate(breadBtiFlowNavigateOptions("/breadbti"))}
             className="w-full rounded-full border-2 border-[#FF8C42] bg-white px-8 py-4 font-bold text-[#FF8C42] shadow-lg transition-all hover:bg-[#FFF4E6] active:scale-95"
           >
             다시 테스트하기

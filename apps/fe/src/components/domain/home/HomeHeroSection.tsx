@@ -3,12 +3,16 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { getMyProfile } from "@/api/user";
+import { isLoggedIn } from "@/lib/auth/isLoggedIn";
 import leadingLogo from "@/assets/icons/Leading.svg";
 import RecommendationHeroCard from "./RecommendationHeroCard";
 import QuickMenuGrid from "./QuickMenuGrid";
 import { pickRandomHomeGreetingBread } from "./homeGreetingBreads";
-import { getDisplayNameForLoginId, getUserProfile, saveUserProfile } from "@/lib/userProfileCache";
+import {
+  getDisplayNameForLoginId,
+  getUserProfile,
+  refreshProfileCacheFromServer,
+} from "@/lib/userProfileCache";
 import { navigateToAiCourseEntry } from "@/utils/navigateToAiCourseEntry";
 
 const HomeHeroSection = () => {
@@ -23,24 +27,18 @@ const HomeHeroSection = () => {
   });
 
   useEffect(() => {
+    if (!isLoggedIn()) return;
+
     let mounted = true;
-    const fetchProfile = async () => {
-      try {
-        const me = await getMyProfile();
-        if (!mounted) return;
-        saveUserProfile({
-          userId: me.userId != null ? Number(me.userId) : undefined,
-          loginId: me.loginId?.trim() || "",
-          name: me.name,
-          email: me.email ?? "",
-          phone: me.phone ?? "",
-        });
-        setDisplayName(me.name?.trim() || me.loginId?.trim() || "회원");
-      } catch {
-        // keep cached value
+    void refreshProfileCacheFromServer().then(() => {
+      if (!mounted) return;
+      const profile = getUserProfile();
+      if (profile?.name?.trim()) {
+        setDisplayName(profile.name.trim());
+      } else if (profile?.loginId?.trim()) {
+        setDisplayName(getDisplayNameForLoginId(profile.loginId));
       }
-    };
-    void fetchProfile();
+    });
     return () => {
       mounted = false;
     };

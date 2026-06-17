@@ -1,10 +1,12 @@
 import { formatCourseEstimatedTime } from "@/utils/formatCourseEstimatedTime";
+import AiCourseRecommendReasonPanel from "./AiCourseRecommendReasonPanel";
 import CourseBreadThumbnail from "./CourseBreadThumbnail";
 import type { CourseSummary } from "./types";
 
 interface ResultSummaryCardProps {
   summary: CourseSummary;
   iconSeed?: string | number;
+  recommendReason?: string | null;
   liked?: boolean;
   likeCount?: number;
   onToggleLike?: () => void;
@@ -32,6 +34,7 @@ function HeartIcon({ filled }: { filled: boolean }) {
 export default function ResultSummaryCard({
   summary,
   iconSeed,
+  recommendReason,
   liked = false,
   likeCount = 0,
   onToggleLike,
@@ -39,43 +42,51 @@ export default function ResultSummaryCard({
   const durationLabel = formatCourseEstimatedTime(summary.duration) || summary.duration;
 
   return (
-    <section className="flex items-center gap-[10px] bg-white px-x5 pt-x9 pb-x6">
-      {iconSeed != null ? (
-        <CourseBreadThumbnail seed={iconSeed} size={60} />
-      ) : (
-        <div className="size-[60px] shrink-0 rounded-full bg-[#dcdee3]" />
-      )}
+    <section className="flex flex-col bg-white px-x5 pt-x9 pb-x6">
+      <div className="flex items-center gap-[10px]">
+        {iconSeed != null ? (
+          <CourseBreadThumbnail seed={iconSeed} size={60} />
+        ) : (
+          <div className="size-[60px] shrink-0 rounded-full bg-[#dcdee3]" />
+        )}
 
-      <div className="min-w-0 flex-1">
-        <h2 className="font-pretendard typo-t7bold text-[#1a1c20]">{summary.title}</h2>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-pretendard typo-t7bold text-[#1a1c20]">{summary.title}</h2>
 
-        <div className="mt-x2 flex flex-wrap items-center gap-x2 gap-y-x1">
-          <div className="flex min-w-0 items-center gap-x1">
-            <span className="font-pretendard typo-t4medium shrink-0 text-[#868b94]">소요시간</span>
-            <span className="font-pretendard typo-t4medium text-[#2a3038]">{durationLabel}</span>
-          </div>
+          <div className="mt-x2 flex flex-wrap items-center gap-x2 gap-y-x1">
+            <div className="flex min-w-0 items-center gap-x1">
+              <span className="font-pretendard typo-t4medium shrink-0 text-[#868b94]">
+                소요시간
+              </span>
+              <span className="font-pretendard typo-t4medium text-[#2a3038]">{durationLabel}</span>
+            </div>
 
-          <span className="font-pretendard typo-t4medium shrink-0 text-[#868b94]">·</span>
+            <span className="font-pretendard typo-t4medium shrink-0 text-[#868b94]">·</span>
 
-          <div className="flex min-w-0 items-center gap-x1">
-            <span className="font-pretendard typo-t4medium shrink-0 text-[#868b94]">예상비용</span>
-            <span className="font-pretendard typo-t4medium text-[#2a3038]">{summary.price}</span>
+            <div className="flex min-w-0 items-center gap-x1">
+              <span className="font-pretendard typo-t4medium shrink-0 text-[#868b94]">
+                예상비용
+              </span>
+              <span className="font-pretendard typo-t4medium text-[#2a3038]">{summary.price}</span>
+            </div>
           </div>
         </div>
+
+        {onToggleLike ? (
+          <button
+            type="button"
+            aria-label={liked ? "코스 좋아요 취소" : "코스 좋아요"}
+            aria-pressed={liked}
+            className="ml-x2 flex min-w-[52px] shrink-0 flex-col items-center justify-center gap-[2px]"
+            onClick={onToggleLike}
+          >
+            <HeartIcon filled={liked} />
+            <span className="font-pretendard text-size-2 text-[#555d6d]">{likeCount}</span>
+          </button>
+        ) : null}
       </div>
 
-      {onToggleLike ? (
-        <button
-          type="button"
-          aria-label={liked ? "코스 좋아요 취소" : "코스 좋아요"}
-          aria-pressed={liked}
-          className="ml-x2 flex min-w-[52px] shrink-0 flex-col items-center justify-center gap-[2px]"
-          onClick={onToggleLike}
-        >
-          <HeartIcon filled={liked} />
-          <span className="font-pretendard text-size-2 text-[#555d6d]">{likeCount}</span>
-        </button>
-      ) : null}
+      {recommendReason?.trim() ? <AiCourseRecommendReasonPanel reason={recommendReason} /> : null}
     </section>
   );
 }

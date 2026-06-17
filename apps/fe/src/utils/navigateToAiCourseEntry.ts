@@ -1,11 +1,9 @@
 import { getAiCourseStatus } from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
-import {
-  clearAiCoursePendingJobId,
-  readAiCourseJobCourseId,
-  readAiCoursePendingJobId,
-} from "@/utils/aiCourseStorage";
+import { isPreferenceNotFoundError } from "@/utils/aiCoursePreference";
+import { clearAiCourseJobContext } from "@/utils/clearAiCourseJobContext";
+import { readAiCourseJobCourseId, readAiCoursePendingJobId } from "@/utils/aiCourseStorage";
 import {
   ensureAiCourseJobRunning,
   isAiJobNotFoundError,
@@ -38,8 +36,12 @@ export async function navigateToAiCourseEntry(navigate: NavigateFn): Promise<voi
     const { status, errorMessage } = await getAiCourseStatus(pendingJobId);
 
     if (status === "FAILED") {
-      clearAiCoursePendingJobId();
-      window.alert(errorMessage ?? "AI 코스 생성에 실패했어요. 다시 시도해 주세요.");
+      clearAiCourseJobContext();
+      if (isPreferenceNotFoundError(errorMessage ?? "")) {
+        window.alert("선호도를 먼저 선택해 주세요. 빵 취향 조사부터 진행할게요.");
+      } else {
+        window.alert(errorMessage ?? "AI 코스 생성에 실패했어요. 다시 시도해 주세요.");
+      }
       await navigate({ to: AI_COURSE_FLOW_START });
       return;
     }
@@ -59,7 +61,7 @@ export async function navigateToAiCourseEntry(navigate: NavigateFn): Promise<voi
     }
 
     if (isAiJobNotFoundError(error)) {
-      clearAiCoursePendingJobId();
+      clearAiCourseJobContext();
     }
 
     window.alert(getErrorMessage(error));

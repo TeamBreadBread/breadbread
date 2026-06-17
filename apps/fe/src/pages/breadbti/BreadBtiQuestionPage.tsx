@@ -2,6 +2,7 @@ import { useState, type MouseEvent } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import BreadBtiMobileFrame from "@/components/domain/breadbti/BreadBtiMobileFrame";
+import { breadBtiFlowNavigateOptions } from "@/lib/breadbti/flowNavigation";
 import { getMbti, INITIAL_SCORES, MBTI_QUESTIONS, type MbtiTrait } from "@/lib/breadbti/mbti";
 import { BREAD_BTI_RESULT_STORAGE_KEY } from "@/lib/breadbti/paths";
 
@@ -26,7 +27,7 @@ export default function BreadBtiQuestionPage() {
     if (isLastQuestion) {
       const mbti = getMbti(nextScores);
       sessionStorage.setItem(BREAD_BTI_RESULT_STORAGE_KEY, mbti);
-      void navigate({ to: "/breadbti/loading" });
+      void navigate(breadBtiFlowNavigateOptions("/breadbti/loading"));
       return;
     }
 

@@ -26,7 +26,7 @@ import {
   saveCourseRoute,
   type CourseDetail,
 } from "@/api/courses";
-import { getBakeriesCongestion } from "@/api/bakery";
+import { getBakeriesCongestion, getBakeryById } from "@/api/bakery";
 import { ApiBusinessError, getErrorMessage } from "@/api/types/common";
 import { startTour } from "@/api/tours";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
@@ -39,6 +39,7 @@ import ActiveTourConflictDialog from "@/components/common/dialog/ActiveTourConfl
 import { hasConflictingActiveTour } from "@/utils/activeTourGuard";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
 import { findMatchingSavedRoute, isSameCourseRouteContent } from "@/utils/courseRouteCompare";
+import { formatBakerySignatureMenuLabel } from "@/utils/bakerySignatureMenu";
 import {
   trackAiCourseRegenerated,
   trackRouteDetailViewed,
@@ -50,6 +51,9 @@ const summary: CourseSummary = {
   duration: "3~4시간",
   price: "3만원",
 };
+
+const devRecommendReason =
+  "커플이 함께 걸으며 즐기기 좋은 달콤한 빵 위주로, 이동 동선을 최소화해 구성했어요.";
 
 const places: CoursePlace[] = [
   {
@@ -99,6 +103,9 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
   const [congestionByBakeryId, setCongestionByBakeryId] = useState<
     Map<number, { level?: string | null; expectedWaitMin?: number | null }>
   >(new Map());
+  const [signatureMenuByBakeryId, setSignatureMenuByBakeryId] = useState<Map<number, string>>(
+    new Map(),
+  );
 
   // courseId가 있으면 항상 API로 최신 코스 상세를 조회한다.
   useEffect(() => {
@@ -171,6 +178,37 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     };
   }, [courseDetail]);
 
+  useEffect(() => {
+    const bakeryIds =
+      courseDetail?.bakeries?.map((bakery) => bakery.id).filter((id) => id > 0) ?? [];
+    if (bakeryIds.length === 0) {
+      setSignatureMenuByBakeryId(new Map());
+      return;
+    }
+
+    let cancelled = false;
+    setSignatureMenuByBakeryId(new Map());
+
+    void Promise.all(
+      bakeryIds.map(async (bakeryId) => {
+        try {
+          const detail = await getBakeryById(bakeryId);
+          const label = formatBakerySignatureMenuLabel(detail.breads ?? []);
+          return [bakeryId, label] as const;
+        } catch {
+          return [bakeryId, ""] as const;
+        }
+      }),
+    ).then((entries) => {
+      if (cancelled) return;
+      setSignatureMenuByBakeryId(new Map(entries));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [courseDetail]);
+
   const dynamicSummary: CourseSummary | null = useMemo(() => {
     if (!courseDetail) return null;
     const costLabel =
@@ -189,16 +227,17 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     if (!Array.isArray(courseDetail.bakeries)) return null;
     return courseDetail.bakeries.map((bakery, index) => {
       const congestion = congestionByBakeryId.get(bakery.id);
+      const signatureMenu = signatureMenuByBakeryId.get(bakery.id)?.trim() ?? "";
       return {
         id: String(bakery.id ?? index + 1),
         name: bakery.name || `빵집 ${index + 1}`,
         address: bakery.address || "",
-        menu: Number.isFinite(bakery.rating) ? `평점 ${bakery.rating}` : "빵집 정보",
+        menu: signatureMenu,
         congestionLevel: congestion?.level,
         expectedWaitMin: congestion?.expectedWaitMin,
       };
     });
-  }, [courseDetail, congestionByBakeryId]);
+  }, [courseDetail, congestionByBakeryId, signatureMenuByBakeryId]);
 
   const { mapPoints: mapBakeries, resolving: mapPointsResolving } = useCourseMapPoints(
     courseDetail?.bakeries,
@@ -209,6 +248,8 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
   const displaySummary = dynamicSummary ?? (useDevFallbackContent ? summary : null);
   const displayPlaces = dynamicPlaces ?? (useDevFallbackContent ? places : null);
   const courseIconSeed = effectiveCourseId ?? displaySummary?.title ?? summary.title;
+  const displayRecommendReason =
+    courseDetail?.recommendReason?.trim() || (useDevFallbackContent ? devRecommendReason : null);
 
   const departurePoint = useMemo(() => {
     const stored = getLatestAiCourseDepartureCoords();
@@ -424,7 +465,11 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
               </button>
             }
           />
-          <ResultSummaryCard summary={resolvedSummary} iconSeed={courseIconSeed} />
+          <ResultSummaryCard
+            summary={resolvedSummary}
+            iconSeed={courseIconSeed}
+            recommendReason={displayRecommendReason}
+          />
         </div>
       </div>
 

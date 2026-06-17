@@ -106,6 +106,26 @@ export function resolveAiCourseActiveJobId(preferredJobId?: string | null): stri
 
 const AI_COURSE_JOB_COURSE_ID_PREFIX = "aiCourseJobCourse:";
 
+/** BTI 복귀용 jobId가 storage에서 지워진 경우 course 캐시 키에서 복구 */
+export function findRecoverableAiCourseJob(): { jobId: string; courseId: number | null } | null {
+  const activeJobId = resolveAiCourseActiveJobId();
+  if (activeJobId) {
+    return { jobId: activeJobId, courseId: readAiCourseJobCourseId(activeJobId) };
+  }
+
+  if (typeof sessionStorage === "undefined") return null;
+
+  for (let index = 0; index < sessionStorage.length; index += 1) {
+    const key = sessionStorage.key(index);
+    if (!key?.startsWith(AI_COURSE_JOB_COURSE_ID_PREFIX)) continue;
+    const jobId = key.slice(AI_COURSE_JOB_COURSE_ID_PREFIX.length).trim();
+    if (!jobId) continue;
+    return { jobId, courseId: readAiCourseJobCourseId(jobId) };
+  }
+
+  return null;
+}
+
 export function saveAiCourseJobCourseId(jobId: string, courseId: number): void {
   const trimmedJobId = jobId.trim();
   if (!trimmedJobId || courseId <= 0) return;

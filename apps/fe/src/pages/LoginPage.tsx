@@ -3,6 +3,7 @@ import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { login, setSessionTokens } from "@/api/auth";
 import { getErrorMessage } from "@/api/types/common";
 import { hasUserPreferenceSaved } from "@/api/user";
+import { beginAuthEstablishment, abortAuthEstablishment } from "@/lib/auth/authSessionGate";
 import { seedProfileCacheThenRefreshFromServer } from "@/lib/userProfileCache";
 import { AppTopBar, Button } from "@/components/common";
 import { PasswordToggleIcon } from "@/components/icons";
@@ -42,11 +43,12 @@ const LoginPage = () => {
     try {
       setIsSubmitting(true);
       const id = userId.trim();
+      beginAuthEstablishment();
       const tokens = await login({ loginId: id, password });
       setSessionTokens(tokens);
       markGa4FirstActionAfterLoginPending();
       onAuthSessionEstablished();
-      seedProfileCacheThenRefreshFromServer(id);
+      await seedProfileCacheThenRefreshFromServer(id);
       try {
         const nextPath = tryPostLoginRedirectPath(redirect);
         if (nextPath) {
@@ -75,6 +77,7 @@ const LoginPage = () => {
         }
       }
     } catch (error) {
+      abortAuthEstablishment(error);
       setLoginError(getErrorMessage(error));
     } finally {
       setIsSubmitting(false);
