@@ -156,7 +156,7 @@ public class GcsService {
         try {
             deleteByObjectKey(extractObjectKey(fileUrl));
         } catch (Exception e) {
-            log.warn("GCS 파일 삭제 실패 (무시됨): {}", fileUrl, e);
+            log.warn("GCS verified delete failed", e);
         }
     }
 

@@ -1,4 +1,4 @@
-/** AI 코스 출발 좌표 — 생성 중에는 jobId, 저장 후에는 courseId로 각각 보관 */
+/** AI 코스 출발 좌표 — 같은 탭 세션 동안 메모리에만 보관 (좌표는 sessionStorage에 저장하지 않음) */
 export type AiCourseDeparture = {
   latitude: number;
   longitude: number;
@@ -18,38 +18,29 @@ const DEPARTURE_BY_COURSE_PREFIX = "aiCourseDepartureCourse:";
 
 let pending: AiCourseDeparture | null = null;
 let latest: AiCourseDeparture | null = null;
+const departureByJobId = new Map<string, AiCourseDeparture>();
+const departureByCourseId = new Map<number, AiCourseDeparture>();
 
 /** 이전 버전에서 sessionStorage에 남아 있을 수 있는 좌표 평문 데이터 제거 */
 function clearLegacyPersistedCoords(): void {
   if (typeof sessionStorage === "undefined") return;
   sessionStorage.removeItem(DEPARTURE_COORDS_STORAGE_KEY);
+
+  const keysToRemove: string[] = [];
+  for (let index = 0; index < sessionStorage.length; index += 1) {
+    const key = sessionStorage.key(index);
+    if (key?.startsWith(DEPARTURE_BY_JOB_PREFIX) || key?.startsWith(DEPARTURE_BY_COURSE_PREFIX)) {
+      keysToRemove.push(key);
+    }
+  }
+  for (const key of keysToRemove) {
+    sessionStorage.removeItem(key);
+  }
 }
 
 function persistMarkerLabel(label: string): void {
   if (typeof sessionStorage === "undefined") return;
   sessionStorage.setItem(DEPARTURE_MARKER_LABEL_STORAGE_KEY, label);
-}
-
-function readDepartureFromStorage(key: string): AiCourseDeparture | null {
-  if (typeof sessionStorage === "undefined") return null;
-  const raw = sessionStorage.getItem(key);
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as AiCourseDeparture;
-    if (!Number.isFinite(parsed.latitude) || !Number.isFinite(parsed.longitude)) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-function writeDepartureToStorage(key: string, departure: AiCourseDeparture): void {
-  if (typeof sessionStorage === "undefined") return;
-  try {
-    sessionStorage.setItem(key, JSON.stringify(departure));
-  } catch {
-    /* ignore */
-  }
 }
 
 function toDeparturePoint(departure: AiCourseDeparture): AiCourseDeparturePoint {
@@ -97,13 +88,13 @@ export function getLatestAiCourseDepartureCoords(): AiCourseDeparture | null {
 export function saveAiCourseDepartureForJob(jobId: string, departure: AiCourseDeparture): void {
   const trimmedJobId = jobId.trim();
   if (!trimmedJobId) return;
-  writeDepartureToStorage(`${DEPARTURE_BY_JOB_PREFIX}${trimmedJobId}`, departure);
+  departureByJobId.set(trimmedJobId, departure);
 }
 
 export function readAiCourseDepartureForJob(jobId: string): AiCourseDeparture | null {
   const trimmedJobId = jobId.trim();
   if (!trimmedJobId) return null;
-  return readDepartureFromStorage(`${DEPARTURE_BY_JOB_PREFIX}${trimmedJobId}`);
+  return departureByJobId.get(trimmedJobId) ?? null;
 }
 
 export function saveAiCourseDepartureForCourse(
@@ -111,12 +102,12 @@ export function saveAiCourseDepartureForCourse(
   departure: AiCourseDeparture,
 ): void {
   if (courseId <= 0) return;
-  writeDepartureToStorage(`${DEPARTURE_BY_COURSE_PREFIX}${courseId}`, departure);
+  departureByCourseId.set(courseId, departure);
 }
 
 export function readAiCourseDepartureForCourse(courseId: number): AiCourseDeparture | null {
   if (courseId <= 0) return null;
-  return readDepartureFromStorage(`${DEPARTURE_BY_COURSE_PREFIX}${courseId}`);
+  return departureByCourseId.get(courseId) ?? null;
 }
 
 export function getAiCourseDepartureMarkerLabel(): string | null {
@@ -172,6 +163,8 @@ export function resolveAiCourseDeparturePoint(options: {
 export function clearAiCourseDepartureCoords(): void {
   pending = null;
   latest = null;
+  departureByJobId.clear();
+  departureByCourseId.clear();
   if (typeof sessionStorage !== "undefined") {
     clearLegacyPersistedCoords();
     sessionStorage.removeItem(DEPARTURE_MARKER_LABEL_STORAGE_KEY);
