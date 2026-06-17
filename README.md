@@ -114,7 +114,7 @@ pnpm --filter fe dev
 로컬 BE(`localhost:8080`)를 쓰려면 `apps/fe/.env.local`에 다음을 설정하세요.
 
 ```env
-VITE_API_BASE_URL=http://localhost:8080
+VITE_API_BASE_URL=http://localhost:8000
 ```
 
 ### Backend 실행
@@ -139,7 +139,7 @@ cp .env.example .env
 ./gradlew bootRun
 ```
 
-- Swagger: [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+- Swagger: [http://localhost:8000/swagger-ui/index.html](http://localhost:8000/swagger-ui/index.html) (local 프로파일 기본 포트)
 
 ---
 
