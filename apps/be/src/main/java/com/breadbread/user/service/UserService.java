@@ -2,6 +2,7 @@ package com.breadbread.user.service;
 
 import com.breadbread.auth.entity.VerificationPurpose;
 import com.breadbread.auth.redis.PhoneVerificationCache;
+import com.breadbread.auth.repository.SsoAccountRepository;
 import com.breadbread.auth.service.PhoneVerificationRedisService;
 import com.breadbread.auth.service.TokenService;
 import com.breadbread.bakery.dto.response.BakeryCourseSummaryResponse;
@@ -37,6 +38,9 @@ import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.global.validator.PaginationValidator;
 import com.breadbread.image.service.GcsService;
 import com.breadbread.image.service.TempImageService;
+import com.breadbread.notification.repository.FcmTokenRepository;
+import com.breadbread.reservation.entity.ReservationStatus;
+import com.breadbread.reservation.repository.ReservationRepository;
 import com.breadbread.user.dto.ChangePasswordRequest;
 import com.breadbread.user.dto.ChangePhoneRequest;
 import com.breadbread.user.dto.CreatePreferenceRequest;
@@ -86,6 +90,9 @@ public class UserService {
     private final PostRepository postRepository;
     private final PostLikeRepository postLikeRepository;
     private final CommentRepository commentRepository;
+    private final FcmTokenRepository fcmTokenRepository;
+    private final SsoAccountRepository ssoAccountRepository;
+    private final ReservationRepository reservationRepository;
 
     @Transactional
     public void savePreference(Long userId, CreatePreferenceRequest request) {
@@ -198,7 +205,7 @@ public class UserService {
                     && !Objects.equals(newProfileImageUrl, oldProfileImageUrl)
                     && oldProfileImageUrl != null
                     && !oldProfileImageUrl.isBlank()) {
-                gcsService.deleteVerifiedQuietly(oldProfileImageUrl);
+                gcsService.deleteQuietly(oldProfileImageUrl);
             }
         } catch (DataIntegrityViolationException e) {
             log.warn("[프로필 수정 중복 또는 무결성 위반] userId={}, msg={}", userId, e.getMessage());
@@ -253,6 +260,28 @@ public class UserService {
         user.updatePassword(passwordEncoder.encode(request.getNewPassword()));
         tokenService.invalidateByUserId(userId);
         log.info("비밀번호 변경: userId={}", userId);
+    }
+
+    @Transactional
+    public void withdraw(Long userId) {
+        User user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        if (reservationRepository.existsByUserIdAndStatusInAndActiveTrue(
+                userId, List.of(ReservationStatus.CONFIRMED, ReservationStatus.IN_PROGRESS))) {
+            throw new CustomException(ErrorCode.WITHDRAW_BLOCKED_BY_RESERVATION);
+        }
+        String profileImageUrl = user.getProfileImageUrl();
+        user.withdraw();
+        tempImageService.cleanupByUserId(userId);
+        tokenService.invalidateByUserId(userId);
+        fcmTokenRepository.deleteAllByUserId(userId);
+        ssoAccountRepository.deleteAllByUserId(userId);
+        if (profileImageUrl != null) {
+            gcsService.deleteQuietly(profileImageUrl);
+        }
+        log.info("회원 탈퇴: userId={}", userId);
     }
 
     @Transactional(readOnly = true)

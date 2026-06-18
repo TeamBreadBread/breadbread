@@ -148,6 +148,13 @@ public class UserController {
         return ApiResponse.ok(userService.getLikedPosts(userDetails.getId(), page, size));
     }
 
+    @Operation(summary = "회원 탈퇴", description = "탈퇴 즉시 로그인 불가. 게시글·댓글은 유지되며 작성자 정보는 익명 처리됩니다.")
+    @DeleteMapping("/me")
+    public ApiResponse<Void> withdraw(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        userService.withdraw(userDetails.getId());
+        return ApiResponse.ok();
+    }
+
     @Operation(summary = "선호도 수정")
     @PatchMapping("/preference")
     public ApiResponse<Void> updatePreference(

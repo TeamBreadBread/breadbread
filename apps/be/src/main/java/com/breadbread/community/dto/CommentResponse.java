@@ -32,7 +32,10 @@ public class CommentResponse {
     public static CommentResponse from(Comment comment, Long userId) {
         return CommentResponse.builder()
                 .id(comment.getId())
-                .nickname(comment.getUser().getNickname())
+                .nickname(
+                        comment.getUser().getNickname() != null
+                                ? comment.getUser().getNickname()
+                                : "탈퇴한 사용자")
                 .profileImageUrl(comment.getUser().getProfileImageUrl())
                 .content(comment.getContent())
                 .createdAt(comment.getCreatedAt())

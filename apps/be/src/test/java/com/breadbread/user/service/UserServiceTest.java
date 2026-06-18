@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import com.breadbread.auth.entity.VerificationPurpose;
 import com.breadbread.auth.redis.PhoneVerificationCache;
+import com.breadbread.auth.repository.SsoAccountRepository;
 import com.breadbread.auth.service.PhoneVerificationRedisService;
 import com.breadbread.auth.service.TokenService;
 import com.breadbread.bakery.entity.Bakery;
@@ -42,6 +43,8 @@ import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.image.service.GcsService;
 import com.breadbread.image.service.TempImageService;
+import com.breadbread.notification.repository.FcmTokenRepository;
+import com.breadbread.reservation.repository.ReservationRepository;
 import com.breadbread.user.dto.ChangePasswordRequest;
 import com.breadbread.user.dto.ChangePhoneRequest;
 import com.breadbread.user.dto.CreatePreferenceRequest;
@@ -89,6 +92,9 @@ class UserServiceTest {
     @Mock private PostRepository postRepository;
     @Mock private PostLikeRepository postLikeRepository;
     @Mock private CommentRepository commentRepository;
+    @Mock private FcmTokenRepository fcmTokenRepository;
+    @Mock private SsoAccountRepository ssoAccountRepository;
+    @Mock private ReservationRepository reservationRepository;
 
     @InjectMocks private UserService userService;
 
@@ -253,7 +259,7 @@ class UserServiceTest {
         userService.updateProfile(1L, request);
 
         assertThat(user.getProfileImageUrl()).isNull();
-        verify(gcsService).deleteVerifiedQuietly("https://gcs/old.jpg");
+        verify(gcsService).deleteQuietly("https://gcs/old.jpg");
         verify(tempImageService, never()).consumeOwnedImages(any(), any(), any());
     }
 
@@ -269,7 +275,6 @@ class UserServiceTest {
         userService.updateProfile(1L, request);
 
         assertThat(user.getProfileImageUrl()).isEqualTo("https://gcs/old.jpg");
-        verify(gcsService, never()).deleteVerifiedQuietly(any());
         verify(gcsService, never()).deleteQuietly(any());
         verify(tempImageService, never()).consumeOwnedImages(any(), any(), any());
     }
@@ -486,6 +491,92 @@ class UserServiceTest {
 
         assertThat(user.getPassword()).isEqualTo("encodedNew");
         verify(tokenService).invalidateByUserId(1L);
+    }
+
+    // ───────────────────────────── withdraw ─────────────────────────────
+
+    @Test
+    void withdraw_throws_whenUserNotFound() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.withdraw(1L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.USER_NOT_FOUND);
+    }
+
+    @Test
+    void withdraw_throws_whenActiveReservationExists() {
+        User user = user(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(reservationRepository.existsByUserIdAndStatusInAndActiveTrue(eq(1L), any()))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> userService.withdraw(1L))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.WITHDRAW_BLOCKED_BY_RESERVATION);
+
+        verify(tokenService, never()).invalidateByUserId(any());
+    }
+
+    @Test
+    void withdraw_masksAllPiiFields() {
+        User user = user(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(reservationRepository.existsByUserIdAndStatusInAndActiveTrue(eq(1L), any()))
+                .thenReturn(false);
+
+        userService.withdraw(1L);
+
+        assertThat(user.isWithdrawn()).isTrue();
+        assertThat(user.getName()).isEqualTo("탈퇴한 사용자");
+        assertThat(user.getLoginId()).isNull();
+        assertThat(user.getPassword()).isNull();
+        assertThat(user.getNickname()).isNull();
+        assertThat(user.getEmail()).isNull();
+        assertThat(user.getPhone()).isNull();
+        assertThat(user.getProfileImageUrl()).isNull();
+    }
+
+    @Test
+    void withdraw_deletesProfileImageFromGcs_whenExists() {
+        User user = user(1L);
+        ReflectionTestUtils.setField(user, "profileImageUrl", "https://gcs/profiles/img.jpg");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(reservationRepository.existsByUserIdAndStatusInAndActiveTrue(eq(1L), any()))
+                .thenReturn(false);
+
+        userService.withdraw(1L);
+
+        verify(gcsService).deleteQuietly("https://gcs/profiles/img.jpg");
+    }
+
+    @Test
+    void withdraw_doesNotTouchGcs_whenNoProfileImage() {
+        User user = user(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(reservationRepository.existsByUserIdAndStatusInAndActiveTrue(eq(1L), any()))
+                .thenReturn(false);
+
+        userService.withdraw(1L);
+
+        verify(gcsService, never()).deleteQuietly(any());
+    }
+
+    @Test
+    void withdraw_cleansUpAllSideData() {
+        User user = user(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(reservationRepository.existsByUserIdAndStatusInAndActiveTrue(eq(1L), any()))
+                .thenReturn(false);
+
+        userService.withdraw(1L);
+
+        verify(tempImageService).cleanupByUserId(1L);
+        verify(tokenService).invalidateByUserId(1L);
+        verify(fcmTokenRepository).deleteAllByUserId(1L);
+        verify(ssoAccountRepository).deleteAllByUserId(1L);
     }
 
     // ───────────────────────────── savePreference ─────────────────────────────

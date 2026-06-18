@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 import com.breadbread.auth.dto.CustomUserDetails;
+import com.breadbread.global.exception.CustomException;
+import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
@@ -55,15 +57,15 @@ class CustomUserDetailsServiceTest {
     }
 
     @Test
-    void loadUserByUsername_reflects_disabled_when_user_inactive() {
+    void loadUserByUsername_throws_when_user_withdrawn() {
         User user = user(3L);
-        ReflectionTestUtils.setField(user, "active", false);
+        user.withdraw();
         when(userRepository.findById(3L)).thenReturn(Optional.of(user));
 
-        CustomUserDetails details =
-                (CustomUserDetails) customUserDetailsService.loadUserByUsername("3");
-
-        assertThat(details.isEnabled()).isFalse();
+        assertThatThrownBy(() -> customUserDetailsService.loadUserByUsername("3"))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.WITHDRAWN_USER);
     }
 
     private static User user(long id) {

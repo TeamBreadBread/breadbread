@@ -55,7 +55,10 @@ public class PostDetailResponse {
         return PostDetailResponse.builder()
                 .id(post.getId())
                 .title(post.getTitle())
-                .nickname(post.getUser().getNickname())
+                .nickname(
+                        post.getUser().getNickname() != null
+                                ? post.getUser().getNickname()
+                                : "탈퇴한 사용자")
                 .profileImageUrl(post.getUser().getProfileImageUrl())
                 .createdAt(post.getCreatedAt())
                 .content(post.getContent())

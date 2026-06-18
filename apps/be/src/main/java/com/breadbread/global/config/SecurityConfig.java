@@ -133,7 +133,8 @@ public class SecurityConfig {
                         new AiApiKeyFilter(aiProperties, objectMapper),
                         UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(
-                        new JwtAuthenticationFilter(jwtProvider, customUserDetailsService),
+                        new JwtAuthenticationFilter(
+                                jwtProvider, customUserDetailsService, objectMapper),
                         AiApiKeyFilter.class)
                 .addFilterBefore(authRateLimitFilter, JwtAuthenticationFilter.class);
         return http.build();
