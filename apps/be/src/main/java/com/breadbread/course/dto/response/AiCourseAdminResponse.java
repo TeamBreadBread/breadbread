@@ -11,7 +11,6 @@ import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseBakery;
 import com.breadbread.course.entity.FlexibilityLevel;
 import com.breadbread.course.entity.TravelType;
-import com.breadbread.user.entity.UserPreference;
 import com.breadbread.user.entity.WaitingTolerance;
 import java.util.Comparator;
 import java.util.List;
@@ -41,12 +40,11 @@ public class AiCourseAdminResponse {
         private double latitude;
         private double longitude;
         private Set<BreadType> preferredBreadTypes;
-        // 요청 시점 스냅샷 없음 — 현재 설정 참조
-        private CurrentUserPreference userPreference;
+        private PreferenceSnapshot userPreference;
 
         @Getter
         @Builder
-        public static class CurrentUserPreference {
+        public static class PreferenceSnapshot {
             private List<BakeryType> bakeryTypes;
             private List<BakeryPersonality> bakeryMoods;
             private List<BakeryUseType> bakeryUseTypes;
@@ -68,7 +66,6 @@ public class AiCourseAdminResponse {
 
     public static AiCourseAdminResponse from(Course course) {
         AiCourseInfo ai = course.getAiCourseInfo();
-        UserPreference pref = course.getUserPreference();
 
         Input input =
                 ai != null
@@ -84,15 +81,13 @@ public class AiCourseAdminResponse {
                                 .longitude(ai.getLongitude())
                                 .preferredBreadTypes(course.getPreferredBreadTypes())
                                 .userPreference(
-                                        pref != null
-                                                ? Input.CurrentUserPreference.builder()
-                                                        .bakeryTypes(pref.getBakeryTypes())
-                                                        .bakeryMoods(pref.getBakeryMoods())
-                                                        .bakeryUseTypes(pref.getBakeryUseTypes())
-                                                        .waitingTolerance(
-                                                                pref.getWaitingTolerance())
-                                                        .build()
-                                                : null)
+                                        Input.PreferenceSnapshot.builder()
+                                                .bakeryTypes(course.getSnapshotBakeryTypes())
+                                                .bakeryMoods(course.getSnapshotBakeryMoods())
+                                                .bakeryUseTypes(course.getSnapshotBakeryUseTypes())
+                                                .waitingTolerance(
+                                                        course.getSnapshotWaitingTolerance())
+                                                .build())
                                 .build()
                         : null;
 

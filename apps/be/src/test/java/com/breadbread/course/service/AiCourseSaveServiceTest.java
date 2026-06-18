@@ -362,7 +362,7 @@ class AiCourseSaveServiceTest {
                         .latitude(0)
                         .longitude(0)
                         .build();
-        Course course = Course.createAi("AI 코스", owner, null, aiInfo, Set.of());
+        Course course = Course.createAi("AI 코스", owner, preference(owner), aiInfo, Set.of());
         ReflectionTestUtils.setField(course, "id", id);
         return course;
     }

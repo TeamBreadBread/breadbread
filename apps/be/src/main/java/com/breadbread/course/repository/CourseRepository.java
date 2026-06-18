@@ -42,7 +42,6 @@ public interface CourseRepository extends JpaRepository<Course, Long>, CourseRep
                             + "LEFT JOIN FETCH c.courseBakeries cb "
                             + "LEFT JOIN FETCH cb.bakery "
                             + "LEFT JOIN FETCH c.user "
-                            + "LEFT JOIN FETCH c.userPreference "
                             + "WHERE c.courseType = :type AND c.active = true",
             countQuery =
                     "SELECT COUNT(c) FROM Course c "
@@ -68,7 +67,6 @@ public interface CourseRepository extends JpaRepository<Course, Long>, CourseRep
                     + "LEFT JOIN FETCH c.courseBakeries cb "
                     + "LEFT JOIN FETCH cb.bakery "
                     + "LEFT JOIN FETCH c.user "
-                    + "LEFT JOIN FETCH c.userPreference "
                     + "WHERE c.id IN :ids")
     List<Course> findAllWithDetailsByIdIn(@Param("ids") List<Long> ids);
 }

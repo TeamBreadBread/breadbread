@@ -11,7 +11,6 @@ import com.breadbread.course.entity.CourseBakery;
 import com.breadbread.course.entity.FlexibilityLevel;
 import com.breadbread.course.entity.ManualCourseInfo;
 import com.breadbread.course.entity.TravelType;
-import com.breadbread.user.entity.UserPreference;
 import com.breadbread.user.entity.WaitingTolerance;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.Comparator;
@@ -98,7 +97,6 @@ public class CourseInfo {
 
         public static AiInfo from(Course course) {
             AiCourseInfo info = course.getAiCourseInfo();
-            UserPreference pref = course.getUserPreference();
 
             return AiInfo.builder()
                     .travelType(info.getTravelType())
@@ -115,7 +113,7 @@ public class CourseInfo {
                             course.getPreferredBreadTypes().isEmpty()
                                     ? null
                                     : course.getPreferredBreadTypes())
-                    .userPreference(pref != null ? UserPreferenceInfo.from(pref) : null)
+                    .userPreference(UserPreferenceInfo.from(course))
                     .build();
         }
     }
@@ -129,13 +127,21 @@ public class CourseInfo {
         private List<BakeryUseType> bakeryUseTypes;
         private WaitingTolerance waitingTolerance;
 
-        public static UserPreferenceInfo from(UserPreference pref) {
+        public static UserPreferenceInfo from(Course course) {
             return UserPreferenceInfo.builder()
-                    .bakeryTypes(pref.getBakeryTypes().isEmpty() ? null : pref.getBakeryTypes())
-                    .bakeryMoods(pref.getBakeryMoods().isEmpty() ? null : pref.getBakeryMoods())
+                    .bakeryTypes(
+                            course.getSnapshotBakeryTypes().isEmpty()
+                                    ? null
+                                    : course.getSnapshotBakeryTypes())
+                    .bakeryMoods(
+                            course.getSnapshotBakeryMoods().isEmpty()
+                                    ? null
+                                    : course.getSnapshotBakeryMoods())
                     .bakeryUseTypes(
-                            pref.getBakeryUseTypes().isEmpty() ? null : pref.getBakeryUseTypes())
-                    .waitingTolerance(pref.getWaitingTolerance())
+                            course.getSnapshotBakeryUseTypes().isEmpty()
+                                    ? null
+                                    : course.getSnapshotBakeryUseTypes())
+                    .waitingTolerance(course.getSnapshotWaitingTolerance())
                     .build();
         }
     }

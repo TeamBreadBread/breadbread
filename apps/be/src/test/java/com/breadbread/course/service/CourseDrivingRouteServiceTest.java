@@ -28,7 +28,9 @@ import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.entity.User;
+import com.breadbread.user.entity.UserPreference;
 import com.breadbread.user.entity.UserRole;
+import com.breadbread.user.entity.WaitingTolerance;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -282,7 +284,7 @@ class CourseDrivingRouteServiceTest {
                         .latitude(0)
                         .longitude(0)
                         .build();
-        Course course = Course.createAi("AI 코스", owner, null, aiInfo, Set.of());
+        Course course = Course.createAi("AI 코스", owner, emptyPreference(owner), aiInfo, Set.of());
         ReflectionTestUtils.setField(course, "id", id);
         return course;
     }
@@ -301,9 +303,19 @@ class CourseDrivingRouteServiceTest {
                         .latitude(lat)
                         .longitude(lng)
                         .build();
-        Course course = Course.createAi("AI 코스", owner, null, aiInfo, Set.of());
+        Course course = Course.createAi("AI 코스", owner, emptyPreference(owner), aiInfo, Set.of());
         ReflectionTestUtils.setField(course, "id", id);
         return course;
+    }
+
+    private static UserPreference emptyPreference(User user) {
+        return UserPreference.builder()
+                .bakeryTypes(List.of())
+                .bakeryPersonalities(List.of())
+                .bakeryUseTypes(List.of())
+                .waitingTolerance(WaitingTolerance.NO_WAIT)
+                .user(user)
+                .build();
     }
 
     private static User owner(long id) {

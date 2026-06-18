@@ -11,7 +11,9 @@ import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.tour.dto.CourseInfo;
 import com.breadbread.user.entity.User;
+import com.breadbread.user.entity.UserPreference;
 import com.breadbread.user.entity.UserRole;
+import com.breadbread.user.entity.WaitingTolerance;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -50,7 +52,7 @@ class CourseContextServiceTest {
     @Test
     void 비공개_코스_본인_접근_성공() {
         User owner = user(1L);
-        Course course = Course.createAi("AI 코스", owner, null, null, Set.of());
+        Course course = Course.createAi("AI 코스", owner, emptyPreference(owner), null, Set.of());
         ReflectionTestUtils.setField(course, "id", 200L);
         when(courseRepository.findByIdAndActiveTrue(200L)).thenReturn(Optional.of(course));
         when(courseBakeryRepository.findAllByCourseIdWithBakery(200L)).thenReturn(List.of());
@@ -64,7 +66,7 @@ class CourseContextServiceTest {
     @Test
     void 비공개_코스_타인_접근_FORBIDDEN() {
         User owner = user(1L);
-        Course course = Course.createAi("AI 코스", owner, null, null, Set.of());
+        Course course = Course.createAi("AI 코스", owner, emptyPreference(owner), null, Set.of());
         ReflectionTestUtils.setField(course, "id", 200L);
         when(courseRepository.findByIdAndActiveTrue(200L)).thenReturn(Optional.of(course));
 
@@ -87,6 +89,16 @@ class CourseContextServiceTest {
     }
 
     // ── helpers ────────────────────────────────────────────────────────────────
+
+    private UserPreference emptyPreference(User user) {
+        return UserPreference.builder()
+                .bakeryTypes(List.of())
+                .bakeryPersonalities(List.of())
+                .bakeryUseTypes(List.of())
+                .waitingTolerance(WaitingTolerance.NO_WAIT)
+                .user(user)
+                .build();
+    }
 
     private User user(long id) {
         User u =

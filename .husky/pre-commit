@@ -14,3 +14,17 @@ else
   echo "node executable not found for pre-commit hook"
   exit 1
 fi
+
+# Backend Spotless check (apps/be 변경 시에만 실행)
+if git diff --cached --name-only | grep -q "^apps/be/"; then
+  cd "$(git rev-parse --show-toplevel)/apps/be" || exit 1
+  echo "[pre-commit] Spotless 포맷 검사 중..."
+  ./gradlew spotlessCheck -q
+  if [ $? -ne 0 ]; then
+    echo ""
+    echo "[pre-commit] Spotless 검사 실패 — 커밋이 취소되었습니다."
+    echo "             ./gradlew spotlessApply 로 포맷 수정 후 다시 커밋하세요."
+    exit 1
+  fi
+  echo "[pre-commit] Spotless 검사 통과"
+fi
