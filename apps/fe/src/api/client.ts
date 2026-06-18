@@ -56,8 +56,19 @@ export function setAccessTokenGetter(getter: () => string | null | undefined): v
   accessTokenGetter = getter;
 }
 
+/** 토큰 교환·갱신 API는 gate 대기 대상이 아님 (자기 자신을 기다리는 교착 방지) */
+export function shouldSkipAuthSessionGate(url?: string): boolean {
+  if (!url) return false;
+
+  return (
+    url.includes("/auth/social/") || url.includes("/auth/login") || url.includes("/auth/refresh")
+  );
+}
+
 apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
-  await waitForAuthSessionIfPending();
+  if (!shouldSkipAuthSessionGate(config.url)) {
+    await waitForAuthSessionIfPending();
+  }
   const token = accessTokenGetter?.();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

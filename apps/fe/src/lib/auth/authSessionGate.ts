@@ -32,6 +32,7 @@ export async function waitForAuthSessionIfPending(): Promise<void> {
   if (!pendingEstablishment) return;
   if (typeof window === "undefined") return;
 
+  const startedAt = performance.now();
   const timeout = new Promise<void>((_, reject) => {
     window.setTimeout(
       () => reject(new Error("Auth establishment timeout")),
@@ -41,7 +42,19 @@ export async function waitForAuthSessionIfPending(): Promise<void> {
 
   try {
     await Promise.race([pendingEstablishment, timeout]);
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console -- auth gate 진단
+      console.info(
+        `[authSessionGate] establishment resolved after ${Math.round(performance.now() - startedAt)}ms`,
+      );
+    }
   } catch {
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console -- auth gate 진단
+      console.warn(
+        `[authSessionGate] establishment wait timed out after ${Math.round(performance.now() - startedAt)}ms (limit ${AUTH_ESTABLISHMENT_TIMEOUT_MS}ms)`,
+      );
+    }
     /* 타임아웃·취소 시 토큰 없이 진행 (기존과 동일하게 401 가능) */
   }
 }

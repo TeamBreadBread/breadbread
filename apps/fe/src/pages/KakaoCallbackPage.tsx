@@ -3,12 +3,12 @@ import { useNavigate } from "@tanstack/react-router";
 import { ApiBusinessError, getErrorMessage } from "@/api/types/common";
 import { setSessionTokens } from "@/api/auth";
 import { beginAuthEstablishment, abortAuthEstablishment } from "@/lib/auth/authSessionGate";
+import { finishLoginAndNavigate } from "@/lib/auth/resolvePostLoginRoute";
+import { loginFlowLog, loginFlowTime, loginFlowTimeEnd } from "@/lib/auth/loginFlowTiming";
 import { markGa4FirstActionAfterLoginPending } from "@/lib/analytics/gtag";
 import { onAuthSessionEstablished } from "@/lib/fcm/setupFcm";
 import { exchangeKakaoSocialLogin } from "@/lib/kakaoOAuth";
 import { kakaoOAuthRedirectUri } from "@/utils/frontBase";
-import { hasUserPreferenceSaved } from "@/api/user";
-import { refreshProfileCacheFromServer } from "@/lib/userProfileCache";
 import {
   clearKakaoOAuthSession,
   clearKakaoPkceSession,
@@ -33,9 +33,15 @@ export default function KakaoCallbackPage(props: Props) {
   );
 
   useEffect(() => {
+    let cancelled = false;
+
     async function exchange() {
+      loginFlowTime("kakao-callback-total");
+      loginFlowLog("KakaoCallback mount / exchange start");
+
       if (props.error) {
         clearKakaoOAuthSession();
+        loginFlowTimeEnd("kakao-callback-total");
         return;
       }
 
@@ -43,6 +49,7 @@ export default function KakaoCallbackPage(props: Props) {
       if (!code?.trim()) {
         clearKakaoOAuthSession();
         setMessage("인가 코드가 없습니다. 로그인을 다시 시도해 주세요.");
+        loginFlowTimeEnd("kakao-callback-total");
         return;
       }
 
@@ -51,49 +58,50 @@ export default function KakaoCallbackPage(props: Props) {
         setMessage(
           "로그인 세션이 만료되었습니다. 카카오로 그만하기 버튼을 두 번 누르지 않았는지 확인한 뒤 다시 시도해 주세요.",
         );
+        loginFlowTimeEnd("kakao-callback-total");
         return;
       }
 
       if (props.returnedState !== undefined && props.returnedState !== session.state) {
         clearKakaoOAuthSession();
         setMessage("잘못된 로그인 요청입니다. 처음부터 다시 시도해 주세요.");
+        loginFlowTimeEnd("kakao-callback-total");
         return;
       }
 
       try {
+        loginFlowLog("beginAuthEstablishment");
         beginAuthEstablishment();
+
+        loginFlowTime("exchangeKakaoSocialLogin");
         const tokens = await exchangeKakaoSocialLogin({
           code,
           codeVerifier: session.codeVerifier,
           state: session.state || undefined,
         });
+        loginFlowTimeEnd("exchangeKakaoSocialLogin");
+        if (cancelled) return;
+
         const postLogin = consumeKakaoPostLoginRedirect();
         clearKakaoPkceSession();
+
+        loginFlowTime("setSessionTokens");
         setSessionTokens(tokens);
+        loginFlowTimeEnd("setSessionTokens");
+        if (cancelled) return;
+
         markGa4FirstActionAfterLoginPending();
         onAuthSessionEstablished();
-        await refreshProfileCacheFromServer();
-        if (postLogin) {
-          if (postLogin === "/bbangteo-board-write") {
-            await navigate({ to: postLogin, search: { editId: 0 } });
-          } else {
-            await navigate({ to: postLogin });
-          }
-          return;
-        }
 
-        try {
-          if (await hasUserPreferenceSaved()) {
-            await navigate({ to: "/home" });
-          } else {
-            await navigate({ to: "/user-preference", search: { mode: "create" } });
-          }
-        } catch {
-          await navigate({ to: "/user-preference", search: { mode: "create" } });
-        }
+        await finishLoginAndNavigate(navigate, postLogin);
+        if (cancelled) return;
+
+        loginFlowTimeEnd("kakao-callback-total");
       } catch (e) {
+        if (cancelled) return;
         abortAuthEstablishment(e);
         clearKakaoOAuthSession();
+        loginFlowTimeEnd("kakao-callback-total");
         const base = getErrorMessage(e);
         const isSocialFail = e instanceof ApiBusinessError && e.code === "E0113";
         setMessage(
@@ -105,6 +113,10 @@ export default function KakaoCallbackPage(props: Props) {
     }
 
     void exchange();
+
+    return () => {
+      cancelled = true;
+    };
   }, [props.code, props.error, props.error_description, props.returnedState, navigate]);
 
   return (
