@@ -45,7 +45,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 response.setStatus(e.getErrorCode().getStatus().value());
                 response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                 response.setCharacterEncoding("UTF-8");
-                response.getWriter().write(objectMapper.writeValueAsString(ApiResponse.fail(e.getErrorCode())));
+                response.getWriter()
+                        .write(objectMapper.writeValueAsString(ApiResponse.fail(e.getErrorCode())));
                 return;
             }
         }
