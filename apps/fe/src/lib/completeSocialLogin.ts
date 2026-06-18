@@ -1,33 +1,10 @@
 import { setSessionTokens, type TokenResponse } from "@/api/auth";
 import { markGa4FirstActionAfterLoginPending } from "@/lib/analytics/gtag";
 import { onAuthSessionEstablished } from "@/lib/fcm/setupFcm";
-import { hasUserPreferenceSaved } from "@/api/user";
-import { refreshProfileCacheFromServer } from "@/lib/userProfileCache";
+import { finishLoginAndNavigate } from "@/lib/auth/resolvePostLoginRoute";
 import { consumePostLoginRedirect } from "@/lib/socialOAuthStorage";
-import type { PostLoginRedirectPath } from "@/lib/postLoginRedirect";
 
 type NavigateFn = (options: { to: string; search?: Record<string, unknown> }) => Promise<void>;
-
-async function goAfterLogin(navigate: NavigateFn, postLogin: PostLoginRedirectPath | undefined) {
-  if (postLogin) {
-    if (postLogin === "/bbangteo-board-write") {
-      await navigate({ to: postLogin, search: { editId: 0 } });
-    } else {
-      await navigate({ to: postLogin });
-    }
-    return;
-  }
-
-  try {
-    if (await hasUserPreferenceSaved()) {
-      await navigate({ to: "/home" });
-    } else {
-      await navigate({ to: "/user-preference", search: { mode: "create" } });
-    }
-  } catch {
-    await navigate({ to: "/user-preference", search: { mode: "create" } });
-  }
-}
 
 /** 소셜 로그인 토큰 저장 후 공통 라우팅 */
 export async function completeSocialLogin(
@@ -39,6 +16,5 @@ export async function completeSocialLogin(
   setSessionTokens(tokens);
   markGa4FirstActionAfterLoginPending();
   onAuthSessionEstablished();
-  await refreshProfileCacheFromServer();
-  await goAfterLogin(navigate, postLogin);
+  await finishLoginAndNavigate(navigate, postLogin);
 }
