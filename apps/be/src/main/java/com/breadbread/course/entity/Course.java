@@ -1,11 +1,15 @@
 package com.breadbread.course.entity;
 
+import com.breadbread.bakery.entity.enums.BakeryPersonality;
+import com.breadbread.bakery.entity.enums.BakeryType;
+import com.breadbread.bakery.entity.enums.BakeryUseType;
 import com.breadbread.bakery.entity.enums.BreadType;
 import com.breadbread.global.entity.BaseEntity;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserPreference;
+import com.breadbread.user.entity.WaitingTolerance;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -78,9 +82,32 @@ public class Course extends BaseEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_preference_id")
-    private UserPreference userPreference;
+    // AI 코스 생성 시점의 사용자 선호도 스냅샷
+    @ElementCollection
+    @CollectionTable(
+            name = "course_pref_bakery_types",
+            joinColumns = @JoinColumn(name = "course_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "bakery_type")
+    private List<BakeryType> snapshotBakeryTypes = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(
+            name = "course_pref_bakery_moods",
+            joinColumns = @JoinColumn(name = "course_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "bakery_mood")
+    private List<BakeryPersonality> snapshotBakeryMoods = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "course_pref_use_types", joinColumns = @JoinColumn(name = "course_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "use_type")
+    private List<BakeryUseType> snapshotBakeryUseTypes = new ArrayList<>();
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "snapshot_waiting_tolerance")
+    private WaitingTolerance snapshotWaitingTolerance;
 
     // 정적 팩토리
     public static Course createManual(
@@ -115,7 +142,10 @@ public class Course extends BaseEntity {
         course.name = name;
         course.courseType = CourseType.AI;
         course.user = user;
-        course.userPreference = userPreference;
+        course.snapshotBakeryTypes = new ArrayList<>(userPreference.getBakeryTypes());
+        course.snapshotBakeryMoods = new ArrayList<>(userPreference.getBakeryMoods());
+        course.snapshotBakeryUseTypes = new ArrayList<>(userPreference.getBakeryUseTypes());
+        course.snapshotWaitingTolerance = userPreference.getWaitingTolerance();
         course.aiCourseInfo = aiCourseInfo;
         course.preferredBreadTypes = preferredBreadTypes;
         course.shared = false;

@@ -577,6 +577,7 @@ class UserServiceTest {
         verify(tokenService).invalidateByUserId(1L);
         verify(fcmTokenRepository).deleteAllByUserId(1L);
         verify(ssoAccountRepository).deleteAllByUserId(1L);
+        verify(userPreferenceRepository).deleteByUserId(1L);
     }
 
     // ───────────────────────────── savePreference ─────────────────────────────

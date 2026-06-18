@@ -29,3 +29,7 @@ gcs:
 server:
   port: ${PORT:8080}
   forward-headers-strategy: framework
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never

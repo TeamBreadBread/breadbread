@@ -278,6 +278,7 @@ public class UserService {
         tokenService.invalidateByUserId(userId);
         fcmTokenRepository.deleteAllByUserId(userId);
         ssoAccountRepository.deleteAllByUserId(userId);
+        userPreferenceRepository.deleteByUserId(userId);
         if (profileImageUrl != null) {
             gcsService.deleteQuietly(profileImageUrl);
         }
