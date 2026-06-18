@@ -54,6 +54,12 @@ public class AiCourseSaveService {
     private final CourseDrivingRouteRepository courseDrivingRouteRepository;
 
     public String createAi(Long userId, AiCourseRequest request) {
+        if (!userRepository.existsById(userId)) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+        if (!userPreferenceRepository.findByUserId(userId).isPresent()) {
+            throw new CustomException(ErrorCode.PREFERENCE_NOT_FOUND);
+        }
         String jobId = UUID.randomUUID().toString();
         aiCourseRedisService.savePending(jobId, userId);
         try {

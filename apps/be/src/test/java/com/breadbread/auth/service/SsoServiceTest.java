@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -188,6 +189,39 @@ class SsoServiceTest {
 
         assertThat(result).isSameAs(tokens);
         verify(tokenService).issueTokens(user);
+    }
+
+    @Test
+    void socialLogin_throws_WITHDRAWN_USER_whenUserWithdrawn() {
+        SocialLoginRequest request =
+                socialRequest("code", "https://app/oauth/kakao/callback", null, null);
+        stubWebClientPostReturns(Mono.just(Map.of("access_token", "kakao-at")));
+        Map<String, Object> kakaoAccount = new HashMap<>();
+        kakaoAccount.put("email", "k@example.com");
+        kakaoAccount.put("name", "카카오이름");
+        kakaoAccount.put("profile", Map.of("nickname", "카카오닉"));
+        Map<String, Object> userBody = new HashMap<>();
+        userBody.put("id", 12345L);
+        userBody.put("kakao_account", kakaoAccount);
+        stubWebClientGetReturns(kakaoConfig.getUserInfoUri(), Mono.just(userBody));
+
+        User withdrawnUser = user(10L);
+        withdrawnUser.withdraw();
+        SsoAccount account =
+                SsoAccount.builder()
+                        .provider(SsoProvider.KAKAO)
+                        .providerUserId("12345")
+                        .user(withdrawnUser)
+                        .build();
+        when(ssoAccountService.findOrCreateSsoAccount(eq(SsoProvider.KAKAO), any()))
+                .thenReturn(account);
+
+        assertThatThrownBy(() -> ssoService.socialLogin(SsoProvider.KAKAO, request))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.WITHDRAWN_USER);
+
+        verify(tokenService, never()).issueTokens(any());
     }
 
     @Test

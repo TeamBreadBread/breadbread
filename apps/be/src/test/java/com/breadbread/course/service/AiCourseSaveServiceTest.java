@@ -72,6 +72,9 @@ class AiCourseSaveServiceTest {
     @Test
     void createAi_returns_job_id_when_async_submit_ok() {
         AiCourseRequest request = new AiCourseRequest();
+        when(userRepository.existsById(2L)).thenReturn(true);
+        when(userPreferenceRepository.findByUserId(2L))
+                .thenReturn(Optional.of(preference(user(2L))));
         when(aiCourseAsyncService.processAiCourse(anyString(), eq(2L), eq(request)))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
@@ -85,6 +88,9 @@ class AiCourseSaveServiceTest {
     @Test
     void createAi_throws_whenAsyncSubmitFails() {
         AiCourseRequest request = new AiCourseRequest();
+        when(userRepository.existsById(2L)).thenReturn(true);
+        when(userPreferenceRepository.findByUserId(2L))
+                .thenReturn(Optional.of(preference(user(2L))));
         when(aiCourseAsyncService.processAiCourse(anyString(), eq(2L), eq(request)))
                 .thenThrow(new IllegalStateException("submit"));
 

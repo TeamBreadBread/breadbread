@@ -143,20 +143,12 @@ public class GcsService {
         }
     }
 
+    /** 공개 URL을 검증한 뒤 객체 키로만 삭제합니다. (CodeQL 경로/URL taint 완화) */
     public void deleteQuietly(String url) {
         try {
-            delete(url);
+            deleteByObjectKey(extractObjectKey(url));
         } catch (Exception e) {
             log.warn("GCS 파일 삭제 실패 (무시됨): {}", url, e);
-        }
-    }
-
-    /** 공개 URL을 검증한 뒤 객체 키로만 삭제합니다. (CodeQL 경로/URL taint 완화) */
-    public void deleteVerifiedQuietly(String fileUrl) {
-        try {
-            deleteByObjectKey(extractObjectKey(fileUrl));
-        } catch (Exception e) {
-            log.warn("GCS verified delete failed", e);
         }
     }
 

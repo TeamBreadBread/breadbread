@@ -3,6 +3,7 @@ package com.breadbread.user.entity;
 import com.breadbread.global.entity.BaseEntity;
 import com.breadbread.user.dto.UpdateProfileRequest;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -49,7 +50,7 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private boolean privacyAgreed;
 
-    private boolean active = true;
+    private LocalDateTime deletedAt;
 
     private String profileImageUrl;
 
@@ -100,5 +101,20 @@ public class User extends BaseEntity {
 
     public void updatePassword(String password) {
         this.password = password;
+    }
+
+    public boolean isWithdrawn() {
+        return this.deletedAt != null;
+    }
+
+    public void withdraw() {
+        this.deletedAt = LocalDateTime.now();
+        this.name = "탈퇴한 사용자";
+        this.loginId = null;
+        this.password = null;
+        this.nickname = null;
+        this.email = null;
+        this.phone = null;
+        this.profileImageUrl = null;
     }
 }

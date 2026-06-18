@@ -38,6 +38,9 @@ public class SsoService {
         SocialUserInfo userInfo = getUserInfo(provider, accessToken);
         SsoAccount ssoAccount = ssoAccountService.findOrCreateSsoAccount(provider, userInfo);
         User user = ssoAccount.getUser();
+        if (user.isWithdrawn()) {
+            throw new CustomException(ErrorCode.WITHDRAWN_USER);
+        }
         log.info("소셜 로그인 성공: provider={}, userId={}", provider, user.getId());
         return tokenService.issueTokens(user);
     }

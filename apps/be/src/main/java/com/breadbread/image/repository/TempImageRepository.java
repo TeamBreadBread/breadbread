@@ -14,4 +14,6 @@ public interface TempImageRepository extends JpaRepository<TempImage, Long> {
     List<TempImage> findAllByUrlIn(Collection<String> urls);
 
     List<TempImage> findAllByUploadedAtBefore(LocalDateTime threshold);
+
+    List<TempImage> findAllByUserId(Long userId);
 }

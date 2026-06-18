@@ -57,6 +57,9 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             @Param("today") LocalDate today,
             @Param("statuses") Collection<ReservationStatus> statuses);
 
+    boolean existsByUserIdAndStatusInAndActiveTrue(
+            Long userId, Collection<ReservationStatus> statuses);
+
     Optional<Reservation> findFirstByUserIdAndCourseIdAndDepartureDateAndStatus(
             Long userId, Long courseId, LocalDate departureDate, ReservationStatus status);
 

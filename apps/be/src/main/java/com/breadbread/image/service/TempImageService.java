@@ -121,6 +121,23 @@ public class TempImageService {
         log.info("만료 임시 이미지 정리 완료: threshold={}, deletedCount={}", threshold, deletedCount);
     }
 
+    @Transactional
+    public void cleanupByUserId(Long userId) {
+        List<TempImage> images = tempImageRepository.findAllByUserId(userId);
+        if (images.isEmpty()) {
+            return;
+        }
+        for (TempImage image : images) {
+            try {
+                gcsService.deleteByObjectKey(image.getObjectKey());
+            } catch (Exception e) {
+                log.warn("탈퇴 임시 이미지 GCS 삭제 실패 (무시됨): objectKey={}", image.getObjectKey(), e);
+            }
+        }
+        tempImageRepository.deleteAll(images);
+        log.info("탈퇴 임시 이미지 정리 완료: userId={}, count={}", userId, images.size());
+    }
+
     private void validateAllRequestedImagesExist(
             Set<String> requestedUrls, List<TempImage> tempImages) {
         Set<String> foundUrls =
