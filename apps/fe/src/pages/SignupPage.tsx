@@ -12,6 +12,12 @@ import {
 } from "@/components/domain/auth";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { saveUserProfile } from "@/lib/userProfileCache";
+import {
+  getAccountPasswordValidationMessage,
+  isValidAccountPassword,
+  isValidSignupEmail,
+  isValidSignupName,
+} from "@/utils/accountValidation";
 import { cn } from "@/utils/cn";
 
 export default function SignupPage() {
@@ -57,14 +63,21 @@ export default function SignupPage() {
   const isEmailFilled = email.length > 0;
 
   const isUserIdValid = /^[a-z0-9_-]{5,20}$/.test(userId);
-  const hasPasswordMinLength = password.length >= 8;
-  const hasPasswordSpecialChar = /[^A-Za-z0-9]/.test(password);
-  const isPasswordValid = hasPasswordMinLength && hasPasswordSpecialChar;
-  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isNameFilled = name.trim().length > 0;
+  const isNameValid = isValidSignupName(name);
+  const isPasswordValid = isValidAccountPassword(password);
+  const isEmailValid = isValidSignupEmail(email);
 
+  const isNameInvalid = isNameFilled && !isNameValid;
   const isUserIdInvalid = isUserIdFilled && !isUserIdValid;
   const isPasswordInvalid = isPasswordFilled && !isPasswordValid;
   const isEmailInvalid = isEmailFilled && !isEmailValid;
+
+  const nameHelperText = isNameFilled
+    ? isNameValid
+      ? "올바른 이름입니다."
+      : "이름은 2~30자의 한글 또는 영문만 입력할 수 있습니다."
+    : "실명을 입력해주세요.";
 
   const userIdHelperText = userIdHasKorean
     ? "아이디는 영문으로 작성해주세요."
@@ -79,11 +92,7 @@ export default function SignupPage() {
       : "5~20자의 영문 소문자, 숫자와 특수기호(_),(-)만 사용 가능합니다.";
 
   const passwordHelperText = isPasswordFilled
-    ? isPasswordValid
-      ? "사용할 수 있는 비밀번호입니다."
-      : !hasPasswordMinLength
-        ? "비밀번호를 8자 이상 입력해주세요."
-        : "비밀번호에 특수문자를 넣어주세요."
+    ? getAccountPasswordValidationMessage(password)
     : "8~16자의 영문 대/소문자, 숫자, 특수문자를 사용해 주세요.";
 
   const emailHelperText = isEmailFilled
@@ -94,6 +103,16 @@ export default function SignupPage() {
 
   const isUserIdSuccess = isUserIdValid && isUserIdDupChecked && !userIdHasKorean;
   const isUserIdWarn = userIdHasKorean || isUserIdInvalid || (isUserIdValid && !isUserIdDupChecked);
+
+  const nameHelperClassName = cn(
+    isNameValid && isNameFilled && "text-green-700",
+    isNameInvalid && "text-red-700",
+  );
+
+  const nameInputClassName = cn(
+    isNameValid && isNameFilled && "border-green-700 text-green-700",
+    isNameInvalid && "border-red-700 text-red-700 placeholder:text-red-700",
+  );
 
   const userIdHelperClassName = cn(
     isUserIdSuccess && "text-green-700",
@@ -130,7 +149,6 @@ export default function SignupPage() {
     isEmailInvalid && "border-red-700 text-red-700 placeholder:text-red-700",
   );
 
-  const isNameValid = name.trim().length > 0;
   const isPhoneReady = /^010\d{8}$/.test(phoneDigits);
 
   const canSubmit =
@@ -189,8 +207,17 @@ export default function SignupPage() {
       />
 
       <main className="flex flex-1 flex-col gap-x8 bg-white px-x5 py-x8">
-        <SignupSection label="이름">
-          <TextField placeholder="실명을 입력해주세요" value={name} onChange={setName} />
+        <SignupSection
+          label="이름"
+          helperText={nameHelperText}
+          helperTextClassName={nameHelperClassName}
+        >
+          <TextField
+            placeholder="실명을 입력해주세요"
+            value={name}
+            onChange={setName}
+            className={nameInputClassName}
+          />
         </SignupSection>
 
         <SignupSection

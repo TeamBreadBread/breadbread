@@ -188,9 +188,11 @@ export default function BreadPreferencePage({ isEditMode = false }: BreadPrefere
           title={
             isEditMode
               ? "현재 선호도를 수정해 주세요"
-              : "정확한 빵 취향을 위해\n선호도 조사를 해주세요"
+              : "정확한 빵 취향 파악을 위해\n선호도 조사를 해주세요"
           }
-          description="설명 문구"
+          description={
+            isEditMode ? undefined : "선택한 스타일을 바탕으로 맞춤형 빵집을 추천해 드려요."
+          }
         />
 
         <div className="flex flex-col gap-x2_5">

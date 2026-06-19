@@ -5,15 +5,16 @@ import { RouteHeroCard, RouteListSection } from "@/components/domain/route";
 import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
 import type { RouteCourse } from "@/components/domain/route";
-import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
 import { saveRouteFocusCourseId } from "@/utils/aiCourseStorage";
 import { deleteAiCourse, getMyCourseRoutes, removeCourseRoute } from "@/api/courses";
 import { getErrorMessage } from "@/api/types/common";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
+import { useAiCourseEntry } from "@/hooks/useAiCourseEntry";
 
 export default function RoutePage() {
   const navigate = useNavigate();
   const { courseGuideActive, courseGuideId } = useLoginRequired();
+  const { startAiCourseEntry, preferenceRequiredDialog } = useAiCourseEntry("/route");
   const [courses, setCourses] = useState<RouteCourse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -68,6 +69,7 @@ export default function RoutePage() {
 
   return (
     <MobileFrame>
+      {preferenceRequiredDialog}
       <div className="flex flex-1 flex-col bg-white">
         <AppTopBar title="루트" hideBack />
 
@@ -75,7 +77,7 @@ export default function RoutePage() {
           <RouteHeroCard
             title="AI 빵집 추천"
             description="내 취향 빵집 찾아보기"
-            onClick={() => navigate({ to: AI_COURSE_FLOW_START })}
+            onClick={startAiCourseEntry}
           />
           {isLoading ? (
             <p className="w-full py-x4 text-center text-size-4 text-gray-700">

@@ -1,5 +1,6 @@
 package com.breadbread.auth.dto;
 
+import com.breadbread.global.validation.ValidationPatterns;
 import com.breadbread.user.entity.UserRole;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
@@ -22,8 +23,8 @@ public class SignupRequest {
     @Schema(description = "비밀번호 (8~16자, 영문 대/소문자, 숫자, 특수문자 사용 가능)", example = "Bread123!")
     @NotBlank(message = "비밀번호는 필수입니다.")
     @Pattern(
-            regexp = "^[A-Za-z0-9!@#$%^&*()_+\\-=\\[\\]{};':\",./<>?\\\\|`~]{8,16}$",
-            message = "비밀번호는 8~16자의 영문 대/소문자, 숫자, 특수문자만 사용 가능합니다.")
+            regexp = ValidationPatterns.ACCOUNT_PASSWORD,
+            message = ValidationPatterns.ACCOUNT_PASSWORD_MESSAGE)
     private String password;
 
     @Schema(description = "비밀번호 확인", example = "Bread123!")
@@ -32,11 +33,13 @@ public class SignupRequest {
 
     @Schema(description = "이름", example = "홍길동")
     @NotBlank(message = "이름은 필수입니다.")
+    @Pattern(regexp = ValidationPatterns.REAL_NAME, message = "이름은 2~30자의 한글 또는 영문만 입력할 수 있습니다.")
     private String name;
 
     @Schema(description = "이메일", example = "breaduser@example.com")
     @NotBlank(message = "이메일은 필수입니다.")
     @Email(message = "올바른 이메일 형식이 아닙니다.")
+    @Pattern(regexp = ValidationPatterns.EMAIL, message = "올바른 이메일 형식이 아닙니다.")
     private String email;
 
     @Schema(description = "휴대전화 번호 (010으로 시작하는 11자리)", example = "01012345678")

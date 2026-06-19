@@ -2,7 +2,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
 import { isLoggedIn } from "@/lib/auth/isLoggedIn";
 import leadingLogo from "@/assets/icons/Leading.svg";
 import RecommendationHeroCard from "./RecommendationHeroCard";
@@ -13,12 +12,11 @@ import {
   getUserProfile,
   refreshProfileCacheFromServer,
 } from "@/lib/userProfileCache";
-import { navigateToAiCourseEntry } from "@/utils/navigateToAiCourseEntry";
+import { useAiCourseEntry } from "@/hooks/useAiCourseEntry";
 
 const HomeHeroSection = () => {
-  const navigate = useNavigate();
   const [greetingBread] = useState(() => pickRandomHomeGreetingBread());
-  const [isAiCourseNavigating, setIsAiCourseNavigating] = useState(false);
+  const { startAiCourseEntry, isNavigating, preferenceRequiredDialog } = useAiCourseEntry("/home");
   const [displayName, setDisplayName] = useState(() => {
     const profile = getUserProfile();
     if (profile?.name?.trim()) return profile.name.trim();
@@ -45,15 +43,12 @@ const HomeHeroSection = () => {
   }, []);
 
   const goAiCoursePreferenceFlow = () => {
-    if (isAiCourseNavigating) return;
-    setIsAiCourseNavigating(true);
-    void navigateToAiCourseEntry(navigate).finally(() => {
-      setIsAiCourseNavigating(false);
-    });
+    startAiCourseEntry();
   };
 
   return (
     <section className="bg-white px-5 pb-[18px] pt-[max(18px,env(safe-area-inset-top))]">
+      {preferenceRequiredDialog}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-[18px]">
           <img src={leadingLogo} alt="빵빵" className="h-[41px] w-[63px] object-contain" />
@@ -66,10 +61,7 @@ const HomeHeroSection = () => {
         </div>
 
         <div className="flex gap-2">
-          <RecommendationHeroCard
-            onClick={goAiCoursePreferenceFlow}
-            disabled={isAiCourseNavigating}
-          />
+          <RecommendationHeroCard onClick={goAiCoursePreferenceFlow} disabled={isNavigating} />
           <QuickMenuGrid />
         </div>
       </div>
