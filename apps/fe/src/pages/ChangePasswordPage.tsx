@@ -3,18 +3,11 @@ import { getErrorMessage } from "@/api/types/common";
 import { getMyProfile, updateMyPassword } from "@/api/user";
 import { AppTopBar, BottomCTA, FieldLabel, PasswordField } from "@/components/common";
 import MobileFrame from "@/components/layout/MobileFrame";
+import {
+  getAccountPasswordValidationMessage,
+  isValidAccountPassword,
+} from "@/utils/accountValidation";
 import { useNavigate } from "@tanstack/react-router";
-
-function isPasswordValid(password: string): boolean {
-  return (
-    password.length >= 8 &&
-    password.length <= 16 &&
-    /[a-z]/.test(password) &&
-    /[A-Z]/.test(password) &&
-    /[0-9]/.test(password) &&
-    /[^a-zA-Z0-9]/.test(password)
-  );
-}
 
 export default function ChangePasswordPage() {
   const navigate = useNavigate();
@@ -45,23 +38,14 @@ export default function ChangePasswordPage() {
     };
   }, [navigate]);
 
-  const passwordMessage = useMemo(() => {
-    if (!newPassword) return "8~16자의 영문 대/소문자, 숫자, 특수문자를 사용해 주세요.";
-    if (newPassword.length < 8 || newPassword.length > 16) {
-      return "비밀번호를 8자 이상 16자 이하로 입력해주세요.";
-    }
-    if (!/[^a-zA-Z0-9]/.test(newPassword)) {
-      return "비밀번호에 특수문자를 포함해주세요.";
-    }
-    if (!isPasswordValid(newPassword)) {
-      return "영문 대/소문자, 숫자, 특수문자를 모두 포함해야 합니다.";
-    }
-    return "사용 가능한 비밀번호입니다.";
-  }, [newPassword]);
+  const passwordMessage = useMemo(
+    () => getAccountPasswordValidationMessage(newPassword),
+    [newPassword],
+  );
 
   const passwordMessageClassName = !newPassword
     ? "text-gray-700"
-    : isPasswordValid(newPassword)
+    : isValidAccountPassword(newPassword)
       ? "text-[color:var(--color-green-700)]"
       : "text-[color:var(--color-red-700)]";
 
@@ -70,7 +54,7 @@ export default function ChangePasswordPage() {
   const canSubmit =
     !profileLoading &&
     currentPassword.trim().length > 0 &&
-    isPasswordValid(newPassword) &&
+    isValidAccountPassword(newPassword) &&
     passwordConfirmMatches &&
     !isSaving;
 
