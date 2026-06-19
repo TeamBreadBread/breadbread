@@ -9,6 +9,7 @@ import com.breadbread.auth.entity.SsoProvider;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.entity.User;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -103,6 +104,7 @@ public class SsoService {
                                                                         ErrorCode
                                                                                 .SOCIAL_LOGIN_FAILED))))
                         .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                        .timeout(Duration.ofSeconds(10))
                         .block();
 
         if (body == null || body.get("access_token") == null) {
@@ -146,6 +148,7 @@ public class SsoService {
                                             new CustomException(ErrorCode.SOCIAL_LOGIN_FAILED));
                                 })
                         .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                        .timeout(Duration.ofSeconds(10))
                         .block();
 
         if (body == null) {
@@ -193,6 +196,7 @@ public class SsoService {
                                             new CustomException(ErrorCode.SOCIAL_LOGIN_FAILED));
                                 })
                         .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                        .timeout(Duration.ofSeconds(10))
                         .block();
 
         if (body == null) {
@@ -232,6 +236,7 @@ public class SsoService {
                                             new CustomException(ErrorCode.SOCIAL_LOGIN_FAILED));
                                 })
                         .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                        .timeout(Duration.ofSeconds(10))
                         .block();
 
         if (body == null) {

@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.portone.sdk.server.errors.WebhookVerificationException;
 import io.portone.sdk.server.webhook.WebhookVerifier;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
@@ -329,6 +330,7 @@ public class PaymentService {
                             .uri("/payments/{paymentId}", paymentId)
                             .retrieve()
                             .bodyToMono(PortOnePaymentResponse.class)
+                            .timeout(Duration.ofSeconds(15))
                             .block());
         } catch (WebClientResponseException e) {
             log.warn("[포트원] API 응답 오류: paymentId={}, status={}", paymentId, e.getStatusCode());
