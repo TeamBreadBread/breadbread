@@ -1,0 +1,67 @@
+<configuration>
+
+  <!-- default: prod/local/test 외 프로필이거나 프로필 미지정 시 -->
+  <springProfile name="!prod &amp; !local &amp; !test">
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder>
+        <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{requestId:-no-request}] %logger{36} - %msg%n</pattern>
+      </encoder>
+    </appender>
+
+    <root level="INFO">
+      <appender-ref ref="STDOUT"/>
+    </root>
+  </springProfile>
+
+  <!-- prod: Cloud Logging이 파싱할 수 있는 JSON 포맷 -->
+  <springProfile name="prod">
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+        <fieldNames>
+          <timestamp>timestamp</timestamp>
+          <level>severity</level>
+          <levelValue>[ignore]</levelValue>
+          <version>[ignore]</version>
+          <logger>logger</logger>
+          <thread>thread</thread>
+        </fieldNames>
+        <customFields>{"service":"breadbread-be"}</customFields>
+        <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+          <maxDepthPerCause>20</maxDepthPerCause>
+          <rootCauseFirst>true</rootCauseFirst>
+        </throwableConverter>
+      </encoder>
+    </appender>
+
+    <root level="INFO">
+      <appender-ref ref="STDOUT"/>
+    </root>
+  </springProfile>
+
+  <!-- local: 가독성 좋은 텍스트 포맷 (기존 패턴 유지) -->
+  <springProfile name="local">
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder>
+        <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{requestId:-no-request}] [%X{userId:-anonymous}] %logger{36} - %msg%n</pattern>
+      </encoder>
+    </appender>
+
+    <root level="DEBUG">
+      <appender-ref ref="STDOUT"/>
+    </root>
+  </springProfile>
+
+  <!-- test: 간결한 텍스트 -->
+  <springProfile name="test">
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder>
+        <pattern>%-5level [%X{requestId:-no-request}] %logger{36} - %msg%n</pattern>
+      </encoder>
+    </appender>
+
+    <root level="WARN">
+      <appender-ref ref="STDOUT"/>
+    </root>
+  </springProfile>
+
+</configuration>

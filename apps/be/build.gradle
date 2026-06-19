@@ -86,6 +86,9 @@ dependencies {
     // FCM
     implementation 'com.google.firebase:firebase-admin:9.8.0'
 
+    // Structured logging (JSON for Cloud Logging)
+    implementation 'net.logstash.logback:logstash-logback-encoder:8.0'
+
     // ShedLock
     implementation 'net.javacrumbs.shedlock:shedlock-spring:6.9.0'
     implementation 'net.javacrumbs.shedlock:shedlock-provider-redis-spring:6.9.0'
