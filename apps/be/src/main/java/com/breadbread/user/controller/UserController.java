@@ -43,7 +43,7 @@ public class UserController {
         return ApiResponse.ok(userService.getUserProfile(userDetails.getId()));
     }
 
-    @Operation(summary = "닉네임 중복 확인")
+    @Operation(summary = "닉네임 중복 확인", description = "사용 가능하면 true, 중복이면 false를 반환합니다.")
     @GetMapping("/check-nickname")
     public ApiResponse<Boolean> checkNickname(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -74,7 +74,9 @@ public class UserController {
         return ApiResponse.ok();
     }
 
-    @Operation(summary = "비밀번호 수정")
+    @Operation(
+            summary = "비밀번호 수정",
+            description = "현재 비밀번호를 확인한 뒤 새 비밀번호로 변경합니다. 소셜 전용 계정은 사용할 수 없습니다.")
     @PatchMapping("/me/password")
     public ApiResponse<Void> changePassword(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -83,7 +85,9 @@ public class UserController {
         return ApiResponse.ok();
     }
 
-    @Operation(summary = "선호도 조사 등록")
+    @Operation(
+            summary = "선호도 조사 등록",
+            description = "빵집 유형, 분위기, 이용 목적, 대기 허용 시간을 등록합니다. 선호도는 1회만 등록 가능합니다.")
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/preference")
     public ApiResponse<Void> savePreference(
@@ -96,14 +100,14 @@ public class UserController {
         return ApiResponse.ok();
     }
 
-    @Operation(summary = "내 선호도 조회")
+    @Operation(summary = "내 선호도 조회", description = "등록된 선호도가 없으면 null을 반환합니다.")
     @GetMapping("/preference")
     public ApiResponse<PreferenceResponse> getPreference(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ApiResponse.ok(userService.getPreference(userDetails.getId()));
     }
 
-    @Operation(summary = "내가 쓴 리뷰 목록 조회")
+    @Operation(summary = "내가 쓴 리뷰 목록 조회", description = "페이지 단위로 조회합니다. page는 0부터 시작합니다.")
     @GetMapping("/me/reviews")
     public ApiResponse<MyReviewListResponse> getMyReviews(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -112,7 +116,7 @@ public class UserController {
         return ApiResponse.ok(userService.getMyReviews(userDetails.getId(), page, size));
     }
 
-    @Operation(summary = "좋아요한 빵집 목록 조회")
+    @Operation(summary = "좋아요한 빵집 목록 조회", description = "페이지 단위로 조회합니다. page는 0부터 시작합니다.")
     @GetMapping("/me/liked/bakeries")
     public ApiResponse<BakeryListResponse> getLikedBakeries(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -121,7 +125,7 @@ public class UserController {
         return ApiResponse.ok(userService.getLikedBakeries(userDetails.getId(), page, size));
     }
 
-    @Operation(summary = "좋아요한 코스 목록 조회")
+    @Operation(summary = "좋아요한 코스 목록 조회", description = "페이지 단위로 조회합니다. page는 0부터 시작합니다.")
     @GetMapping("/me/liked/courses")
     public ApiResponse<CourseListResponse> getLikedCourses(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -130,7 +134,7 @@ public class UserController {
         return ApiResponse.ok(userService.getLikedCourses(userDetails.getId(), page, size));
     }
 
-    @Operation(summary = "내가 쓴 게시글 목록 조회")
+    @Operation(summary = "내가 쓴 게시글 목록 조회", description = "페이지 단위로 조회합니다. page는 0부터 시작합니다.")
     @GetMapping("/me/posts")
     public ApiResponse<PostListResponse> getMyPosts(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -139,7 +143,7 @@ public class UserController {
         return ApiResponse.ok(userService.getMyPosts(userDetails.getId(), page, size));
     }
 
-    @Operation(summary = "좋아요한 게시글 목록 조회")
+    @Operation(summary = "좋아요한 게시글 목록 조회", description = "페이지 단위로 조회합니다. page는 0부터 시작합니다.")
     @GetMapping("/me/liked/posts")
     public ApiResponse<PostListResponse> getLikedPosts(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -155,7 +159,7 @@ public class UserController {
         return ApiResponse.ok();
     }
 
-    @Operation(summary = "선호도 수정")
+    @Operation(summary = "선호도 수정", description = "기존 선호도를 수정합니다. 선호도가 등록되지 않은 경우 에러가 반환됩니다.")
     @PatchMapping("/preference")
     public ApiResponse<Void> updatePreference(
             @AuthenticationPrincipal CustomUserDetails userDetails,
