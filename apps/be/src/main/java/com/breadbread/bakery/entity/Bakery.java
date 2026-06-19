@@ -184,6 +184,20 @@ public class Bakery extends BaseEntity {
         this.dong = dong;
     }
 
+    public void updatePhone(String phone) {
+        this.phone = phone;
+    }
+
+    public void updateCoordinates(double latitude, double longitude) {
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.location = toPoint(longitude, latitude);
+    }
+
+    public void updateRegion(String region) {
+        this.region = region;
+    }
+
     public void updatePlaceId(String placeId) {
         this.placeId = placeId;
     }

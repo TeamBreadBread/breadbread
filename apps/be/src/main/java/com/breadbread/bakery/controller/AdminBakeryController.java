@@ -4,12 +4,14 @@ import com.breadbread.bakery.dto.request.ApproveBakeriesRequest;
 import com.breadbread.bakery.dto.response.ApproveBakeriesResponse;
 import com.breadbread.bakery.dto.response.BakeryAdminListResponse;
 import com.breadbread.bakery.dto.response.BakeryAdminResponse;
+import com.breadbread.bakery.dto.response.KakaoSyncResultResponse;
 import com.breadbread.bakery.entity.enums.AdminBakerySortType;
 import com.breadbread.bakery.entity.enums.BakeryStatus;
 import com.breadbread.bakery.service.BakeryService;
 import com.breadbread.bakery.service.GooglePlacesImportService;
 import com.breadbread.bakery.service.GooglePlacesUpdateService;
 import com.breadbread.bakery.service.KakaoLocalImportService;
+import com.breadbread.bakery.service.KakaoLocalUpdateService;
 import com.breadbread.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -32,6 +34,7 @@ public class AdminBakeryController {
     private final GooglePlacesUpdateService googlePlacesUpdateService;
     private final GooglePlacesImportService googlePlacesImportService;
     private final KakaoLocalImportService kakaoLocalImportService;
+    private final KakaoLocalUpdateService kakaoLocalUpdateService;
 
     @Operation(
             summary = "구글 Places 키워드로 빵집 임포트",
@@ -167,10 +170,45 @@ public class AdminBakeryController {
 
     @Operation(
             summary = "전체 빵집 구글 Places 동기화",
-            description = "활성 상태인 모든 빵집을 구글 Places API와 동기화한다. 개별 실패는 무시하고 계속 진행한다.")
+            description =
+                    "APPROVED 상태인 모든 활성 빵집의 이미지를 구글 Places API로 동기화한다. GCS 이미지가 이미 있는 빵집은 스킵.\n\n"
+                            + "**스킵 기준**\n"
+                            + "- 구글 검색 결과가 없는 경우\n"
+                            + "- 가장 가까운 후보가 300m 초과인 경우")
     @PostMapping("/sync-places")
-    public ApiResponse<Void> syncAllPlaces() {
-        googlePlacesUpdateService.syncAllBakeries();
+    public ApiResponse<KakaoSyncResultResponse> syncAllPlaces() {
+        return ApiResponse.ok(googlePlacesUpdateService.syncAllBakeries());
+    }
+
+    @Operation(
+            summary = "특정 빵집 카카오 로컬 동기화",
+            description =
+                    "카카오 로컬 API로 특정 빵집의 정보를 업데이트한다. 상태 무관하게 동작.\n\n"
+                            + "**업데이트 필드**\n"
+                            + "- `phone` — 전화번호\n"
+                            + "- `dong` — 행정동\n"
+                            + "- `region` — 지역구 (예: 대전 중구)\n"
+                            + "- `address` — 도로명 주소 (없으면 지번 주소)\n"
+                            + "- `latitude` / `longitude` / `location` — 위경도\n\n"
+                            + "빵집 이름으로 검색 후 좌표 기준 200m 이내 동일 이름의 장소가 있을 때만 업데이트된다.")
+    @PostMapping("/{id}/sync-kakao")
+    public ApiResponse<Void> syncKakao(@PathVariable Long id) {
+        kakaoLocalUpdateService.syncBakery(id);
         return ApiResponse.ok();
+    }
+
+    @Operation(
+            summary = "전체 빵집 카카오 로컬 동기화",
+            description =
+                    "APPROVED 상태인 모든 활성 빵집의 정보를 카카오 로컬 API로 업데이트한다. 실패한 빵집 목록을 응답에 포함.\n\n"
+                            + "**업데이트 필드**\n"
+                            + "- `phone` — 전화번호\n"
+                            + "- `dong` — 행정동\n"
+                            + "- `region` — 지역구 (예: 대전 중구)\n"
+                            + "- `address` — 도로명 주소 (없으면 지번 주소)\n"
+                            + "- `latitude` / `longitude` / `location` — 위경도")
+    @PostMapping("/sync-kakao")
+    public ApiResponse<KakaoSyncResultResponse> syncAllKakao() {
+        return ApiResponse.ok(kakaoLocalUpdateService.syncAllBakeries());
     }
 }
