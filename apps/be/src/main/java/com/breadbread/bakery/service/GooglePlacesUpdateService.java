@@ -2,6 +2,8 @@ package com.breadbread.bakery.service;
 
 import com.breadbread.bakery.client.GooglePlacesClient;
 import com.breadbread.bakery.client.GooglePlacesClient.PlaceResult;
+import com.breadbread.bakery.dto.response.KakaoSyncResultResponse;
+import com.breadbread.bakery.dto.response.KakaoSyncResultResponse.BakeryEntry;
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.BakeryImage;
 import com.breadbread.bakery.entity.enums.BakeryStatus;
@@ -116,25 +118,43 @@ public class GooglePlacesUpdateService {
         return true;
     }
 
-    public void syncAllBakeries() {
+    public KakaoSyncResultResponse syncAllBakeries() {
         List<Bakery> bakeries =
                 bakeryRepository.findAllByActiveTrueAndStatus(BakeryStatus.APPROVED);
         log.debug("[Places 동기화] 전체 동기화 시작: count={}", bakeries.size());
-        int success = 0, skip = 0, fail = 0;
+        int success = 0;
+        List<BakeryEntry> skipped = new ArrayList<>();
+        List<BakeryEntry> failed = new ArrayList<>();
         for (Bakery bakery : bakeries) {
             try {
                 if (self.syncBakery(bakery.getId())) success++;
-                else skip++;
+                else
+                    skipped.add(
+                            BakeryEntry.builder()
+                                    .id(bakery.getId())
+                                    .name(bakery.getName())
+                                    .build());
             } catch (Exception e) {
-                log.error("[Places 동기화] 실패: bakeryId={}", bakery.getId(), e);
-                fail++;
+                log.error(
+                        "[Places 동기화] 실패: bakeryId={}, name={}",
+                        bakery.getId(),
+                        bakery.getName(),
+                        e);
+                failed.add(BakeryEntry.builder().id(bakery.getId()).name(bakery.getName()).build());
             }
         }
-        if (fail > 0) {
-            log.warn("[Places 동기화] 전체 동기화 완료: success={}, skip={}, fail={}", success, skip, fail);
-        } else {
-            log.debug("[Places 동기화] 전체 동기화 완료: success={}, skip={}", success, skip);
-        }
+        log.info(
+                "[Places 동기화] 전체 동기화 완료: success={}, skipped={}, failed={}",
+                success,
+                skipped.size(),
+                failed.size());
+        return KakaoSyncResultResponse.builder()
+                .successCount(success)
+                .skippedCount(skipped.size())
+                .failedCount(failed.size())
+                .skippedBakeries(skipped)
+                .failedBakeries(failed)
+                .build();
     }
 
     @Scheduled(cron = "0 0 4 */4 * *", zone = "Asia/Seoul")
