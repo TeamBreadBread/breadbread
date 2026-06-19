@@ -109,7 +109,7 @@ export default function ChangePasswordPage() {
               borderClassName={
                 !newPassword
                   ? "border-gray-400"
-                  : isPasswordValid(newPassword)
+                  : isValidAccountPassword(newPassword)
                     ? "border-[color:var(--color-green-700)]"
                     : "border-[color:var(--color-red-700)]"
               }
