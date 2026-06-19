@@ -8,9 +8,9 @@ import {
   type UpdateMyProfileRequest,
 } from "@/api/user";
 import { AppTopBar, BottomCTA, FieldLabel, TextField } from "@/components/common";
-import { AppIcon, IconAssets } from "@/components/icons";
 import MobileFrame from "@/components/layout/MobileFrame";
 import { refreshProfileCacheFromServer } from "@/lib/userProfileCache";
+import { resolveProfileImageUrl } from "@/utils/defaultProfileAvatar";
 import { useNavigate } from "@tanstack/react-router";
 
 type NicknameCheckState = "idle" | "checking" | "available" | "taken";
@@ -42,6 +42,7 @@ export default function EditProfilePage() {
   const [original, setOriginal] = useState<ProfileFormState | null>(null);
   const [nicknameCheckState, setNicknameCheckState] = useState<NicknameCheckState>("idle");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [profileAvatarSeed, setProfileAvatarSeed] = useState<string | undefined>();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -57,6 +58,7 @@ export default function EditProfilePage() {
         };
         setForm(initial);
         setOriginal(initial);
+        setProfileAvatarSeed(me.loginId?.trim() || me.userId?.toString());
       } catch (error) {
         if (active) {
           window.alert(getErrorMessage(error));
@@ -76,6 +78,11 @@ export default function EditProfilePage() {
   const trimmedNickname = form.nickname.trim();
   const trimmedEmail = form.email.trim();
   const trimmedProfileImageUrl = form.profileImageUrl.trim();
+  const previewProfileImageUrl = useMemo(
+    () => resolveProfileImageUrl(trimmedProfileImageUrl || null, profileAvatarSeed),
+    [trimmedProfileImageUrl, profileAvatarSeed],
+  );
+  const hasCustomProfileImage = trimmedProfileImageUrl.length > 0;
   const isNicknameChanged = trimmedNickname !== normalizedOriginal.nickname;
   const isEmailChanged = trimmedEmail !== normalizedOriginal.email;
   const isProfileImageChanged = trimmedProfileImageUrl !== normalizedOriginal.profileImageUrl;
@@ -229,18 +236,12 @@ export default function EditProfilePage() {
         <section className="flex flex-col gap-[6px] rounded-r4 bg-white p-x5">
           <FieldLabel>프로필 이미지</FieldLabel>
           <div className="flex items-center gap-x4">
-            <div className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-full bg-gray-200">
-              {form.profileImageUrl ? (
-                <img
-                  src={form.profileImageUrl}
-                  alt="프로필 이미지 미리보기"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                  <AppIcon src={IconAssets.IcPerson} size={40} className="opacity-50" />
-                </div>
-              )}
+            <div className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-full border border-[#eeeff1] bg-[#f7f8f9]">
+              <img
+                src={previewProfileImageUrl}
+                alt="프로필 이미지 미리보기"
+                className="h-full w-full object-cover"
+              />
             </div>
             <div className="flex flex-1 flex-col gap-x2">
               <button
@@ -251,7 +252,7 @@ export default function EditProfilePage() {
               >
                 {isUploadingImage ? "업로드 중…" : "이미지 변경"}
               </button>
-              {form.profileImageUrl ? (
+              {hasCustomProfileImage ? (
                 <button
                   type="button"
                   onClick={() => setForm((prev) => ({ ...prev, profileImageUrl: "" }))}
