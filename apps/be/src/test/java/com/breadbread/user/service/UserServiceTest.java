@@ -48,6 +48,7 @@ import com.breadbread.reservation.repository.ReservationRepository;
 import com.breadbread.user.dto.ChangePasswordRequest;
 import com.breadbread.user.dto.ChangePhoneRequest;
 import com.breadbread.user.dto.CreatePreferenceRequest;
+import com.breadbread.user.dto.PreferenceResponse;
 import com.breadbread.user.dto.UpdatePreferenceRequest;
 import com.breadbread.user.dto.UpdateProfileRequest;
 import com.breadbread.user.entity.User;
@@ -626,13 +627,30 @@ class UserServiceTest {
     // ───────────────────────────── getPreference / updatePreference ─────────────────────────────
 
     @Test
-    void getPreference_throws_whenMissing() {
+    void getPreference_returnsNull_whenMissing() {
         when(userPreferenceRepository.findByUserId(3L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> userService.getPreference(3L))
-                .isInstanceOf(CustomException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.PREFERENCE_NOT_FOUND);
+        assertThat(userService.getPreference(3L)).isNull();
+    }
+
+    @Test
+    void getPreference_returnsResponse_whenExists() {
+        User user = user(3L);
+        UserPreference pref =
+                UserPreference.builder()
+                        .user(user)
+                        .bakeryTypes(List.of(BakeryType.CLASSIC))
+                        .bakeryPersonalities(List.of(BakeryPersonality.HIDDEN_GEM))
+                        .bakeryUseTypes(List.of(BakeryUseType.TAKEOUT))
+                        .waitingTolerance(WaitingTolerance.UNDER_20)
+                        .build();
+        when(userPreferenceRepository.findByUserId(3L)).thenReturn(Optional.of(pref));
+
+        PreferenceResponse result = userService.getPreference(3L);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getBakeryTypes()).containsExactly(BakeryType.CLASSIC);
+        assertThat(result.getWaitingTolerance()).isEqualTo(WaitingTolerance.UNDER_20);
     }
 
     @Test

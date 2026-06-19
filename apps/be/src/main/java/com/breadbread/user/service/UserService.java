@@ -123,11 +123,10 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public PreferenceResponse getPreference(Long userId) {
-        UserPreference preference =
-                userPreferenceRepository
-                        .findByUserId(userId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.PREFERENCE_NOT_FOUND));
-        return PreferenceResponse.from(preference);
+        return userPreferenceRepository
+                .findByUserId(userId)
+                .map(PreferenceResponse::from)
+                .orElse(null);
     }
 
     @Transactional
