@@ -4,6 +4,7 @@ import com.breadbread.global.dto.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -23,10 +24,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ApiResponse<Void>> handleCustomException(CustomException e) {
         ErrorCode errorCode = e.getErrorCode();
-        if (errorCode.getStatus().is5xxServerError()) {
-            log.error("[{}] {}", errorCode.getCode(), e.getMessage(), e);
-        } else {
-            log.warn("[{}] {}", errorCode.getCode(), e.getMessage());
+        MDC.put("errorCode", errorCode.getCode());
+        try {
+            if (errorCode.getStatus().is5xxServerError()) {
+                log.error("[{}] {}", errorCode.getCode(), e.getMessage(), e);
+            } else {
+                log.warn("[{}] {}", errorCode.getCode(), e.getMessage());
+            }
+        } finally {
+            MDC.remove("errorCode");
         }
         return ResponseEntity.status(errorCode.getStatus()).body(ApiResponse.fail(errorCode));
     }
@@ -34,11 +40,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidException(
             MethodArgumentNotValidException e) {
-        log.warn("Validation failed: {}", e.getMessage());
         String message =
                 e.getBindingResult().getFieldErrors().stream()
                         .map(error -> error.getField() + ": " + error.getDefaultMessage())
                         .collect(Collectors.joining(", "));
+        MDC.put("errorCode", ErrorCode.INVALID_INPUT_VALUE.getCode());
+        try {
+            log.warn("Validation failed: {}", message);
+        } finally {
+            MDC.remove("errorCode");
+        }
         return ResponseEntity.badRequest()
                 .body(ApiResponse.fail(ErrorCode.INVALID_INPUT_VALUE.getCode(), message));
     }
@@ -46,7 +57,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(
             MethodArgumentTypeMismatchException e) {
-        log.warn("TypeMismatch: {}", e.getValue());
+        MDC.put("errorCode", ErrorCode.INVALID_INPUT_VALUE.getCode());
+        try {
+            log.warn("TypeMismatch: {}", e.getValue());
+        } finally {
+            MDC.remove("errorCode");
+        }
         return ResponseEntity.badRequest()
                 .body(
                         ApiResponse.fail(
@@ -57,25 +73,40 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(
             ConstraintViolationException e) {
-        log.warn("ConstraintViolation: {}", e.getMessage());
         String message =
                 e.getConstraintViolations().stream()
                         .map(violation -> violation.getMessage())
                         .collect(Collectors.joining(", "));
+        MDC.put("errorCode", ErrorCode.INVALID_INPUT_VALUE.getCode());
+        try {
+            log.warn("ConstraintViolation: {}", message);
+        } finally {
+            MDC.remove("errorCode");
+        }
         return ResponseEntity.badRequest()
                 .body(ApiResponse.fail(ErrorCode.INVALID_INPUT_VALUE.getCode(), message));
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiResponse<Void>> handleBadCredentials(BadCredentialsException e) {
-        log.warn("BadCredentials: {}", e.getMessage());
+        MDC.put("errorCode", ErrorCode.INVALID_PASSWORD.getCode());
+        try {
+            log.warn("BadCredentials: {}", e.getMessage());
+        } finally {
+            MDC.remove("errorCode");
+        }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(ApiResponse.fail(ErrorCode.INVALID_PASSWORD));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiResponse<Void>> handleNotReadable(HttpMessageNotReadableException e) {
-        log.warn("HttpMessageNotReadable: {}", e.getMessage());
+        MDC.put("errorCode", ErrorCode.INVALID_INPUT_VALUE.getCode());
+        try {
+            log.warn("HttpMessageNotReadable: {}", e.getMessage());
+        } finally {
+            MDC.remove("errorCode");
+        }
         return ResponseEntity.badRequest()
                 .body(
                         ApiResponse.fail(
@@ -84,7 +115,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({NoHandlerFoundException.class, NoResourceFoundException.class})
     public ResponseEntity<ApiResponse<Void>> handleNotFound(Exception e) {
-        log.warn("Path not found: {}", e.getMessage());
+        MDC.put("errorCode", ErrorCode.NOT_FOUND.getCode());
+        try {
+            log.warn("Path not found: {}", e.getMessage());
+        } finally {
+            MDC.remove("errorCode");
+        }
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.fail(ErrorCode.NOT_FOUND.getCode(), "존재하지 않는 경로입니다."));
     }
@@ -92,7 +128,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(
             HttpRequestMethodNotSupportedException e) {
-        log.warn("HttpRequestMethodNotSupportedException: {}", e.getMessage());
+        MDC.put("errorCode", ErrorCode.INVALID_INPUT_VALUE.getCode());
+        try {
+            log.warn("HttpRequestMethodNotSupportedException: {}", e.getMessage());
+        } finally {
+            MDC.remove("errorCode");
+        }
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
                 .body(
                         ApiResponse.fail(
@@ -101,7 +142,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
-        log.error("Unhandled exception", e);
+        MDC.put("errorCode", ErrorCode.INTERNAL_SERVER_ERROR.getCode());
+        try {
+            log.error("Unhandled exception", e);
+        } finally {
+            MDC.remove("errorCode");
+        }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.fail(ErrorCode.INTERNAL_SERVER_ERROR));
     }

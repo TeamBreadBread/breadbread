@@ -186,6 +186,3 @@ google:
     base-url: https://places.googleapis.com
     photo-url-ttl-seconds: ${GOOGLE_PLACES_PHOTO_URL_TTL_SECONDS:345600}
 
-logging:
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{requestId:-no-request}] [%X{userId:-anonymous}] %logger{36} - %msg%n"
