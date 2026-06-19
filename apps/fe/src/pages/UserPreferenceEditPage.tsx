@@ -231,7 +231,6 @@ export default function UserPreferenceEditPage() {
           title={
             hasExistingPreference ? "현재 선호도를 수정해 주세요" : "선호도를 먼저 선택해 주세요"
           }
-          description="설명 문구"
         />
 
         <div className="flex flex-col gap-x2_5">
