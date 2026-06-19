@@ -167,6 +167,10 @@ cp .env.example .env
 
 FE 배포 시 필요한 GitHub Secrets는 [apps/fe/DEPLOY.md](apps/fe/DEPLOY.md)를 참고하세요.
 
+BE 배포 시 필요한 환경 변수 및 인프라 설정은 [apps/be/docs/backend-deployment.md](apps/be/docs/backend-deployment.md)를 참고하세요.
+
+- 📊 [실시간 모니터링 대시보드 (Grafana)](https://livelysamosa206.grafana.net/public-dashboards/fd40ccf21ed84237ae3fe1037a073b51) — Cloud Run 요청 수, 레이턴시, 인스턴스 수, 리소스 사용량 등
+
 ---
 
 ## 팀원
@@ -175,8 +179,8 @@ FE 배포 시 필요한 GitHub Secrets는 [apps/fe/DEPLOY.md](apps/fe/DEPLOY.md)
 |------|------|
 | 백승훈 | PM |
 | 유민진 | PD |
-| 이지현 | FE |
-| 임지원 | BE |
+| 이지현 | FE, AI |
+| 임지원 | BE, Infra |
 
 ---
 
@@ -185,3 +189,4 @@ FE 배포 시 필요한 GitHub Secrets는 [apps/fe/DEPLOY.md](apps/fe/DEPLOY.md)
 - [협업 가이드라인 (CONTRIBUTING.md)](CONTRIBUTING.md) — 브랜치 전략, 커밋 규칙, 협업 방식
 - [FE 배포 가이드 (apps/fe/DEPLOY.md)](apps/fe/DEPLOY.md) — Firebase Hosting, GitHub Secrets
 - [API 문서](https://api.breadbread.io/swagger-ui/index.html)
+- [모니터링 대시보드 (Grafana)](https://livelysamosa206.grafana.net/public-dashboards/fd40ccf21ed84237ae3fe1037a073b51) — Cloud Run 실시간 메트릭
