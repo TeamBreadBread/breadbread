@@ -93,6 +93,12 @@ export default function MyPage() {
       onClick: () => navigate({ to: "/route" }),
     },
     {
+      id: "tour-celebrations",
+      label: "코스 완료 축하 메시지함",
+      iconSrc: IconAssets.IcVerified,
+      onClick: () => navigate({ to: "/my-tour-celebrations" }),
+    },
+    {
       id: "reservation",
       label: "예약 내역",
       iconSrc: IconAssets.IcCalendar,

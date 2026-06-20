@@ -10,11 +10,8 @@ interface CourseTimelineItemProps {
   place: import("./types").CoursePlace;
   onClick?: () => void;
   canReorder?: boolean;
-  canMoveUp?: boolean;
-  canMoveDown?: boolean;
   reorderBusy?: boolean;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
+  dragHandle?: ReactNode;
 }
 
 function TimelineInfoRow({
@@ -39,11 +36,8 @@ export default function CourseTimelineItem({
   place,
   onClick,
   canReorder = false,
-  canMoveUp = false,
-  canMoveDown = false,
   reorderBusy = false,
-  onMoveUp,
-  onMoveDown,
+  dragHandle,
 }: CourseTimelineItemProps) {
   const clickableClass = onClick ? "cursor-pointer hover:bg-[#fafbfc]" : "";
   const badgeBgClass = getCourseOrderBadgeBgClass(index);
@@ -53,7 +47,12 @@ export default function CourseTimelineItem({
     place.congestionLabel?.trim() || formatCongestionTimelineLabel(place.congestionLevel);
 
   return (
-    <div className="flex items-start gap-x1">
+    <div
+      className={cn(
+        "flex items-start gap-x1",
+        canReorder && reorderBusy && "pointer-events-none opacity-70",
+      )}
+    >
       <div className="flex items-center justify-start p-x2">
         <div className="relative h-x6 w-x6">
           <div className={cn("h-x6 w-x6 rounded-full", badgeBgClass)} />
@@ -63,14 +62,15 @@ export default function CourseTimelineItem({
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-1 items-start gap-x1">
+      <div className="relative min-w-0 flex-1">
         <button
           type="button"
           onClick={onClick}
           disabled={!onClick}
           className={cn(
-            "min-w-0 flex-1 rounded-r2 border border-[#eeeff1] bg-white p-x4 text-left shadow-[0_1px_2px_rgba(26,31,39,0.04)]",
+            "w-full rounded-r2 border border-[#eeeff1] bg-white p-x4 text-left shadow-[0_1px_2px_rgba(26,31,39,0.04)]",
             clickableClass,
+            dragHandle && "pr-x10",
           )}
         >
           <div className="font-pretendard typo-t5bold text-[#1a1c20]">{place.name}</div>
@@ -103,36 +103,7 @@ export default function CourseTimelineItem({
           </div>
         </button>
 
-        {canReorder ? (
-          <div className="flex shrink-0 flex-col gap-x1 pt-x1">
-            <button
-              type="button"
-              aria-label={`${place.name} 순서 위로`}
-              disabled={!canMoveUp || reorderBusy}
-              onPointerDown={(event) => event.stopPropagation()}
-              onClick={(event) => {
-                event.stopPropagation();
-                onMoveUp?.();
-              }}
-              className="flex h-x6 w-x6 items-center justify-center rounded-r2 border border-gray-200 bg-white text-[14px] text-gray-700 disabled:opacity-40"
-            >
-              ↑
-            </button>
-            <button
-              type="button"
-              aria-label={`${place.name} 순서 아래로`}
-              disabled={!canMoveDown || reorderBusy}
-              onPointerDown={(event) => event.stopPropagation()}
-              onClick={(event) => {
-                event.stopPropagation();
-                onMoveDown?.();
-              }}
-              className="flex h-x6 w-x6 items-center justify-center rounded-r2 border border-gray-200 bg-white text-[14px] text-gray-700 disabled:opacity-40"
-            >
-              ↓
-            </button>
-          </div>
-        ) : null}
+        {dragHandle}
       </div>
     </div>
   );

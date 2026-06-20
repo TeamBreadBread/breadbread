@@ -20,6 +20,7 @@ import { Route as ResetPasswordRouteImport } from "./routes/reset-password";
 import { Route as RecommendationRouteImport } from "./routes/recommendation";
 import { Route as PreferenceRouteImport } from "./routes/preference";
 import { Route as PasswordResetSuccessRouteImport } from "./routes/password-reset-success";
+import { Route as MyTourCelebrationsRouteImport } from "./routes/my-tour-celebrations";
 import { Route as MyReviewsRouteImport } from "./routes/my-reviews";
 import { Route as MyReservationsRouteImport } from "./routes/my-reservations";
 import { Route as MyReservationDetailRouteImport } from "./routes/my-reservation-detail";
@@ -122,6 +123,11 @@ const PreferenceRoute = PreferenceRouteImport.update({
 const PasswordResetSuccessRoute = PasswordResetSuccessRouteImport.update({
   id: "/password-reset-success",
   path: "/password-reset-success",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const MyTourCelebrationsRoute = MyTourCelebrationsRouteImport.update({
+  id: "/my-tour-celebrations",
+  path: "/my-tour-celebrations",
   getParentRoute: () => rootRouteImport,
 } as any);
 const MyReviewsRoute = MyReviewsRouteImport.update({
@@ -400,6 +406,7 @@ export interface FileRoutesByFullPath {
   "/my-reservation-detail": typeof MyReservationDetailRoute;
   "/my-reservations": typeof MyReservationsRoute;
   "/my-reviews": typeof MyReviewsRoute;
+  "/my-tour-celebrations": typeof MyTourCelebrationsRoute;
   "/password-reset-success": typeof PasswordResetSuccessRoute;
   "/preference": typeof PreferenceRoute;
   "/recommendation": typeof RecommendationRoute;
@@ -459,6 +466,7 @@ export interface FileRoutesByTo {
   "/my-reservation-detail": typeof MyReservationDetailRoute;
   "/my-reservations": typeof MyReservationsRoute;
   "/my-reviews": typeof MyReviewsRoute;
+  "/my-tour-celebrations": typeof MyTourCelebrationsRoute;
   "/password-reset-success": typeof PasswordResetSuccessRoute;
   "/preference": typeof PreferenceRoute;
   "/recommendation": typeof RecommendationRoute;
@@ -521,6 +529,7 @@ export interface FileRoutesById {
   "/my-reservation-detail": typeof MyReservationDetailRoute;
   "/my-reservations": typeof MyReservationsRoute;
   "/my-reviews": typeof MyReviewsRoute;
+  "/my-tour-celebrations": typeof MyTourCelebrationsRoute;
   "/password-reset-success": typeof PasswordResetSuccessRoute;
   "/preference": typeof PreferenceRoute;
   "/recommendation": typeof RecommendationRoute;
@@ -584,6 +593,7 @@ export interface FileRouteTypes {
     | "/my-reservation-detail"
     | "/my-reservations"
     | "/my-reviews"
+    | "/my-tour-celebrations"
     | "/password-reset-success"
     | "/preference"
     | "/recommendation"
@@ -643,6 +653,7 @@ export interface FileRouteTypes {
     | "/my-reservation-detail"
     | "/my-reservations"
     | "/my-reviews"
+    | "/my-tour-celebrations"
     | "/password-reset-success"
     | "/preference"
     | "/recommendation"
@@ -704,6 +715,7 @@ export interface FileRouteTypes {
     | "/my-reservation-detail"
     | "/my-reservations"
     | "/my-reviews"
+    | "/my-tour-celebrations"
     | "/password-reset-success"
     | "/preference"
     | "/recommendation"
@@ -766,6 +778,7 @@ export interface RootRouteChildren {
   MyReservationDetailRoute: typeof MyReservationDetailRoute;
   MyReservationsRoute: typeof MyReservationsRoute;
   MyReviewsRoute: typeof MyReviewsRoute;
+  MyTourCelebrationsRoute: typeof MyTourCelebrationsRoute;
   PasswordResetSuccessRoute: typeof PasswordResetSuccessRoute;
   PreferenceRoute: typeof PreferenceRoute;
   RecommendationRoute: typeof RecommendationRoute;
@@ -861,6 +874,13 @@ declare module "@tanstack/react-router" {
       path: "/password-reset-success";
       fullPath: "/password-reset-success";
       preLoaderRoute: typeof PasswordResetSuccessRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/my-tour-celebrations": {
+      id: "/my-tour-celebrations";
+      path: "/my-tour-celebrations";
+      fullPath: "/my-tour-celebrations";
+      preLoaderRoute: typeof MyTourCelebrationsRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/my-reviews": {
@@ -1273,6 +1293,7 @@ const rootRouteChildren: RootRouteChildren = {
   MyReservationDetailRoute: MyReservationDetailRoute,
   MyReservationsRoute: MyReservationsRoute,
   MyReviewsRoute: MyReviewsRoute,
+  MyTourCelebrationsRoute: MyTourCelebrationsRoute,
   PasswordResetSuccessRoute: PasswordResetSuccessRoute,
   PreferenceRoute: PreferenceRoute,
   RecommendationRoute: RecommendationRoute,

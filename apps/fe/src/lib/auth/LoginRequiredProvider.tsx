@@ -7,6 +7,11 @@ import { isBotFloatingHiddenPath } from "@/lib/courseGuide";
 import { isLoggedIn } from "@/lib/auth/isLoggedIn";
 import { tryPostLoginRedirectPath } from "@/lib/postLoginRedirect";
 import { LoginRequiredContext } from "@/lib/auth/LoginRequiredContext";
+import {
+  clearPendingTourCompleteCelebration,
+  markTourCompleteCelebration,
+  readPendingTourCompleteCelebration,
+} from "@/utils/tourCelebration";
 
 export function LoginRequiredProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
@@ -17,6 +22,9 @@ export function LoginRequiredProvider({ children }: { children: ReactNode }) {
   const [redirectPath, setRedirectPath] = useState<string | undefined>();
   const [courseGuideActive, setCourseGuideActive] = useState(false);
   const [courseGuideId, setCourseGuideId] = useState<number | null>(null);
+  const [pendingCelebrationCourseId, setPendingCelebrationCourseId] = useState<number | null>(() =>
+    readPendingTourCompleteCelebration(),
+  );
 
   const hideLoginDialog = useCallback(() => {
     setLoginDialogOpen(false);
@@ -43,6 +51,8 @@ export function LoginRequiredProvider({ children }: { children: ReactNode }) {
 
   const startCourseGuide = useCallback((courseId: number) => {
     if (!isLoggedIn() || courseId <= 0) return;
+    clearPendingTourCompleteCelebration();
+    setPendingCelebrationCourseId(null);
     setCourseGuideActive(true);
     setCourseGuideId(courseId);
   }, []);
@@ -50,6 +60,17 @@ export function LoginRequiredProvider({ children }: { children: ReactNode }) {
   const endCourseGuide = useCallback(() => {
     setCourseGuideActive(false);
     setCourseGuideId(null);
+  }, []);
+
+  const startCelebrationPending = useCallback((courseId: number) => {
+    if (!isLoggedIn() || courseId <= 0) return;
+    markTourCompleteCelebration(courseId);
+    setPendingCelebrationCourseId(courseId);
+  }, []);
+
+  const acknowledgeCelebration = useCallback(() => {
+    clearPendingTourCompleteCelebration();
+    setPendingCelebrationCourseId(null);
   }, []);
 
   /** 앱 재진입 시 진행 중 투어가 있으면 코스 안내 세션 복구 */
@@ -61,9 +82,11 @@ export function LoginRequiredProvider({ children }: { children: ReactNode }) {
       .then((tour) => {
         if (cancelled) return;
         if (tour?.status === "IN_PROGRESS" && tour.courseId > 0) {
+          clearPendingTourCompleteCelebration();
+          setPendingCelebrationCourseId(null);
           setCourseGuideActive(true);
           setCourseGuideId(tour.courseId);
-        } else {
+        } else if (readPendingTourCompleteCelebration() == null) {
           setCourseGuideActive(false);
           setCourseGuideId(null);
         }
@@ -83,11 +106,13 @@ export function LoginRequiredProvider({ children }: { children: ReactNode }) {
     pathname === "/bbangteo" ||
     pathname.startsWith("/bbangteo-") ||
     pathname.startsWith("/bbangteo/");
-  /** 코스 안내 시작 후에만 BreadBot 노출 (투어 중 빵터 제외) */
+  /** 코스 안내 또는 축하 메시지 확인 전까지 BreadBot 노출 (투어 중 빵터 제외) */
   const showBot =
-    loggedIn && resolvedCourseGuideActive && !(isBbangteoPath && resolvedCourseGuideActive);
+    loggedIn &&
+    (resolvedCourseGuideActive || pendingCelebrationCourseId != null) &&
+    !(isBbangteoPath && resolvedCourseGuideActive);
   const showBotFloating = showBot && !isBotFloatingHiddenPath(pathname);
-  const botCourseId = resolvedCourseGuideId;
+  const botCourseId = resolvedCourseGuideId ?? pendingCelebrationCourseId;
 
   const value = useMemo(
     () => ({
@@ -96,6 +121,9 @@ export function LoginRequiredProvider({ children }: { children: ReactNode }) {
       endCourseGuide,
       courseGuideActive: resolvedCourseGuideActive,
       courseGuideId: resolvedCourseGuideId,
+      pendingCelebrationCourseId: loggedIn ? pendingCelebrationCourseId : null,
+      startCelebrationPending,
+      acknowledgeCelebration,
     }),
     [
       requireLogin,
@@ -103,6 +131,10 @@ export function LoginRequiredProvider({ children }: { children: ReactNode }) {
       endCourseGuide,
       resolvedCourseGuideActive,
       resolvedCourseGuideId,
+      pendingCelebrationCourseId,
+      startCelebrationPending,
+      acknowledgeCelebration,
+      loggedIn,
     ],
   );
 

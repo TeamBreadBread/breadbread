@@ -65,6 +65,7 @@ interface KakaoMap {
   setDraggable(draggable: boolean): void;
   setZoomable(zoomable: boolean): void;
   relayout(): void;
+  addListener?(event: string, callback: () => void): void;
 }
 
 interface KakaoLatLngBounds {

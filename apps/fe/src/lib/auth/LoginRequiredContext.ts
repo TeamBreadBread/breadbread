@@ -11,6 +11,12 @@ export type LoginRequiredContextValue = {
   courseGuideActive: boolean;
   /** 안내 중인 코스 ID (없으면 null) */
   courseGuideId: number | null;
+  /** 코스 완료 축하 메시지 확인 전까지 BreadBot 유지 */
+  pendingCelebrationCourseId: number | null;
+  /** 코스 완료 축하 대기 시작 */
+  startCelebrationPending: (courseId: number) => void;
+  /** 축하 메시지 확인 완료 — BreadBot 숨김 */
+  acknowledgeCelebration: () => void;
 };
 
 export const LoginRequiredContext = createContext<LoginRequiredContextValue | null>(null);
