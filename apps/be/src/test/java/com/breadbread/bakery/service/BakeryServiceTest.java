@@ -74,6 +74,7 @@ class BakeryServiceTest {
     @Mock private CourseDrivingRouteRepository courseDrivingRouteRepository;
     @Mock private GooglePlacesUpdateService googlePlacesUpdateService;
     @Mock private BakeryImageService bakeryImageService;
+    @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     @InjectMocks private BakeryService bakeryService;
 
@@ -678,7 +679,7 @@ class BakeryServiceTest {
         Bakery bakery = pendingBakeryWithId(100L);
         when(bakeryRepository.findByIdAndActiveTrue(100L)).thenReturn(Optional.of(bakery));
 
-        ApproveBakeriesResponse result = bakeryService.approveBakeries(List.of(100L));
+        ApproveBakeriesResponse result = bakeryService.approveBakeries(1L, List.of(100L));
 
         assertThat(bakery.getStatus()).isEqualTo(BakeryStatus.APPROVED);
         assertThat(result.getSuccessCount()).isEqualTo(1);
@@ -705,7 +706,7 @@ class BakeryServiceTest {
         ReflectionTestUtils.setField(bakery, "status", BakeryStatus.PENDING);
         when(bakeryRepository.findByIdAndActiveTrue(100L)).thenReturn(Optional.of(bakery));
 
-        ApproveBakeriesResponse result = bakeryService.approveBakeries(List.of(100L));
+        ApproveBakeriesResponse result = bakeryService.approveBakeries(1L, List.of(100L));
 
         assertThat(bakery.getStatus()).isEqualTo(BakeryStatus.PENDING);
         assertThat(result.getSuccessCount()).isZero();
@@ -730,7 +731,7 @@ class BakeryServiceTest {
         ReflectionTestUtils.setField(bakery, "status", BakeryStatus.PENDING);
         when(bakeryRepository.findByIdAndActiveTrue(101L)).thenReturn(Optional.of(bakery));
 
-        ApproveBakeriesResponse result = bakeryService.approveBakeries(List.of(101L));
+        ApproveBakeriesResponse result = bakeryService.approveBakeries(1L, List.of(101L));
 
         assertThat(result.getSuccessCount()).isZero();
         assertThat(result.getSkipCount()).isEqualTo(1);
@@ -741,7 +742,7 @@ class BakeryServiceTest {
         Bakery bakery = bakeryWithId(100L);
         when(bakeryRepository.findByIdAndActiveTrue(100L)).thenReturn(Optional.of(bakery));
 
-        ApproveBakeriesResponse result = bakeryService.approveBakeries(List.of(100L));
+        ApproveBakeriesResponse result = bakeryService.approveBakeries(1L, List.of(100L));
 
         assertThat(result.getSuccessCount()).isZero();
         assertThat(result.getSkipCount()).isEqualTo(1);
@@ -754,7 +755,7 @@ class BakeryServiceTest {
         when(bakeryRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(good));
         when(bakeryRepository.findByIdAndActiveTrue(2L)).thenReturn(Optional.of(bad));
 
-        ApproveBakeriesResponse result = bakeryService.approveBakeries(List.of(1L, 2L));
+        ApproveBakeriesResponse result = bakeryService.approveBakeries(1L, List.of(1L, 2L));
 
         assertThat(good.getStatus()).isEqualTo(BakeryStatus.APPROVED);
         assertThat(result.getSuccessCount()).isEqualTo(1);

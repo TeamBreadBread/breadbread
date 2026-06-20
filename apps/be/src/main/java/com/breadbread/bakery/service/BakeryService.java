@@ -11,6 +11,7 @@ import com.breadbread.bakery.entity.enums.AdminBakerySortType;
 import com.breadbread.bakery.entity.enums.BakerySortType;
 import com.breadbread.bakery.entity.enums.BakeryStatus;
 import com.breadbread.bakery.entity.enums.DayType;
+import com.breadbread.bakery.event.BakeriesApprovedEvent;
 import com.breadbread.bakery.repository.*;
 import com.breadbread.bakery.service.BakeryImageService.PreviewBatch;
 import com.breadbread.course.repository.CourseBakeryRepository;
@@ -27,6 +28,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -48,6 +50,7 @@ public class BakeryService {
     private final CourseDrivingRouteRepository courseDrivingRouteRepository;
     private final GooglePlacesUpdateService googlePlacesUpdateService;
     private final BakeryImageService bakeryImageService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public List<BakeryAiResponse> findAllForAi(BakeryAiSearch search) {
@@ -433,18 +436,18 @@ public class BakeryService {
     }
 
     @Transactional
-    public ApproveBakeriesResponse approveAllPendingBakeries() {
+    public ApproveBakeriesResponse approveAllPendingBakeries(Long adminUserId) {
         List<Long> ids =
                 bakeryRepository.findAllByActiveTrueAndStatus(BakeryStatus.PENDING).stream()
                         .map(Bakery::getId)
                         .toList();
-        return approveBakeries(ids);
+        return approveBakeries(adminUserId, ids);
     }
 
     @Transactional
-    public ApproveBakeriesResponse approveBakeries(List<Long> bakeryIds) {
+    public ApproveBakeriesResponse approveBakeries(Long adminUserId, List<Long> bakeryIds) {
         List<ApproveBakeriesResponse.SkippedBakery> skipped = new ArrayList<>();
-        int successCount = 0;
+        List<Long> approvedIds = new ArrayList<>();
         for (Long id : bakeryIds) {
             Bakery bakery =
                     bakeryRepository
@@ -466,11 +469,16 @@ public class BakeryService {
                 continue;
             }
             bakery.approve();
-            successCount++;
+            approvedIds.add(id);
         }
-        log.info("빵집 일괄 승인: 성공={}, 스킵={}", successCount, skipped.size());
+        log.info("빵집 일괄 승인: 성공={}, 스킵={}", approvedIds.size(), skipped.size());
+
+        if (!approvedIds.isEmpty()) {
+            eventPublisher.publishEvent(new BakeriesApprovedEvent(adminUserId, approvedIds));
+        }
+
         return ApproveBakeriesResponse.builder()
-                .successCount(successCount)
+                .successCount(approvedIds.size())
                 .skipCount(skipped.size())
                 .skippedBakeries(skipped)
                 .build();

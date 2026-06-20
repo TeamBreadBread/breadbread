@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -109,13 +110,48 @@ public class CongestionSignalService {
     @Transactional
     public void saveAllFromInstantCheck(
             List<CongestionInstantCheckResponse.CongestionResult> results) {
+        saveAllFromInstantCheck(results, null);
+    }
+
+    @Transactional
+    public void saveAllFromInstantCheck(
+            List<CongestionInstantCheckResponse.CongestionResult> results,
+            Set<Long> allowedBakeryIds) {
         if (results == null || results.isEmpty()) {
             log.warn("[혼잡도 신호] 저장 가능한 데이터가 없습니다.");
             return;
         }
-        List<BakeryCongestionSignal> entities = results.stream().map(this::toEntity).toList();
+        List<Long> bakeryIds =
+                results.stream()
+                        .map(CongestionInstantCheckResponse.CongestionResult::getBakeryId)
+                        .filter(id -> id != null)
+                        .toList();
+        Set<Long> approvedIds =
+                bakeryRepository
+                        .findAllByIdInAndActiveTrueAndStatus(bakeryIds, BakeryStatus.APPROVED)
+                        .stream()
+                        .map(Bakery::getId)
+                        .collect(Collectors.toSet());
+
+        List<BakeryCongestionSignal> entities =
+                results.stream()
+                        .filter(
+                                r ->
+                                        r.getBakeryId() != null
+                                                && approvedIds.contains(r.getBakeryId()))
+                        .filter(
+                                r ->
+                                        allowedBakeryIds == null
+                                                || allowedBakeryIds.contains(r.getBakeryId()))
+                        .map(this::toEntity)
+                        .toList();
+
+        if (entities.isEmpty()) {
+            log.warn("[혼잡도 신호] 저장 가능한 데이터가 없습니다.");
+            return;
+        }
         repository.saveAll(entities);
-        log.info("[혼잡도 신호] {}건 저장 완료", entities.size());
+        log.info("[혼잡도 신호] {}건 저장 완료 (응답 {}건 중)", entities.size(), results.size());
     }
 
     private BakeryCongestionSignal toEntity(

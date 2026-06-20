@@ -16,6 +16,7 @@ public class ReviewResponse {
     private Long authorUserId;
 
     private String authorNickname;
+    private String authorProfileImageUrl;
     private int rating;
     private String content;
     private List<String> imageUrls;
@@ -31,6 +32,8 @@ public class ReviewResponse {
                 .id(review.getId())
                 .authorUserId(review.getUser() != null ? review.getUser().getId() : null)
                 .authorNickname(authorDisplayName(review.getUser()))
+                .authorProfileImageUrl(
+                        review.getUser() != null ? review.getUser().getProfileImageUrl() : null)
                 .rating(review.getRating())
                 .content(review.getContent())
                 .imageUrls(review.getImageUrls())

@@ -33,6 +33,7 @@ import com.breadbread.user.repository.UserRepository;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -411,7 +412,25 @@ class TourServiceTest {
 
         tourService.checkCongestionInstant(1L, request);
 
-        verify(congestionSignalService).saveAllFromInstantCheck(List.of(result));
+        verify(congestionSignalService).saveAllFromInstantCheck(List.of(result), Set.of(1L));
+    }
+
+    @Test
+    void checkCongestionInstant_includes_targetBakeryId_in_allowed_ids() {
+        CongestionInstantCheckRequest request = mock(CongestionInstantCheckRequest.class);
+        CongestionInstantCheckResponse response = mock(CongestionInstantCheckResponse.class);
+        CongestionInstantCheckResponse.CongestionResult result =
+                mock(CongestionInstantCheckResponse.CongestionResult.class);
+        when(request.getCourseId()).thenReturn(10L);
+        when(request.getBakeryIds()).thenReturn(List.of(1L, 2L));
+        when(request.getTargetBakeryId()).thenReturn(3L);
+        when(congestionInstantCheckClient.check(any())).thenReturn(response);
+        when(response.getData()).thenReturn(List.of(result));
+
+        tourService.checkCongestionInstant(1L, request);
+
+        verify(congestionSignalService)
+                .saveAllFromInstantCheck(List.of(result), Set.of(1L, 2L, 3L));
     }
 
     @Test
@@ -426,7 +445,7 @@ class TourServiceTest {
 
         tourService.checkCongestionInstant(1L, request);
 
-        verify(congestionSignalService, never()).saveAllFromInstantCheck(any());
+        verify(congestionSignalService, never()).saveAllFromInstantCheck(any(), any());
     }
 
     // ── helpers ────────────────────────────────────────────────────────────────
