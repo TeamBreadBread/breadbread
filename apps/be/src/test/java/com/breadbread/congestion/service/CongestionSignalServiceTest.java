@@ -136,6 +136,10 @@ class CongestionSignalServiceTest {
 
     @Test
     void saveAllFromInstantCheck_saves_entities_when_data_present() {
+        Bakery bakery = bakery(1L, "파리바게뜨");
+        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
+                        List.of(1L), BakeryStatus.APPROVED))
+                .thenReturn(List.of(bakery));
         CongestionInstantCheckResponse.CongestionResult result =
                 instantCheckResult(1L, "파리바게뜨", "HIGH");
 
@@ -149,6 +153,19 @@ class CongestionSignalServiceTest {
     }
 
     @Test
+    void saveAllFromInstantCheck_skips_unapproved_bakery() {
+        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
+                        List.of(1L), BakeryStatus.APPROVED))
+                .thenReturn(List.of());
+        CongestionInstantCheckResponse.CongestionResult result =
+                instantCheckResult(1L, "파리바게뜨", "HIGH");
+
+        service.saveAllFromInstantCheck(List.of(result));
+
+        verify(repository, never()).saveAll(anyList());
+    }
+
+    @Test
     void saveAllFromInstantCheck_skips_save_when_empty() {
         service.saveAllFromInstantCheck(List.of());
 
@@ -157,6 +174,10 @@ class CongestionSignalServiceTest {
 
     @Test
     void saveAllFromInstantCheck_handles_unknown_level_gracefully() {
+        Bakery bakery = bakery(1L, "파리바게뜨");
+        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
+                        List.of(1L), BakeryStatus.APPROVED))
+                .thenReturn(List.of(bakery));
         CongestionInstantCheckResponse.CongestionResult result =
                 instantCheckResult(1L, "파리바게뜨", "UNKNOWN_LEVEL");
 

@@ -23,7 +23,9 @@ import com.breadbread.user.repository.UserRepository;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -150,9 +152,13 @@ public class TourService {
         if (request.getTargetBakeryId() != null) {
             body.put("targetBakeryId", request.getTargetBakeryId());
         }
+        Set<Long> allowedIds = new HashSet<>(request.getBakeryIds());
+        if (request.getTargetBakeryId() != null) {
+            allowedIds.add(request.getTargetBakeryId());
+        }
         CongestionInstantCheckResponse response = congestionInstantCheckClient.check(body);
         if (response.getData() != null && !response.getData().isEmpty()) {
-            congestionSignalService.saveAllFromInstantCheck(response.getData());
+            congestionSignalService.saveAllFromInstantCheck(response.getData(), allowedIds);
         }
         return response;
     }

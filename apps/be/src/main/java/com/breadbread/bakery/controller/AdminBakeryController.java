@@ -1,5 +1,6 @@
 package com.breadbread.bakery.controller;
 
+import com.breadbread.auth.dto.CustomUserDetails;
 import com.breadbread.bakery.dto.request.ApproveBakeriesRequest;
 import com.breadbread.bakery.dto.response.ApproveBakeriesResponse;
 import com.breadbread.bakery.dto.response.BakeryAdminListResponse;
@@ -21,6 +22,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "관리자 - 빵집")
@@ -121,16 +123,18 @@ public class AdminBakeryController {
                             + "승인 후 일반 사용자에게 노출되며 AI 코스 추천 대상에도 포함됩니다.")
     @PostMapping("/approve")
     public ApiResponse<ApproveBakeriesResponse> approveBakeries(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody @Valid ApproveBakeriesRequest request) {
-        return ApiResponse.ok(bakeryService.approveBakeries(request.getIds()));
+        return ApiResponse.ok(bakeryService.approveBakeries(userDetails.getId(), request.getIds()));
     }
 
     @Operation(
             summary = "빵집 전체 일괄 승인 (PENDING → APPROVED)",
             description = "현재 PENDING 상태인 빵집을 모두 승인합니다. " + "필수 항목 미충족 빵집은 스킵되며 응답에 포함됩니다.")
     @PostMapping("/approve-all")
-    public ApiResponse<ApproveBakeriesResponse> approveAllBakeries() {
-        return ApiResponse.ok(bakeryService.approveAllPendingBakeries());
+    public ApiResponse<ApproveBakeriesResponse> approveAllBakeries(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ApiResponse.ok(bakeryService.approveAllPendingBakeries(userDetails.getId()));
     }
 
     @Operation(summary = "빵집 등록 거절 (PENDING → REJECTED)")
