@@ -8,45 +8,40 @@ import { filterValidMapPoints, type CourseMapBakery } from "./courseMapPoints";
 
 export type { CourseMapBakery } from "./courseMapPoints";
 
+export type CourseMapBoundsPadding = {
+  top?: number;
+  right?: number;
+  bottom?: number;
+  left?: number;
+};
+
 type Props = {
   bakeries: CourseMapBakery[];
   departurePoint?: { lat: number; lng: number; label: string } | null;
   className?: string;
   /** API 조회 중 좌표가 아직 없을 때 정적 지도 대신 로딩 표시 */
   isLoading?: boolean;
-  /** 지도 영역 높이 등 레이아웃 변경 시 bounds 재적용 트리거 */
+  /** 지도 영역 높이 변경 시 relayout만 수행 (fitBounds 재실행 없음) */
   layoutKey?: string | number;
+  /** fitBounds 여백 — 하단 시트 등 UI 가림 방지 */
+  boundsPadding?: CourseMapBoundsPadding;
 };
 
 type MapStatus = "loading" | "ready" | "fallback";
 
-/** 마커·출발지가 잘리지 않도록 상하좌우 여백 */
-const MAP_BOUNDS_PADDING = 48;
+const DEFAULT_BOUNDS_PADDING: Required<CourseMapBoundsPadding> = {
+  top: 48,
+  right: 48,
+  bottom: 48,
+  left: 48,
+};
 
-function fitMapToCourseBounds(map: KakaoMap, bounds: KakaoLatLngBounds): void {
-  map.relayout();
-  map.setBounds(bounds, MAP_BOUNDS_PADDING);
-}
-
-function scheduleFitMapToCourseBounds(map: KakaoMap, bounds: KakaoLatLngBounds): () => void {
-  let cancelled = false;
-  const fit = () => {
-    if (!cancelled) fitMapToCourseBounds(map, bounds);
-  };
-
-  fit();
-  const rafId = requestAnimationFrame(() => {
-    fit();
-    requestAnimationFrame(fit);
-  });
-  const timeoutIds = [120, 320].map((delay) => window.setTimeout(fit, delay));
-
-  return () => {
-    cancelled = true;
-    cancelAnimationFrame(rafId);
-    for (const timeoutId of timeoutIds) {
-      window.clearTimeout(timeoutId);
-    }
+function resolveBoundsPadding(padding?: CourseMapBoundsPadding): Required<CourseMapBoundsPadding> {
+  return {
+    top: padding?.top ?? DEFAULT_BOUNDS_PADDING.top,
+    right: padding?.right ?? DEFAULT_BOUNDS_PADDING.right,
+    bottom: padding?.bottom ?? DEFAULT_BOUNDS_PADDING.bottom,
+    left: padding?.left ?? DEFAULT_BOUNDS_PADDING.left,
   };
 }
 
@@ -54,17 +49,26 @@ function buildCourseMapBounds(
   maps: KakaoMaps,
   orderedPoints: CourseMapBakery[],
   departurePoint: { lat: number; lng: number } | null | undefined,
+  pathPositions: KakaoLatLng[] = [],
 ): KakaoLatLngBounds | null {
   const bounds = new maps.LatLngBounds();
   let hasPoint = false;
 
-  if (departurePoint) {
-    bounds.extend(new maps.LatLng(departurePoint.lat, departurePoint.lng));
+  const extend = (lat: number, lng: number) => {
+    bounds.extend(new maps.LatLng(lat, lng));
     hasPoint = true;
+  };
+
+  if (departurePoint) {
+    extend(departurePoint.lat, departurePoint.lng);
   }
 
   for (const point of orderedPoints) {
-    bounds.extend(new maps.LatLng(point.lat, point.lng));
+    extend(point.lat, point.lng);
+  }
+
+  for (const position of pathPositions) {
+    bounds.extend(position);
     hasPoint = true;
   }
 
@@ -73,6 +77,10 @@ function buildCourseMapBounds(
 
 function mapPointsKey(points: CourseMapBakery[]): string {
   return points.map((b) => `${b.order}:${b.id}:${b.lat},${b.lng}`).join("|");
+}
+
+function courseBoundsKey(pointsKey: string, departureKey: string): string {
+  return `${pointsKey}::${departureKey}`;
 }
 
 function createOrderMarkerElement(order: number, name: string): HTMLDivElement {
@@ -219,25 +227,39 @@ function CourseKakaoMapView({
   departurePoint,
   className,
   layoutKey,
+  boundsPadding,
 }: {
   mapPoints: CourseMapBakery[];
   departurePoint?: { lat: number; lng: number; label: string } | null;
   className?: string;
   layoutKey?: string | number;
+  boundsPadding?: CourseMapBoundsPadding;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<KakaoMap | null>(null);
   const boundsRef = useRef<KakaoLatLngBounds | null>(null);
+  const userHasMovedMapRef = useRef(false);
+  const isProgrammaticFitRef = useRef(false);
+  const lastFittedBoundsKeyRef = useRef<string | null>(null);
   const [status, setStatus] = useState<MapStatus>("loading");
 
+  const pointsKey = mapPointsKey(mapPoints);
+  const departureKey = departurePoint
+    ? `${departurePoint.lat.toFixed(6)},${departurePoint.lng.toFixed(6)},${departurePoint.label}`
+    : "none";
+  const boundsKey = courseBoundsKey(pointsKey, departureKey);
+  const resolvedPadding = resolveBoundsPadding(boundsPadding);
+
   useEffect(() => {
+    userHasMovedMapRef.current = false;
+    lastFittedBoundsKeyRef.current = null;
+
     const container = containerRef.current;
     if (!container) return;
     container.style.touchAction = "none";
 
     let cancelled = false;
     const mapObjects: Array<{ setMap: (map: null) => void }> = [];
-    let cancelScheduledFit: (() => void) | null = null;
 
     void (async () => {
       try {
@@ -247,25 +269,40 @@ function CourseKakaoMapView({
         const { maps } = kakao;
         const orderedPoints = [...mapPoints].sort((a, b) => a.order - b.order);
         const markerPositions = orderedPoints.map((b) => new maps.LatLng(b.lat, b.lng));
-        const center = markerPositions[0]!;
+        const pathPositions = buildSimplePathPositions(maps, departurePoint, markerPositions);
+        const center = markerPositions[0] ?? pathPositions[0];
+        if (!center) {
+          if (!cancelled) setStatus("fallback");
+          return;
+        }
 
         const map = new maps.Map(container, {
           center,
-          level: mapPoints.length === 1 ? 4 : 5,
+          level: orderedPoints.length === 1 ? 4 : 5,
           draggable: true,
         });
-        // 일부 SDK 버전은 생성자 옵션의 draggable을 무시하므로 명시적으로 활성화한다.
         map.setDraggable(true);
         map.setZoomable(true);
         mapRef.current = map;
+
+        if (typeof map.addListener === "function") {
+          map.addListener("dragstart", () => {
+            if (!isProgrammaticFitRef.current) {
+              userHasMovedMapRef.current = true;
+            }
+          });
+          map.addListener("zoom_changed", () => {
+            if (!isProgrammaticFitRef.current) {
+              userHasMovedMapRef.current = true;
+            }
+          });
+        }
 
         const departureOverlayPosition = departurePoint
           ? new maps.LatLng(departurePoint.lat, departurePoint.lng)
           : null;
 
         if (markerPositions.length > 1) {
-          const pathPositions = buildSimplePathPositions(maps, departurePoint, markerPositions);
-
           mapObjects.push(
             new maps.Polyline({
               map,
@@ -276,69 +313,41 @@ function CourseKakaoMapView({
               strokeStyle: "shortdash",
             }),
           );
-
-          if (departurePoint && departureOverlayPosition) {
-            mapObjects.push(
-              new maps.CustomOverlay({
-                map,
-                position: departureOverlayPosition,
-                content: createDepartureMarkerElement(departurePoint.label),
-                xAnchor: 0.5,
-                yAnchor: 1.7,
-                zIndex: 3000,
-              }),
-            );
-          }
-
-          for (const point of orderedPoints) {
-            const overlayPosition = new maps.LatLng(point.lat, point.lng);
-            mapObjects.push(
-              new maps.CustomOverlay({
-                map,
-                position: overlayPosition,
-                content: createOrderMarkerElement(point.order, point.name),
-                xAnchor: 0.5,
-                yAnchor: 1.55,
-                zIndex: 2000 + point.order,
-              }),
-            );
-          }
-        } else {
-          if (departurePoint && departureOverlayPosition) {
-            mapObjects.push(
-              new maps.CustomOverlay({
-                map,
-                position: departureOverlayPosition,
-                content: createDepartureMarkerElement(departurePoint.label),
-                xAnchor: 0.5,
-                yAnchor: 1.7,
-                zIndex: 3000,
-              }),
-            );
-          }
-
-          for (const point of orderedPoints) {
-            const position = new maps.LatLng(point.lat, point.lng);
-            mapObjects.push(
-              new maps.CustomOverlay({
-                map,
-                position,
-                content: createOrderMarkerElement(point.order, point.name),
-                xAnchor: 0.5,
-                yAnchor: 1.55,
-                zIndex: 2000 + point.order,
-              }),
-            );
-          }
         }
 
-        const bounds = buildCourseMapBounds(maps, orderedPoints, departurePoint);
-        if (bounds) {
-          boundsRef.current = bounds;
-          cancelScheduledFit = scheduleFitMapToCourseBounds(map, bounds);
-        } else {
-          boundsRef.current = null;
+        if (departurePoint && departureOverlayPosition) {
+          mapObjects.push(
+            new maps.CustomOverlay({
+              map,
+              position: departureOverlayPosition,
+              content: createDepartureMarkerElement(departurePoint.label),
+              xAnchor: 0.5,
+              yAnchor: 1.7,
+              zIndex: 3000,
+            }),
+          );
         }
+
+        for (const point of orderedPoints) {
+          const overlayPosition = new maps.LatLng(point.lat, point.lng);
+          mapObjects.push(
+            new maps.CustomOverlay({
+              map,
+              position: overlayPosition,
+              content: createOrderMarkerElement(point.order, point.name),
+              xAnchor: 0.5,
+              yAnchor: 1.55,
+              zIndex: 2000 + point.order,
+            }),
+          );
+        }
+
+        boundsRef.current = buildCourseMapBounds(
+          maps,
+          orderedPoints,
+          departurePoint,
+          pathPositions,
+        );
 
         if (!cancelled) setStatus("ready");
       } catch {
@@ -348,36 +357,103 @@ function CourseKakaoMapView({
 
     return () => {
       cancelled = true;
-      cancelScheduledFit?.();
       mapRef.current = null;
       boundsRef.current = null;
       for (const mapObject of mapObjects) {
         mapObject.setMap(null);
       }
       container.replaceChildren();
+      setStatus("loading");
     };
-  }, [departurePoint, mapPoints]);
+  }, [departureKey, pointsKey]);
 
   useEffect(() => {
     if (status !== "ready") return;
-    const container = containerRef.current;
+
     const map = mapRef.current;
     const bounds = boundsRef.current;
-    if (!container || !map || !bounds) return;
+    const container = containerRef.current;
+    if (!map || !bounds || !container) return;
 
-    const fitMapToContainer = () => {
-      fitMapToCourseBounds(map, bounds);
+    if (lastFittedBoundsKeyRef.current === boundsKey) return;
+    if (userHasMovedMapRef.current) return;
+
+    let disposed = false;
+
+    const applyFitBounds = (): boolean => {
+      if (disposed || userHasMovedMapRef.current) return false;
+      if (lastFittedBoundsKeyRef.current === boundsKey) return true;
+
+      const { clientWidth, clientHeight } = container;
+      if (clientWidth < 16 || clientHeight < 16) return false;
+
+      isProgrammaticFitRef.current = true;
+      map.relayout();
+      map.setBounds(
+        bounds,
+        resolvedPadding.top,
+        resolvedPadding.right,
+        resolvedPadding.bottom,
+        resolvedPadding.left,
+      );
+      lastFittedBoundsKeyRef.current = boundsKey;
+
+      window.requestAnimationFrame(() => {
+        isProgrammaticFitRef.current = false;
+      });
+
+      return true;
     };
 
+    if (applyFitBounds()) return;
+
     const observer = new ResizeObserver(() => {
-      fitMapToContainer();
+      if (applyFitBounds()) {
+        observer.disconnect();
+      }
     });
     observer.observe(container);
-    const cancelScheduledFit = scheduleFitMapToCourseBounds(map, bounds);
+
+    const rafId = window.requestAnimationFrame(() => {
+      if (applyFitBounds()) {
+        observer.disconnect();
+      }
+    });
+
+    const timeoutId = window.setTimeout(() => {
+      applyFitBounds();
+      observer.disconnect();
+    }, 180);
+
+    return () => {
+      disposed = true;
+      observer.disconnect();
+      window.cancelAnimationFrame(rafId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    status,
+    boundsKey,
+    resolvedPadding.bottom,
+    resolvedPadding.left,
+    resolvedPadding.right,
+    resolvedPadding.top,
+  ]);
+
+  useEffect(() => {
+    if (status !== "ready") return;
+    const map = mapRef.current;
+    const container = containerRef.current;
+    if (!map || !container) return;
+
+    const observer = new ResizeObserver(() => {
+      map.relayout();
+    });
+    observer.observe(container);
+    map.relayout();
 
     return () => {
       observer.disconnect();
-      cancelScheduledFit();
     };
   }, [status, layoutKey]);
 
@@ -418,6 +494,7 @@ export default function CourseKakaoMap({
   className,
   isLoading = false,
   layoutKey,
+  boundsPadding,
 }: Props) {
   const mapPoints = useMemo(() => filterValidMapPoints(bakeries), [bakeries]);
 
@@ -437,6 +514,7 @@ export default function CourseKakaoMap({
       departurePoint={departurePoint}
       className={className}
       layoutKey={layoutKey}
+      boundsPadding={boundsPadding}
     />
   );
 }

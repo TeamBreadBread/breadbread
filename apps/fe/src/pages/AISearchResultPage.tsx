@@ -35,6 +35,7 @@ import SaveRouteBanner from "@/components/domain/ai-course/SaveRouteBanner";
 import ActiveTourConflictDialog from "@/components/common/dialog/ActiveTourConflictDialog";
 import { hasConflictingActiveTour } from "@/utils/activeTourGuard";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
+import { resetAiCourseFlowForRetry } from "@/utils/clearAiCourseJobContext";
 import { findMatchingSavedRoute, isSameCourseRouteContent } from "@/utils/courseRouteCompare";
 import { formatBakerySignatureMenuLabel } from "@/utils/bakerySignatureMenu";
 import {
@@ -402,7 +403,8 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
   const handleRetryRecommendation = () => {
     trackAiCourseRegenerated();
     requireLogin(() => {
-      void navigate({ to: AI_COURSE_FLOW_START });
+      resetAiCourseFlowForRetry();
+      void navigate({ to: AI_COURSE_FLOW_START, replace: true });
     }, "/preference");
   };
 
@@ -416,18 +418,16 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     }
   };
 
-  const handleMoveBakery = (index: number, direction: "up" | "down") => {
+  const handleReorderBakeries = (nextPlaces: CoursePlace[]) => {
     if (!effectiveCourseId || !courseDetail?.bakeries?.length || reorderBusy) return;
 
-    const bakeryIds = courseDetail.bakeries.map((bakery) => bakery.id);
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= bakeryIds.length) return;
+    const bakeryById = new Map(courseDetail.bakeries.map((bakery) => [bakery.id, bakery]));
+    const nextBakeries = nextPlaces
+      .map((place) => bakeryById.get(Number.parseInt(place.id, 10)))
+      .filter((bakery): bakery is NonNullable<typeof bakery> => bakery != null);
 
-    const nextBakeries = [...courseDetail.bakeries];
-    [nextBakeries[index], nextBakeries[targetIndex]] = [
-      nextBakeries[targetIndex],
-      nextBakeries[index],
-    ];
+    if (nextBakeries.length !== courseDetail.bakeries.length) return;
+
     const nextOrder = nextBakeries.map((bakery) => bakery.id);
 
     setApiCourseDetail({
@@ -466,8 +466,9 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
           bakeries={mapBakeries}
           departurePoint={departurePoint}
           className="h-full w-full"
-          isLoading={mapLoading && mapBakeries.length === 0}
+          isLoading={mapLoading}
           layoutKey={mapHeightPx}
+          boundsPadding={{ top: 56, right: 40, bottom: 40, left: 40 }}
         />
       </div>
 
@@ -536,7 +537,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
               onPlaceClick={handlePlaceClick}
               canReorder={Boolean(courseDetail?.bakeries && courseDetail.bakeries.length > 1)}
               reorderBusy={reorderBusy}
-              onMoveBakery={handleMoveBakery}
+              onReorderPlaces={handleReorderBakeries}
             />
           ) : courseDetailLoading ? (
             <p className="px-x5 py-x8 text-center font-pretendard text-size-4 text-gray-500">

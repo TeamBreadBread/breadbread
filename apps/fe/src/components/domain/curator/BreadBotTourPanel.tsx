@@ -35,7 +35,7 @@ export default function BreadBotTourPanel({
   active = true,
   onOpenFullPage,
 }: BreadBotTourPanelProps) {
-  const { endCourseGuide } = useLoginRequired();
+  const { endCourseGuide, startCelebrationPending } = useLoginRequired();
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [tour, setTour] = useState<TourCurrentResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -105,11 +105,12 @@ export default function BreadBotTourPanel({
     (updated: TourCurrentResponse) => {
       setTour(updated);
       if (updated.status === "COMPLETED") {
-        endCourseGuide();
+        startCelebrationPending(courseId);
         notifyTourCompleteCelebration(courseId);
+        endCourseGuide();
       }
     },
-    [courseId, endCourseGuide],
+    [courseId, endCourseGuide, startCelebrationPending],
   );
 
   useTourStateSync({

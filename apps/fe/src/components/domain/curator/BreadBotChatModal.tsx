@@ -1,4 +1,4 @@
-import { useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import DefaultBreadImage from "@/assets/images/Default_Bread.svg";
 import SadBreadImage from "@/assets/images/Sad_Bread.svg";
 import CelebrateImage from "@/assets/icons/Img_Celebrate.svg";
@@ -32,6 +32,8 @@ type BreadBotChatModalProps = {
   onBackToStart: () => void;
   /** 투어 탭에서 "전체 화면으로 보기" — 모달 닫고 /tour 이동 */
   onOpenTourPage: () => void;
+  /** 코스 완료 축하 메시지가 채팅에 표시되었을 때 (닫기 전 확인용) */
+  onCelebrationViewed?: () => void;
 };
 
 const CHAT_TABS = ["채팅", "투어 진행"] as const;
@@ -252,6 +254,24 @@ function WelcomeSpeechBubble({
 const CONGESTION_DISCLAIMER =
   "※ 혼잡도 정보는 SNS 데이터를 기반으로 예측되며,\n실제 현장 상황과 다를 수 있습니다.";
 
+const CELEBRATION_EMOJIS = ["🎉", "🥐", "🍞", "✨"] as const;
+
+function CelebrationEmojiAnimation() {
+  return (
+    <div className="mb-x3 flex items-center justify-center gap-x2" aria-hidden>
+      {CELEBRATION_EMOJIS.map((emoji, index) => (
+        <span
+          key={emoji}
+          className="animate-bounce text-[28px]"
+          style={{ animationDelay: `${index * 0.12}s`, animationDuration: "1.1s" }}
+        >
+          {emoji}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function BotMessageBlock({
   message,
   loading,
@@ -271,12 +291,15 @@ function BotMessageBlock({
     <div className="flex w-full max-w-[92%] flex-col items-start">
       <BotSpeechBubble tone={message.showSadBread ? "warm" : "default"}>
         {message.showCelebration ? (
-          <img
-            src={CelebrateImage}
-            alt=""
-            aria-hidden
-            className="mx-auto mb-x3 h-[96px] w-[96px] object-contain"
-          />
+          <>
+            <CelebrationEmojiAnimation />
+            <img
+              src={CelebrateImage}
+              alt=""
+              aria-hidden
+              className="mx-auto mb-x3 h-[96px] w-[96px] object-contain"
+            />
+          </>
         ) : null}
 
         <p className="whitespace-pre-wrap font-pretendard text-size-3 leading-t5 text-gray-1000">
@@ -340,9 +363,23 @@ export default function BreadBotChatModal({
   onCourseDetail,
   onBackToStart,
   onOpenTourPage,
+  onCelebrationViewed,
 }: BreadBotChatModalProps) {
   const showTourTab = activeTourCourseId != null && activeTourCourseId > 0;
   const [selectedTab, setSelectedTab] = useState<ChatTab>("채팅");
+  const celebrationReportedRef = useRef(false);
+
+  useEffect(() => {
+    if (!open) {
+      celebrationReportedRef.current = false;
+      return;
+    }
+    if (!onCelebrationViewed || celebrationReportedRef.current) return;
+    if (!messages.some((message) => message.showCelebration)) return;
+
+    celebrationReportedRef.current = true;
+    onCelebrationViewed();
+  }, [open, messages, onCelebrationViewed]);
 
   // 투어가 끝나면(탭 숨김) 자동으로 채팅 뷰로 복귀 — 완료 축하 메시지가 채팅에 표시됨
   const activeTab: ChatTab = showTourTab ? selectedTab : "채팅";

@@ -53,10 +53,11 @@ import {
   resolvePreDepartureReminderStage,
 } from "@/utils/tourReminders";
 import {
-  consumeTourCompleteCelebration,
   notifyTourCompleteCelebration,
+  readPendingTourCompleteCelebration,
   TOUR_COMPLETE_EVENT,
 } from "@/utils/tourCelebration";
+import { saveTourCelebrationRecord } from "@/utils/tourCelebrationInbox";
 import { saveRouteFocusCourseId } from "@/utils/aiCourseStorage";
 import { cn } from "@/utils/cn";
 import { useTourArrivalProximity, type TourArrivalPrompt } from "@/hooks/useTourArrivalProximity";
@@ -392,7 +393,14 @@ export default function BreadBotWidget({
   courseId,
   showFloatingButton = true,
 }: BreadBotWidgetProps) {
-  const { startCourseGuide, endCourseGuide, courseGuideActive } = useLoginRequired();
+  const {
+    startCourseGuide,
+    endCourseGuide,
+    courseGuideActive,
+    startCelebrationPending,
+    acknowledgeCelebration,
+    pendingCelebrationCourseId,
+  } = useLoginRequired();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const onTourPage = pathname.startsWith("/tour");
@@ -578,6 +586,12 @@ export default function BreadBotWidget({
       }
 
       setShowConfetti(true);
+      const celebrationMessage = buildTourCompleteCelebrationMessage(courseName);
+      saveTourCelebrationRecord({
+        courseId: completedCourseId,
+        courseName: courseName || "오늘의 빵 투어",
+        message: celebrationMessage,
+      });
       setMessages((prev) => {
         const celebrationIdPrefix = `tour-complete-${completedCourseId}`;
         // 같은 완료 건의 중복 추가만 막고, 새로 완료한 투어는 다시 축하한다 (id에 timestamp 포함)
@@ -587,7 +601,7 @@ export default function BreadBotWidget({
           {
             id: `${celebrationIdPrefix}-${Date.now()}`,
             role: "bot" as const,
-            text: buildTourCompleteCelebrationMessage(courseName),
+            text: celebrationMessage,
             showCelebration: true,
           },
         ];
@@ -602,28 +616,31 @@ export default function BreadBotWidget({
     setTourBubble((prev) => (prev?.mode === "resume" ? null : prev));
   }, []);
 
-  // 투어 완료 후 홈에 도착하면 보류 중인 축하를 실행 (투어 페이지에서는 mark만 해둔다)
+  // 투어 완료 후 홈에 도착하면 보류 중인 축하를 실행 (이벤트를 놓친 경우 대비)
   useEffect(() => {
     if (!onHomePage) return;
-    const pendingCelebrationId = consumeTourCompleteCelebration();
+    const pendingCelebrationId = readPendingTourCompleteCelebration();
     if (pendingCelebrationId) {
-      void celebrateTourComplete(pendingCelebrationId, { force: true });
+      void celebrateTourComplete(pendingCelebrationId);
     }
   }, [onHomePage, celebrateTourComplete]);
 
   useEffect(() => {
     const handleTourComplete = (event: Event) => {
-      const courseId = (event as CustomEvent<{ courseId?: number }>).detail?.courseId;
-      if (courseId && courseId > 0) {
-        // 즉시 축하 이벤트(챗봇 투어 탭에서 완료 등) — 보류 마크를 소비해 홈 도착 시 중복 축하 방지
-        consumeTourCompleteCelebration();
-        void celebrateTourComplete(courseId, { force: true });
+      const courseIdFromEvent = (event as CustomEvent<{ courseId?: number }>).detail?.courseId;
+      if (courseIdFromEvent && courseIdFromEvent > 0) {
+        void celebrateTourComplete(courseIdFromEvent, { force: true });
       }
     };
 
     window.addEventListener(TOUR_COMPLETE_EVENT, handleTourComplete);
     return () => window.removeEventListener(TOUR_COMPLETE_EVENT, handleTourComplete);
   }, [celebrateTourComplete]);
+
+  useEffect(() => {
+    if (!pendingCelebrationCourseId || pendingCelebrationCourseId <= 0) return;
+    void celebrateTourComplete(pendingCelebrationCourseId);
+  }, [pendingCelebrationCourseId, celebrateTourComplete]);
 
   useEffect(() => {
     if (!isLoggedIn()) return;
@@ -973,11 +990,19 @@ export default function BreadBotWidget({
     [appendBotMessage, courseId, navigate],
   );
 
+  const celebrationFlowActiveRef = useRef(false);
+  const celebrationMessageSeenRef = useRef(false);
+
   const openChat = () => {
     trackCuratorOpened();
     setChangeBubble(null);
     setCelebrationBubble(null);
     setOpen(true);
+  };
+
+  const openCelebrationChat = () => {
+    celebrationFlowActiveRef.current = true;
+    openChat();
   };
 
   const sendMessage = (raw: string) => {
@@ -1247,9 +1272,23 @@ export default function BreadBotWidget({
     clearChatHistory();
   };
 
+  const handleCelebrationMessageSeen = useCallback(() => {
+    if (!celebrationFlowActiveRef.current) return;
+    celebrationMessageSeenRef.current = true;
+  }, []);
+
   const closeChat = () => {
     setCelebrationBubble(null);
     setOpen(false);
+    if (
+      pendingCelebrationCourseId != null &&
+      celebrationFlowActiveRef.current &&
+      celebrationMessageSeenRef.current
+    ) {
+      celebrationFlowActiveRef.current = false;
+      celebrationMessageSeenRef.current = false;
+      acknowledgeCelebration();
+    }
   };
 
   const handleChangeAction = (button: ChatActionButton) => {
@@ -1326,6 +1365,7 @@ export default function BreadBotWidget({
         dismissedArrivalRef.current.add(prompt.dismissKey);
         setArrivalRecheckNonce((value) => value + 1);
         if (updated.status === "COMPLETED") {
+          startCelebrationPending(updated.courseId);
           endCourseGuide();
           notifyTourCompleteCelebration(updated.courseId);
         }
@@ -1336,7 +1376,7 @@ export default function BreadBotWidget({
         setArrivalBusy(false);
       }
     },
-    [appendBotMessage, arrivalBusy, endCourseGuide],
+    [appendBotMessage, arrivalBusy, endCourseGuide, startCelebrationPending],
   );
 
   const showCelebrationBubble = celebrationBubble !== null && !open;
@@ -1384,6 +1424,7 @@ export default function BreadBotWidget({
           onCourseDetail={handleCourseDetail}
           onBackToStart={handleBackToStart}
           onOpenTourPage={handleOpenTourPage}
+          onCelebrationViewed={handleCelebrationMessageSeen}
         />
       ) : null}
 
@@ -1405,13 +1446,13 @@ export default function BreadBotWidget({
             </button>
 
             <p className="whitespace-pre-wrap pr-x4 font-pretendard text-size-3 leading-t5 text-gray-1000">
-              {`🎉 '${celebrationBubble.courseName || "코스"}' 빵 투어 완료!\n오늘도 달콤한 빵 여행 고생하셨어요!`}
+              {`🎉 코스를 모두 완료했어요!\n축하 메시지가 도착했어요!`}
             </p>
 
             <div className="mt-x3 flex flex-col gap-x2">
               <button
                 type="button"
-                onClick={openChat}
+                onClick={openCelebrationChat}
                 className="h-[40px] w-full rounded-r2 bg-orange-600 font-pretendard text-size-3 font-bold text-gray-00"
               >
                 축하 메시지 보기

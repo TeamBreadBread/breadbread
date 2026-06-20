@@ -23,7 +23,7 @@ import {
   buildBakeryNameLookup,
   mapCongestionByBakeryId,
 } from "@/utils/congestionCheck";
-import { markTourCompleteCelebration } from "@/utils/tourCelebration";
+import { notifyTourCompleteCelebration } from "@/utils/tourCelebration";
 import { hasConflictingActiveTour } from "@/utils/activeTourGuard";
 import { trackBakeryVisitChecked, trackTourCompleted } from "@/lib/analytics/gtag";
 import { cn } from "@/utils/cn";
@@ -39,7 +39,7 @@ function visitedCountOf(tour: TourCurrentResponse | null): number {
 
 export default function TourPage({ courseId }: TourPageProps) {
   const navigate = useNavigate();
-  const { startCourseGuide, endCourseGuide } = useLoginRequired();
+  const { startCourseGuide, endCourseGuide, startCelebrationPending } = useLoginRequired();
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [tour, setTour] = useState<TourCurrentResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -113,15 +113,23 @@ export default function TourPage({ courseId }: TourPageProps) {
     if (courseId > 0) startCourseGuide(courseId);
   }, [courseId, startCourseGuide]);
 
+  const handleTourCompleted = useCallback(
+    (completedCourseId: number) => {
+      startCelebrationPending(completedCourseId);
+      notifyTourCompleteCelebration(completedCourseId);
+      endCourseGuide();
+    },
+    [endCourseGuide, startCelebrationPending],
+  );
+
   const applyRemoteTourUpdate = useCallback(
     (updated: TourCurrentResponse) => {
       setTour(updated);
       if (updated.status === "COMPLETED") {
-        endCourseGuide();
-        markTourCompleteCelebration(courseId);
+        handleTourCompleted(courseId);
       }
     },
-    [courseId, endCourseGuide],
+    [courseId, handleTourCompleted],
   );
 
   useTourStateSync({
@@ -176,9 +184,7 @@ export default function TourPage({ courseId }: TourPageProps) {
       const updated = await checkTourVisit(courseId, order);
       setTour(updated);
       if (updated.status === "COMPLETED") {
-        endCourseGuide();
-        // 홈으로 이동하면 챗봇이 컨페티와 함께 축하하도록 보류 마크만 남긴다
-        markTourCompleteCelebration(courseId);
+        handleTourCompleted(courseId);
       }
     } catch (e) {
       setError(getErrorMessage(e));
@@ -196,8 +202,7 @@ export default function TourPage({ courseId }: TourPageProps) {
       const updated = await completeTour(courseId);
       setTour(updated);
       if (updated.status === "COMPLETED") {
-        endCourseGuide();
-        markTourCompleteCelebration(courseId);
+        handleTourCompleted(courseId);
       }
     } catch (e) {
       setError(getErrorMessage(e));
