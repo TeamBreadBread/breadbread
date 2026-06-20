@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { getBakeryById } from "@/api/bakery";
 import type { BakeryDetail, BakeryListItem, BakerySortType } from "@/api/types/bakery";
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
+import { SafeImage } from "@/components/common/SafeImage";
 import { AppIcon, IconAssets } from "@/components/icons";
 import BottomNav from "@/components/layout/BottomNav";
 import {
@@ -402,7 +403,7 @@ const BakeryImageRow = ({
             }
           >
             {url ? (
-              <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
+              <SafeImage src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
             ) : (
               <div className="flex h-full w-full items-center justify-center">
                 <img

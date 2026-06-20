@@ -1,16 +1,30 @@
 import { useEffect, useMemo } from "react";
 
+import { getSafeImageUrl, resolveSafeImageSrc } from "@/utils/safeImageUrl";
+
 type ImagePreviewThumbProps = {
   src: string;
   alt: string;
   index: number;
   onRemove?: () => void;
+  allowBlob?: boolean;
 };
 
-export function ImagePreviewThumb({ src, alt, index, onRemove }: ImagePreviewThumbProps) {
+export function ImagePreviewThumb({
+  src,
+  alt,
+  index,
+  onRemove,
+  allowBlob = false,
+}: ImagePreviewThumbProps) {
+  const safeSrc = allowBlob ? resolveSafeImageSrc(src) : getSafeImageUrl(src);
+  if (!safeSrc) {
+    return null;
+  }
+
   return (
     <div className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-[10px] bg-[#eeeff1]">
-      <img src={src} alt={alt} className="h-full w-full object-cover" />
+      <img src={safeSrc} alt={alt} className="h-full w-full object-cover" />
       {onRemove ? (
         <button
           type="button"
@@ -46,6 +60,7 @@ export function LocalFilePreviewThumb({ file, index, onRemove }: LocalFilePrevie
       alt={`선택 이미지 ${index + 1}`}
       index={index}
       onRemove={onRemove}
+      allowBlob
     />
   );
 }

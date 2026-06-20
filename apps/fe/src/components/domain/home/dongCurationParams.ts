@@ -5,7 +5,16 @@ import {
   resolveThumbnailDongAddress,
 } from "@/utils/formatCurationAddress";
 
-export const DONG_OPTIONS = ["소제동", "은행동", "선화동", "대흥동", "둔산동"] as const;
+export const DONG_OPTIONS = [
+  "소제동",
+  "은행동",
+  "선화동",
+  "대흥동",
+  "둔산동",
+  "봉명동",
+  "갈마동",
+  "탄방동",
+] as const;
 
 export type DongOption = (typeof DONG_OPTIONS)[number];
 
@@ -16,6 +25,9 @@ export const DONG_REGION_FALLBACK: Record<string, string> = {
   선화동: "대전 중구",
   대흥동: "대전 중구",
   둔산동: "대전 서구",
+  봉명동: "대전 유성구",
+  갈마동: "대전 서구",
+  탄방동: "대전 서구",
 };
 
 /** 행정동 → 소속 자치구 (주소 구 불일치 시 제외용) */
@@ -25,6 +37,9 @@ const DONG_DISTRICT: Record<DongOption, string> = {
   선화동: "중구",
   대흥동: "중구",
   둔산동: "서구",
+  봉명동: "유성구",
+  갈마동: "서구",
+  탄방동: "서구",
 };
 
 const DISTRICT_TOKENS = ["동구", "중구", "서구", "유성구", "대덕구"] as const;

@@ -1,4 +1,5 @@
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
+import { SafeImage } from "@/components/common/SafeImage";
 import { AppIcon, IconAssets } from "@/components/icons";
 import { cn } from "@/utils/cn";
 import { formatBakeryRating, shouldShowBakeryRating } from "@/utils/bakeryRating";
@@ -40,7 +41,7 @@ const CurationCard = ({
         )}
       >
         {hasPhoto ? (
-          <img src={imageUrl!} alt="" className="h-full w-full object-cover" loading="lazy" />
+          <SafeImage src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
         ) : (
           <img
             src={currationBreadImg}
