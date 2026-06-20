@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { createPost, getPost, updatePost } from "@/api/posts";
 import { uploadImages } from "@/api/image";
 import { getErrorMessage } from "@/api/types/common";
+import { ImageUploadPreviewStrip } from "@/components/common/ImageUploadPreview";
 import { AppIcon, IconAssets } from "@/components/icons";
 import BottomNav from "@/components/layout/BottomNav";
 import {
@@ -62,123 +63,6 @@ const WriteHeader = ({
     </>
   );
 };
-
-/** 백엔드 GCS 허용 타입과 동일 */
-const ALLOWED_PREVIEW_IMAGE_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
-
-const PREVIEW_PX = 88;
-
-function drawImageCover(
-  ctx: CanvasRenderingContext2D,
-  bitmap: ImageBitmap,
-  width: number,
-  height: number,
-): void {
-  const bw = bitmap.width;
-  const bh = bitmap.height;
-  if (bw === 0 || bh === 0) {
-    return;
-  }
-  const scale = Math.max(width / bw, height / bh);
-  const dw = bw * scale;
-  const dh = bh * scale;
-  const dx = (width - dw) / 2;
-  const dy = (height - dh) / 2;
-  ctx.drawImage(bitmap, 0, 0, bw, bh, dx, dy, dw, dh);
-}
-
-function LocalImageThumbnail({
-  file,
-  previewIndex,
-  onRemove,
-}: {
-  file: File;
-  previewIndex: number;
-  onRemove: () => void;
-}) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !ALLOWED_PREVIEW_IMAGE_TYPES.has(file.type)) {
-      return;
-    }
-
-    let cancelled = false;
-
-    const paint = async () => {
-      let bitmap: ImageBitmap | null = null;
-      try {
-        bitmap = await createImageBitmap(file);
-      } catch {
-        return;
-      }
-      if (cancelled) {
-        bitmap.close();
-        return;
-      }
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        bitmap.close();
-        return;
-      }
-
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
-      const px = Math.round(PREVIEW_PX * dpr);
-      canvas.width = px;
-      canvas.height = px;
-      canvas.style.width = `${PREVIEW_PX}px`;
-      canvas.style.height = `${PREVIEW_PX}px`;
-      ctx.clearRect(0, 0, px, px);
-      drawImageCover(ctx, bitmap, px, px);
-      bitmap.close();
-    };
-
-    void paint();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [file, previewIndex]);
-
-  return (
-    <div className="relative h-[88px] w-[88px] shrink-0">
-      <canvas
-        ref={canvasRef}
-        className="block rounded-[10px] bg-[#eeeff1]"
-        width={PREVIEW_PX}
-        height={PREVIEW_PX}
-        aria-label={`선택 이미지 ${previewIndex + 1}`}
-        role="img"
-      />
-      <button
-        type="button"
-        aria-label={`이미지 ${previewIndex + 1} 삭제`}
-        className="absolute right-[4px] top-[4px] flex h-[20px] w-[20px] items-center justify-center rounded-full bg-black/60 text-[12px] text-white"
-        onClick={onRemove}
-      >
-        ×
-      </button>
-    </div>
-  );
-}
-
-function RemoteImageThumb({ url, onRemove }: { url: string; onRemove: () => void }) {
-  return (
-    <div className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-[10px] bg-[#eeeff1]">
-      <img src={url} alt="" className="h-full w-full object-cover" />
-      <button
-        type="button"
-        aria-label="첨부 이미지 삭제"
-        className="absolute right-[4px] top-[4px] flex h-[20px] w-[20px] items-center justify-center rounded-full bg-black/60 text-[12px] text-white"
-        onClick={onRemove}
-      >
-        ×
-      </button>
-    </div>
-  );
-}
 
 const BbangteoBoardWritePage = ({ editPostId }: BbangteoBoardWritePageProps) => {
   const navigate = useNavigate();
@@ -313,21 +197,13 @@ const BbangteoBoardWritePage = ({ editPostId }: BbangteoBoardWritePageProps) => 
             disabled={loadingEdit}
             className="min-h-[200px] w-full resize-y bg-transparent text-[16px] leading-[22px] text-[#1a1c20] placeholder:text-[#b0b3ba] outline-none disabled:opacity-50"
           />
-          {totalImageCount > 0 ? (
-            <div className="mt-[8px] flex flex-wrap gap-[10px] pb-[4px]">
-              {remoteImageUrls.map((url) => (
-                <RemoteImageThumb key={url} url={url} onRemove={() => handleRemoveRemote(url)} />
-              ))}
-              {selectedImages.map((item, index) => (
-                <LocalImageThumbnail
-                  key={item.id}
-                  file={item.file}
-                  previewIndex={remoteImageUrls.length + index}
-                  onRemove={() => handleRemoveLocal(item.id)}
-                />
-              ))}
-            </div>
-          ) : null}
+          <ImageUploadPreviewStrip
+            className="mt-[8px] flex flex-wrap gap-[10px] pb-[4px]"
+            remoteUrls={remoteImageUrls}
+            localFiles={selectedImages.map((item) => item.file)}
+            onRemoveRemote={handleRemoveRemote}
+            onRemoveLocal={(index) => handleRemoveLocal(selectedImages[index]?.id ?? "")}
+          />
         </main>
         <div className="fixed bottom-[56px] left-1/2 z-40 flex w-full max-w-[402px] -translate-x-1/2 flex-col bg-white pb-[env(safe-area-inset-bottom,0)] sm:bottom-[60px]">
           <div className="flex items-center justify-start border-t border-[#eeeff1] bg-white px-[14px] py-[8px]">

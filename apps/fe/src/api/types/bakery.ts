@@ -131,6 +131,7 @@ export type BakeryReview = {
   /** 작성자 회원 PK — 로그인 사용자와 같으면 MY 표시명으로 교체 */
   authorUserId?: number | null;
   authorNickname: string;
+  authorProfileImageUrl?: string | null;
   /** 현재 로그인 사용자가 이 리뷰 작성자면 true (Jackson 등에 따라 `isAuthor`로 올 수 있음) */
   author?: boolean;
   isAuthor?: boolean;

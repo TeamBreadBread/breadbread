@@ -479,6 +479,28 @@ const BakeryList = ({
   </section>
 );
 
+const PAGE_NUMBER_WINDOW_SIZE = 5;
+
+function getVisiblePageWindow(
+  currentPage: number,
+  totalPages: number,
+): { start: number; end: number } {
+  if (totalPages <= PAGE_NUMBER_WINDOW_SIZE) {
+    return { start: 0, end: totalPages - 1 };
+  }
+
+  let start = currentPage - Math.floor(PAGE_NUMBER_WINDOW_SIZE / 2);
+  if (start < 0) start = 0;
+
+  let end = start + PAGE_NUMBER_WINDOW_SIZE - 1;
+  if (end >= totalPages) {
+    end = totalPages - 1;
+    start = end - PAGE_NUMBER_WINDOW_SIZE + 1;
+  }
+
+  return { start, end };
+}
+
 function PageNumberNav({
   currentPage,
   totalPages,
@@ -490,18 +512,34 @@ function PageNumberNav({
 }) {
   if (totalPages <= 1) return null;
 
+  const { start, end } = getVisiblePageWindow(currentPage, totalPages);
+  const canGoPrev = currentPage > 0;
+  const canGoNext = currentPage < totalPages - 1;
+  const navButtonClass =
+    "flex h-[36px] w-[36px] items-center justify-center rounded-[10px] bg-[#f3f4f5] text-[#1a1c20] transition-colors enabled:hover:bg-[#e8eaed] disabled:cursor-not-allowed disabled:opacity-40";
+
   return (
     <nav
       className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 border-t border-[#eeeff1] px-[16px] py-[14px] pb-[max(14px,env(safe-area-inset-bottom))]"
       aria-label="페이지"
     >
-      {Array.from({ length: totalPages }, (_, i) => {
-        const isActive = i === currentPage;
+      <button
+        type="button"
+        aria-label="이전 페이지"
+        disabled={!canGoPrev}
+        onClick={() => onSelectPage(currentPage - 1)}
+        className={navButtonClass}
+      >
+        <AppIcon src={IconAssets.IcChevronLeft} size={18} alt="" />
+      </button>
+
+      {Array.from({ length: end - start + 1 }, (_, offset) => start + offset).map((pageIndex) => {
+        const isActive = pageIndex === currentPage;
         return (
           <button
-            key={i}
+            key={pageIndex}
             type="button"
-            onClick={() => onSelectPage(i)}
+            onClick={() => onSelectPage(pageIndex)}
             className={cn(
               "flex h-[36px] min-w-[36px] items-center justify-center rounded-[10px] px-2 text-[15px] font-semibold transition-colors",
               isActive
@@ -510,10 +548,20 @@ function PageNumberNav({
             )}
             aria-current={isActive ? "page" : undefined}
           >
-            {i + 1}
+            {pageIndex + 1}
           </button>
         );
       })}
+
+      <button
+        type="button"
+        aria-label="다음 페이지"
+        disabled={!canGoNext}
+        onClick={() => onSelectPage(currentPage + 1)}
+        className={navButtonClass}
+      >
+        <AppIcon src={IconAssets.IcChevronRight} size={18} alt="" />
+      </button>
     </nav>
   );
 }

@@ -30,6 +30,7 @@ import type { BakeryDetail, BakeryDetailBread } from "@/api/types/bakery";
 import { getBakeryDetailBackTarget, type BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import { formatInstantInSeoul } from "@/utils/formatSeoulDateTime";
 import { buildWeeklyHoursRows, getBakeryHoursStatusLabel } from "@/utils/bakeryBusinessHours";
+import { resolveProfileImageUrl } from "@/utils/defaultProfileAvatar";
 import BakeryKakaoMapPreview from "@/components/domain/bbangteo/BakeryKakaoMapPreview";
 import CongestionBadge from "@/components/common/CongestionBadge";
 import { getBakeryCongestion, type BakeryCongestion } from "@/api/bakery";
@@ -472,11 +473,25 @@ const ReviewCard = ({
 }) => {
   const { date, time } = formatInstantInSeoul(review.createdAt);
   const imgs = (review.imageUrls ?? []).slice(0, MAX_REVIEW_PREVIEWS);
+  const avatarSeed =
+    review.authorUserId != null ? String(review.authorUserId) : review.authorNickname;
+  const avatarUrl = resolveProfileImageUrl(review.authorProfileImageUrl, avatarSeed);
 
   return (
     <article className="flex flex-col gap-[14px]">
       <div className="flex items-start gap-[10px]">
-        <div className="h-[40px] w-[40px] shrink-0 rounded-full border border-[#eeeff1] bg-[#f7f8f9]" />
+        <div className="h-[40px] w-[40px] shrink-0 overflow-hidden rounded-full border border-[#eeeff1] bg-[#f7f8f9]">
+          <img
+            src={avatarUrl}
+            alt=""
+            className="h-full w-full object-cover"
+            onError={(event) => {
+              const img = event.currentTarget;
+              img.onerror = null;
+              img.src = resolveProfileImageUrl(null, avatarSeed);
+            }}
+          />
+        </div>
         <div className="flex flex-1 flex-col gap-[10px]">
           <div className="flex items-start justify-between gap-[10px]">
             <div className="flex flex-col gap-[4px]">
