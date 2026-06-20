@@ -47,14 +47,11 @@ public class ReviewResponse {
         if (user == null) {
             return null;
         }
-        if (user.getName() != null && !user.getName().isBlank()) {
-            return user.getName().trim();
-        }
-        if (user.getLoginId() != null && !user.getLoginId().isBlank()) {
-            return user.getLoginId().trim();
-        }
         if (user.getNickname() != null && !user.getNickname().isBlank()) {
             return user.getNickname().trim();
+        }
+        if (user.getName() != null && !user.getName().isBlank()) {
+            return user.getName().trim();
         }
         return null;
     }
