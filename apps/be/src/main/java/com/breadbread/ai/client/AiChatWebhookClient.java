@@ -25,7 +25,9 @@ public class AiChatWebhookClient {
     private final AiProperties aiProperties;
 
     public AiChatResponse requestChat(AiChatWebhookRequest request) {
-        log.info("[AI 채팅 웹훅] 요청 시작: message={}", request.getMessage());
+        log.info(
+                "[AI 채팅 웹훅] 요청 시작: messageLength={}",
+                request.getMessage() == null ? 0 : request.getMessage().length());
         String rawBody = fetchRawBody(request);
         return parseResponse(rawBody);
     }
