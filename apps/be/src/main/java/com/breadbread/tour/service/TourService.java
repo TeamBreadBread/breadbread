@@ -1,5 +1,6 @@
 package com.breadbread.tour.service;
 
+import com.breadbread.congestion.service.CongestionSignalService;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.repository.CourseBakeryRepository;
 import com.breadbread.course.repository.CourseRepository;
@@ -39,6 +40,7 @@ public class TourService {
     private final ReservationRepository reservationRepository;
     private final UserRepository userRepository;
     private final CongestionInstantCheckClient congestionInstantCheckClient;
+    private final CongestionSignalService congestionSignalService;
 
     @Transactional
     public TourStartResponse startTour(Long userId, UserRole role, Long courseId) {
@@ -148,7 +150,11 @@ public class TourService {
         if (request.getTargetBakeryId() != null) {
             body.put("targetBakeryId", request.getTargetBakeryId());
         }
-        return congestionInstantCheckClient.check(body);
+        CongestionInstantCheckResponse response = congestionInstantCheckClient.check(body);
+        if (response.getData() != null && !response.getData().isEmpty()) {
+            congestionSignalService.saveAllFromInstantCheck(response.getData());
+        }
+        return response;
     }
 
     private void completeReservationIfExists(Long userId, Long courseId) {

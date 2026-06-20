@@ -12,6 +12,7 @@ import com.breadbread.congestion.entity.CongestionLevel;
 import com.breadbread.congestion.repository.BakeryCongestionSignalRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.tour.dto.CongestionInstantCheckResponse;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -103,6 +104,39 @@ public class CongestionSignalService {
 
         repository.saveAll(signals);
         log.info("[혼잡도 신호] {}건 저장 완료 (요청 {}건 중)", signals.size(), requests.size());
+    }
+
+    @Transactional
+    public void saveAllFromInstantCheck(
+            List<CongestionInstantCheckResponse.CongestionResult> results) {
+        if (results == null || results.isEmpty()) {
+            log.warn("[혼잡도 신호] 저장 가능한 데이터가 없습니다.");
+            return;
+        }
+        List<BakeryCongestionSignal> entities = results.stream().map(this::toEntity).toList();
+        repository.saveAll(entities);
+        log.info("[혼잡도 신호] {}건 저장 완료", entities.size());
+    }
+
+    private BakeryCongestionSignal toEntity(
+            CongestionInstantCheckResponse.CongestionResult result) {
+        CongestionInstantCheckResponse.CongestionResult.Signals s = result.getSignals();
+        return BakeryCongestionSignal.builder()
+                .bakeryId(result.getBakeryId())
+                .bakeryName(result.getBakeryName())
+                .congestionScore(result.getCongestionScore())
+                .level(parseLevel(result.getLevel()))
+                .expectedWaitMin(result.getExpectedWaitMin())
+                .reason(result.getReason())
+                .waitingKeywordCount(s != null ? s.getWaitingKeywordCount() : null)
+                .openRunKeywordCount(s != null ? s.getOpenRunKeywordCount() : null)
+                .soldOutKeywordCount(s != null ? s.getSoldOutKeywordCount() : null)
+                .recentMentionCount(s != null ? s.getRecentMentionCount() : null)
+                .morningMentions(s != null ? s.getMorningMentions() : null)
+                .afternoonMentions(s != null ? s.getAfternoonMentions() : null)
+                .eveningMentions(s != null ? s.getEveningMentions() : null)
+                .collectedAt(result.getCheckedAt())
+                .build();
     }
 
     @Transactional(readOnly = true)

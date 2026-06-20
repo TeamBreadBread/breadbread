@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.breadbread.congestion.service.CongestionSignalService;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseBakery;
 import com.breadbread.course.repository.CourseBakeryRepository;
@@ -52,6 +53,7 @@ class TourServiceTest {
     @Mock private ReservationRepository reservationRepository;
     @Mock private UserRepository userRepository;
     @Mock private CongestionInstantCheckClient congestionInstantCheckClient;
+    @Mock private CongestionSignalService congestionSignalService;
 
     // ── startTour ──────────────────────────────────────────────────────────────
 
@@ -370,6 +372,7 @@ class TourServiceTest {
         when(request.getBakeryIds()).thenReturn(List.of(1L, 2L, 3L));
         when(request.getTargetBakeryId()).thenReturn(null);
         when(congestionInstantCheckClient.check(any())).thenReturn(response);
+        when(response.getData()).thenReturn(null);
 
         CongestionInstantCheckResponse result = tourService.checkCongestionInstant(1L, request);
 
@@ -385,12 +388,45 @@ class TourServiceTest {
         when(request.getBakeryIds()).thenReturn(List.of(1L, 2L));
         when(request.getTargetBakeryId()).thenReturn(1L);
         when(congestionInstantCheckClient.check(any())).thenReturn(response);
+        when(response.getData()).thenReturn(null);
 
         tourService.checkCongestionInstant(1L, request);
 
         ArgumentCaptor<java.util.Map> captor = ArgumentCaptor.forClass(java.util.Map.class);
         verify(congestionInstantCheckClient).check(captor.capture());
         assertThat(captor.getValue()).containsKey("targetBakeryId");
+    }
+
+    @Test
+    void checkCongestionInstant_saves_congestion_when_data_present() {
+        CongestionInstantCheckRequest request = mock(CongestionInstantCheckRequest.class);
+        CongestionInstantCheckResponse response = mock(CongestionInstantCheckResponse.class);
+        CongestionInstantCheckResponse.CongestionResult result =
+                mock(CongestionInstantCheckResponse.CongestionResult.class);
+        when(request.getCourseId()).thenReturn(10L);
+        when(request.getBakeryIds()).thenReturn(List.of(1L));
+        when(request.getTargetBakeryId()).thenReturn(null);
+        when(congestionInstantCheckClient.check(any())).thenReturn(response);
+        when(response.getData()).thenReturn(List.of(result));
+
+        tourService.checkCongestionInstant(1L, request);
+
+        verify(congestionSignalService).saveAllFromInstantCheck(List.of(result));
+    }
+
+    @Test
+    void checkCongestionInstant_skips_save_when_data_empty() {
+        CongestionInstantCheckRequest request = mock(CongestionInstantCheckRequest.class);
+        CongestionInstantCheckResponse response = mock(CongestionInstantCheckResponse.class);
+        when(request.getCourseId()).thenReturn(10L);
+        when(request.getBakeryIds()).thenReturn(List.of(1L));
+        when(request.getTargetBakeryId()).thenReturn(null);
+        when(congestionInstantCheckClient.check(any())).thenReturn(response);
+        when(response.getData()).thenReturn(List.of());
+
+        tourService.checkCongestionInstant(1L, request);
+
+        verify(congestionSignalService, never()).saveAllFromInstantCheck(any());
     }
 
     // ── helpers ────────────────────────────────────────────────────────────────
