@@ -4,6 +4,7 @@ import { createBakeryReview, getBakeryReviews, updateBakeryReview } from "@/api/
 import { uploadImages } from "@/api/image";
 import { isBakeryReviewAuthor } from "@/api/types/bakery";
 import { getErrorMessage } from "@/api/types/common";
+import { ImageUploadPreviewStrip } from "@/components/common/ImageUploadPreview";
 import { getUserProfile, refreshProfileCacheFromServer } from "@/lib/userProfileCache";
 import { AppIcon, IconAssets } from "@/components/icons";
 import MobileFrame from "@/components/layout/MobileFrame";
@@ -19,6 +20,13 @@ interface BbangteoBakeryReviewWritePageProps {
   reviewId?: number;
   listEntryFrom?: BakeryListEntryFrom;
 }
+
+const MAX_REVIEW_IMAGES = 2;
+
+type SelectedLocalImage = {
+  id: string;
+  file: File;
+};
 
 function ConfirmExitDialog({ onExit, onContinue }: { onExit: () => void; onContinue: () => void }) {
   return (
@@ -65,13 +73,14 @@ export default function BbangteoBakeryReviewWritePage({
   const [rating, setRating] = useState(0);
   const [content, setContent] = useState("");
   const [showExitDialog, setShowExitDialog] = useState(false);
-  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
-  const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [remoteImageUrls, setRemoteImageUrls] = useState<string[]>([]);
+  const [selectedImages, setSelectedImages] = useState<SelectedLocalImage[]>([]);
   const [loadError, setLoadError] = useState("");
   const [isLoadingReview, setIsLoadingReview] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const canSubmit = useMemo(() => rating > 0 && content.trim().length > 0, [rating, content]);
+  const totalImageCount = remoteImageUrls.length + selectedImages.length;
 
   useEffect(() => {
     if (bakeryId === undefined || reviewId === undefined) return;
@@ -94,7 +103,8 @@ export default function BbangteoBakeryReviewWritePage({
         }
         setRating(found.rating);
         setContent(found.content);
-        setUploadedImageUrls(found.imageUrls ? [...found.imageUrls] : []);
+        setRemoteImageUrls(found.imageUrls ? [...found.imageUrls] : []);
+        setSelectedImages([]);
       } catch (e) {
         if (!cancelled) {
           setLoadError(getErrorMessage(e));
@@ -126,10 +136,13 @@ export default function BbangteoBakeryReviewWritePage({
     void (async () => {
       try {
         setIsSubmitting(true);
+        const files = selectedImages.map((item) => item.file);
+        const uploaded = files.length > 0 ? await uploadImages(files, "reviews") : [];
+        const imageUrls = [...remoteImageUrls, ...uploaded].slice(0, MAX_REVIEW_IMAGES);
         const payload = {
           rating,
           content: content.trim(),
-          imageUrls: uploadedImageUrls.length > 0 ? uploadedImageUrls.slice(0, 2) : undefined,
+          imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
         };
         if (reviewId !== undefined) {
           await updateBakeryReview(bakeryId, reviewId, payload);
@@ -146,27 +159,28 @@ export default function BbangteoBakeryReviewWritePage({
     })();
   };
 
-  const MAX_REVIEW_IMAGES = 2;
-
-  const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
     if (files.length === 0) return;
 
-    setIsUploadingImages(true);
-    try {
-      const room = Math.max(0, MAX_REVIEW_IMAGES - uploadedImageUrls.length);
-      if (room === 0) {
-        alert(`이미지는 최대 ${MAX_REVIEW_IMAGES}장까지 첨부할 수 있습니다.`);
-        return;
-      }
-      const uploadedUrls = await uploadImages(files.slice(0, room), "reviews");
-      setUploadedImageUrls((prev) => [...prev, ...uploadedUrls].slice(0, MAX_REVIEW_IMAGES));
-    } catch (error) {
-      alert(getErrorMessage(error) || "이미지 업로드 중 오류가 발생했습니다.");
-    } finally {
-      setIsUploadingImages(false);
-      event.target.value = "";
+    const room = MAX_REVIEW_IMAGES - remoteImageUrls.length - selectedImages.length;
+    const next = files.slice(0, Math.max(0, room));
+    if (next.length < files.length) {
+      alert(`이미지는 최대 ${MAX_REVIEW_IMAGES}장까지 첨부할 수 있습니다.`);
     }
+    setSelectedImages((prev) => [
+      ...prev,
+      ...next.map((file) => ({ id: crypto.randomUUID(), file })),
+    ]);
+    event.target.value = "";
+  };
+
+  const handleRemoveLocal = (id: string) => {
+    setSelectedImages((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleRemoveRemote = (url: string) => {
+    setRemoteImageUrls((prev) => prev.filter((u) => u !== url));
   };
 
   return (
@@ -237,12 +251,18 @@ export default function BbangteoBakeryReviewWritePage({
 
           <div className="h-[50px] w-full shrink-0" aria-hidden />
 
-          <section className="flex h-[354px] w-full flex-col gap-[8px] rounded-[12px] border border-[#dcdee3] px-[20px] py-[16px]">
+          <section className="flex w-full flex-col gap-[8px] rounded-[12px] border border-[#dcdee3] px-[20px] py-[16px]">
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value.slice(0, 300))}
               placeholder="후기를 작성해주세요"
-              className="min-h-[66px] flex-1 resize-none bg-transparent text-[16px] leading-[22px] text-[#1a1c20] outline-none placeholder:text-[#d1d3d8]"
+              className="min-h-[66px] h-[280px] resize-none bg-transparent text-[16px] leading-[22px] text-[#1a1c20] outline-none placeholder:text-[#d1d3d8]"
+            />
+            <ImageUploadPreviewStrip
+              remoteUrls={remoteImageUrls}
+              localFiles={selectedImages.map((item) => item.file)}
+              onRemoveRemote={handleRemoveRemote}
+              onRemoveLocal={(index) => handleRemoveLocal(selectedImages[index]?.id ?? "")}
             />
             <p className="text-right text-[14px] leading-[19px]">
               <span className="text-[#1a1c20]">{content.length}</span>
@@ -255,16 +275,14 @@ export default function BbangteoBakeryReviewWritePage({
       <div className="fixed bottom-0 left-1/2 z-40 flex h-[44px] w-full max-w-[402px] -translate-x-1/2 items-center border-t border-[#eeeff1] bg-white px-[14px]">
         <button
           type="button"
-          className="flex h-[28px] items-center gap-[6px] rounded-[8px] border border-[#dcdee3] px-[8px]"
+          className="flex h-[28px] items-center gap-[6px] rounded-[8px] border border-[#dcdee3] px-[8px] disabled:opacity-40"
           onClick={() => fileInputRef.current?.click()}
-          disabled={isUploadingImages}
+          disabled={isSubmitting || totalImageCount >= MAX_REVIEW_IMAGES}
           aria-label="이미지 업로드"
         >
           <AppIcon src={IconAssets.IcImageLine} size={16} />
           <span className="text-[13px] leading-[18px] font-medium text-[#1a1c20]">
-            {isUploadingImages
-              ? "업로드 중..."
-              : `이미지${uploadedImageUrls.length ? ` (${uploadedImageUrls.length})` : ""}`}
+            {totalImageCount > 0 ? `이미지 (${totalImageCount}/${MAX_REVIEW_IMAGES})` : "이미지"}
           </span>
         </button>
         <input

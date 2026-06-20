@@ -30,6 +30,9 @@ public class AiApiKeyFilter extends OncePerRequestFilter {
         return !((uri.startsWith("/admin/congestion") && !"GET".equals(method))
                 || (uri.startsWith("/admin/trends") && !"GET".equals(method))
                 || uri.startsWith("/admin/tours/active")
+                || (uri.startsWith("/admin/bakeries")
+                        && uri.contains("sync-kakao")
+                        && "POST".equals(method))
                 || (uri.startsWith("/notifications/curator") && "POST".equals(method)));
     }
 

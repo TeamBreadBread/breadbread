@@ -16,3 +16,23 @@ export function getSafeImageUrl(url?: string): string | undefined {
   }
   return undefined;
 }
+
+/** `URL.createObjectURL`로 만든 로컬 미리보기 blob URL만 허용합니다. */
+export function getSafeBlobPreviewUrl(url?: string): string | undefined {
+  if (!url) return undefined;
+  const trimmed = url.trim();
+  if (!trimmed) return undefined;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === "blob:") {
+      return parsed.toString();
+    }
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
+
+export function resolveSafeImageSrc(url?: string): string | undefined {
+  return getSafeImageUrl(url) ?? getSafeBlobPreviewUrl(url);
+}

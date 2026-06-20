@@ -93,7 +93,7 @@ public class KakaoLocalUpdateService {
 
         String addressName = matched.getAddressName();
 
-        String dong = extractDong(addressName);
+        String dong = resolveDong(matched);
         if (dong != null) {
             bakery.updateDong(dong);
         }
@@ -162,6 +162,14 @@ public class KakaoLocalUpdateService {
         String city = parts[0].replaceAll("(광역시|특별시|특별자치시|특별자치도|도|시)$", "");
         String gu = Arrays.stream(parts).filter(p -> p.endsWith("구")).findFirst().orElse(null);
         return gu != null ? city + " " + gu : null;
+    }
+
+    private String resolveDong(Place matched) {
+        String dong = extractDong(matched.getAddressName());
+        if (dong != null) {
+            return dong;
+        }
+        return extractDong(matched.getRoadAddressName());
     }
 
     private String extractDong(String addressName) {

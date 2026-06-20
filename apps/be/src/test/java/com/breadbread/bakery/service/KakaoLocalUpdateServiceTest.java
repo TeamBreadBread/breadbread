@@ -118,6 +118,18 @@ class KakaoLocalUpdateServiceTest {
         assertThat(bakery.getAddress()).isEqualTo("대전광역시 중구 대흥동 123");
     }
 
+    @Test
+    void syncBakery_usesRoadAddressName_forDongWhenAddressNameHasNoDong() {
+        Bakery bakery = bakery(1L, "영춘모찌", 36.3504, 127.3845);
+        Place p = place("영춘모찌", null, "127.3846", "36.3505", "대전광역시 중구", "대전광역시 중구 대흥동 123");
+        when(bakeryRepository.findById(1L)).thenReturn(Optional.of(bakery));
+        when(kakaoLocalClient.searchBakeries("영춘모찌")).thenReturn(List.of(p));
+
+        kakaoLocalUpdateService.syncBakery(1L);
+
+        assertThat(bakery.getDong()).isEqualTo("대흥동");
+    }
+
     // ───────────────────────────── syncAllBakeries ─────────────────────────────
 
     @Test

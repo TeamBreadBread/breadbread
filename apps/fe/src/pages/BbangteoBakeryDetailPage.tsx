@@ -30,6 +30,8 @@ import type { BakeryDetail, BakeryDetailBread } from "@/api/types/bakery";
 import { getBakeryDetailBackTarget, type BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import { formatInstantInSeoul } from "@/utils/formatSeoulDateTime";
 import { buildWeeklyHoursRows, getBakeryHoursStatusLabel } from "@/utils/bakeryBusinessHours";
+import { resolveProfileImageUrl } from "@/utils/defaultProfileAvatar";
+import { SafeImage } from "@/components/common/SafeImage";
 import BakeryKakaoMapPreview from "@/components/domain/bbangteo/BakeryKakaoMapPreview";
 import CongestionBadge from "@/components/common/CongestionBadge";
 import { getBakeryCongestion, type BakeryCongestion } from "@/api/bakery";
@@ -152,7 +154,7 @@ const BakeryImageGallery = ({
             className="relative h-[280px] w-[280px] shrink-0 overflow-hidden rounded-[12px] bg-[#f7f8f9]"
           >
             {url ? (
-              <img
+              <SafeImage
                 src={url}
                 alt={`${bakeryName} 이미지 ${index + 1}`}
                 className="h-full w-full object-cover"
@@ -391,7 +393,7 @@ const MenuImagePreview = ({ menu }: { menu: MenuRow }) => {
   if (menu.imageUrl) {
     return (
       <div className="relative flex h-[84px] w-[84px] shrink-0 items-center justify-center overflow-hidden bg-gray-100">
-        <img src={menu.imageUrl} alt="" className="h-full w-full object-cover" />
+        <SafeImage src={menu.imageUrl} alt="" className="h-full w-full object-cover" />
       </div>
     );
   }
@@ -459,6 +461,28 @@ const MenuList = ({ menus }: { menus: MenuRow[] }) => (
   </div>
 );
 
+const ReviewAuthorAvatar = ({
+  profileImageUrl,
+  seed,
+}: {
+  profileImageUrl?: string | null;
+  seed: string;
+}) => {
+  const [useFallback, setUseFallback] = useState(false);
+  const src = resolveProfileImageUrl(useFallback ? null : profileImageUrl, seed);
+
+  return (
+    <SafeImage
+      src={src}
+      alt=""
+      className="h-full w-full object-cover"
+      onError={() => {
+        setUseFallback(true);
+      }}
+    />
+  );
+};
+
 const ReviewCard = ({
   review,
   viewerUserId,
@@ -472,11 +496,19 @@ const ReviewCard = ({
 }) => {
   const { date, time } = formatInstantInSeoul(review.createdAt);
   const imgs = (review.imageUrls ?? []).slice(0, MAX_REVIEW_PREVIEWS);
+  const avatarSeed =
+    review.authorUserId != null ? String(review.authorUserId) : review.authorNickname;
 
   return (
     <article className="flex flex-col gap-[14px]">
       <div className="flex items-start gap-[10px]">
-        <div className="h-[40px] w-[40px] shrink-0 rounded-full border border-[#eeeff1] bg-[#f7f8f9]" />
+        <div className="h-[40px] w-[40px] shrink-0 overflow-hidden rounded-full border border-[#eeeff1] bg-[#f7f8f9]">
+          <ReviewAuthorAvatar
+            key={review.id}
+            profileImageUrl={review.authorProfileImageUrl}
+            seed={avatarSeed}
+          />
+        </div>
         <div className="flex flex-1 flex-col gap-[10px]">
           <div className="flex items-start justify-between gap-[10px]">
             <div className="flex flex-col gap-[4px]">
@@ -533,7 +565,7 @@ const ReviewCard = ({
               key={`${review.id}-img-${index}`}
               className="flex h-[110px] w-[110px] shrink-0 overflow-hidden rounded-[8px] bg-gray-100"
             >
-              <img src={url} alt="" className="h-full w-full object-cover" />
+              <SafeImage src={url} alt="" className="h-full w-full object-cover" />
             </div>
           ))}
         </div>
