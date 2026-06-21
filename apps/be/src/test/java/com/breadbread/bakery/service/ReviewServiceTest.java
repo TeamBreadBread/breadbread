@@ -3,18 +3,29 @@ package com.breadbread.bakery.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.breadbread.bakery.dto.request.CreateReviewRequest;
+import com.breadbread.bakery.dto.request.MenuTagRequest;
 import com.breadbread.bakery.dto.request.UpdateReviewRequest;
 import com.breadbread.bakery.entity.Bakery;
+import com.breadbread.bakery.entity.BakeryTag;
+import com.breadbread.bakery.entity.Bread;
+import com.breadbread.bakery.entity.BreadTag;
 import com.breadbread.bakery.entity.Review;
 import com.breadbread.bakery.entity.enums.BakeryStatus;
+import com.breadbread.bakery.entity.enums.BakeryTagType;
+import com.breadbread.bakery.entity.enums.BreadTagType;
 import com.breadbread.bakery.entity.enums.ReviewSortType;
 import com.breadbread.bakery.repository.BakeryRepository;
+import com.breadbread.bakery.repository.BakeryTagRepository;
+import com.breadbread.bakery.repository.BreadRepository;
+import com.breadbread.bakery.repository.BreadTagRepository;
 import com.breadbread.bakery.repository.ReviewRepository;
 import com.breadbread.global.dto.UploadFolder;
 import com.breadbread.global.exception.CustomException;
@@ -42,8 +53,11 @@ import org.springframework.test.util.ReflectionTestUtils;
 class ReviewServiceTest {
 
     @Mock private BakeryRepository bakeryRepository;
+    @Mock private BreadRepository breadRepository;
     @Mock private UserRepository userRepository;
     @Mock private ReviewRepository reviewRepository;
+    @Mock private BakeryTagRepository bakeryTagRepository;
+    @Mock private BreadTagRepository breadTagRepository;
     @Mock private GcsService gcsService;
     @Mock private TempImageService tempImageService;
 
@@ -70,6 +84,91 @@ class ReviewServiceTest {
 
         assertThat(reviewId).isEqualTo(900L);
         assertThat(bakery.getRating()).isEqualTo(4.25);
+    }
+
+    @Test
+    void createReview_saves_bakeryTags_when_provided() {
+        Bakery bakery = bakeryWithId(20L);
+        User author = user(30L, UserRole.ROLE_USER);
+        CreateReviewRequest request = createReviewRequest("좋아요", 5);
+        ReflectionTestUtils.setField(
+                request, "bakeryTags", List.of(BakeryTagType.COZY, BakeryTagType.QUIET));
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(20L, BakeryStatus.APPROVED))
+                .thenReturn(Optional.of(bakery));
+        when(userRepository.findById(30L)).thenReturn(Optional.of(author));
+        when(reviewRepository.save(any(Review.class)))
+                .thenAnswer(
+                        inv -> {
+                            Review r = inv.getArgument(0);
+                            ReflectionTestUtils.setField(r, "id", 1L);
+                            return r;
+                        });
+        when(reviewRepository.findAverageRatingByBakeryId(20L)).thenReturn(Optional.empty());
+
+        reviewService.createReview(20L, 30L, request);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<BakeryTag>> captor = ArgumentCaptor.forClass(List.class);
+        verify(bakeryTagRepository).saveAll(captor.capture());
+        assertThat(captor.getValue()).hasSize(2);
+    }
+
+    @Test
+    void createReview_saves_menuTags_when_provided() {
+        Bakery bakery = bakeryWithId(20L);
+        User author = user(30L, UserRole.ROLE_USER);
+        Bread bread = breadWithId(5L, bakery);
+        CreateReviewRequest request = createReviewRequest("좋아요", 5);
+        MenuTagRequest menuTag = new MenuTagRequest();
+        ReflectionTestUtils.setField(menuTag, "breadId", 5L);
+        ReflectionTestUtils.setField(menuTag, "tags", List.of(BreadTagType.SAVORY));
+        ReflectionTestUtils.setField(request, "menuTags", List.of(menuTag));
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(20L, BakeryStatus.APPROVED))
+                .thenReturn(Optional.of(bakery));
+        when(userRepository.findById(30L)).thenReturn(Optional.of(author));
+        when(reviewRepository.save(any(Review.class)))
+                .thenAnswer(
+                        inv -> {
+                            Review r = inv.getArgument(0);
+                            ReflectionTestUtils.setField(r, "id", 1L);
+                            return r;
+                        });
+        when(breadRepository.findByIdAndBakeryId(5L, 20L)).thenReturn(Optional.of(bread));
+        when(reviewRepository.findAverageRatingByBakeryId(20L)).thenReturn(Optional.empty());
+
+        reviewService.createReview(20L, 30L, request);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<BreadTag>> captor = ArgumentCaptor.forClass(List.class);
+        verify(breadTagRepository).saveAll(captor.capture());
+        assertThat(captor.getValue()).hasSize(1);
+    }
+
+    @Test
+    void createReview_throws_when_menu_not_in_bakery() {
+        Bakery bakery = bakeryWithId(20L);
+        User author = user(30L, UserRole.ROLE_USER);
+        CreateReviewRequest request = createReviewRequest("좋아요", 5);
+        MenuTagRequest menuTag = new MenuTagRequest();
+        ReflectionTestUtils.setField(menuTag, "breadId", 99L);
+        ReflectionTestUtils.setField(menuTag, "tags", List.of(BreadTagType.SAVORY));
+        ReflectionTestUtils.setField(request, "menuTags", List.of(menuTag));
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(20L, BakeryStatus.APPROVED))
+                .thenReturn(Optional.of(bakery));
+        when(userRepository.findById(30L)).thenReturn(Optional.of(author));
+        when(reviewRepository.save(any(Review.class)))
+                .thenAnswer(
+                        inv -> {
+                            Review r = inv.getArgument(0);
+                            ReflectionTestUtils.setField(r, "id", 1L);
+                            return r;
+                        });
+        when(breadRepository.findByIdAndBakeryId(99L, 20L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> reviewService.createReview(20L, 30L, request))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.MENU_NOT_FOUND);
     }
 
     @Test
@@ -155,6 +254,9 @@ class ReviewServiceTest {
                 .thenReturn(true);
         when(reviewRepository.findAllByBakeryIdAndActiveTrue(eq(20L), pageableCaptor.capture()))
                 .thenReturn(new PageImpl<>(List.of(review), PageRequest.of(0, 10), 1));
+        when(bakeryTagRepository.findAllBySourceTypeAndSourceIdIn(anyString(), anyList()))
+                .thenReturn(List.of());
+        when(breadTagRepository.findAllByReviewIdIn(anyList())).thenReturn(List.of());
 
         var result = reviewService.getReviews(20L, ReviewSortType.LATEST, 0, 10, 30L);
 
@@ -267,7 +369,35 @@ class ReviewServiceTest {
     }
 
     @Test
-    void deleteReview_succeeds_when_admin_not_author() {
+    void updateReview_syncs_bakeryTags_when_provided() {
+        Bakery bakery = bakeryWithId(20L);
+        User author = user(40L, UserRole.ROLE_USER);
+        Review review =
+                Review.builder()
+                        .content("a")
+                        .rating(3)
+                        .imageUrls(List.of())
+                        .user(author)
+                        .bakery(bakery)
+                        .build();
+        ReflectionTestUtils.setField(review, "id", 11L);
+        UpdateReviewRequest request = new UpdateReviewRequest();
+        ReflectionTestUtils.setField(request, "bakeryTags", List.of(BakeryTagType.COZY));
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(20L, BakeryStatus.APPROVED))
+                .thenReturn(Optional.of(bakery));
+        when(reviewRepository.findByIdAndBakeryIdAndActiveTrue(11L, 20L))
+                .thenReturn(Optional.of(review));
+        when(bakeryTagRepository.findAllBySourceTypeAndSourceId("REVIEW", 11L))
+                .thenReturn(List.of());
+        when(reviewRepository.findAverageRatingByBakeryId(20L)).thenReturn(Optional.empty());
+
+        reviewService.updateReview(20L, 11L, 40L, request);
+
+        verify(bakeryTagRepository).saveAll(anyList());
+    }
+
+    @Test
+    void deleteReview_deletes_tags_and_deactivates() {
         Bakery bakery = bakeryWithId(20L);
         User author = user(40L, UserRole.ROLE_USER);
         Review review =
@@ -283,12 +413,16 @@ class ReviewServiceTest {
                 .thenReturn(Optional.of(bakery));
         when(reviewRepository.findByIdAndBakeryIdAndActiveTrue(11L, 20L))
                 .thenReturn(Optional.of(review));
+        when(bakeryTagRepository.findAllBySourceTypeAndSourceId("REVIEW", 11L))
+                .thenReturn(List.of());
+        when(breadTagRepository.findAllByReviewId(11L)).thenReturn(List.of());
         when(reviewRepository.findAverageRatingByBakeryId(20L)).thenReturn(Optional.empty());
 
         reviewService.deleteReview(20L, 11L, 999L, UserRole.ROLE_ADMIN);
 
+        verify(bakeryTagRepository).deleteAll(anyList());
+        verify(breadTagRepository).deleteAll(anyList());
         assertThat(review.isActive()).isFalse();
-        verify(reviewRepository).findAverageRatingByBakeryId(20L);
     }
 
     @Test
@@ -346,6 +480,19 @@ class ReviewServiceTest {
                         .parkingAvailable(false)
                         .drinkAvailable(true)
                         .note("")
+                        .build();
+        ReflectionTestUtils.setField(b, "id", id);
+        return b;
+    }
+
+    private static Bread breadWithId(long id, Bakery bakery) {
+        Bread b =
+                Bread.builder()
+                        .name("소금빵")
+                        .price(3000)
+                        .bakery(bakery)
+                        .signature(false)
+                        .selloutMin(0)
                         .build();
         ReflectionTestUtils.setField(b, "id", id);
         return b;

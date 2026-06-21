@@ -1,5 +1,6 @@
 package com.breadbread.community.dto;
 
+import com.breadbread.bakery.entity.enums.BakeryTagType;
 import com.breadbread.community.entity.Post;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
@@ -46,12 +47,22 @@ public class PostDetailResponse {
     @Schema(description = "댓글 목록")
     private CommentListResponse commentListResponse;
 
+    @Schema(description = "연결된 빵집 ID")
+    private Long bakeryId;
+
+    @Schema(description = "연결된 빵집 이름")
+    private String bakeryName;
+
+    @Schema(description = "빵집 선택형 태그 목록")
+    private List<BakeryTagType> bakeryTags;
+
     public static PostDetailResponse from(
             Post post,
             Long userId,
             boolean liked,
             int likeCount,
-            CommentListResponse commentListResponse) {
+            CommentListResponse commentListResponse,
+            List<BakeryTagType> bakeryTags) {
         return PostDetailResponse.builder()
                 .id(post.getId())
                 .title(post.getTitle())
@@ -67,6 +78,9 @@ public class PostDetailResponse {
                 .isAuthor(userId != null && userId.equals(post.getUser().getId()))
                 .likeCount(likeCount)
                 .commentListResponse(commentListResponse)
+                .bakeryId(post.getBakery() != null ? post.getBakery().getId() : null)
+                .bakeryName(post.getBakery() != null ? post.getBakery().getName() : null)
+                .bakeryTags(bakeryTags)
                 .build();
     }
 }

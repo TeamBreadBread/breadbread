@@ -57,6 +57,7 @@ public enum ErrorCode {
             HttpStatus.BAD_REQUEST,
             "E0310",
             "빵집 승인에 필요한 필드가 입력되지 않았습니다. (name, address, latitude, longitude, region, dong, bakeryType)"),
+    MENU_TAG_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "E0311", "메뉴당 태그는 최대 2개까지 등록할 수 있습니다."),
 
     // 코스/AI추천 E04xx
     COURSE_NOT_FOUND(HttpStatus.NOT_FOUND, "E0401", "존재하지 않는 코스입니다."),
@@ -128,6 +129,9 @@ public enum ErrorCode {
     NOT_POST_LIKED(HttpStatus.BAD_REQUEST, "E0804", "좋아요하지 않은 게시글입니다."),
     POST_AUTHOR_ONLY(HttpStatus.FORBIDDEN, "E0805", "게시글 작성자만 수행할 수 있습니다."),
     COMMENT_AUTHOR_ONLY(HttpStatus.FORBIDDEN, "E0806", "댓글 작성자만 수행할 수 있습니다."),
+    TAG_REQUIRES_BAKERY(HttpStatus.BAD_REQUEST, "E0807", "태그를 추가하려면 빵집을 먼저 선택해야 합니다."),
+    BAKERY_TAG_NOT_ALLOWED_POST_TYPE(
+            HttpStatus.BAD_REQUEST, "E0808", "빵집 태그는 자유게시판 글에만 추가할 수 있습니다."),
 
     // 투어 E09xx
     TOUR_NOT_FOUND(HttpStatus.NOT_FOUND, "E0901", "진행 중인 투어가 없습니다."),

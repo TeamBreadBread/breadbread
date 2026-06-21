@@ -1,6 +1,7 @@
 package com.breadbread.bakery.dto.response;
 
 import com.breadbread.bakery.entity.Review;
+import com.breadbread.bakery.entity.enums.BakeryTagType;
 import com.breadbread.user.entity.User;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,8 +23,22 @@ public class ReviewResponse {
     private List<String> imageUrls;
     private LocalDateTime createdAt;
     private boolean isAuthor;
+    private List<BakeryTagType> bakeryTags;
+    private List<MenuTagResponse> menuTags;
 
-    public static ReviewResponse from(Review review, Long currentUserId) {
+    public record TagBundle(List<BakeryTagType> bakeryTags, List<MenuTagResponse> menuTags) {}
+
+    public static ReviewResponse from(Review review, Long currentUserId, TagBundle tags) {
+        List<BakeryTagType> bakeryTags = tags != null ? tags.bakeryTags() : List.of();
+        List<MenuTagResponse> menuTags = tags != null ? tags.menuTags() : List.of();
+        return from(review, currentUserId, bakeryTags, menuTags);
+    }
+
+    private static ReviewResponse from(
+            Review review,
+            Long currentUserId,
+            List<BakeryTagType> bakeryTags,
+            List<MenuTagResponse> menuTags) {
         boolean isAuthor =
                 currentUserId != null
                         && review.getUser() != null
@@ -39,6 +54,8 @@ public class ReviewResponse {
                 .imageUrls(review.getImageUrls())
                 .createdAt(review.getCreatedAt())
                 .isAuthor(isAuthor)
+                .bakeryTags(bakeryTags)
+                .menuTags(menuTags)
                 .build();
     }
 

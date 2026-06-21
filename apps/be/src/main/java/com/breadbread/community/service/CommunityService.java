@@ -1,5 +1,11 @@
 package com.breadbread.community.service;
 
+import com.breadbread.bakery.entity.Bakery;
+import com.breadbread.bakery.entity.BakeryTag;
+import com.breadbread.bakery.entity.enums.BakeryStatus;
+import com.breadbread.bakery.entity.enums.BakeryTagType;
+import com.breadbread.bakery.repository.BakeryRepository;
+import com.breadbread.bakery.repository.BakeryTagRepository;
 import com.breadbread.community.dto.CommentListResponse;
 import com.breadbread.community.dto.CommentResponse;
 import com.breadbread.community.dto.CreateCommentRequest;
@@ -47,6 +53,8 @@ public class CommunityService {
     private final CommentRepository commentRepository;
     private final PostLikeRepository postLikeRepository;
     private final UserRepository userRepository;
+    private final BakeryRepository bakeryRepository;
+    private final BakeryTagRepository bakeryTagRepository;
     private final GcsService gcsService;
     private final TempImageService tempImageService;
 
@@ -97,6 +105,28 @@ public class CommunityService {
                 userRepository
                         .findById(userId)
                         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        if (request.getBakeryId() == null
+                && request.getBakeryTags() != null
+                && !request.getBakeryTags().isEmpty()) {
+            throw new CustomException(ErrorCode.TAG_REQUIRES_BAKERY);
+        }
+
+        Bakery bakery =
+                request.getBakeryId() == null
+                        ? null
+                        : bakeryRepository
+                                .findByIdAndActiveTrueAndStatus(
+                                        request.getBakeryId(), BakeryStatus.APPROVED)
+                                .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
+
+        if (bakery != null
+                && request.getPostType() != PostType.FREE
+                && request.getBakeryTags() != null
+                && !request.getBakeryTags().isEmpty()) {
+            throw new CustomException(ErrorCode.BAKERY_TAG_NOT_ALLOWED_POST_TYPE);
+        }
+
         Post post =
                 postRepository.save(
                         Post.builder()
@@ -105,14 +135,33 @@ public class CommunityService {
                                 .postType(request.getPostType())
                                 .imageUrls(request.getImageUrls())
                                 .user(user)
+                                .bakery(bakery)
                                 .build());
+
+        if (bakery != null && request.getBakeryTags() != null) {
+            bakeryTagRepository.saveAll(
+                    request.getBakeryTags().stream()
+                            .distinct()
+                            .map(
+                                    tag ->
+                                            BakeryTag.builder()
+                                                    .bakery(bakery)
+                                                    .tag(tag)
+                                                    .sourceType("POST")
+                                                    .sourceId(post.getId())
+                                                    .build())
+                            .toList());
+        }
+
         tempImageService.consumeOwnedImages(userId, request.getImageUrls(), UploadFolder.posts);
 
         log.info(
-                "게시글 작성: postId={}, userId={}, postType={}",
+                "게시글 작성: postId={}, userId={}, postType={}, bakeryId={}, bakeryTags={}",
                 post.getId(),
                 userId,
-                post.getPostType());
+                post.getPostType(),
+                request.getBakeryId(),
+                request.getBakeryTags());
         return post.getId();
     }
 
@@ -130,7 +179,11 @@ public class CommunityService {
                 CommentListResponse.from(
                         commentRepository.findAllByPostIdWithUserOrderByCreatedAtAsc(post.getId()),
                         userId);
-        return PostDetailResponse.from(post, userId, liked, likeCount, comments);
+        List<BakeryTagType> bakeryTags =
+                bakeryTagRepository.findAllBySourceTypeAndSourceId("POST", post.getId()).stream()
+                        .map(BakeryTag::getTag)
+                        .toList();
+        return PostDetailResponse.from(post, userId, liked, likeCount, comments, bakeryTags);
     }
 
     @Transactional
@@ -155,7 +208,18 @@ public class CommunityService {
                     .forEach(gcsService::deleteQuietly);
         }
 
-        log.info("게시글 수정: postId={}, userId={}", postId, userId);
+        if (request.getBakeryTags() != null) {
+            if (post.getBakery() == null && !request.getBakeryTags().isEmpty()) {
+                throw new CustomException(ErrorCode.TAG_REQUIRES_BAKERY);
+            }
+            syncBakeryTags("POST", postId, request.getBakeryTags(), post.getBakery());
+        }
+
+        log.info(
+                "게시글 수정: postId={}, userId={}, bakeryTags={}",
+                postId,
+                userId,
+                request.getBakeryTags());
     }
 
     @Transactional
@@ -167,6 +231,8 @@ public class CommunityService {
         validatePostAuthority(post, userId, role);
         post.getImageUrls().forEach(gcsService::deleteQuietly);
         commentRepository.deactivateAllByPostId(postId);
+        bakeryTagRepository.deleteAll(
+                bakeryTagRepository.findAllBySourceTypeAndSourceId("POST", postId));
         post.deactivate();
 
         log.info("게시글 삭제: postId={}, userId={}", postId, userId);
@@ -279,6 +345,33 @@ public class CommunityService {
         }
         if (!post.getUser().getId().equals(userId)) {
             throw new CustomException(ErrorCode.POST_AUTHOR_ONLY);
+        }
+    }
+
+    private void syncBakeryTags(
+            String sourceType, Long sourceId, List<BakeryTagType> requested, Bakery bakery) {
+        List<BakeryTag> existing =
+                bakeryTagRepository.findAllBySourceTypeAndSourceId(sourceType, sourceId);
+        List<BakeryTagType> existingTypes = existing.stream().map(BakeryTag::getTag).toList();
+
+        List<BakeryTagType> toAdd =
+                requested.stream().distinct().filter(t -> !existingTypes.contains(t)).toList();
+        List<BakeryTag> toRemove =
+                existing.stream().filter(t -> !requested.contains(t.getTag())).toList();
+
+        bakeryTagRepository.deleteAll(toRemove);
+        if (bakery != null) {
+            bakeryTagRepository.saveAll(
+                    toAdd.stream()
+                            .map(
+                                    tag ->
+                                            BakeryTag.builder()
+                                                    .bakery(bakery)
+                                                    .tag(tag)
+                                                    .sourceType(sourceType)
+                                                    .sourceId(sourceId)
+                                                    .build())
+                            .toList());
         }
     }
 }

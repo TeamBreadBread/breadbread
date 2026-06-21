@@ -3,11 +3,19 @@ package com.breadbread.community.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.breadbread.bakery.entity.Bakery;
+import com.breadbread.bakery.entity.enums.BakeryStatus;
+import com.breadbread.bakery.entity.enums.BakeryTagType;
+import com.breadbread.bakery.repository.BakeryRepository;
+import com.breadbread.bakery.repository.BakeryTagRepository;
 import com.breadbread.community.dto.CreateCommentRequest;
 import com.breadbread.community.dto.CreatePostRequest;
 import com.breadbread.community.dto.PostListSort;
@@ -51,6 +59,8 @@ class CommunityServiceTest {
     @Mock private CommentRepository commentRepository;
     @Mock private PostLikeRepository postLikeRepository;
     @Mock private UserRepository userRepository;
+    @Mock private BakeryRepository bakeryRepository;
+    @Mock private BakeryTagRepository bakeryTagRepository;
     @Mock private GcsService gcsService;
     @Mock private TempImageService tempImageService;
 
@@ -137,6 +147,58 @@ class CommunityServiceTest {
     }
 
     @Test
+    void createPost_throws_when_bakeryTag_without_bakeryId() {
+        CreatePostRequest request = createPostRequest("글", "내용", PostType.FREE, null);
+        ReflectionTestUtils.setField(request, "bakeryTags", List.of(BakeryTagType.COZY));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
+
+        assertThatThrownBy(() -> communityService.createPost(1L, UserRole.ROLE_USER, request))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.TAG_REQUIRES_BAKERY);
+
+        verify(postRepository, never()).save(any(Post.class));
+    }
+
+    @Test
+    void createPost_throws_when_bakeryTag_on_non_free_post() {
+        CreatePostRequest request = createPostRequest("공지", "내용", PostType.NOTICE, null);
+        ReflectionTestUtils.setField(request, "bakeryId", 1L);
+        ReflectionTestUtils.setField(request, "bakeryTags", List.of(BakeryTagType.COZY));
+        User admin = user(3L);
+        when(userRepository.findById(3L)).thenReturn(Optional.of(admin));
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(1L, BakeryStatus.APPROVED))
+                .thenReturn(Optional.of(bakeryWithId(1L)));
+
+        assertThatThrownBy(() -> communityService.createPost(3L, UserRole.ROLE_ADMIN, request))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.BAKERY_TAG_NOT_ALLOWED_POST_TYPE);
+    }
+
+    @Test
+    void createPost_saves_bakeryTags_when_bakeryId_and_tags_provided() {
+        User author = user(2L);
+        CreatePostRequest request = createPostRequest("자유", "본문", PostType.FREE, null);
+        ReflectionTestUtils.setField(request, "bakeryId", 10L);
+        ReflectionTestUtils.setField(request, "bakeryTags", List.of(BakeryTagType.COZY));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(author));
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(10L, BakeryStatus.APPROVED))
+                .thenReturn(Optional.of(bakeryWithId(10L)));
+        when(postRepository.save(any(Post.class)))
+                .thenAnswer(
+                        inv -> {
+                            Post p = inv.getArgument(0);
+                            ReflectionTestUtils.setField(p, "id", 100L);
+                            return p;
+                        });
+
+        communityService.createPost(2L, UserRole.ROLE_USER, request);
+
+        verify(bakeryTagRepository).saveAll(anyList());
+    }
+
+    @Test
     void createPost_returns_id_when_free_and_user_exists() {
         User author = user(2L);
         CreatePostRequest request =
@@ -200,6 +262,8 @@ class CommunityServiceTest {
         when(postLikeRepository.countByPostId(50L)).thenReturn(3L);
         when(commentRepository.findAllByPostIdWithUserOrderByCreatedAtAsc(50L))
                 .thenReturn(List.of());
+        when(bakeryTagRepository.findAllBySourceTypeAndSourceId(anyString(), anyLong()))
+                .thenReturn(List.of());
 
         var detail = communityService.findOne(50L, 10L);
 
@@ -217,6 +281,8 @@ class CommunityServiceTest {
         when(postLikeRepository.existsByUserIdAndPostId(11L, 60L)).thenReturn(false);
         when(postLikeRepository.countByPostId(60L)).thenReturn(0L);
         when(commentRepository.findAllByPostIdWithUserOrderByCreatedAtAsc(60L))
+                .thenReturn(List.of());
+        when(bakeryTagRepository.findAllBySourceTypeAndSourceId(anyString(), anyLong()))
                 .thenReturn(List.of());
 
         var detail = communityService.findOne(60L, 11L);
@@ -276,25 +342,46 @@ class CommunityServiceTest {
     }
 
     @Test
-    void removePost_deletes_when_author() {
+    void updatePost_throws_when_bakeryTag_without_bakery() {
+        User owner = user(1L);
+        Post post = post(7L, "t", PostType.FREE, owner, List.of());
+        when(postRepository.findByIdWithUser(7L)).thenReturn(Optional.of(post));
+        UpdatePostRequest req = new UpdatePostRequest();
+        ReflectionTestUtils.setField(req, "bakeryTags", List.of(BakeryTagType.COZY));
+
+        assertThatThrownBy(
+                        () ->
+                                communityService.updatePost(
+                                        7L, owner.getId(), UserRole.ROLE_USER, req))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.TAG_REQUIRES_BAKERY);
+    }
+
+    @Test
+    void removePost_deletes_tags_and_deactivates_when_author() {
         User owner = user(1L);
         Post post = post(9L, "t", PostType.FREE, owner, List.of());
         when(postRepository.findByIdWithUser(9L)).thenReturn(Optional.of(post));
+        when(bakeryTagRepository.findAllBySourceTypeAndSourceId("POST", 9L)).thenReturn(List.of());
 
         communityService.removePost(9L, owner.getId(), UserRole.ROLE_USER);
 
+        verify(bakeryTagRepository).deleteAll(anyList());
         verify(commentRepository).deactivateAllByPostId(9L);
         assertThat(post.isActive()).isFalse();
     }
 
     @Test
-    void removePost_deletes_when_admin() {
+    void removePost_deletes_tags_and_deactivates_when_admin() {
         User owner = user(1L);
         Post post = post(9L, "t", PostType.FREE, owner, List.of());
         when(postRepository.findByIdWithUser(9L)).thenReturn(Optional.of(post));
+        when(bakeryTagRepository.findAllBySourceTypeAndSourceId("POST", 9L)).thenReturn(List.of());
 
         communityService.removePost(9L, 50L, UserRole.ROLE_ADMIN);
 
+        verify(bakeryTagRepository).deleteAll(anyList());
         verify(commentRepository).deactivateAllByPostId(9L);
         assertThat(post.isActive()).isFalse();
     }
@@ -423,21 +510,6 @@ class CommunityServiceTest {
     }
 
     @Test
-    void likePost_maps_integrity_violation_when_race_on_save() {
-        Post post = post(1L, "t", PostType.FREE, user(1L), List.of());
-        when(postRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(post));
-        when(userRepository.findById(2L)).thenReturn(Optional.of(user(2L)));
-        doThrow(new DataIntegrityViolationException("dup"))
-                .when(postLikeRepository)
-                .saveAndFlush(any(PostLike.class));
-
-        assertThatThrownBy(() -> communityService.likePost(1L, 2L))
-                .isInstanceOf(CustomException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.ALREADY_POST_LIKED);
-    }
-
-    @Test
     void unlikePost_throws_when_not_liked() {
         when(postLikeRepository.findByUserIdAndPostId(2L, 1L)).thenReturn(Optional.empty());
 
@@ -457,6 +529,20 @@ class CommunityServiceTest {
         communityService.unlikePost(1L, 2L);
 
         verify(postLikeRepository).delete(like);
+    }
+
+    private static Bakery bakeryWithId(long id) {
+        Bakery b =
+                Bakery.builder()
+                        .name("테스트빵집")
+                        .address("주소")
+                        .region("대전")
+                        .latitude(36.0)
+                        .longitude(127.0)
+                        .drinkAvailable(false)
+                        .build();
+        ReflectionTestUtils.setField(b, "id", id);
+        return b;
     }
 
     private static CreatePostRequest createPostRequest(

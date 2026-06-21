@@ -1,5 +1,7 @@
 package com.breadbread.bakery.dto.request;
 
+import com.breadbread.bakery.entity.enums.BakeryTagType;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.util.List;
 import lombok.Getter;
@@ -19,4 +21,10 @@ public class CreateReviewRequest {
 
     @Size(max = 2)
     private List<String> imageUrls;
+
+    @Size(max = 2)
+    private List<@NotNull BakeryTagType> bakeryTags;
+
+    @Size(max = 5)
+    private List<@NotNull @Valid MenuTagRequest> menuTags;
 }
