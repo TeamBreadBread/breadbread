@@ -168,6 +168,16 @@ export type ReorderCourseBakeriesResponse = {
   estimatedTotalMinutes: number;
 };
 
+export type ModifyCourseBakeryResponse = {
+  courseId: number;
+  bakeryOrder: number[];
+  estimatedTotalMinutes: number;
+  targetBakeryId?: number;
+  targetBakeryName?: string;
+  replacementBakeryId?: number | null;
+  replacementBakeryName?: string | null;
+};
+
 export async function getCourses(params?: GetCoursesParams): Promise<CourseListResponse> {
   const { data } = await apiClient.get<ApiEnvelope<CourseListResponse>>(PATH, { params });
   return extractData(data);
@@ -285,6 +295,28 @@ export async function reorderCourseBakeries(
   const response = await apiClient.patch<ApiEnvelope<ReorderCourseBakeriesResponse>>(
     `${PATH}/${courseId}/bakeries/reorder`,
     body,
+  );
+  return extractData(response.data);
+}
+
+export async function excludeBakeryFromCourse(
+  courseId: number,
+  bakeryId: number,
+): Promise<ModifyCourseBakeryResponse> {
+  const response = await apiClient.delete<ApiEnvelope<ModifyCourseBakeryResponse>>(
+    `${PATH}/${courseId}/bakeries/${bakeryId}`,
+  );
+  return extractData(response.data);
+}
+
+export async function replaceBakeryInCourse(
+  courseId: number,
+  bakeryId: number,
+  replacementBakeryId?: number,
+): Promise<ModifyCourseBakeryResponse> {
+  const response = await apiClient.patch<ApiEnvelope<ModifyCourseBakeryResponse>>(
+    `${PATH}/${courseId}/bakeries/${bakeryId}/replace`,
+    replacementBakeryId != null ? { replacementBakeryId } : {},
   );
   return extractData(response.data);
 }

@@ -37,6 +37,7 @@ import { hasConflictingActiveTour } from "@/utils/activeTourGuard";
 import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
 import { resetAiCourseFlowForRetry } from "@/utils/clearAiCourseJobContext";
 import { findMatchingSavedRoute, isSameCourseRouteContent } from "@/utils/courseRouteCompare";
+import { useCourseGuideStart } from "@/hooks/useCourseGuideStart";
 import { formatBakerySignatureMenuLabel } from "@/utils/bakerySignatureMenu";
 import {
   trackAiCourseRegenerated,
@@ -317,6 +318,20 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     void navigate({ to: "/tour", search: { courseId: effectiveCourseId } });
   };
 
+  const { requestCourseGuideStart, closedBakeryDialog } = useCourseGuideStart({
+    courseId: effectiveCourseId,
+    onCourseUpdated: (detail) => {
+      if (!effectiveCourseId) return;
+      setApiCourseDetail({ courseId: effectiveCourseId, detail });
+      try {
+        sessionStorage.setItem(AI_COURSE_RESULT_STORAGE_KEY, JSON.stringify(detail));
+      } catch {
+        /* ignore */
+      }
+    },
+    onStartGuide: handleCourseGuide,
+  });
+
   const goBreadTaxiReserve = () => {
     if (!effectiveCourseId) {
       window.alert(
@@ -563,6 +578,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
         open={activeTourConflictOpen}
         onConfirm={() => setActiveTourConflictOpen(false)}
       />
+      {closedBakeryDialog}
 
       {from === "route" ? (
         <div
@@ -576,7 +592,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
               variant="primary"
               type="button"
               className="flex-1"
-              onClick={() => void handleCourseGuide()}
+              onClick={() => void requestCourseGuideStart()}
             >
               코스 안내
             </Button>

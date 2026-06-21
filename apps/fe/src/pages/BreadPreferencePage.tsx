@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ApiBusinessError, getErrorMessage } from "@/api/types/common";
 import { getMyPreference, savePreference, updateMyPreference } from "@/api/user";
-import { AppTopBar, BottomDoubleCTA } from "@/components/common";
+import { AppTopBar, BottomCTA } from "@/components/common";
 import { PreferenceOptionCard } from "@/components/common/cards";
 import PreferenceIntroSection from "@/components/domain/ai-course/PreferenceIntroSection";
 import PreferenceQuestionSection from "@/components/domain/ai-course/PreferenceQuestionSection";
 import MobileFrame from "@/components/layout/MobileFrame";
+import { FIXED_BOTTOM_BAR_FRAME_CLASS } from "@/components/layout/layout.constants";
 import type { PreferenceQuestion } from "@/components/domain/ai-course/types";
+import { invalidatePreferenceOnboardingCache } from "@/lib/auth/preferenceOnboardingGate";
+import { cn } from "@/utils/cn";
 import {
   hydrateQuestionsFromMyPreference,
   INITIAL_USER_PREFERENCE_QUESTIONS,
@@ -165,6 +168,7 @@ export default function BreadPreferencePage({ isEditMode = false }: BreadPrefere
           if (!alreadySaved) throw error;
         }
       }
+      invalidatePreferenceOnboardingCache();
       navigate({ to: "/home" });
     } catch (error) {
       window.alert(getErrorMessage(error));
@@ -178,7 +182,8 @@ export default function BreadPreferencePage({ isEditMode = false }: BreadPrefere
       <div className="pb-footer-safe flex flex-1 flex-col bg-white">
         <AppTopBar
           title={isEditMode ? "내 선호도 수정" : "선호도 조사"}
-          onBack={() => navigate({ to: isEditMode ? "/my" : "/" })}
+          hideBack={!isEditMode}
+          onBack={isEditMode ? () => navigate({ to: "/my" }) : undefined}
         />
         {isLoadingPreference ? (
           <p className="px-x5 py-x3 text-size-4 text-gray-700">내 선호도 불러오는 중...</p>
@@ -222,14 +227,21 @@ export default function BreadPreferencePage({ isEditMode = false }: BreadPrefere
         </div>
       </div>
 
-      <BottomDoubleCTA
-        placement="fixed"
-        leftText={isEditMode ? "취소하기" : "건너뛰기"}
-        rightText={isSubmitting ? "저장 중..." : isEditMode ? "수정 완료" : "완료"}
-        rightDisabled={!allQuestionsAnswered || isSubmitting}
-        onLeftClick={() => navigate({ to: isEditMode ? "/my" : "/home" })}
-        onRightClick={handleSubmit}
-      />
+      {isEditMode ? (
+        <BottomCTA
+          text={isSubmitting ? "저장 중..." : "수정 완료"}
+          disabled={!allQuestionsAnswered || isSubmitting}
+          onClick={handleSubmit}
+          className={cn(FIXED_BOTTOM_BAR_FRAME_CLASS, "border-t border-gray-300 bg-gray-00")}
+        />
+      ) : (
+        <BottomCTA
+          text={isSubmitting ? "저장 중..." : "완료"}
+          disabled={!allQuestionsAnswered || isSubmitting}
+          onClick={handleSubmit}
+          className={cn(FIXED_BOTTOM_BAR_FRAME_CLASS, "border-t border-gray-300 bg-gray-00")}
+        />
+      )}
     </MobileFrame>
   );
 }
