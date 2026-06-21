@@ -1,7 +1,9 @@
 package com.breadbread.community.dto;
 
+import com.breadbread.bakery.entity.enums.BakeryTagType;
 import com.breadbread.global.validation.NotBlankIfPresent;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import lombok.Getter;
@@ -25,4 +27,8 @@ public class UpdatePostRequest {
     @Schema(description = "수정할 이미지 URL 목록 (최대 5개, null 전송 시 변경 없음)")
     @Size(max = 5)
     private List<String> imageUrls;
+
+    @Schema(description = "빵집 선택형 태그 (null 전송 시 변경 없음, 빈 배열 전송 시 전체 삭제, 최대 2개)")
+    @Size(max = 2)
+    private List<@NotNull BakeryTagType> bakeryTags;
 }

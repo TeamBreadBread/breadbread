@@ -1,5 +1,6 @@
 package com.breadbread.community.dto;
 
+import com.breadbread.bakery.entity.enums.BakeryTagType;
 import com.breadbread.community.entity.PostType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -31,4 +32,11 @@ public class CreatePostRequest {
     @Schema(description = "이미지 URL 목록 (최대 5개)")
     @Size(max = 5)
     private List<String> imageUrls;
+
+    @Schema(description = "연결할 빵집 ID (자유게시판 전용, optional)")
+    private Long bakeryId;
+
+    @Schema(description = "빵집 선택형 태그 최대 2개 (bakeryId 있을 때만 유효)")
+    @Size(max = 2)
+    private List<@NotNull BakeryTagType> bakeryTags;
 }

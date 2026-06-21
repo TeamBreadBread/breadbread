@@ -1,5 +1,6 @@
 package com.breadbread.community.entity;
 
+import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.global.entity.BaseEntity;
 import com.breadbread.user.entity.User;
 import jakarta.persistence.*;
@@ -32,6 +33,10 @@ public class Post extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bakery_id")
+    private Bakery bakery;
+
     @ElementCollection
     @CollectionTable(name = "post_image_urls", joinColumns = @JoinColumn(name = "post_id"))
     @Column(name = "image_url", nullable = false)
@@ -56,12 +61,18 @@ public class Post extends BaseEntity {
 
     @Builder
     public Post(
-            String title, String content, PostType postType, List<String> imageUrls, User user) {
+            String title,
+            String content,
+            PostType postType,
+            List<String> imageUrls,
+            User user,
+            Bakery bakery) {
         this.title = title;
         this.content = content;
         this.postType = postType;
         this.imageUrls = imageUrls != null ? new ArrayList<>(imageUrls) : new ArrayList<>();
         this.user = user;
+        this.bakery = bakery;
     }
 
     public void update(String title, String content, List<String> imageUrls) {
