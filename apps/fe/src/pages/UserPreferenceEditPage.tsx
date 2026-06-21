@@ -16,6 +16,7 @@ import PreferenceIntroSection from "@/components/domain/ai-course/PreferenceIntr
 import PreferenceQuestionSection from "@/components/domain/ai-course/PreferenceQuestionSection";
 import MobileFrame from "@/components/layout/MobileFrame";
 import type { PreferenceQuestion } from "@/components/domain/ai-course/types";
+import { invalidatePreferenceOnboardingCache } from "@/lib/auth/preferenceOnboardingGate";
 import {
   hydrateQuestionsFromMyPreference,
   INITIAL_USER_PREFERENCE_QUESTIONS,
@@ -210,6 +211,7 @@ export default function UserPreferenceEditPage() {
         await savePreference(payload);
         window.alert("선호도를 저장했습니다.");
       }
+      invalidatePreferenceOnboardingCache();
       navigate({ to: "/my" });
     } catch (error) {
       window.alert(getErrorMessage(error));

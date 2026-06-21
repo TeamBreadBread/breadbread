@@ -3,7 +3,9 @@ package com.breadbread.course.controller;
 import com.breadbread.auth.dto.CustomUserDetails;
 import com.breadbread.course.dto.request.CourseSearch;
 import com.breadbread.course.dto.request.ReorderBakeriesRequest;
+import com.breadbread.course.dto.request.ReplaceCourseBakeryRequest;
 import com.breadbread.course.dto.response.*;
+import com.breadbread.course.service.CourseBakeryMutationService;
 import com.breadbread.course.service.CourseBakeryOrderService;
 import com.breadbread.course.service.CourseDrivingRouteService;
 import com.breadbread.course.service.CourseService;
@@ -29,6 +31,7 @@ public class CourseController {
     private final CourseService courseService;
     private final CourseDrivingRouteService courseDrivingRouteService;
     private final CourseBakeryOrderService courseBakeryOrderService;
+    private final CourseBakeryMutationService courseBakeryMutationService;
 
     @Operation(summary = "코스 목록 조회", description = "지역별/종류별/테마별/에디터픽 필터 지원")
     @Parameters({
@@ -115,5 +118,35 @@ public class CourseController {
         return ApiResponse.ok(
                 courseBakeryOrderService.reorderBakeries(
                         courseId, userDetails.getId(), userDetails.getRole(), request));
+    }
+
+    @Operation(summary = "코스에서 빵집 제외")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @DeleteMapping("/{courseId}/bakeries/{bakeryId}")
+    public ApiResponse<ModifyCourseBakeryResponse> excludeBakery(
+            @PathVariable Long courseId,
+            @PathVariable Long bakeryId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ApiResponse.ok(
+                courseBakeryMutationService.excludeBakery(
+                        courseId, userDetails.getId(), userDetails.getRole(), bakeryId));
+    }
+
+    @Operation(summary = "코스 내 빵집 대체", description = "replacementBakeryId 생략 시 유사·영업 중 빵집을 추천합니다.")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PatchMapping("/{courseId}/bakeries/{bakeryId}/replace")
+    public ApiResponse<ModifyCourseBakeryResponse> replaceBakery(
+            @PathVariable Long courseId,
+            @PathVariable Long bakeryId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody(required = false) ReplaceCourseBakeryRequest request) {
+        Long replacementBakeryId = request != null ? request.getReplacementBakeryId() : null;
+        return ApiResponse.ok(
+                courseBakeryMutationService.replaceBakery(
+                        courseId,
+                        userDetails.getId(),
+                        userDetails.getRole(),
+                        bakeryId,
+                        replacementBakeryId));
     }
 }

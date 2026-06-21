@@ -2,8 +2,12 @@ import { useState } from "react";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { login, setSessionTokens } from "@/api/auth";
 import { getErrorMessage } from "@/api/types/common";
-import { hasUserPreferenceSaved } from "@/api/user";
 import { beginAuthEstablishment, abortAuthEstablishment } from "@/lib/auth/authSessionGate";
+import {
+  PREFERENCE_ONBOARDING_PATH,
+  PREFERENCE_ONBOARDING_SEARCH,
+  resolveHasPreferenceForLogin,
+} from "@/lib/auth/preferenceOnboardingGate";
 import { seedProfileCacheThenRefreshFromServer } from "@/lib/userProfileCache";
 import { AppTopBar, Button } from "@/components/common";
 import { PasswordToggleIcon } from "@/components/icons";
@@ -49,33 +53,25 @@ const LoginPage = () => {
       markGa4FirstActionAfterLoginPending();
       onAuthSessionEstablished();
       await seedProfileCacheThenRefreshFromServer(id);
-      try {
-        const nextPath = tryPostLoginRedirectPath(redirect);
-        if (nextPath) {
-          if (nextPath === "/bbangteo-board-write") {
-            navigate({ to: nextPath, search: { editId: 0 } });
-          } else {
-            navigate({ to: nextPath });
-          }
-          return;
-        }
-        if (await hasUserPreferenceSaved()) {
-          navigate({ to: "/home" });
-        } else {
-          navigate({ to: "/user-preference", search: { mode: "create" } });
-        }
-      } catch {
-        const nextPath = tryPostLoginRedirectPath(redirect);
-        if (nextPath) {
-          if (nextPath === "/bbangteo-board-write") {
-            navigate({ to: nextPath, search: { editId: 0 } });
-          } else {
-            navigate({ to: nextPath });
-          }
-        } else {
-          navigate({ to: "/user-preference", search: { mode: "create" } });
-        }
+      const hasPreference = await resolveHasPreferenceForLogin();
+      if (!hasPreference) {
+        navigate({
+          to: PREFERENCE_ONBOARDING_PATH,
+          search: PREFERENCE_ONBOARDING_SEARCH,
+        });
+        return;
       }
+
+      const nextPath = tryPostLoginRedirectPath(redirect);
+      if (nextPath) {
+        if (nextPath === "/bbangteo-board-write") {
+          navigate({ to: nextPath, search: { editId: 0 } });
+        } else {
+          navigate({ to: nextPath });
+        }
+        return;
+      }
+      navigate({ to: "/home" });
     } catch (error) {
       abortAuthEstablishment(error);
       setLoginError(getErrorMessage(error));

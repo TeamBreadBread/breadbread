@@ -3,6 +3,7 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import FcmNotificationListener from "@/components/FcmNotificationListener";
 import GoogleAnalytics from "@/components/common/GoogleAnalytics";
 import { isLoggedIn } from "@/lib/auth/isLoggedIn";
+import { ensurePreferenceOnboardingGate } from "@/lib/auth/preferenceOnboardingGate";
 import { isPublicPath } from "@/lib/auth/publicRoutes";
 import { LoginRequiredProvider } from "@/lib/auth/LoginRequiredProvider";
 import { parseLoginRedirectPath } from "@/lib/postLoginRedirect";
@@ -30,15 +31,22 @@ function RootErrorBoundary({ error }: { error: unknown }) {
 }
 
 export const Route = createRootRoute({
-  beforeLoad: ({ location }) => {
-    if (isLoggedIn() || isPublicPath(location.pathname)) return;
+  beforeLoad: async ({ location }) => {
+    const pathname = location.pathname;
+    const search = location.search as Record<string, unknown>;
 
-    throw redirect({
-      to: "/login-entry",
-      search: {
-        redirect: parseLoginRedirectPath(location.pathname),
-      },
-    });
+    if (!isLoggedIn()) {
+      if (isPublicPath(pathname)) return;
+
+      throw redirect({
+        to: "/login-entry",
+        search: {
+          redirect: parseLoginRedirectPath(pathname),
+        },
+      });
+    }
+
+    await ensurePreferenceOnboardingGate(pathname, search);
   },
   errorComponent: RootErrorBoundary,
   component: () => (

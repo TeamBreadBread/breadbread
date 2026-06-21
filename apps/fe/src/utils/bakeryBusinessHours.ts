@@ -67,10 +67,20 @@ function isWeekendJsDay(jsDay: number): boolean {
   return jsDay === 0 || jsDay === 6;
 }
 
-function isClosedDay(jsDay: number, closedDays?: string[] | null): boolean {
+export function isBakeryClosedOnJsDay(jsDay: number, closedDays?: string[] | null): boolean {
   if (!closedDays?.length) return false;
   const key = JS_DAY_TO_KEY[jsDay];
   return closedDays.includes(key);
+}
+
+/** 서울 기준 오늘 요일이 정기 휴무인지 확인합니다. */
+export function isBakeryClosedToday(closedDays?: string[] | null): boolean {
+  const todayJs = getSeoulNow().getDay();
+  return isBakeryClosedOnJsDay(todayJs, closedDays);
+}
+
+function isClosedDay(jsDay: number, closedDays?: string[] | null): boolean {
+  return isBakeryClosedOnJsDay(jsDay, closedDays);
 }
 
 function getOpenCloseForJsDay(

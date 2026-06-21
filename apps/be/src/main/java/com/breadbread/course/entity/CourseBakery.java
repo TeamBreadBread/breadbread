@@ -46,4 +46,8 @@ public class CourseBakery {
     public void setVisitOrder(int visitOrder) {
         this.visitOrder = visitOrder;
     }
+
+    public void replaceBakery(Bakery bakery) {
+        this.bakery = bakery;
+    }
 }

@@ -1,7 +1,11 @@
-import { hasUserPreferenceSaved } from "@/api/user";
 import { refreshProfileCacheFromServer } from "@/lib/userProfileCache";
 import type { PostLoginRedirectPath } from "@/lib/postLoginRedirect";
 import { loginFlowTime, loginFlowTimeEnd } from "@/lib/auth/loginFlowTiming";
+import {
+  PREFERENCE_ONBOARDING_PATH,
+  PREFERENCE_ONBOARDING_SEARCH,
+  resolveHasPreferenceForLogin,
+} from "@/lib/auth/preferenceOnboardingGate";
 
 type NavigateFn = (options: { to: string; search?: Record<string, unknown> }) => Promise<void>;
 
@@ -18,16 +22,18 @@ async function navigateToPostLoginRedirect(
   loginFlowTimeEnd("navigate");
 }
 
-async function navigateToDefaultAfterLogin(
-  navigate: NavigateFn,
-  hasPreference: boolean,
-): Promise<void> {
+async function navigateToPreferenceOnboarding(navigate: NavigateFn): Promise<void> {
   loginFlowTime("navigate");
-  if (hasPreference) {
-    await navigate({ to: "/home" });
-  } else {
-    await navigate({ to: "/user-preference", search: { mode: "create" } });
-  }
+  await navigate({
+    to: PREFERENCE_ONBOARDING_PATH,
+    search: PREFERENCE_ONBOARDING_SEARCH,
+  });
+  loginFlowTimeEnd("navigate");
+}
+
+async function navigateToHome(navigate: NavigateFn): Promise<void> {
+  loginFlowTime("navigate");
+  await navigate({ to: "/home" });
   loginFlowTimeEnd("navigate");
 }
 
@@ -36,24 +42,22 @@ export async function finishLoginAndNavigate(
   navigate: NavigateFn,
   postLogin: PostLoginRedirectPath | undefined,
 ): Promise<void> {
+  loginFlowTime("post-login-parallel");
+  const [, hasPreference] = await Promise.all([
+    refreshProfileCacheFromServer(),
+    resolveHasPreferenceForLogin(),
+  ]);
+  loginFlowTimeEnd("post-login-parallel");
+
+  if (!hasPreference) {
+    await navigateToPreferenceOnboarding(navigate);
+    return;
+  }
+
   if (postLogin) {
-    loginFlowTime("refreshProfileCacheFromServer");
-    await refreshProfileCacheFromServer();
-    loginFlowTimeEnd("refreshProfileCacheFromServer");
     await navigateToPostLoginRedirect(navigate, postLogin);
     return;
   }
 
-  loginFlowTime("post-login-parallel");
-  try {
-    const [, hasPreference] = await Promise.all([
-      refreshProfileCacheFromServer(),
-      hasUserPreferenceSaved(),
-    ]);
-    loginFlowTimeEnd("post-login-parallel");
-    await navigateToDefaultAfterLogin(navigate, hasPreference);
-  } catch {
-    loginFlowTimeEnd("post-login-parallel");
-    await navigateToDefaultAfterLogin(navigate, false);
-  }
+  await navigateToHome(navigate);
 }
