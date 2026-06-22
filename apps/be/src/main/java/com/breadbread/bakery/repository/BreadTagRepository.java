@@ -16,6 +16,13 @@ public interface BreadTagRepository extends JpaRepository<BreadTag, Long> {
     List<BreadTagType> findPopularTagsByBreadId(
             @Param("breadId") Long breadId, @Param("minCount") long minCount);
 
+    @Query(
+            "SELECT bt.bread.id, bt.tag FROM BreadTag bt "
+                    + "WHERE bt.bread.id IN :breadIds AND bt.review.active = true "
+                    + "GROUP BY bt.bread.id, bt.tag HAVING COUNT(bt.tag) >= :minCount")
+    List<Object[]> findPopularTagsByBreadIds(
+            @Param("breadIds") List<Long> breadIds, @Param("minCount") long minCount);
+
     List<BreadTag> findAllByReviewId(Long reviewId);
 
     List<BreadTag> findAllByReviewIdIn(List<Long> reviewIds);

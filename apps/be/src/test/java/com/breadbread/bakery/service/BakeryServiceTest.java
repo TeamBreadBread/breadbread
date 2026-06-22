@@ -24,14 +24,18 @@ import com.breadbread.bakery.entity.CrowdTime;
 import com.breadbread.bakery.entity.enums.AdminBakerySortType;
 import com.breadbread.bakery.entity.enums.BakerySortType;
 import com.breadbread.bakery.entity.enums.BakeryStatus;
+import com.breadbread.bakery.entity.enums.BakeryTagType;
 import com.breadbread.bakery.entity.enums.BakeryType;
+import com.breadbread.bakery.entity.enums.BreadTagType;
 import com.breadbread.bakery.entity.enums.BreadType;
 import com.breadbread.bakery.entity.enums.CrowdLevel;
 import com.breadbread.bakery.entity.enums.DayType;
 import com.breadbread.bakery.repository.BakeryImageRepository;
 import com.breadbread.bakery.repository.BakeryLikeRepository;
 import com.breadbread.bakery.repository.BakeryRepository;
+import com.breadbread.bakery.repository.BakeryTagRepository;
 import com.breadbread.bakery.repository.BreadRepository;
+import com.breadbread.bakery.repository.BreadTagRepository;
 import com.breadbread.bakery.repository.CrowdTimeRepository;
 import com.breadbread.bakery.repository.ReviewRepository;
 import com.breadbread.bakery.service.BakeryImageService.PreviewBatch;
@@ -75,6 +79,8 @@ class BakeryServiceTest {
     @Mock private GooglePlacesUpdateService googlePlacesUpdateService;
     @Mock private BakeryImageService bakeryImageService;
     @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
+    @Mock private BakeryTagRepository bakeryTagRepository;
+    @Mock private BreadTagRepository breadTagRepository;
 
     @InjectMocks private BakeryService bakeryService;
 
@@ -355,12 +361,46 @@ class BakeryServiceTest {
         when(bakeryLikeRepository.countByBakery(b)).thenReturn(4L);
         when(bakeryLikeRepository.existsByBakeryIdAndUserId(3L, 9L)).thenReturn(true);
         when(reviewRepository.countByBakeryIdAndActiveTrue(3L)).thenReturn(12L);
+        when(bakeryTagRepository.findPopularTagsByBakeryId(3L, 4)).thenReturn(List.of());
 
         var detail = bakeryService.findOne(3L, 9L);
 
         assertThat(detail.getLikeCount()).isEqualTo(4L);
         assertThat(detail.isLiked()).isTrue();
         assertThat(detail.getReviewCount()).isEqualTo(12L);
+    }
+
+    @Test
+    void findOne_includesPopularBakeryTags() {
+        Bakery b = bakeryWithId(4L);
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(4L, BakeryStatus.APPROVED))
+                .thenReturn(Optional.of(b));
+        when(bakeryLikeRepository.countByBakery(b)).thenReturn(0L);
+        when(reviewRepository.countByBakeryIdAndActiveTrue(4L)).thenReturn(0L);
+        when(bakeryTagRepository.findPopularTagsByBakeryId(4L, 4))
+                .thenReturn(List.of(BakeryTagType.COZY, BakeryTagType.QUIET));
+
+        var detail = bakeryService.findOne(4L, null);
+
+        assertThat(detail.getBakeryTags()).containsExactly(BakeryTagType.COZY, BakeryTagType.QUIET);
+    }
+
+    @Test
+    void findOne_includesPopularBreadTagsPerBread() {
+        Bakery b = bakeryWithId(5L);
+        Bread bread = bread(b);
+        ReflectionTestUtils.setField(b, "breads", List.of(bread));
+        when(bakeryRepository.findByIdAndActiveTrueAndStatus(5L, BakeryStatus.APPROVED))
+                .thenReturn(Optional.of(b));
+        when(bakeryLikeRepository.countByBakery(b)).thenReturn(0L);
+        when(reviewRepository.countByBakeryIdAndActiveTrue(5L)).thenReturn(0L);
+        when(bakeryTagRepository.findPopularTagsByBakeryId(5L, 4)).thenReturn(List.of());
+        when(breadTagRepository.findPopularTagsByBreadIds(List.of(100L), 4))
+                .thenReturn(List.<Object[]>of(new Object[] {100L, BreadTagType.SOFT}));
+
+        var detail = bakeryService.findOne(5L, null);
+
+        assertThat(detail.getBreads().get(0).getBreadTags()).containsExactly(BreadTagType.SOFT);
     }
 
     @Test
