@@ -101,6 +101,7 @@ export type CommentResponse = {
   nickname: string;
   profileImageUrl: string | null;
   content: string;
+  imageUrls?: string[];
   createdAt: string;
   /** Swagger 예시 키 */
   author?: boolean;
@@ -179,6 +180,7 @@ export async function unlikePost(postId: number): Promise<void> {
 
 export type CreateCommentBody = {
   content: string;
+  imageUrls?: string[];
 };
 
 export async function createComment(
@@ -194,6 +196,7 @@ export async function createComment(
 
 export type UpdateCommentBody = {
   content: string;
+  imageUrls?: string[];
 };
 
 export async function updateComment(

@@ -4,9 +4,12 @@ import { RouterProvider } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { appRouter } from "@/lib/appRouter";
+import { initAppSettingsTheme } from "@/lib/settings/appSettings";
 import { isKakaoMapKeyConfigured, loadKakaoMapSdk } from "@/lib/kakaoMapSdk";
 import PwaUpdatePrompt from "@/components/common/PwaUpdatePrompt";
 import "./index.css";
+
+initAppSettingsTheme();
 
 if (isKakaoMapKeyConfigured()) {
   void loadKakaoMapSdk().catch(() => {

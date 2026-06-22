@@ -30,7 +30,7 @@ import type { BakeryDetail, BakeryDetailBread } from "@/api/types/bakery";
 import { getBakeryDetailBackTarget, type BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import { formatInstantInSeoul } from "@/utils/formatSeoulDateTime";
 import { buildWeeklyHoursRows, getBakeryHoursStatusLabel } from "@/utils/bakeryBusinessHours";
-import { resolveProfileImageUrl } from "@/utils/defaultProfileAvatar";
+import { UserProfileAvatar } from "@/components/common/UserProfileAvatar";
 import { SafeImage } from "@/components/common/SafeImage";
 import BakeryKakaoMapPreview from "@/components/domain/bbangteo/BakeryKakaoMapPreview";
 import CongestionBadge from "@/components/common/CongestionBadge";
@@ -461,28 +461,6 @@ const MenuList = ({ menus }: { menus: MenuRow[] }) => (
   </div>
 );
 
-const ReviewAuthorAvatar = ({
-  profileImageUrl,
-  seed,
-}: {
-  profileImageUrl?: string | null;
-  seed: string;
-}) => {
-  const [useFallback, setUseFallback] = useState(false);
-  const src = resolveProfileImageUrl(useFallback ? null : profileImageUrl, seed);
-
-  return (
-    <SafeImage
-      src={src}
-      alt=""
-      className="h-full w-full object-cover"
-      onError={() => {
-        setUseFallback(true);
-      }}
-    />
-  );
-};
-
 const ReviewCard = ({
   review,
   viewerUserId,
@@ -503,10 +481,11 @@ const ReviewCard = ({
     <article className="flex flex-col gap-[14px]">
       <div className="flex items-start gap-[10px]">
         <div className="h-[40px] w-[40px] shrink-0 overflow-hidden rounded-full border border-[#eeeff1] bg-[#f7f8f9]">
-          <ReviewAuthorAvatar
+          <UserProfileAvatar
             key={review.id}
             profileImageUrl={review.authorProfileImageUrl}
             seed={avatarSeed}
+            className="h-full w-full"
           />
         </div>
         <div className="flex flex-1 flex-col gap-[10px]">

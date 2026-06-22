@@ -183,6 +183,7 @@ function buildMockComments(
       nickname: nick,
       profileImageUrl: null,
       content: line,
+      imageUrls: [],
       createdAt: new Date(t0 + (i + 1) * 60_000).toISOString(),
       isAuthor: false,
     };

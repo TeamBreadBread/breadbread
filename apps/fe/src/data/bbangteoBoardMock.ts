@@ -314,6 +314,7 @@ function buildMockCommentsForPost(
       nickname: MOCK_NICKS[i % MOCK_NICKS.length],
       profileImageUrl: null,
       content: MOCK_COMMENT_BLURBS[i % MOCK_COMMENT_BLURBS.length],
+      imageUrls: [],
       createdAt,
       author: false,
     });

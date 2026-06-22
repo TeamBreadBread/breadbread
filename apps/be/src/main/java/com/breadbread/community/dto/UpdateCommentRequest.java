@@ -3,6 +3,7 @@ package com.breadbread.community.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -15,4 +16,8 @@ public class UpdateCommentRequest {
     @NotBlank
     @Size(max = 1000)
     private String content;
+
+    @Schema(description = "이미지 URL 목록 (최대 3개, null이면 변경 없음)")
+    @Size(max = 3)
+    private List<String> imageUrls;
 }

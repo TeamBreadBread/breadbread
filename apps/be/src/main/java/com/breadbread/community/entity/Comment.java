@@ -3,6 +3,8 @@ package com.breadbread.community.entity;
 import com.breadbread.global.entity.BaseEntity;
 import com.breadbread.user.entity.User;
 import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.*;
 
 @Entity
@@ -19,6 +21,11 @@ public class Comment extends BaseEntity {
     @Column(columnDefinition = "text", nullable = false)
     private String content;
 
+    @ElementCollection
+    @CollectionTable(name = "comment_image_urls", joinColumns = @JoinColumn(name = "comment_id"))
+    @Column(name = "image_url", nullable = false)
+    private List<String> imageUrls = new ArrayList<>();
+
     @Column(nullable = false)
     private boolean active = true;
 
@@ -31,14 +38,20 @@ public class Comment extends BaseEntity {
     private User user;
 
     @Builder
-    public Comment(String content, Post post, User user) {
+    public Comment(String content, List<String> imageUrls, Post post, User user) {
         this.content = content;
+        this.imageUrls = imageUrls != null ? new ArrayList<>(imageUrls) : new ArrayList<>();
         this.post = post;
         this.user = user;
     }
 
-    public void update(String content) {
-        this.content = content;
+    public void update(String content, List<String> imageUrls) {
+        if (content != null) {
+            this.content = content;
+        }
+        if (imageUrls != null) {
+            this.imageUrls = new ArrayList<>(imageUrls);
+        }
     }
 
     public void deactivate() {
