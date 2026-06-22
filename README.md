@@ -76,7 +76,7 @@ TanStack Query는 Provider가 구성되어 있으며, 점진적으로 데이터 
 | DB 마이그레이션 | Flyway |
 | 캐시 · 세션 | Redis |
 | DB | PostgreSQL |
-| API 문서 | SpringDoc OpenAPI (Swagger) |
+| API 문서 | SpringDoc OpenAPI + Scalar UI |
 | 인증 | OAuth2 (소셜 로그인) + JWT |
 | 파일 저장 | Google Cloud Storage |
 | 외부 연동 | n8n (AI), PortOne (결제), CoolSMS, FCM |
@@ -139,7 +139,7 @@ cp .env.example .env
 ./gradlew bootRun
 ```
 
-- Swagger: [http://localhost:8000/swagger-ui/index.html](http://localhost:8000/swagger-ui/index.html) (local 프로파일 기본 포트)
+- API 문서: [http://localhost:8000/api-docs.html](http://localhost:8000/api-docs.html) (local 프로파일 기본 포트)
 
 ---
 
@@ -188,5 +188,5 @@ BE 배포 시 필요한 환경 변수 및 인프라 설정은 [apps/be/docs/back
 
 - [협업 가이드라인 (CONTRIBUTING.md)](CONTRIBUTING.md) — 브랜치 전략, 커밋 규칙, 협업 방식
 - [FE 배포 가이드 (apps/fe/DEPLOY.md)](apps/fe/DEPLOY.md) — Firebase Hosting, GitHub Secrets
-- [API 문서](https://api.breadbread.io/swagger-ui/index.html)
+- [API 문서](https://api.breadbread.io/api-docs.html)
 - [모니터링 대시보드 (Grafana)](https://livelysamosa206.grafana.net/public-dashboards/fd40ccf21ed84237ae3fe1037a073b51) — Cloud Run 실시간 메트릭

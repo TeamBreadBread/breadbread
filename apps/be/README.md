@@ -1,6 +1,6 @@
 # breadbread 백엔드
 
-> 로컬 실행 방법(docker compose, bootRun, Swagger)은 [루트 README](../../README.md)를 참고하세요.
+> 로컬 실행 방법(docker compose, bootRun, API 문서)은 [루트 README](../../README.md)를 참고하세요.
 
 ---
 
