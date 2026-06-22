@@ -1,0 +1,1 @@
+export const LANDING_DURATION_MS = 3000;
