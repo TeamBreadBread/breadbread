@@ -2,6 +2,7 @@ package com.breadbread.bakery.dto.response;
 
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.BusinessHours;
+import com.breadbread.bakery.entity.enums.BakeryTagType;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.Collections;
@@ -34,6 +35,7 @@ public class BakeryDetailResponse {
     private List<BakeryBreadResponse> breads;
     private Long likeCount;
     private boolean liked;
+    private List<BakeryTagType> bakeryTags;
 
     public static BakeryDetailResponse from(
             Bakery bakery,
@@ -41,13 +43,24 @@ public class BakeryDetailResponse {
             boolean liked,
             Long reviewCount,
             List<String> resolvedImageUrls,
-            Double rating) {
+            Double rating,
+            List<BakeryTagType> bakeryTags,
+            java.util.Map<Long, List<com.breadbread.bakery.entity.enums.BreadTagType>>
+                    breadPopularTags) {
         BusinessHours bh = bakery.getBusinessHours();
 
         List<BakeryBreadResponse> breads =
                 bakery.getBreads() == null
                         ? Collections.emptyList()
-                        : bakery.getBreads().stream().map(BakeryBreadResponse::from).toList();
+                        : bakery.getBreads().stream()
+                                .map(
+                                        b ->
+                                                BakeryBreadResponse.from(
+                                                        b,
+                                                        breadPopularTags.getOrDefault(
+                                                                b.getId(),
+                                                                Collections.emptyList())))
+                                .toList();
 
         Set<DayOfWeek> closed = bakery.getClosedDays();
         List<String> closedDayNames =
@@ -79,6 +92,7 @@ public class BakeryDetailResponse {
                 .breads(breads)
                 .likeCount(likeCount)
                 .liked(liked)
+                .bakeryTags(bakeryTags != null ? bakeryTags : Collections.emptyList())
                 .build();
     }
 }

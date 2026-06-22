@@ -10,6 +10,8 @@ import com.breadbread.bakery.entity.*;
 import com.breadbread.bakery.entity.enums.AdminBakerySortType;
 import com.breadbread.bakery.entity.enums.BakerySortType;
 import com.breadbread.bakery.entity.enums.BakeryStatus;
+import com.breadbread.bakery.entity.enums.BakeryTagType;
+import com.breadbread.bakery.entity.enums.BreadTagType;
 import com.breadbread.bakery.entity.enums.DayType;
 import com.breadbread.bakery.event.BakeriesApprovedEvent;
 import com.breadbread.bakery.repository.*;
@@ -51,6 +53,8 @@ public class BakeryService {
     private final GooglePlacesUpdateService googlePlacesUpdateService;
     private final BakeryImageService bakeryImageService;
     private final ApplicationEventPublisher eventPublisher;
+    private final BakeryTagRepository bakeryTagRepository;
+    private final BreadTagRepository breadTagRepository;
 
     @Transactional(readOnly = true)
     public List<BakeryAiResponse> findAllForAi(BakeryAiSearch search) {
@@ -243,7 +247,36 @@ public class BakeryService {
 
         List<String> imageUrls = bakeryImageService.resolveDetailUrls(images);
 
-        return BakeryDetailResponse.from(bakery, likeCount, liked, reviewCount, imageUrls, rating);
+        List<BakeryTagType> popularBakeryTags =
+                bakeryTagRepository.findPopularTagsByBakeryId(bakeryId, 4);
+
+        List<Long> breadIds =
+                bakery.getBreads() == null
+                        ? Collections.emptyList()
+                        : bakery.getBreads().stream().map(Bread::getId).toList();
+        Map<Long, List<BreadTagType>> breadPopularTags;
+        if (breadIds.isEmpty()) {
+            breadPopularTags = Collections.emptyMap();
+        } else {
+            breadPopularTags = new HashMap<>();
+            breadTagRepository
+                    .findPopularTagsByBreadIds(breadIds, 4)
+                    .forEach(
+                            row ->
+                                    breadPopularTags
+                                            .computeIfAbsent((Long) row[0], k -> new ArrayList<>())
+                                            .add((BreadTagType) row[1]));
+        }
+
+        return BakeryDetailResponse.from(
+                bakery,
+                likeCount,
+                liked,
+                reviewCount,
+                imageUrls,
+                rating,
+                popularBakeryTags,
+                breadPopularTags);
     }
 
     @Transactional

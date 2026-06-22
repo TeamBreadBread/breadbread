@@ -3,14 +3,12 @@ package com.breadbread.bakery.entity;
 import com.breadbread.bakery.entity.enums.BakeryTagType;
 import com.breadbread.global.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "bakery_tag")
 @Getter
+@ToString(exclude = "bakery")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class BakeryTag extends BaseEntity {
 

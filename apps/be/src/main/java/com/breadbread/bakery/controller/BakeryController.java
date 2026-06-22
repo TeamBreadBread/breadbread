@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -80,7 +81,7 @@ public class BakeryController {
     @GetMapping
     public ApiResponse<BakeryListResponse> search(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Valid @ModelAttribute BakerySearch search,
+            @ParameterObject @Valid @ModelAttribute BakerySearch search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Long userId = userDetails != null ? userDetails.getId() : null;
@@ -114,7 +115,7 @@ public class BakeryController {
     })
     @GetMapping("/summary")
     public ApiResponse<BakerySimpleListResponse> searchSimple(
-            @Valid @ModelAttribute BakerySearch search,
+            @ParameterObject @Valid @ModelAttribute BakerySearch search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ApiResponse.ok(bakeryService.searchSimple(search, PageRequest.of(page, size)));
