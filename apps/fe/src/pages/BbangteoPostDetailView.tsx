@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { uploadImages } from "@/api/image";
 import {
   createComment,
   deleteComment,
@@ -15,6 +16,8 @@ import {
 } from "@/api/posts";
 import { getErrorMessage, ApiBusinessError } from "@/api/types/common";
 import currationBreadImg from "@/assets/images/Curration_CardBread.png";
+import { ImageUploadPreviewStrip } from "@/components/common/ImageUploadPreview";
+import { UserProfileAvatar } from "@/components/common/UserProfileAvatar";
 import { AppIcon, IconAssets } from "@/components/icons";
 import { ToolbarHeartLikeIcon } from "@/components/icons/PostDetailToolbarIcons";
 import BottomNav from "@/components/layout/BottomNav";
@@ -38,6 +41,13 @@ type BbangteoPostDetailViewProps = {
   listPath: "/bbangteo-board" | "/bbangteo-article-board";
 };
 
+const MAX_COMMENT_IMAGES = 3;
+
+type SelectedCommentImage = {
+  id: string;
+  file: File;
+};
+
 function PostDetailLikeHeartIcon({ filled }: { filled: boolean }) {
   return <ToolbarHeartLikeIcon liked={filled} size={18} className="pointer-events-none" />;
 }
@@ -49,33 +59,19 @@ const DateTimeText = ({ date, time }: { date: string; time: string }) => (
   </div>
 );
 
-function ProfileAvatar({ url }: { url: string | null | undefined }) {
-  if (url) {
-    return (
-      <img
-        src={url}
-        alt=""
-        className="h-[40px] w-[40px] shrink-0 rounded-full border border-[#eeeff1] object-cover"
-      />
-    );
-  }
-  return (
-    <div className="h-[40px] w-[40px] shrink-0 rounded-full border border-[#eeeff1] bg-[#f7f8f9]" />
-  );
-}
-
-const ImageRow = ({ urls }: { urls: string[] }) => {
+const ImageRow = ({ urls, size = 110 }: { urls: string[]; size?: number }) => {
   if (urls.length === 0) return null;
   return (
-    <div className="flex h-[110px] items-center gap-[6px] overflow-x-auto">
+    <div className="flex items-center gap-[6px] overflow-x-auto" style={{ height: size }}>
       {urls.map((url, index) => (
         <div
           key={`${url}-${index}`}
-          className="flex h-[110px] w-[110px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-[#f3f4f5]"
+          className="flex shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-[#f3f4f5]"
+          style={{ width: size, height: size }}
         >
           <img
             src={url}
-            alt={`게시글 이미지 ${index + 1}`}
+            alt={`첨부 이미지 ${index + 1}`}
             className="h-full w-full object-cover"
             onError={(e) => {
               (e.target as HTMLImageElement).src = currationBreadImg;
@@ -95,7 +91,9 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
   const [loading, setLoading] = useState(true);
   const [likeBusy, setLikeBusy] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [commentImages, setCommentImages] = useState<SelectedCommentImage[]>([]);
   const [commentBusy, setCommentBusy] = useState(false);
+  const commentFileInputRef = useRef<HTMLInputElement | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingText, setEditingText] = useState("");
   /** 초기/중복 load와 좋아요 직후 getPost가 끝나는 순서가 뒤바뀌면 오래된 응답이 상세를 덮어쓰지 않도록 함 */
@@ -135,7 +133,7 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
     try {
       setLoading(true);
       setLoadError("");
-      const d = await getPost(postId);
+      const d = applyOverlayToPostDetail(await getPost(postId));
       if (gen !== detailFetchGen.current) return;
       setDetail(d);
       persistDetailToLikeOverlay(d);
@@ -159,11 +157,9 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
     if (isBbangteoMockPostId(detail.id)) {
       const wasLiked = detail.liked;
       const prevCount = detail.likeCount;
-      const next = {
-        ...detail,
-        liked: !wasLiked,
-        likeCount: wasLiked ? Math.max(0, prevCount - 1) : prevCount + 1,
-      };
+      const nextLiked = !wasLiked;
+      const nextCount = wasLiked ? Math.max(0, prevCount - 1) : prevCount + 1;
+      const next = { ...detail, liked: nextLiked, likeCount: nextCount };
       setDetail(next);
       persistDetailToLikeOverlay(next);
       return;
@@ -172,11 +168,10 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
     const wasLiked = detail.liked;
     const prevCount = detail.likeCount;
     likePendingRef.current = true;
-    setDetail({
-      ...detail,
-      liked: !wasLiked,
-      likeCount: wasLiked ? Math.max(0, prevCount - 1) : prevCount + 1,
-    });
+    const nextLiked = !wasLiked;
+    const optimisticCount = wasLiked ? Math.max(0, prevCount - 1) : prevCount + 1;
+    setDetail({ ...detail, liked: nextLiked, likeCount: optimisticCount });
+    setPostLikeOverlay(id, { liked: nextLiked, likeCount: optimisticCount });
     setLikeBusy(true);
     try {
       if (wasLiked) {
@@ -184,10 +179,18 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
       } else {
         await likePost(id);
       }
-      const fresh = await getPost(id);
-      detailFetchGen.current += 1;
-      setDetail(fresh);
-      persistDetailToLikeOverlay(fresh);
+      let resolvedCount = optimisticCount;
+      try {
+        const fresh = await getPost(id);
+        detailFetchGen.current += 1;
+        resolvedCount = Math.max(optimisticCount, fresh.likeCount ?? optimisticCount);
+      } catch {
+        /* 카운트 동기화 실패 시 UI liked 상태는 유지 */
+      }
+      setDetail((d) =>
+        d && d.id === id ? { ...d, liked: nextLiked, likeCount: resolvedCount } : d,
+      );
+      setPostLikeOverlay(id, { liked: nextLiked, likeCount: resolvedCount });
     } catch (e) {
       setPostLikeOverlay(id, { liked: wasLiked, likeCount: prevCount });
       setDetail((d) => (d && d.id === id ? { ...d, liked: wasLiked, likeCount: prevCount } : d));
@@ -196,10 +199,16 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
           try {
             const fresh = await getPost(id);
             detailFetchGen.current += 1;
-            setDetail(fresh);
-            persistDetailToLikeOverlay(fresh);
+            const resolvedCount = Math.max(prevCount + 1, fresh.likeCount ?? prevCount + 1);
+            setDetail((d) =>
+              d && d.id === id ? { ...d, liked: true, likeCount: resolvedCount } : d,
+            );
+            setPostLikeOverlay(id, { liked: true, likeCount: resolvedCount });
           } catch {
-            /* 서버와 동기화 실패 시 무시 */
+            setDetail((d) =>
+              d && d.id === id ? { ...d, liked: true, likeCount: prevCount + 1 } : d,
+            );
+            setPostLikeOverlay(id, { liked: true, likeCount: prevCount + 1 });
           }
           return;
         }
@@ -207,10 +216,16 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
           try {
             const fresh = await getPost(id);
             detailFetchGen.current += 1;
-            setDetail(fresh);
-            persistDetailToLikeOverlay(fresh);
+            const resolvedCount = Math.max(0, fresh.likeCount ?? prevCount - 1);
+            setDetail((d) =>
+              d && d.id === id ? { ...d, liked: false, likeCount: resolvedCount } : d,
+            );
+            setPostLikeOverlay(id, { liked: false, likeCount: resolvedCount });
           } catch {
-            /* 서버와 동기화 실패 시 무시 */
+            setDetail((d) =>
+              d && d.id === id ? { ...d, liked: false, likeCount: Math.max(0, prevCount - 1) } : d,
+            );
+            setPostLikeOverlay(id, { liked: false, likeCount: Math.max(0, prevCount - 1) });
           }
           return;
         }
@@ -256,14 +271,41 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
     if (!text) return;
     setCommentBusy(true);
     try {
-      await createComment(detail.id, { content: text });
+      const files = commentImages.map((item) => item.file);
+      const uploaded = files.length > 0 ? await uploadImages(files, "posts") : [];
+      const imageUrls = uploaded.slice(0, MAX_COMMENT_IMAGES);
+      await createComment(detail.id, {
+        content: text,
+        ...(imageUrls.length > 0 ? { imageUrls } : {}),
+      });
       setCommentText("");
+      setCommentImages([]);
       await load();
     } catch (e) {
       alert(getErrorMessage(e) || "댓글 등록에 실패했습니다.");
     } finally {
       setCommentBusy(false);
     }
+  };
+
+  const handleCommentImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    if (files.length === 0) return;
+
+    const room = MAX_COMMENT_IMAGES - commentImages.length;
+    const next = files.slice(0, Math.max(0, room));
+    if (next.length < files.length) {
+      alert(`댓글 이미지는 최대 ${MAX_COMMENT_IMAGES}장까지 첨부할 수 있습니다.`);
+    }
+    setCommentImages((prev) => [
+      ...prev,
+      ...next.map((file) => ({ id: crypto.randomUUID(), file })),
+    ]);
+    event.target.value = "";
+  };
+
+  const handleRemoveCommentImage = (id: string) => {
+    setCommentImages((prev) => prev.filter((item) => item.id !== id));
   };
 
   const startEditComment = (c: CommentResponse) => {
@@ -304,6 +346,8 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
   const mockPost = detail ? isBbangteoMockPostId(detail.id) : false;
   /** 공지·빵티클(빵빵 소식) 게시판은 댓글 없음 */
   const commentsEnabled = listPath === "/bbangteo-board";
+  const commentImagePreviewHeight = commentImages.length > 0 ? 96 : 0;
+  const canSubmitComment = Boolean(commentText.trim()) && !commentBusy && !mockPost;
   const { date: postDate, time: postTime } = detail
     ? formatInstantInSeoul(detail.createdAt)
     : { date: "-", time: "" };
@@ -347,10 +391,18 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
         <div className={FIXED_TOP_BAR_SPACER_CLASS} aria-hidden />
 
         <main
-          className={
+          className={cn(
+            "flex flex-1 flex-col gap-[10px]",
             commentsEnabled
-              ? "flex flex-1 flex-col gap-[10px] pb-[calc(56px+64px)] sm:pb-[calc(60px+64px)]"
-              : "flex flex-1 flex-col gap-[10px] pb-[56px] sm:pb-[60px]"
+              ? "pb-[calc(56px+64px+env(safe-area-inset-bottom,0px))] sm:pb-[calc(60px+64px+env(safe-area-inset-bottom,0px))]"
+              : "pb-[56px] sm:pb-[60px]",
+          )}
+          style={
+            commentsEnabled && commentImagePreviewHeight > 0
+              ? {
+                  paddingBottom: `calc(56px + 64px + ${commentImagePreviewHeight}px + env(safe-area-inset-bottom, 0px))`,
+                }
+              : undefined
           }
         >
           {loading ? <p className="px-[20px] py-[24px] text-[#868b94]">불러오는 중...</p> : null}
@@ -361,7 +413,13 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
             <>
               <section className="flex flex-col gap-[24px] bg-white p-[20px]">
                 <div className="flex h-[40px] items-center gap-[10px]">
-                  <ProfileAvatar url={detail.profileImageUrl} />
+                  <div className="h-[40px] w-[40px] shrink-0 overflow-hidden rounded-full border border-[#eeeff1] bg-[#f7f8f9]">
+                    <UserProfileAvatar
+                      profileImageUrl={detail.profileImageUrl}
+                      seed={detail.nickname}
+                      className="h-full w-full"
+                    />
+                  </div>
                   <div className="flex flex-1 flex-col gap-[2px]">
                     <div className="text-[13px] leading-[18px] font-bold text-[#1a1c20]">
                       {detail.nickname}
@@ -391,17 +449,16 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
                   </button>
                   <button
                     type="button"
-                    disabled={likeBusy}
                     aria-label={detail.liked ? "좋아요 취소" : "좋아요"}
                     aria-pressed={detail.liked}
-                    className="relative z-[52] flex min-h-[44px] min-w-[44px] items-center justify-end gap-[6px] rounded-[8px] px-[6px] disabled:opacity-50 touch-manipulation"
+                    className="relative z-[52] flex min-h-[44px] min-w-[44px] items-center justify-end gap-[6px] rounded-[8px] px-[6px] touch-manipulation"
                     onClick={() => void onToggleLike()}
                   >
                     <PostDetailLikeHeartIcon filled={detail.liked} />
                     <span
                       className={
                         detail.liked
-                          ? "text-[14px] leading-[19px] text-red-600"
+                          ? "text-[14px] leading-[19px] text-orange-600"
                           : "text-[14px] leading-[19px] text-[#1a1c20]"
                       }
                     >
@@ -427,7 +484,13 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
                       const mine = isCommentAuthor(c);
                       return (
                         <article key={c.id} className="flex min-h-[80px] items-start gap-[10px]">
-                          <ProfileAvatar url={c.profileImageUrl} />
+                          <div className="h-[40px] w-[40px] shrink-0 overflow-hidden rounded-full border border-[#eeeff1] bg-[#f7f8f9]">
+                            <UserProfileAvatar
+                              profileImageUrl={c.profileImageUrl}
+                              seed={c.nickname}
+                              className="h-full w-full"
+                            />
+                          </div>
                           <div className="flex flex-1 flex-col gap-[4px]">
                             <div className="flex items-center justify-between gap-[8px]">
                               <div className="text-[13px] leading-[18px] font-bold text-[#1a1c20]">
@@ -481,9 +544,12 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
                                 className="w-full resize-y rounded-[8px] border border-[#dcdee3] px-[10px] py-[8px] text-[14px] text-[#1a1c20] outline-none"
                               />
                             ) : (
-                              <p className="text-[14px] leading-[19px] text-[#1a1c20]">
-                                {c.content}
-                              </p>
+                              <div className="flex flex-col gap-[8px]">
+                                <p className="text-[14px] leading-[19px] text-[#1a1c20]">
+                                  {c.content}
+                                </p>
+                                <ImageRow urls={c.imageUrls ?? []} size={72} />
+                              </div>
                             )}
                             <DateTimeText date={date} time={time} />
                           </div>
@@ -503,7 +569,26 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
           className="fixed bottom-[56px] left-1/2 z-[49] w-full max-w-[402px] -translate-x-1/2 border-t border-[#eeeff1] bg-white px-[20px] py-[10px] md:bottom-[60px]"
           style={{ touchAction: "manipulation" as const }}
         >
-          <div className="flex h-[44px] items-center gap-[8px] rounded-[9999px] bg-[#f3f4f5] px-[14px]">
+          {commentImages.length > 0 ? (
+            <ImageUploadPreviewStrip
+              className="mb-[8px] flex flex-wrap gap-[8px]"
+              localFiles={commentImages.map((item) => item.file)}
+              onRemoveLocal={(index) => {
+                const target = commentImages[index];
+                if (target) handleRemoveCommentImage(target.id);
+              }}
+            />
+          ) : null}
+          <div className="flex h-[44px] items-center gap-[8px] rounded-[9999px] bg-[#f3f4f5] px-[10px]">
+            <button
+              type="button"
+              aria-label="댓글 이미지 첨부"
+              disabled={commentBusy || mockPost || commentImages.length >= MAX_COMMENT_IMAGES}
+              className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full disabled:opacity-40"
+              onClick={() => commentFileInputRef.current?.click()}
+            >
+              <AppIcon src={IconAssets.IcImageLine} size={20} className="opacity-70" alt="" />
+            </button>
             <input
               type="text"
               value={commentText}
@@ -519,13 +604,11 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
             />
             <button
               type="button"
-              disabled={commentBusy || mockPost || !commentText.trim()}
+              disabled={!canSubmitComment}
               aria-label="댓글 전송"
               className={cn(
                 "flex h-[28px] w-[28px] shrink-0 items-center justify-center",
-                commentText.trim() && !commentBusy && !mockPost
-                  ? "text-orange-600"
-                  : "text-gray-600",
+                canSubmitComment ? "text-orange-600" : "text-gray-600",
               )}
               onClick={() => void onSubmitComment()}
             >
@@ -534,6 +617,14 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
               </svg>
             </button>
           </div>
+          <input
+            ref={commentFileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handleCommentImageSelect}
+          />
         </div>
       ) : null}
       <BottomNav />

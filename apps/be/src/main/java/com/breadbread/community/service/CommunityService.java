@@ -248,10 +248,14 @@ public class CommunityService {
                 userRepository
                         .findById(userId)
                         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        List<String> imageUrls =
+                request.getImageUrls() != null ? request.getImageUrls() : List.of();
+        tempImageService.consumeOwnedImages(userId, imageUrls, UploadFolder.posts);
         Comment comment =
                 commentRepository.save(
                         Comment.builder()
                                 .content(request.getContent())
+                                .imageUrls(imageUrls)
                                 .post(post)
                                 .user(user)
                                 .build());
@@ -272,7 +276,20 @@ public class CommunityService {
             throw new CustomException(ErrorCode.COMMENT_AUTHOR_ONLY);
         }
 
-        comment.update(request.getContent());
+        if (request.getImageUrls() != null) {
+            List<String> previousImageUrls = List.copyOf(comment.getImageUrls());
+            List<String> addedImageUrls =
+                    request.getImageUrls().stream()
+                            .filter(url -> !previousImageUrls.contains(url))
+                            .toList();
+            tempImageService.consumeOwnedImages(userId, addedImageUrls, UploadFolder.posts);
+            comment.update(request.getContent(), request.getImageUrls());
+            previousImageUrls.stream()
+                    .filter(url -> !request.getImageUrls().contains(url))
+                    .forEach(gcsService::deleteQuietly);
+        } else {
+            comment.update(request.getContent(), null);
+        }
         log.info("댓글 수정: commentId={}, postId={}, userId={}", commentId, postId, userId);
     }
 
@@ -287,6 +304,7 @@ public class CommunityService {
             throw new CustomException(ErrorCode.COMMENT_AUTHOR_ONLY);
         }
 
+        comment.getImageUrls().forEach(gcsService::deleteQuietly);
         comment.deactivate();
         log.info("댓글 삭제: commentId={}, postId={}, userId={}", commentId, postId, userId);
     }

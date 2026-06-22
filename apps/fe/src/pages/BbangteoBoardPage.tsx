@@ -121,7 +121,11 @@ const BoardTabs = ({
 };
 
 const ListHeartIcon = ({ filled }: { filled?: boolean }) => (
-  <AppIcon src={IconAssets.IcHeart} size={14} className={filled ? "red_700" : "opacity-45"} />
+  <AppIcon
+    src={IconAssets.IcHeart}
+    size={14}
+    className={filled ? "icon-orange-600" : "opacity-45"}
+  />
 );
 
 const ListCommentIcon = () => <AppIcon src={IconAssets.IcChat} size={14} className="opacity-45" />;
@@ -139,7 +143,7 @@ const PostMetaItem = ({
     {variant === "like" ? <ListHeartIcon filled={likeFilled} /> : <ListCommentIcon />}
     <span
       className={`text-[12px] leading-[16px] ${
-        variant === "like" && likeFilled ? "red_700" : "text-[#868b94]"
+        variant === "like" && likeFilled ? "text-orange-600" : "text-[#868b94]"
       }`}
     >
       {count}

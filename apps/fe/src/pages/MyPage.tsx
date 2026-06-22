@@ -1,12 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { clearSessionTokens, logout } from "@/api/auth";
+import { performLogout } from "@/lib/auth/performLogout";
 import { getMyProfile } from "@/api/user";
-import {
-  clearUserProfile,
-  getDisplayNameForLoginId,
-  getUserProfile,
-  saveUserProfile,
-} from "@/lib/userProfileCache";
+import { getDisplayNameForLoginId, getUserProfile, saveUserProfile } from "@/lib/userProfileCache";
 import { AppTopBar } from "@/components/common";
 import { IconAssets } from "@/components/icons";
 import MyLevelCard from "@/components/domain/my/MyLevelCard";
@@ -34,19 +29,8 @@ export default function MyPage() {
   const handleLogout = () => {
     if (isLoggingOut) return;
     if (!window.confirm("로그아웃할까요?")) return;
-    void (async () => {
-      setIsLoggingOut(true);
-      try {
-        await logout();
-      } catch {
-        /* 만료·서버 오류여도 로컬 세션은 정리 */
-      } finally {
-        setIsLoggingOut(false);
-      }
-      clearSessionTokens();
-      clearUserProfile();
-      void navigate({ to: "/" });
-    })();
+    setIsLoggingOut(true);
+    void performLogout(navigate).finally(() => setIsLoggingOut(false));
   };
 
   useEffect(() => {
@@ -148,8 +132,18 @@ export default function MyPage() {
       iconSrc: IconAssets.IcPerson,
       onClick: goToAccountSettings,
     },
-    { id: "service", label: "서비스 설정", iconSrc: IconAssets.IcSetting },
-    { id: "support", label: "고객센터", iconSrc: IconAssets.IcHeadphone },
+    {
+      id: "service",
+      label: "서비스 설정",
+      iconSrc: IconAssets.IcSetting,
+      onClick: () => navigate({ to: "/my/settings" }),
+    },
+    {
+      id: "support",
+      label: "고객센터",
+      iconSrc: IconAssets.IcHeadphone,
+      onClick: () => navigate({ to: "/my/support" }),
+    },
   ];
 
   const profileAvatarSeed =

@@ -3,6 +3,8 @@
 @import "./styles/typo.css";
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer utilities {
 	.t8bold {
 		font-size: var(--font-size-7);
