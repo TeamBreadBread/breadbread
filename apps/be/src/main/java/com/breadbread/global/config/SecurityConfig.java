@@ -127,7 +127,8 @@ public class SecurityConfig {
                                                 "/auth/**",
                                                 "/swagger-ui/**",
                                                 "/v3/api-docs/**",
-                                                "/actuator/health")
+                                                "/actuator/health",
+                                                "/api-docs.html")
                                         .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/bakeries/**")
                                         .permitAll()
