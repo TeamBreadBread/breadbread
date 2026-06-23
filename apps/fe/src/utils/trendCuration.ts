@@ -124,7 +124,7 @@ export function buildTrendBreadListTitle(keyword: string | null | undefined): st
   if (!trimmedKeyword) {
     return "빵집 리스트";
   }
-  return `'${trimmedKeyword}' 빵집`;
+  return "SNS에서 핫한 빵";
 }
 
 /** 트렌드 순위 상위 N개 키워드 중 매칭 빵집이 있는 것을 무작위로 선택 */

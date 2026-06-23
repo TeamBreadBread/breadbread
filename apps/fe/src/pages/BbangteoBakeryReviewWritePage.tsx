@@ -1,10 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { createBakeryReview, getBakeryReviews, updateBakeryReview } from "@/api/bakery";
+import {
+  createBakeryReview,
+  getBakeryById,
+  getBakeryReviews,
+  updateBakeryReview,
+} from "@/api/bakery";
 import { uploadImages } from "@/api/image";
+import type { BakeryTagType, BakeryDetailBread } from "@/api/types/bakery";
 import { isBakeryReviewAuthor } from "@/api/types/bakery";
 import { getErrorMessage } from "@/api/types/common";
 import { ImageUploadPreviewStrip } from "@/components/common/ImageUploadPreview";
+import BakeryTagSelector from "@/components/domain/bbangteo/BakeryTagSelector";
+import ReviewMenuTagEditor, {
+  type ReviewMenuTagEntry,
+} from "@/components/domain/bbangteo/ReviewMenuTagEditor";
+import { normalizeBakeryTags, normalizeBreadTags } from "@/utils/bakeryTagLabels";
 import { getUserProfile, refreshProfileCacheFromServer } from "@/lib/userProfileCache";
 import { AppIcon, IconAssets } from "@/components/icons";
 import MobileFrame from "@/components/layout/MobileFrame";
@@ -78,9 +89,37 @@ export default function BbangteoBakeryReviewWritePage({
   const [loadError, setLoadError] = useState("");
   const [isLoadingReview, setIsLoadingReview] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [bakeryTags, setBakeryTags] = useState<BakeryTagType[]>([]);
+  const [menuTags, setMenuTags] = useState<ReviewMenuTagEntry[]>([]);
+  const [bakeryMenus, setBakeryMenus] = useState<Pick<BakeryDetailBread, "id" | "name">[]>([]);
+  const [isLoadingMenus, setIsLoadingMenus] = useState(false);
 
   const canSubmit = useMemo(() => rating > 0 && content.trim().length > 0, [rating, content]);
   const totalImageCount = remoteImageUrls.length + selectedImages.length;
+
+  useEffect(() => {
+    if (bakeryId === undefined) return;
+
+    let cancelled = false;
+    void (async () => {
+      setIsLoadingMenus(true);
+      try {
+        const detail = await getBakeryById(bakeryId);
+        if (cancelled) return;
+        setBakeryMenus((detail.breads ?? []).map((bread) => ({ id: bread.id, name: bread.name })));
+      } catch (e) {
+        if (!cancelled) {
+          setLoadError(getErrorMessage(e));
+        }
+      } finally {
+        if (!cancelled) setIsLoadingMenus(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bakeryId]);
 
   useEffect(() => {
     if (bakeryId === undefined || reviewId === undefined) return;
@@ -105,6 +144,14 @@ export default function BbangteoBakeryReviewWritePage({
         setContent(found.content);
         setRemoteImageUrls(found.imageUrls ? [...found.imageUrls] : []);
         setSelectedImages([]);
+        setBakeryTags(normalizeBakeryTags(found.bakeryTags));
+        setMenuTags(
+          (found.menuTags ?? []).map((entry) => ({
+            breadId: entry.breadId,
+            breadName: entry.breadName?.trim() || `메뉴 #${entry.breadId}`,
+            tags: normalizeBreadTags(entry.tags),
+          })),
+        );
       } catch (e) {
         if (!cancelled) {
           setLoadError(getErrorMessage(e));
@@ -143,6 +190,11 @@ export default function BbangteoBakeryReviewWritePage({
           rating,
           content: content.trim(),
           imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+          bakeryTags,
+          menuTags: menuTags.map((entry) => ({
+            breadId: entry.breadId,
+            tags: entry.tags,
+          })),
         };
         if (reviewId !== undefined) {
           await updateBakeryReview(bakeryId, reviewId, payload);
@@ -204,7 +256,9 @@ export default function BbangteoBakeryReviewWritePage({
                     ? "text-[#1a1c20]"
                     : "text-[#b0b3ba]"
                 }`}
-                disabled={!canSubmit || isSubmitting || isLoadingReview || !!loadError}
+                disabled={
+                  !canSubmit || isSubmitting || isLoadingReview || isLoadingMenus || !!loadError
+                }
                 onClick={() => handleSubmit()}
               >
                 {isSubmitting ? "등록 중…" : reviewId !== undefined ? "수정" : "게시"}
@@ -215,10 +269,10 @@ export default function BbangteoBakeryReviewWritePage({
         </>
 
         <main className="flex flex-1 flex-col items-center px-[20px] pb-[64px] pt-[41px]">
-          {isLoadingReview ? (
+          {isLoadingReview || isLoadingMenus ? (
             <p className="text-[14px] text-[#868b94]">후기를 불러오는 중…</p>
           ) : null}
-          {!isLoadingReview && loadError ? (
+          {!isLoadingReview && !isLoadingMenus && loadError ? (
             <p className="text-center text-[14px] text-red-600">{loadError}</p>
           ) : null}
           <section className="flex w-[204px] flex-col items-center gap-[16px]">
@@ -269,6 +323,22 @@ export default function BbangteoBakeryReviewWritePage({
               <span className="text-[#b0b3ba]">/300</span>
             </p>
           </section>
+
+          {!loadError ? (
+            <section className="mt-[24px] flex w-full flex-col gap-[20px]">
+              <BakeryTagSelector
+                selected={bakeryTags}
+                onChange={setBakeryTags}
+                disabled={isLoadingReview || isLoadingMenus || isSubmitting}
+              />
+              <ReviewMenuTagEditor
+                menus={bakeryMenus}
+                value={menuTags}
+                onChange={setMenuTags}
+                disabled={isLoadingReview || isLoadingMenus || isSubmitting}
+              />
+            </section>
+          ) : null}
         </main>
       </div>
 

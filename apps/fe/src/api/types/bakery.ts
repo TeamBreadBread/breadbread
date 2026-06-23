@@ -30,6 +30,29 @@ export type BakeryListResponse = {
 };
 
 /** GET /bakeries/{id} — breads 항목 */
+export type BakeryTagType =
+  | "COZY"
+  | "QUIET"
+  | "LIVELY"
+  | "EMOTIONAL"
+  | "LOCAL_VIBE"
+  | "SWEET"
+  | "SAVORY"
+  | "CRISPY"
+  | "SOFT"
+  | "NUTTY";
+
+export type BreadTagType =
+  | "SWEET"
+  | "SAVORY"
+  | "CRISPY"
+  | "SOFT"
+  | "NUTTY"
+  | "SPICY"
+  | "CHEWY"
+  | "RICH";
+
+/** GET /bakeries/{id} — breads 항목 */
 export type BakeryDetailBread = {
   id: number;
   name: string;
@@ -38,6 +61,7 @@ export type BakeryDetailBread = {
   breadType?: string | null;
   signature: boolean;
   estimatedSoldOut: boolean;
+  breadTags?: BreadTagType[];
 };
 
 /** GET /bakeries/{id} */
@@ -60,6 +84,7 @@ export type BakeryDetail = {
   phone?: string | null;
   rating?: number | null;
   reviewCount?: number | null;
+  bakeryTags?: BakeryTagType[];
   breads: BakeryDetailBread[];
   likeCount?: number | null;
   liked?: boolean | null;
@@ -126,6 +151,18 @@ export type BakerySummaryListResponse = {
 export type BakeryReviewSortType = "LATEST" | "RATING_HIGH" | "RATING_LOW";
 
 /** 단일 리뷰 (GET 목록 항목) */
+export type BakeryReviewMenuTag = {
+  breadId: number;
+  breadName?: string | null;
+  tags: BreadTagType[];
+};
+
+export type BakeryReviewMenuTagPayload = {
+  breadId: number;
+  tags: BreadTagType[];
+};
+
+/** 단일 리뷰 (GET 목록 항목) */
 export type BakeryReview = {
   id: number;
   /** 작성자 회원 PK — 로그인 사용자와 같으면 MY 표시명으로 교체 */
@@ -139,6 +176,8 @@ export type BakeryReview = {
   content: string;
   imageUrls?: string[] | null;
   createdAt: string;
+  bakeryTags?: BakeryTagType[];
+  menuTags?: BakeryReviewMenuTag[];
 };
 
 /** 리뷰 목록 응답의 작성자 여부 — `author` / `isAuthor` 우선, 없으면 `authorUserId`와 로그인 사용자 id 비교 */
@@ -168,6 +207,8 @@ export type BakeryReviewWritePayload = {
   rating: number;
   content: string;
   imageUrls?: string[];
+  bakeryTags?: BakeryTagType[];
+  menuTags?: BakeryReviewMenuTagPayload[];
 };
 
 /** PATCH /bakeries/{bakeryId}/reviews/{reviewId} — 필드 부분 수정 허용 */

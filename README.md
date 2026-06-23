@@ -6,7 +6,7 @@
 
 - **FE**: React 19 + Tailwind CSS v4 + TanStack Router + Vite
 - **BE**: Spring Boot 3.5 + Spring Data JPA + PostgreSQL
-- **배포**: Firebase Hosting (FE) / Google Cloud Run (BE) / Cloud SQL (DB)
+- **배포**: Cloudflare Pages (FE) / Google Cloud Run (BE) / Cloud SQL (DB)
 - **모노레포**: pnpm workspace (`apps/fe`) + Gradle (`apps/be`)
 
 ## 주요 기능
@@ -39,7 +39,7 @@ breadbread/
 │   └── be/          # Spring Boot API (Gradle)
 ├── .github/workflows/
 │   ├── ci.yml                   # PR: FE lint/tsc, BE spotless/build/test
-│   ├── cd-firebase-hosting.yml  # main: FE → Firebase Hosting
+│   ├── cd-firebase-hosting.yml  # (선택) main: FE → Firebase Hosting, Secrets 없으면 skip
 │   └── cd-cloud-run.yml         # main: BE → Cloud Run
 ├── package.json     # 루트 스크립트, husky, lint-staged
 └── pnpm-workspace.yaml
@@ -162,7 +162,8 @@ cp .env.example .env
 | 워크플로 | 트리거 | 내용 |
 |---|---|---|
 | `ci.yml` | PR → `main` | FE lint · tsc, BE spotless · build · unit test |
-| `cd-firebase-hosting.yml` | push → `main` (`apps/fe/**`) | FE 빌드 후 Firebase Hosting 배포 |
+| Cloudflare Pages | push → `main` (`apps/fe/**`) | FE 빌드 후 Cloudflare Pages 배포 (Git 연동) |
+| `cd-firebase-hosting.yml` | push → `main` (선택) | Firebase Hosting — Secrets 없으면 skip |
 | `cd-cloud-run.yml` | push → `main` (`apps/be/**`) | BE Docker 이미지 빌드 후 Cloud Run 배포 |
 
 FE 배포 시 필요한 GitHub Secrets는 [apps/fe/DEPLOY.md](apps/fe/DEPLOY.md)를 참고하세요.
@@ -187,6 +188,6 @@ BE 배포 시 필요한 환경 변수 및 인프라 설정은 [apps/be/docs/back
 ## 관련 문서
 
 - [협업 가이드라인 (CONTRIBUTING.md)](CONTRIBUTING.md) — 브랜치 전략, 커밋 규칙, 협업 방식
-- [FE 배포 가이드 (apps/fe/DEPLOY.md)](apps/fe/DEPLOY.md) — Firebase Hosting, GitHub Secrets
+- [FE 배포 가이드 (apps/fe/DEPLOY.md)](apps/fe/DEPLOY.md) — Cloudflare Pages, GitHub Secrets
 - [API 문서](https://api.breadbread.io/api-docs.html)
 - [모니터링 대시보드 (Grafana)](https://livelysamosa206.grafana.net/public-dashboards/fd40ccf21ed84237ae3fe1037a073b51) — Cloud Run 실시간 메트릭
