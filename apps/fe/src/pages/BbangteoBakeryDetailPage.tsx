@@ -21,6 +21,8 @@ import {
 import MobileFrame from "@/components/layout/MobileFrame";
 import { ToastBanner } from "@/components/common";
 import FloatingPlusButton from "@/components/common/FloatingPlusButton";
+import { BakeryTagBadgeRow, BreadTagBadgeRow } from "@/components/domain/bbangteo/BakeryTagBadges";
+import ReviewTagsSection from "@/components/domain/bbangteo/ReviewTagsSection";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import { setBakeryLikeOverlay } from "@/lib/bakeryLikeLocalCache";
 import { patchBakeryInListCaches } from "@/hooks/useBakeries";
@@ -53,6 +55,7 @@ type MenuRow = {
   price: string;
   imageUrl?: string | null;
   soldOut?: boolean;
+  breadTags?: BakeryDetailBread["breadTags"];
 };
 
 const MAX_PREVIEW_IMAGES = 4;
@@ -65,6 +68,7 @@ function breadsToMenus(breads: BakeryDetailBread[], bakeryName?: string): MenuRo
     price: b.price.toLocaleString("ko-KR"),
     imageUrl: b.imageUrl,
     soldOut: b.estimatedSoldOut || (bakeryName === "성심당 본점" && b.name.trim() === "튀김소보로"),
+    breadTags: b.breadTags,
   }));
 }
 
@@ -179,6 +183,7 @@ const BakeryTitleInfo = ({
   name,
   rating,
   reviewCount,
+  bakeryTags,
   liked,
   likeBusy,
   onToggleLike,
@@ -186,6 +191,7 @@ const BakeryTitleInfo = ({
   name: string;
   rating: number;
   reviewCount: number;
+  bakeryTags?: BakeryDetail["bakeryTags"];
   liked: boolean;
   likeBusy: boolean;
   onToggleLike: () => void;
@@ -215,6 +221,7 @@ const BakeryTitleInfo = ({
         ) : null}
         <span>후기({reviewCount.toLocaleString("ko-KR")})</span>
       </div>
+      <BakeryTagBadgeRow tags={bakeryTags} />
     </div>
   );
 };
@@ -350,6 +357,7 @@ const BakeryHero = ({
           name={detail.name}
           rating={rating}
           reviewCount={reviewCount}
+          bakeryTags={detail.bakeryTags}
           liked={liked}
           likeBusy={likeBusy}
           onToggleLike={onToggleLike}
@@ -422,6 +430,7 @@ const MenuItem = ({ menu }: { menu: MenuRow }) => {
         <h3 className="line-clamp-1 text-[16px] leading-[22px] font-medium text-[#1a1c20]">
           {menu.name}
         </h3>
+        <BreadTagBadgeRow tags={menu.breadTags} />
         <div className="flex items-start">
           <span
             className={`line-clamp-1 text-[16px] leading-[22px] font-bold ${
@@ -535,6 +544,7 @@ const ReviewCard = ({
             ) : null}
           </div>
           <p className="text-[14px] leading-[19px] text-[#1a1c20]">{review.content}</p>
+          <ReviewTagsSection review={review} />
         </div>
       </div>
       {imgs.length > 0 ? (

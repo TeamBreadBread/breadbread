@@ -27,6 +27,9 @@ import {
 } from "@/lib/bakeryLikeLocalCache";
 import type { BakeryListEntryFrom } from "@/utils/bakeryListEntry";
 import { buildBbakeryDetailSearch } from "@/utils/bakeryListEntry";
+import TrendBreadCategoryTabBar from "@/components/domain/trend/TrendBreadCategoryTabBar";
+import { useTrendingBreads } from "@/hooks/trend/useTrendingBreads";
+import { buildBbangteoBakeryListSearch } from "@/utils/bakeryListEntry";
 import { buildTrendBreadListTitle, resolveBakeryIdsForKeyword } from "@/utils/trendCuration";
 import { cn } from "@/utils/cn";
 import { resolveThumbnailDongAddress } from "@/utils/formatCurationAddress";
@@ -595,6 +598,11 @@ const BbangteoBakeryListPage = ({
   const navigate = useNavigate();
   const breadKeywordTrimmed = breadKeyword?.trim() ?? "";
   const isTrendBreadList = Boolean(breadKeywordTrimmed);
+  const trendingBreadsQuery = useTrendingBreads(undefined, { enabled: isTrendBreadList });
+  const trendCategoryBreads = useMemo(
+    () => trendingBreadsQuery.data?.breads ?? [],
+    [trendingBreadsQuery.data?.breads],
+  );
   const menuIndexQuery = useTrendMenuIndex({ enabled: isTrendBreadList });
   const breadBakeriesQuery = useQuery({
     queryKey: trendQueryKeys.breadBakeries(breadKeywordTrimmed),
@@ -662,6 +670,20 @@ const BbangteoBakeryListPage = ({
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [page, listSort, openOnly]);
+
+  const handleTrendCategorySelect = (keyword: string) => {
+    const trimmed = keyword.trim();
+    if (!trimmed || trimmed === breadKeywordTrimmed) return;
+    void navigate({
+      to: "/bbangteo-bakery-list",
+      search: buildBbangteoBakeryListSearch({
+        from: listEntryFrom,
+        curationOnly: true,
+        breadKeyword: trimmed,
+      }),
+      replace: true,
+    });
+  };
 
   const queryKeyword = keyword.trim() || undefined;
   const { data, loading, error } = useBakeries(
@@ -932,6 +954,13 @@ const BbangteoBakeryListPage = ({
             onOpenOnlyToggle={handleOpenOnlyToggle}
             hideKeywordSearch={isTrendBreadList}
           />
+          {isTrendBreadList ? (
+            <TrendBreadCategoryTabBar
+              breads={trendCategoryBreads}
+              selectedKeyword={breadKeywordTrimmed}
+              onSelect={handleTrendCategorySelect}
+            />
+          ) : null}
           {listLoading ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 px-[20px] py-[40px] text-[14px] text-[#868b94]">
               불러오는 중…

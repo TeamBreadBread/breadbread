@@ -3,7 +3,11 @@ import { useNavigate } from "@tanstack/react-router";
 import { createPost, getPost, updatePost } from "@/api/posts";
 import { uploadImages } from "@/api/image";
 import { getErrorMessage } from "@/api/types/common";
+import type { BakeryListItem, BakeryTagType } from "@/api/types/bakery";
 import { ImageUploadPreviewStrip } from "@/components/common/ImageUploadPreview";
+import BakeryTagSelector from "@/components/domain/bbangteo/BakeryTagSelector";
+import PostBakeryPlaceTagField from "@/components/domain/bbangteo/PostBakeryPlaceTagField";
+import { normalizeBakeryTags } from "@/utils/bakeryTagLabels";
 import { AppIcon, IconAssets } from "@/components/icons";
 import BottomNav from "@/components/layout/BottomNav";
 import {
@@ -71,6 +75,10 @@ const BbangteoBoardWritePage = ({ editPostId }: BbangteoBoardWritePageProps) => 
   const [body, setBody] = useState("");
   const [selectedImages, setSelectedImages] = useState<SelectedLocalImage[]>([]);
   const [remoteImageUrls, setRemoteImageUrls] = useState<string[]>([]);
+  const [selectedBakery, setSelectedBakery] = useState<Pick<BakeryListItem, "id" | "name"> | null>(
+    null,
+  );
+  const [bakeryTags, setBakeryTags] = useState<BakeryTagType[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -90,6 +98,12 @@ const BbangteoBoardWritePage = ({ editPostId }: BbangteoBoardWritePageProps) => 
         setBody(d.content);
         setRemoteImageUrls([...d.imageUrls]);
         setSelectedImages([]);
+        if (d.bakeryId != null && d.bakeryId > 0 && d.bakeryName?.trim()) {
+          setSelectedBakery({ id: d.bakeryId, name: d.bakeryName.trim() });
+        } else {
+          setSelectedBakery(null);
+        }
+        setBakeryTags(normalizeBakeryTags(d.bakeryTags));
       } catch (e) {
         alert(getErrorMessage(e) || "게시글을 불러오지 못했습니다.");
         navigate({ to: "/bbangteo-board" });
@@ -127,6 +141,11 @@ const BbangteoBoardWritePage = ({ editPostId }: BbangteoBoardWritePageProps) => 
     setRemoteImageUrls((prev) => prev.filter((u) => u !== url));
   };
 
+  const handleClearBakery = () => {
+    setSelectedBakery(null);
+    setBakeryTags([]);
+  };
+
   const handleSubmit = async () => {
     if (!canSubmit || isSubmitting || loadingEdit) {
       return;
@@ -143,6 +162,7 @@ const BbangteoBoardWritePage = ({ editPostId }: BbangteoBoardWritePageProps) => 
           title: title.trim(),
           content: body.trim(),
           imageUrls,
+          bakeryTags: selectedBakery ? bakeryTags : [],
         });
         navigate({ to: "/bbangteo-board-post-detail", search: { id: editPostId } });
         return;
@@ -153,6 +173,8 @@ const BbangteoBoardWritePage = ({ editPostId }: BbangteoBoardWritePageProps) => 
         content: body.trim(),
         postType: "FREE",
         imageUrls,
+        bakeryId: selectedBakery?.id,
+        bakeryTags: selectedBakery ? bakeryTags : undefined,
       });
       navigate({ to: "/bbangteo-board-post-detail", search: { id: newId } });
     } catch (error) {
@@ -204,6 +226,51 @@ const BbangteoBoardWritePage = ({ editPostId }: BbangteoBoardWritePageProps) => 
             onRemoveRemote={handleRemoveRemote}
             onRemoveLocal={(index) => handleRemoveLocal(selectedImages[index]?.id ?? "")}
           />
+          {!isEdit ? (
+            <>
+              <PostBakeryPlaceTagField
+                className="mt-[12px]"
+                selectedBakery={selectedBakery}
+                onSelect={(bakery) => {
+                  if (selectedBakery?.id !== bakery.id) {
+                    setBakeryTags([]);
+                  }
+                  setSelectedBakery({ id: bakery.id, name: bakery.name });
+                }}
+                onClear={handleClearBakery}
+                disabled={loadingEdit}
+              />
+              {selectedBakery ? (
+                <BakeryTagSelector
+                  label="이 빵집은 어떤 느낌이었나요?"
+                  selected={bakeryTags}
+                  onChange={setBakeryTags}
+                  disabled={loadingEdit || isSubmitting}
+                />
+              ) : null}
+            </>
+          ) : selectedBakery ? (
+            <>
+              <PostBakeryPlaceTagField
+                className="mt-[12px]"
+                selectedBakery={selectedBakery}
+                onSelect={(bakery) => {
+                  if (selectedBakery?.id !== bakery.id) {
+                    setBakeryTags([]);
+                  }
+                  setSelectedBakery({ id: bakery.id, name: bakery.name });
+                }}
+                onClear={handleClearBakery}
+                disabled
+              />
+              <BakeryTagSelector
+                label="이 빵집은 어떤 느낌이었나요?"
+                selected={bakeryTags}
+                onChange={setBakeryTags}
+                disabled={loadingEdit || isSubmitting}
+              />
+            </>
+          ) : null}
         </main>
         <div className="fixed bottom-[56px] left-1/2 z-40 flex w-full max-w-[402px] -translate-x-1/2 flex-col bg-white pb-[env(safe-area-inset-bottom,0)] sm:bottom-[60px]">
           <div className="flex items-center justify-start border-t border-[#eeeff1] bg-white px-[14px] py-[8px]">

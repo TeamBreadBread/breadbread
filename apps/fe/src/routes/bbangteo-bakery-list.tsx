@@ -27,6 +27,7 @@ function BbangteoBakeryListRoute() {
     Route.useSearch();
   return (
     <BbangteoBakeryListPage
+      key={breadKeyword ?? "__default__"}
       listEntryFrom={from}
       curationOnly={curationOnly}
       dongFilter={dong}

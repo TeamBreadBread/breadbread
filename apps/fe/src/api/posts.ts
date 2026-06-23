@@ -1,4 +1,5 @@
 import { apiClient, extractData } from "@/api/client";
+import type { BakeryTagType } from "@/api/types/bakery";
 import type { ApiEnvelope } from "@/api/types/common";
 
 const PATH = "/posts";
@@ -70,6 +71,8 @@ export type CreatePostBody = {
   content: string;
   postType: PostType;
   imageUrls: string[];
+  bakeryId?: number;
+  bakeryTags?: BakeryTagType[];
 };
 
 export async function createPost(body: CreatePostBody): Promise<number> {
@@ -81,6 +84,7 @@ export type UpdatePostBody = {
   title?: string;
   content?: string;
   imageUrls?: string[];
+  bakeryTags?: BakeryTagType[];
 };
 
 export async function updatePost(postId: number, body: UpdatePostBody): Promise<void> {
@@ -121,6 +125,9 @@ export type PostDetail = {
   author?: boolean;
   isAuthor?: boolean;
   likeCount: number;
+  bakeryId?: number | null;
+  bakeryName?: string | null;
+  bakeryTags?: BakeryTagType[];
   commentListResponse: {
     comments: CommentResponse[];
     total: number;

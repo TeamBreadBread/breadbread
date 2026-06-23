@@ -35,6 +35,7 @@ import {
 } from "@/lib/postLikeLocalCache";
 import { cn } from "@/utils/cn";
 import { formatInstantInSeoul } from "@/utils/formatSeoulDateTime";
+import { buildBbakeryDetailSearch } from "@/utils/bakeryListEntry";
 
 type BbangteoPostDetailViewProps = {
   postId: number;
@@ -436,6 +437,24 @@ export default function BbangteoPostDetailView({ postId, listPath }: BbangteoPos
                       {detail.content}
                     </p>
                   </div>
+                  {detail.bakeryId != null && detail.bakeryId > 0 && detail.bakeryName?.trim() ? (
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-[4px] self-start text-[14px] leading-[19px] font-semibold text-[#E8623A]"
+                      onClick={() =>
+                        void navigate({
+                          to: "/bbangteo-bakery-detail",
+                          search: buildBbakeryDetailSearch({
+                            bakeryId: detail.bakeryId ?? undefined,
+                            from: "bbangteo",
+                          }),
+                        })
+                      }
+                    >
+                      <span aria-hidden>📍</span>
+                      <span>{detail.bakeryName.trim()}</span>
+                    </button>
+                  ) : null}
                   <ImageRow urls={detail.imageUrls} />
                 </div>
                 <div className="flex items-center justify-between">
