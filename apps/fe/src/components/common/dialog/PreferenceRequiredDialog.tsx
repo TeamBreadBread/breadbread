@@ -4,12 +4,20 @@ type PreferenceRequiredDialogProps = {
   open: boolean;
   onCancel: () => void;
   onGoToSurvey: () => void;
+  title?: string;
+  message?: string;
+  cancelLabel?: string;
+  confirmLabel?: string;
 };
 
 export default function PreferenceRequiredDialog({
   open,
   onCancel,
   onGoToSurvey,
+  title = "선호도 조사 필요",
+  message = "AI 추천을 받으려면 먼저 선호도 조사를 완료해주세요.",
+  cancelLabel = "닫기",
+  confirmLabel = "선호도 조사 하러가기",
 }: PreferenceRequiredDialogProps) {
   if (!open) return null;
 
@@ -33,10 +41,10 @@ export default function PreferenceRequiredDialog({
             id="preference-required-title"
             className="w-full text-center font-pretendard text-size-7 font-bold leading-t7 tracking-0 text-gray-1000"
           >
-            선호도 조사 필요
+            {title}
           </div>
           <div className="w-full text-center font-pretendard text-size-4 leading-t5 tracking-0 text-gray-1000">
-            AI 추천을 받으려면 먼저 선호도 조사를 완료해주세요.
+            {message}
           </div>
         </div>
 
@@ -47,7 +55,7 @@ export default function PreferenceRequiredDialog({
             className="flex flex-1 flex-row items-center justify-center overflow-hidden rounded-r3 bg-gray-200 px-x4 py-x3-5"
           >
             <span className="whitespace-nowrap text-center font-pretendard text-size-3 font-bold leading-t4 tracking-0 text-gray-1000">
-              취소
+              {cancelLabel}
             </span>
           </button>
           <button
@@ -56,7 +64,7 @@ export default function PreferenceRequiredDialog({
             className="flex max-w-[300px] flex-1 flex-row items-center justify-center overflow-hidden rounded-r3 bg-gray-900 px-x4 py-x3-5"
           >
             <span className="whitespace-nowrap text-center font-pretendard text-size-3 font-bold leading-t4 tracking-0 text-gray-00">
-              선호도 조사 하러 가기
+              {confirmLabel}
             </span>
           </button>
         </div>
