@@ -19,7 +19,6 @@ import com.breadbread.congestion.entity.CongestionLevel;
 import com.breadbread.congestion.repository.BakeryCongestionSignalRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
-import com.breadbread.tour.dto.CongestionInstantCheckResponse;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -130,62 +129,6 @@ class CongestionSignalServiceTest {
         verify(repository).saveAll(captor.capture());
         assertThat(captor.getValue()).hasSize(1);
         assertThat(captor.getValue().get(0).getBakeryId()).isEqualTo(1L);
-    }
-
-    // ── saveAllFromInstantCheck ───────────────────────────────────────────────
-
-    @Test
-    void saveAllFromInstantCheck_saves_entities_when_data_present() {
-        Bakery bakery = bakery(1L, "파리바게뜨");
-        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
-                        List.of(1L), BakeryStatus.APPROVED))
-                .thenReturn(List.of(bakery));
-        CongestionInstantCheckResponse.CongestionResult result =
-                instantCheckResult(1L, "파리바게뜨", "HIGH");
-
-        service.saveAllFromInstantCheck(List.of(result));
-
-        ArgumentCaptor<List<BakeryCongestionSignal>> captor = ArgumentCaptor.forClass(List.class);
-        verify(repository).saveAll(captor.capture());
-        assertThat(captor.getValue()).hasSize(1);
-        assertThat(captor.getValue().get(0).getBakeryId()).isEqualTo(1L);
-        assertThat(captor.getValue().get(0).getLevel()).isEqualTo(CongestionLevel.HIGH);
-    }
-
-    @Test
-    void saveAllFromInstantCheck_skips_unapproved_bakery() {
-        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
-                        List.of(1L), BakeryStatus.APPROVED))
-                .thenReturn(List.of());
-        CongestionInstantCheckResponse.CongestionResult result =
-                instantCheckResult(1L, "파리바게뜨", "HIGH");
-
-        service.saveAllFromInstantCheck(List.of(result));
-
-        verify(repository, never()).saveAll(anyList());
-    }
-
-    @Test
-    void saveAllFromInstantCheck_skips_save_when_empty() {
-        service.saveAllFromInstantCheck(List.of());
-
-        verify(repository, never()).saveAll(anyList());
-    }
-
-    @Test
-    void saveAllFromInstantCheck_handles_unknown_level_gracefully() {
-        Bakery bakery = bakery(1L, "파리바게뜨");
-        when(bakeryRepository.findAllByIdInAndActiveTrueAndStatus(
-                        List.of(1L), BakeryStatus.APPROVED))
-                .thenReturn(List.of(bakery));
-        CongestionInstantCheckResponse.CongestionResult result =
-                instantCheckResult(1L, "파리바게뜨", "UNKNOWN_LEVEL");
-
-        service.saveAllFromInstantCheck(List.of(result));
-
-        ArgumentCaptor<List<BakeryCongestionSignal>> captor = ArgumentCaptor.forClass(List.class);
-        verify(repository).saveAll(captor.capture());
-        assertThat(captor.getValue().get(0).getLevel()).isNull();
     }
 
     // ── getByBakeryId ─────────────────────────────────────────────────────────
@@ -316,20 +259,6 @@ class CongestionSignalServiceTest {
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
-
-    private static CongestionInstantCheckResponse.CongestionResult instantCheckResult(
-            Long bakeryId, String bakeryName, String level) {
-        CongestionInstantCheckResponse.CongestionResult result =
-                new CongestionInstantCheckResponse.CongestionResult();
-        ReflectionTestUtils.setField(result, "bakeryId", bakeryId);
-        ReflectionTestUtils.setField(result, "bakeryName", bakeryName);
-        ReflectionTestUtils.setField(result, "congestionScore", 70.0);
-        ReflectionTestUtils.setField(result, "level", level);
-        ReflectionTestUtils.setField(result, "expectedWaitMin", 15);
-        ReflectionTestUtils.setField(result, "checkedAt", LocalDateTime.now());
-        ReflectionTestUtils.setField(result, "signals", null);
-        return result;
-    }
 
     private static Bakery bakery(Long id, String name) {
         Bakery bakery =

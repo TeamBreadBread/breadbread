@@ -12,12 +12,10 @@ import com.breadbread.congestion.entity.CongestionLevel;
 import com.breadbread.congestion.repository.BakeryCongestionSignalRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
-import com.breadbread.tour.dto.CongestionInstantCheckResponse;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -107,74 +105,6 @@ public class CongestionSignalService {
         log.info("[혼잡도 신호] {}건 저장 완료 (요청 {}건 중)", signals.size(), requests.size());
     }
 
-    @Transactional
-    public void saveAllFromInstantCheck(
-            List<CongestionInstantCheckResponse.CongestionResult> results) {
-        saveAllFromInstantCheck(results, null);
-    }
-
-    @Transactional
-    public void saveAllFromInstantCheck(
-            List<CongestionInstantCheckResponse.CongestionResult> results,
-            Set<Long> allowedBakeryIds) {
-        if (results == null || results.isEmpty()) {
-            log.warn("[혼잡도 신호] 저장 가능한 데이터가 없습니다.");
-            return;
-        }
-        List<Long> bakeryIds =
-                results.stream()
-                        .map(CongestionInstantCheckResponse.CongestionResult::getBakeryId)
-                        .filter(id -> id != null)
-                        .toList();
-        Set<Long> approvedIds =
-                bakeryRepository
-                        .findAllByIdInAndActiveTrueAndStatus(bakeryIds, BakeryStatus.APPROVED)
-                        .stream()
-                        .map(Bakery::getId)
-                        .collect(Collectors.toSet());
-
-        List<BakeryCongestionSignal> entities =
-                results.stream()
-                        .filter(
-                                r ->
-                                        r.getBakeryId() != null
-                                                && approvedIds.contains(r.getBakeryId()))
-                        .filter(
-                                r ->
-                                        allowedBakeryIds == null
-                                                || allowedBakeryIds.contains(r.getBakeryId()))
-                        .map(this::toEntity)
-                        .toList();
-
-        if (entities.isEmpty()) {
-            log.warn("[혼잡도 신호] 저장 가능한 데이터가 없습니다.");
-            return;
-        }
-        repository.saveAll(entities);
-        log.info("[혼잡도 신호] {}건 저장 완료 (응답 {}건 중)", entities.size(), results.size());
-    }
-
-    private BakeryCongestionSignal toEntity(
-            CongestionInstantCheckResponse.CongestionResult result) {
-        CongestionInstantCheckResponse.CongestionResult.Signals s = result.getSignals();
-        return BakeryCongestionSignal.builder()
-                .bakeryId(result.getBakeryId())
-                .bakeryName(result.getBakeryName())
-                .congestionScore(result.getCongestionScore())
-                .level(parseLevel(result.getLevel()))
-                .expectedWaitMin(result.getExpectedWaitMin())
-                .reason(result.getReason())
-                .waitingKeywordCount(s != null ? s.getWaitingKeywordCount() : null)
-                .openRunKeywordCount(s != null ? s.getOpenRunKeywordCount() : null)
-                .soldOutKeywordCount(s != null ? s.getSoldOutKeywordCount() : null)
-                .recentMentionCount(s != null ? s.getRecentMentionCount() : null)
-                .morningMentions(s != null ? s.getMorningMentions() : null)
-                .afternoonMentions(s != null ? s.getAfternoonMentions() : null)
-                .eveningMentions(s != null ? s.getEveningMentions() : null)
-                .collectedAt(result.getCheckedAt())
-                .build();
-    }
-
     @Transactional(readOnly = true)
     public CongestionResponse getByBakeryId(Long bakeryId) {
         BakeryCongestionSignal signal =
@@ -207,7 +137,8 @@ public class CongestionSignalService {
                 .morningMentions(s != null ? s.getMorningMentions() : null)
                 .afternoonMentions(s != null ? s.getAfternoonMentions() : null)
                 .eveningMentions(s != null ? s.getEveningMentions() : null)
-                .collectedAt(req.getCollectedAt())
+                .collectedAt(
+                        req.getCollectedAt() != null ? req.getCollectedAt() : LocalDateTime.now())
                 .build();
     }
 

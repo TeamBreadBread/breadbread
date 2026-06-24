@@ -1,6 +1,5 @@
 package com.breadbread.tour.service;
 
-import com.breadbread.congestion.service.CongestionSignalService;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.repository.CourseBakeryRepository;
 import com.breadbread.course.repository.CourseRepository;
@@ -23,9 +22,7 @@ import com.breadbread.user.repository.UserRepository;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -42,7 +39,6 @@ public class TourService {
     private final ReservationRepository reservationRepository;
     private final UserRepository userRepository;
     private final CongestionInstantCheckClient congestionInstantCheckClient;
-    private final CongestionSignalService congestionSignalService;
 
     @Transactional
     public TourStartResponse startTour(Long userId, UserRole role, Long courseId) {
@@ -152,15 +148,7 @@ public class TourService {
         if (request.getTargetBakeryId() != null) {
             body.put("targetBakeryId", request.getTargetBakeryId());
         }
-        Set<Long> allowedIds = new HashSet<>(request.getBakeryIds());
-        if (request.getTargetBakeryId() != null) {
-            allowedIds.add(request.getTargetBakeryId());
-        }
-        CongestionInstantCheckResponse response = congestionInstantCheckClient.check(body);
-        if (response.getData() != null && !response.getData().isEmpty()) {
-            congestionSignalService.saveAllFromInstantCheck(response.getData(), allowedIds);
-        }
-        return response;
+        return congestionInstantCheckClient.check(body);
     }
 
     private void completeReservationIfExists(Long userId, Long courseId) {
