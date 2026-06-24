@@ -108,6 +108,7 @@ Redis는 다음 기능에 사용된다.
 - 휴대폰 인증코드와 인증 토큰 저장
 - AI job 상태 저장
 - Rate Limit 카운터 저장
+- Google Places 사진 URL 캐싱 (외부 API 호출 최소화, TTL: `GOOGLE_PLACES_PHOTO_URL_TTL_SECONDS`)
 
 Redis 장애 시 영향:
 

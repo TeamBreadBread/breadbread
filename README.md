@@ -26,7 +26,7 @@
 
 ## 아키텍처
 
-<img width="1271" height="1030" alt="아키텍쳐" src="https://github.com/user-attachments/assets/4c4560d3-ca26-4793-8e8a-0d95c2876a96" />
+<img width="1271" height="1030" alt="아키텍쳐" src="https://github.com/user-attachments/assets/7ea61763-f251-4b38-ba7e-ae11fd5c6801" />
 
 ---
 
@@ -164,7 +164,7 @@ cp .env.example .env
 | `ci.yml` | PR → `main` | FE lint · tsc, BE spotless · build · unit test |
 | Cloudflare Pages | push → `main` (`apps/fe/**`) | FE 빌드 후 Cloudflare Pages 배포 (Git 연동) |
 | `cd-firebase-hosting.yml` | push → `main` (선택) | Firebase Hosting — Secrets 없으면 skip |
-| `cd-cloud-run.yml` | push → `main` (`apps/be/**`) | BE Docker 이미지 빌드 후 Cloud Run 배포 |
+| `cd-cloud-run.yml` | PR merge → `main` (`apps/be/**`) | BE Docker 이미지 빌드 후 Cloud Run 배포 |
 
 FE 배포 시 필요한 GitHub Secrets는 [apps/fe/DEPLOY.md](apps/fe/DEPLOY.md)를 참고하세요.
 
