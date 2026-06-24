@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { checkId, signup, type UserRole } from "@/api/auth";
+import { markMandatoryPreferenceOnboarding } from "@/lib/auth/preferenceOnboardingSession";
 import { getErrorMessage } from "@/api/types/common";
 import { ActionField, AppTopBar, BottomCTA, TextField } from "@/components/common";
 import { PasswordToggleIcon } from "@/components/icons";
@@ -187,6 +188,7 @@ export default function SignupPage() {
           email: email.trim(),
           phone: phoneDigits,
         });
+        markMandatoryPreferenceOnboarding();
         await navigate({
           to: "/signup-result",
           search: { name: name.trim() },

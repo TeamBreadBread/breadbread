@@ -6,6 +6,7 @@ import {
   PREFERENCE_ONBOARDING_SEARCH,
   resolveHasPreferenceForLogin,
 } from "@/lib/auth/preferenceOnboardingGate";
+import { isMandatoryPreferenceOnboarding } from "@/lib/auth/preferenceOnboardingSession";
 
 type NavigateFn = (options: { to: string; search?: Record<string, unknown> }) => Promise<void>;
 
@@ -50,7 +51,17 @@ export async function finishLoginAndNavigate(
   loginFlowTimeEnd("post-login-parallel");
 
   if (!hasPreference) {
-    await navigateToPreferenceOnboarding(navigate);
+    if (isMandatoryPreferenceOnboarding()) {
+      await navigateToPreferenceOnboarding(navigate);
+      return;
+    }
+
+    if (postLogin) {
+      await navigateToPostLoginRedirect(navigate, postLogin);
+      return;
+    }
+
+    await navigateToHome(navigate);
     return;
   }
 

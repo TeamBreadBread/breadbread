@@ -10,6 +10,10 @@ import MobileFrame from "@/components/layout/MobileFrame";
 import { FIXED_BOTTOM_BAR_FRAME_CLASS } from "@/components/layout/layout.constants";
 import type { PreferenceQuestion } from "@/components/domain/ai-course/types";
 import { invalidatePreferenceOnboardingCache } from "@/lib/auth/preferenceOnboardingGate";
+import {
+  clearHomePreferencePromptDismissed,
+  clearMandatoryPreferenceOnboarding,
+} from "@/lib/auth/preferenceOnboardingSession";
 import { cn } from "@/utils/cn";
 import {
   hydrateQuestionsFromMyPreference,
@@ -169,6 +173,8 @@ export default function BreadPreferencePage({ isEditMode = false }: BreadPrefere
         }
       }
       invalidatePreferenceOnboardingCache();
+      clearMandatoryPreferenceOnboarding();
+      clearHomePreferencePromptDismissed();
       navigate({ to: "/home" });
     } catch (error) {
       window.alert(getErrorMessage(error));
