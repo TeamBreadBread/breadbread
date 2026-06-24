@@ -10,6 +10,8 @@ feat/fe/기능명          ← FE 기능 브랜치
 feat/be/기능명          ← BE 기능 브랜치
 fix/fe/버그명           ← FE 버그 수정
 fix/be/버그명           ← BE 버그 수정
+docs/fe/작업명          ← FE 문서
+docs/be/작업명          ← BE 문서
 chore/작업명            ← 설정, 문서, 패키지 등
 ```
 
@@ -26,7 +28,8 @@ chore/작업명            ← 설정, 문서, 패키지 등
 ```
 feat: 새로운 기능 추가
 fix: 버그 수정
-chore: 설정, 패키지, 문서 등
+docs: 문서 추가 및 수정
+chore: 설정, 패키지 등
 refactor: 리팩토링 (기능 변경 없음)
 style: 스타일 변경 (CSS 등)
 ```
@@ -60,7 +63,7 @@ pnpm add -D 패키지명 --filter fe
 
 ## API 명세 확인
 
-- 배포된 Swagger: [api.breadbread.io/swagger-ui/index.html](https://api.breadbread.io/swagger-ui/index.html)
+- [API 문서 (Scalar)](https://api.breadbread.io/api-docs.html)
 
 ---
 

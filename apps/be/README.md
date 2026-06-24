@@ -4,6 +4,32 @@
 
 ---
 
+## 패키지 구조
+
+비즈니스 도메인별로 패키지를 분리했습니다.
+
+```
+com.breadbread
+├── auth          # 인증/인가 — JWT, OAuth2(Google·Naver·Kakao), 전화번호 인증
+├── bakery        # 빵집 — CRUD, 이미지, 리뷰, 태그, 빵집 제보
+├── course        # 코스 — 수동/AI 코스 생성, 경로 계산, 코스 저장·좋아요
+├── image         # 이미지 업로드·삭제, 임시 이미지 관리
+├── community     # 빵터 — 게시글, 댓글, 좋아요
+├── reservation   # 예약 — 빵택시 예약·확정·취소
+├── payment       # 결제 — PortOne 연동, 웹훅 처리
+├── notification  # 알림 — FCM 푸시
+├── ai            # AI — BreadBot 챗봇 웹훅
+├── congestion    # 혼잡도 — 실시간 혼잡도 신호 처리
+├── trend         # 트렌드 — 인기 빵집·메뉴 집계
+├── tour          # 투어 — 실시간 코스 안내
+├── user          # 사용자 — 프로필, 탈퇴
+└── global        # 공통 — 예외처리, 보안 설정, GCS, Rate Limit, JWT
+```
+
+각 도메인 패키지는 `controller / service / repository / entity / dto` 레이어로 구성됩니다.
+
+---
+
 ## 환경변수 설정
 
 `apps/be` 루트에 `.env` 파일을 생성하거나, IDE의 Run Configuration에 아래 환경변수를 추가한다.
@@ -107,8 +133,8 @@ NAVER_MAPS_CLIENT_SECRET=...
 | `COOLSMS_SENDER` | `01000000000` | 문자 발신 번호 |
 | `PHONE_CODE_EXPIRES_IN` | `300` | 인증코드 유효시간 (초) |
 | `PHONE_TOKEN_EXPIRES_IN` | `600` | 인증 토큰 유효시간 (초) |
-| `NAVER_MAPS_CLIENT_ID` | **필수** | Naver Maps API 클라이언트 ID |
-| `NAVER_MAPS_CLIENT_SECRET` | **필수** | Naver Maps API 클라이언트 시크릿 |
+| `NAVER_MAPS_CLIENT_ID` | _(없음)_ | Naver Maps API 클라이언트 ID (`route.provider=naver` 전환 시 필수) |
+| `NAVER_MAPS_CLIENT_SECRET` | _(없음)_ | Naver Maps API 클라이언트 시크릿 (`route.provider=naver` 전환 시 필수) |
 | `NAVER_MAPS_TIMEOUT_SECONDS` | `10` | Naver Maps 요청 타임아웃 |
 | `GOOGLE_PLACES_API_KEY` | **필수** | Google Places API 키 |
 | `GOOGLE_PLACES_PHOTO_URL_TTL_SECONDS` | `345600` | 사진 URL 캐시 TTL (초, 기본 4일) |
