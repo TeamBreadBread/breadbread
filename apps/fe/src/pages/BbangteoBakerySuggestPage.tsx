@@ -42,6 +42,8 @@ type FormState = {
 
   signatureMenu: string;
 
+  menuName: string;
+
   message: string;
 
   targetBakeryId: number | null;
@@ -61,6 +63,8 @@ const INITIAL_FORM: FormState = {
   dong: "",
 
   signatureMenu: "",
+
+  menuName: "",
 
   message: "",
 
@@ -103,6 +107,10 @@ const TYPE_INTRO: Record<BakerySuggestType, readonly [string, string]> = {
   UPDATE: [
     "이미 등록된 빵집 중 틀리거나 빠진 정보를 알려주세요.",
     "수정할 빵집을 먼저 선택해주세요.",
+  ],
+  MENU: [
+    "등록된 빵집에 빠진 메뉴가 있다면 알려주세요.",
+    "건의할 빵집을 선택하고 메뉴 이름을 입력해주세요.",
   ],
 };
 
@@ -179,6 +187,10 @@ function isUpdateFormComplete(form: FormState): boolean {
   );
 }
 
+function isMenuFormComplete(form: FormState): boolean {
+  return form.targetBakeryId != null && form.menuName.trim().length > 0;
+}
+
 function SubmitButton({
   canSubmit,
   isSubmitting,
@@ -245,8 +257,13 @@ export default function BbangteoBakerySuggestPage() {
   const kakaoPlaceSearchEnabled = isKakaoPlaceSearchConfigured();
 
   const isNewType = form.type === "NEW";
+  const isUpdateType = form.type === "UPDATE";
 
-  const canSubmit = isNewType ? isNewFormComplete(form) : isUpdateFormComplete(form);
+  const canSubmit = isNewType
+    ? isNewFormComplete(form)
+    : isUpdateType
+      ? isUpdateFormComplete(form)
+      : isMenuFormComplete(form);
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -342,13 +359,20 @@ export default function BbangteoBakerySuggestPage() {
           representativeMenus: parseRepresentativeMenus(form.signatureMenu.trim()),
           recommendation: form.message.trim() || undefined,
         });
-      } else {
+      } else if (isUpdateType) {
         if (form.correctionTarget == null) return;
 
         await submitUpdateBakeryReport({
           targetBakeryName: form.bakeryName.trim(),
           updateField: mapCorrectionFieldToApi(form.correctionTarget),
           correctValue: form.correctedInfo.trim(),
+          description: form.message.trim() || undefined,
+        });
+      } else {
+        await submitUpdateBakeryReport({
+          targetBakeryName: form.bakeryName.trim(),
+          updateField: "REPRESENTATIVE_MENU",
+          correctValue: form.menuName.trim(),
           description: form.message.trim() || undefined,
         });
       }
@@ -409,14 +433,16 @@ export default function BbangteoBakerySuggestPage() {
             {TYPE_INTRO[form.type][1]}
           </p>
 
-          <fieldset className="flex gap-[8px]">
+          <fieldset className="grid grid-cols-3 gap-[8px]">
             <legend className="sr-only">건의 유형</legend>
 
             {(
               [
-                { value: "NEW" as const, label: "새 빵집 등록" },
+                { value: "NEW" as const, label: "빵집 건의" },
 
-                { value: "UPDATE" as const, label: "정보 수정" },
+                { value: "UPDATE" as const, label: "수정함" },
+
+                { value: "MENU" as const, label: "메뉴 건의" },
               ] as const
             ).map((option) => {
               const selected = form.type === option.value;
@@ -427,7 +453,7 @@ export default function BbangteoBakerySuggestPage() {
                   type="button"
                   onClick={() => handleTypeChange(option.value)}
                   className={cn(
-                    "flex-1 rounded-[10px] border px-[12px] py-[10px] text-[14px] font-medium leading-[19px] transition-colors",
+                    "rounded-[10px] border px-[8px] py-[10px] text-[13px] font-medium leading-[18px] transition-colors",
 
                     selected
                       ? "border-[#E8623A] bg-[#FFF0EB] text-[#1a1c20]"
@@ -530,7 +556,7 @@ export default function BbangteoBakerySuggestPage() {
                 />
               </FormField>
             </>
-          ) : (
+          ) : isUpdateType ? (
             <>
               <FormField label="수정할 빵집" required>
                 <BakerySuggestExistingSearchField
@@ -597,6 +623,48 @@ export default function BbangteoBakerySuggestPage() {
                   value={form.message}
                   onChange={(e) => update("message", e.target.value)}
                   placeholder="어떤 정보가 틀렸는지, 참고할 내용이 있다면 적어주세요"
+                  className={cn(inputClassName, "min-h-[120px] resize-none")}
+                  maxLength={500}
+                />
+              </FormField>
+            </>
+          ) : (
+            <>
+              <FormField label="건의할 빵집" required>
+                <BakerySuggestExistingSearchField
+                  value={form.bakeryName}
+                  selectedBakeryId={form.targetBakeryId}
+                  onValueChange={handleExistingBakeryNameChange}
+                  onBakerySelect={handleExistingBakerySelect}
+                  onClearSelection={handleClearExistingBakerySelection}
+                  inputClassName={inputClassName}
+                />
+              </FormField>
+
+              {form.targetBakeryId != null ? (
+                <SelectedBakeryPreview
+                  bakeryName={form.bakeryName}
+                  address={form.address}
+                  dong={form.dong}
+                />
+              ) : null}
+
+              <FormField label="메뉴 이름" required>
+                <input
+                  type="text"
+                  value={form.menuName}
+                  onChange={(e) => update("menuName", e.target.value)}
+                  placeholder="예) 튀김소보로, 명란바게트"
+                  className={inputClassName}
+                  maxLength={120}
+                />
+              </FormField>
+
+              <FormField label="추가 설명">
+                <textarea
+                  value={form.message}
+                  onChange={(e) => update("message", e.target.value)}
+                  placeholder="가격, 맛 후기 등 참고할 내용이 있다면 적어주세요"
                   className={cn(inputClassName, "min-h-[120px] resize-none")}
                   maxLength={500}
                 />
