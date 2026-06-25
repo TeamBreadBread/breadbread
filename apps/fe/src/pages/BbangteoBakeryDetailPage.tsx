@@ -545,20 +545,20 @@ const ReviewCard = ({
           </div>
           <p className="text-[14px] leading-[19px] text-[#1a1c20]">{review.content}</p>
           <ReviewTagsSection review={review} />
+          {imgs.length > 0 ? (
+            <div className="flex items-center gap-[6px] overflow-x-auto">
+              {imgs.map((url, index) => (
+                <div
+                  key={`${review.id}-img-${index}`}
+                  className="flex h-[110px] w-[110px] shrink-0 overflow-hidden rounded-[8px] bg-gray-100"
+                >
+                  <SafeImage src={url} alt="" className="h-full w-full object-cover" />
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
-      {imgs.length > 0 ? (
-        <div className="flex h-[110px] items-center gap-[6px]">
-          {imgs.map((url, index) => (
-            <div
-              key={`${review.id}-img-${index}`}
-              className="flex h-[110px] w-[110px] shrink-0 overflow-hidden rounded-[8px] bg-gray-100"
-            >
-              <SafeImage src={url} alt="" className="h-full w-full object-cover" />
-            </div>
-          ))}
-        </div>
-      ) : null}
     </article>
   );
 };

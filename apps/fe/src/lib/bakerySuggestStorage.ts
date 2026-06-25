@@ -1,4 +1,4 @@
-export type BakerySuggestType = "NEW" | "UPDATE";
+export type BakerySuggestType = "NEW" | "UPDATE" | "MENU";
 
 export type BakeryCorrectionField = "ADDRESS" | "DONG" | "MENU" | "HOURS" | "OTHER";
 
@@ -50,7 +50,7 @@ function isBakerySuggestion(value: unknown): value is BakerySuggestion {
   const row = value as Partial<BakerySuggestion>;
   return (
     typeof row.id === "string" &&
-    (row.type === "NEW" || row.type === "UPDATE") &&
+    (row.type === "NEW" || row.type === "UPDATE" || row.type === "MENU") &&
     typeof row.bakeryName === "string" &&
     typeof row.createdAt === "string"
   );
