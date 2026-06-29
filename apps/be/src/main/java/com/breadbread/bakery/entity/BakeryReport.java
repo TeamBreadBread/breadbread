@@ -64,6 +64,11 @@ public class BakeryReport extends BaseEntity {
     // UPDATE_BAKERY 필드
     private String targetBakeryName;
 
+    // MENU_SUGGESTION 필드
+    private Long targetBakeryId;
+    private String menuName;
+    private String menuDescription;
+
     @Enumerated(EnumType.STRING)
     private BakeryUpdateField updateField;
 
@@ -85,7 +90,10 @@ public class BakeryReport extends BaseEntity {
             String targetBakeryName,
             BakeryUpdateField updateField,
             String correctValue,
-            String description) {
+            String description,
+            Long targetBakeryId,
+            String menuName,
+            String menuDescription) {
         this.type = type;
         this.user = user;
         this.bakeryName = bakeryName;
@@ -97,6 +105,9 @@ public class BakeryReport extends BaseEntity {
         this.updateField = updateField;
         this.correctValue = correctValue;
         this.description = description;
+        this.targetBakeryId = targetBakeryId;
+        this.menuName = menuName;
+        this.menuDescription = menuDescription;
     }
 
     public void approve() {

@@ -1,6 +1,7 @@
 package com.breadbread.bakery.controller;
 
 import com.breadbread.auth.dto.CustomUserDetails;
+import com.breadbread.bakery.dto.request.CreateMenuReportRequest;
 import com.breadbread.bakery.dto.request.CreateNewBakeryReportRequest;
 import com.breadbread.bakery.dto.request.CreateUpdateBakeryReportRequest;
 import com.breadbread.bakery.service.BakeryReportService;
@@ -41,5 +42,14 @@ public class BakeryReportController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody CreateUpdateBakeryReportRequest request) {
         return ApiResponse.ok(bakeryReportService.submitUpdate(userDetails.getId(), request));
+    }
+
+    @Operation(summary = "메뉴 건의", description = "등록된 빵집에 빠진 메뉴를 건의합니다.")
+    @PostMapping("/menu")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<Long> submitMenu(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody CreateMenuReportRequest request) {
+        return ApiResponse.ok(bakeryReportService.submitMenu(userDetails.getId(), request));
     }
 }
