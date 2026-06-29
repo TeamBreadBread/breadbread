@@ -180,6 +180,11 @@ rate-limit:
 route:
   provider: kakao  # naver | kakao
 
+tmap:
+  app-key: ${TMAP_APP_KEY:}
+  base-url: https://apis.openapi.sk.com
+  timeout-seconds: ${TMAP_TIMEOUT_SECONDS:10}
+
 google:
   places:
     api-key: ${GOOGLE_PLACES_API_KEY}

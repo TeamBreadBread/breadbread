@@ -609,7 +609,7 @@ class BakeryServiceTest {
         bakeryService.updateBakery(20L, UserRole.ROLE_BUSINESS, 7L, request);
 
         verify(courseBakeryRepository).findCourseIdsByBakeryId(7L);
-        verify(courseDrivingRouteRepository).deleteAllByCourseIdIn(List.of(100L, 200L));
+        verify(courseDrivingRouteRepository).deleteByIdCourseIdIn(List.of(100L, 200L));
     }
 
     @Test
@@ -623,7 +623,7 @@ class BakeryServiceTest {
         bakeryService.updateBakery(20L, UserRole.ROLE_BUSINESS, 7L, request);
 
         verify(courseBakeryRepository, never()).findCourseIdsByBakeryId(any());
-        verify(courseDrivingRouteRepository, never()).deleteAllByCourseIdIn(any());
+        verify(courseDrivingRouteRepository, never()).deleteByIdCourseIdIn(any());
     }
 
     // ── validateSearch ──────────────────────────────────────────────────────
@@ -861,7 +861,7 @@ class BakeryServiceTest {
 
         bakeryService.hardDeleteBakery(303L);
 
-        verify(courseDrivingRouteRepository).deleteAllByCourseIdIn(List.of(10L));
+        verify(courseDrivingRouteRepository).deleteByIdCourseIdIn(List.of(10L));
         verify(courseBakeryRepository).deleteAllByBakeryId(303L);
         verify(breadRepository).deleteAllByBakeryId(303L);
         verify(crowdTimeRepository).deleteAllByBakeryId(303L);

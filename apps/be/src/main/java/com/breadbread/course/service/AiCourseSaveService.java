@@ -286,7 +286,7 @@ public class AiCourseSaveService {
         }
 
         course.deactivate();
-        courseDrivingRouteRepository.deleteAllByCourseIdIn(List.of(courseId));
+        courseDrivingRouteRepository.deleteByIdCourseIdIn(List.of(courseId));
         log.info("AI 코스 삭제: courseId={}, userId={}", courseId, userId);
     }
 }

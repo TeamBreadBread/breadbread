@@ -5,8 +5,8 @@ import com.breadbread.course.converter.IntegerListConverter;
 import com.breadbread.course.dto.route.Coordinate;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.List;
 import lombok.AccessLevel;
@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CourseDrivingRoute {
 
-    @Id private Long courseId;
+    @EmbeddedId private CourseDrivingRouteId id;
 
     @Convert(converter = CoordinateListConverter.class)
     @Column(columnDefinition = "text", nullable = false)
@@ -38,10 +38,11 @@ public class CourseDrivingRoute {
     @Builder
     public CourseDrivingRoute(
             Long courseId,
+            RouteMode routeMode,
             List<Coordinate> path,
             Integer totalTravelSeconds,
             List<Integer> legDurations) {
-        this.courseId = courseId;
+        this.id = new CourseDrivingRouteId(courseId, routeMode);
         this.path = path;
         this.totalTravelSeconds = totalTravelSeconds;
         this.legDurations = legDurations;
