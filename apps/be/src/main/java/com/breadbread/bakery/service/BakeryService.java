@@ -348,7 +348,7 @@ public class BakeryService {
         if (coordinatesChanged) {
             List<Long> courseIds = courseBakeryRepository.findCourseIdsByBakeryId(bakeryId);
             if (!courseIds.isEmpty()) {
-                courseDrivingRouteRepository.deleteAllByCourseIdIn(courseIds);
+                courseDrivingRouteRepository.deleteByIdCourseIdIn(courseIds);
                 log.info("빵집 좌표 변경으로 경로 캐시 삭제: bakeryId={}, courseIds={}", bakeryId, courseIds);
             }
         }
@@ -372,7 +372,7 @@ public class BakeryService {
 
         List<Long> courseIds = courseBakeryRepository.findCourseIdsByBakeryId(bakeryId);
         if (!courseIds.isEmpty()) {
-            courseDrivingRouteRepository.deleteAllByCourseIdIn(courseIds);
+            courseDrivingRouteRepository.deleteByIdCourseIdIn(courseIds);
             log.info("빵집 삭제로 경로 캐시 삭제: bakeryId={}, courseIds={}", bakeryId, courseIds);
         }
     }
@@ -565,7 +565,7 @@ public class BakeryService {
     private void deleteRelatedData(Long bakeryId) {
         List<Long> courseIds = courseBakeryRepository.findCourseIdsByBakeryId(bakeryId);
         if (!courseIds.isEmpty()) {
-            courseDrivingRouteRepository.deleteAllByCourseIdIn(courseIds);
+            courseDrivingRouteRepository.deleteByIdCourseIdIn(courseIds);
         }
         courseBakeryRepository.deleteAllByBakeryId(bakeryId);
         breadRepository.deleteAllByBakeryId(bakeryId);

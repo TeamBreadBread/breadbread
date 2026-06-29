@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.enums.BreadType;
 import com.breadbread.course.client.DrivingRouteClient;
+import com.breadbread.course.client.WalkingRouteClient;
 import com.breadbread.course.dto.response.DrivingRouteResponse;
 import com.breadbread.course.dto.route.Coordinate;
 import com.breadbread.course.dto.route.RouteResult;
@@ -22,6 +23,7 @@ import com.breadbread.course.entity.CourseBakery;
 import com.breadbread.course.entity.CourseDrivingRoute;
 import com.breadbread.course.entity.FlexibilityLevel;
 import com.breadbread.course.entity.ManualCourseInfo;
+import com.breadbread.course.entity.RouteMode;
 import com.breadbread.course.entity.TravelType;
 import com.breadbread.course.repository.CourseDrivingRouteRepository;
 import com.breadbread.course.repository.CourseRepository;
@@ -50,6 +52,7 @@ class CourseDrivingRouteServiceTest {
     @Mock private CourseDrivingRouteRepository courseDrivingRouteRepository;
     @Mock private CourseDrivingRouteSaver courseDrivingRouteSaver;
     @Mock private DrivingRouteClient drivingRouteClient;
+    @Mock private WalkingRouteClient walkingRouteClient;
 
     @InjectMocks private CourseDrivingRouteService courseDrivingRouteService;
 
@@ -57,7 +60,7 @@ class CourseDrivingRouteServiceTest {
     void getDrivingRoute_throws_whenCourseNotFound() {
         when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L))
+        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L, RouteMode.DRIVING))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.COURSE_NOT_FOUND);
@@ -69,12 +72,18 @@ class CourseDrivingRouteServiceTest {
         List<Coordinate> cachedPath =
                 List.of(new Coordinate(36.0, 127.0), new Coordinate(36.1, 127.1));
         CourseDrivingRoute cached =
-                CourseDrivingRoute.builder().courseId(1L).path(cachedPath).build();
+                CourseDrivingRoute.builder()
+                        .courseId(1L)
+                        .routeMode(RouteMode.DRIVING)
+                        .path(cachedPath)
+                        .build();
 
         when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
-        when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.of(cached));
+        when(courseDrivingRouteRepository.findByIdCourseIdAndIdRouteMode(1L, RouteMode.DRIVING))
+                .thenReturn(Optional.of(cached));
 
-        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(1L);
+        DrivingRouteResponse response =
+                courseDrivingRouteService.getDrivingRoute(1L, RouteMode.DRIVING);
 
         assertThat(response.getPath()).isEqualTo(cachedPath);
         verify(drivingRouteClient, never()).getPath(any());
@@ -93,10 +102,12 @@ class CourseDrivingRouteServiceTest {
         RouteResult routeResult = new RouteResult(path, List.of(), 600);
 
         when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
-        when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
+        when(courseDrivingRouteRepository.findByIdCourseIdAndIdRouteMode(1L, RouteMode.DRIVING))
+                .thenReturn(Optional.empty());
         when(drivingRouteClient.getPath(any())).thenReturn(routeResult);
 
-        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(1L);
+        DrivingRouteResponse response =
+                courseDrivingRouteService.getDrivingRoute(1L, RouteMode.DRIVING);
 
         assertThat(response.getPath()).isEqualTo(path);
 
@@ -107,7 +118,7 @@ class CourseDrivingRouteServiceTest {
         assertThat(coords.get(0).getLat()).isEqualTo(36.0);
         assertThat(coords.get(0).getLng()).isEqualTo(127.0);
 
-        verify(courseDrivingRouteSaver).save(eq(1L), any(RouteResult.class));
+        verify(courseDrivingRouteSaver).save(eq(1L), eq(RouteMode.DRIVING), any(RouteResult.class));
     }
 
     @Test
@@ -122,10 +133,11 @@ class CourseDrivingRouteServiceTest {
         RouteResult routeResult = new RouteResult(path, List.of(), 600);
 
         when(courseRepository.findActiveWithBakeriesById(2L)).thenReturn(Optional.of(course));
-        when(courseDrivingRouteRepository.findById(2L)).thenReturn(Optional.empty());
+        when(courseDrivingRouteRepository.findByIdCourseIdAndIdRouteMode(2L, RouteMode.DRIVING))
+                .thenReturn(Optional.empty());
         when(drivingRouteClient.getPath(any())).thenReturn(routeResult);
 
-        courseDrivingRouteService.getDrivingRoute(2L);
+        courseDrivingRouteService.getDrivingRoute(2L, RouteMode.DRIVING);
 
         ArgumentCaptor<List<Coordinate>> coordCaptor = ArgumentCaptor.forClass(List.class);
         verify(drivingRouteClient).getPath(coordCaptor.capture());
@@ -147,10 +159,11 @@ class CourseDrivingRouteServiceTest {
         RouteResult routeResult = new RouteResult(path, List.of(), 600);
 
         when(courseRepository.findActiveWithBakeriesById(2L)).thenReturn(Optional.of(course));
-        when(courseDrivingRouteRepository.findById(2L)).thenReturn(Optional.empty());
+        when(courseDrivingRouteRepository.findByIdCourseIdAndIdRouteMode(2L, RouteMode.DRIVING))
+                .thenReturn(Optional.empty());
         when(drivingRouteClient.getPath(any())).thenReturn(routeResult);
 
-        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(2L);
+        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(2L, RouteMode.DRIVING);
 
         assertThat(response.getPath()).isEqualTo(path);
         verify(drivingRouteClient).getPath(any());
@@ -163,9 +176,10 @@ class CourseDrivingRouteServiceTest {
         course.addCourseBakery(CourseBakery.builder().visitOrder(1).bakery(bakery).build());
 
         when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
-        when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
+        when(courseDrivingRouteRepository.findByIdCourseIdAndIdRouteMode(1L, RouteMode.DRIVING))
+                .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L))
+        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L, RouteMode.DRIVING))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROUTE_INSUFFICIENT_WAYPOINTS);
@@ -185,9 +199,10 @@ class CourseDrivingRouteServiceTest {
         }
 
         when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
-        when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
+        when(courseDrivingRouteRepository.findByIdCourseIdAndIdRouteMode(1L, RouteMode.DRIVING))
+                .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L))
+        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L, RouteMode.DRIVING))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROUTE_TOO_MANY_WAYPOINTS);
@@ -208,9 +223,10 @@ class CourseDrivingRouteServiceTest {
         }
 
         when(courseRepository.findActiveWithBakeriesById(2L)).thenReturn(Optional.of(course));
-        when(courseDrivingRouteRepository.findById(2L)).thenReturn(Optional.empty());
+        when(courseDrivingRouteRepository.findByIdCourseIdAndIdRouteMode(2L, RouteMode.DRIVING))
+                .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(2L))
+        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(2L, RouteMode.DRIVING))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROUTE_TOO_MANY_WAYPOINTS);
@@ -227,9 +243,10 @@ class CourseDrivingRouteServiceTest {
         course.addCourseBakery(CourseBakery.builder().visitOrder(1).bakery(bakery).build());
 
         when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
-        when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
+        when(courseDrivingRouteRepository.findByIdCourseIdAndIdRouteMode(1L, RouteMode.DRIVING))
+                .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L))
+        assertThatThrownBy(() -> courseDrivingRouteService.getDrivingRoute(1L, RouteMode.DRIVING))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ROUTE_NOT_FOUND);
@@ -249,15 +266,43 @@ class CourseDrivingRouteServiceTest {
         RouteResult routeResult = new RouteResult(path, List.of(), 600);
 
         when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
-        when(courseDrivingRouteRepository.findById(1L)).thenReturn(Optional.empty());
+        when(courseDrivingRouteRepository.findByIdCourseIdAndIdRouteMode(1L, RouteMode.DRIVING))
+                .thenReturn(Optional.empty());
         when(drivingRouteClient.getPath(any())).thenReturn(routeResult);
         doThrow(new DataIntegrityViolationException("dup"))
                 .when(courseDrivingRouteSaver)
-                .save(eq(1L), any(RouteResult.class));
+                .save(eq(1L), eq(RouteMode.DRIVING), any(RouteResult.class));
 
-        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(1L);
+        DrivingRouteResponse response =
+                courseDrivingRouteService.getDrivingRoute(1L, RouteMode.DRIVING);
 
         assertThat(response.getPath()).isEqualTo(path);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void getDrivingRoute_walking_usesWalkingClient_andSavesWithWalkingMode() {
+        Course course = manualCourse(1L, "공유코스");
+        Bakery b1 = bakeryAt(10L, "A빵집", 36.0, 127.0);
+        Bakery b2 = bakeryAt(20L, "B빵집", 36.1, 127.1);
+        course.addCourseBakery(CourseBakery.builder().visitOrder(1).bakery(b1).build());
+        course.addCourseBakery(CourseBakery.builder().visitOrder(2).bakery(b2).build());
+
+        List<Coordinate> path = List.of(new Coordinate(36.0, 127.0), new Coordinate(36.1, 127.1));
+        RouteResult routeResult = new RouteResult(path, List.of(), 900);
+
+        when(courseRepository.findActiveWithBakeriesById(1L)).thenReturn(Optional.of(course));
+        when(courseDrivingRouteRepository.findByIdCourseIdAndIdRouteMode(1L, RouteMode.WALKING))
+                .thenReturn(Optional.empty());
+        when(walkingRouteClient.getPath(any())).thenReturn(routeResult);
+
+        DrivingRouteResponse response =
+                courseDrivingRouteService.getDrivingRoute(1L, RouteMode.WALKING);
+
+        assertThat(response.getPath()).isEqualTo(path);
+        verify(walkingRouteClient).getPath(any());
+        verify(drivingRouteClient, never()).getPath(any());
+        verify(courseDrivingRouteSaver).save(eq(1L), eq(RouteMode.WALKING), any(RouteResult.class));
     }
 
     // ── 헬퍼 ─────────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@ package com.breadbread.course.service;
 
 import com.breadbread.course.dto.route.RouteResult;
 import com.breadbread.course.entity.CourseDrivingRoute;
+import com.breadbread.course.entity.RouteMode;
 import com.breadbread.course.repository.CourseDrivingRouteRepository;
 import com.breadbread.course.repository.CourseRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +20,11 @@ public class CourseDrivingRouteSaver {
     private final CourseRepository courseRepository;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void save(Long courseId, RouteResult result) {
+    public void save(Long courseId, RouteMode routeMode, RouteResult result) {
         courseDrivingRouteRepository.save(
                 CourseDrivingRoute.builder()
                         .courseId(courseId)
+                        .routeMode(routeMode)
                         .path(result.getPath())
                         .totalTravelSeconds(result.getTotalDurationSeconds())
                         .legDurations(result.getLegDurationsSeconds())

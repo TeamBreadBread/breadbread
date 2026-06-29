@@ -147,8 +147,8 @@ class CourseBakeryOrderServiceTest {
                         .totalStayMinutes(40)
                         .totalMinutes(50)
                         .build();
-        when(courseDrivingRouteService.fetchAndSaveDrivingRoute(
-                        any(Course.class), anyList(), anyList(), anyInt()))
+        when(courseDrivingRouteService.fetchAndSaveRoute(
+                        any(Course.class), anyList(), anyList(), anyInt(), any()))
                 .thenReturn(routeResponse);
 
         // 순서 뒤집기: [20, 10]
@@ -184,8 +184,8 @@ class CourseBakeryOrderServiceTest {
                         .totalStayMinutes(40)
                         .totalMinutes(50)
                         .build();
-        when(courseDrivingRouteService.fetchAndSaveDrivingRoute(
-                        any(Course.class), anyList(), anyList(), anyInt()))
+        when(courseDrivingRouteService.fetchAndSaveRoute(
+                        any(Course.class), anyList(), anyList(), anyInt(), any()))
                 .thenReturn(routeResponse);
 
         // 비활성 ID 999는 필터링 후 활성 [10, 20]과 일치 → 성공

@@ -300,7 +300,7 @@ public class CourseService {
                                 course.addCourseBakery(courseBakery);
                             });
 
-            courseDrivingRouteRepository.deleteAllByCourseIdIn(List.of(courseId));
+            courseDrivingRouteRepository.deleteByIdCourseIdIn(List.of(courseId));
             log.info("코스 빵집 변경으로 경로 캐시 삭제: courseId={}", courseId);
         }
 
@@ -348,7 +348,7 @@ public class CourseService {
                         .findByIdAndActiveTrue(courseId)
                         .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
         course.deactivate();
-        courseDrivingRouteRepository.deleteAllByCourseIdIn(List.of(courseId));
+        courseDrivingRouteRepository.deleteByIdCourseIdIn(List.of(courseId));
         log.info("코스 삭제: courseId={}", courseId);
     }
 

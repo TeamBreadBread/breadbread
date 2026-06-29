@@ -279,7 +279,7 @@ class CourseServiceTest {
 
         assertThat(course.getCourseBakeries()).hasSize(1);
         assertThat(course.getCourseBakeries().get(0).getBakery().getId()).isEqualTo(30L);
-        verify(courseDrivingRouteRepository).deleteAllByCourseIdIn(List.of(3L));
+        verify(courseDrivingRouteRepository).deleteByIdCourseIdIn(List.of(3L));
     }
 
     @Test
@@ -510,7 +510,7 @@ class CourseServiceTest {
 
         courseService.updateManual(1L, request);
 
-        verify(courseDrivingRouteRepository, never()).deleteAllByCourseIdIn(any());
+        verify(courseDrivingRouteRepository, never()).deleteByIdCourseIdIn(any());
     }
 
     // ── findAllAiForAdmin ─────────────────────────────────────────────────────

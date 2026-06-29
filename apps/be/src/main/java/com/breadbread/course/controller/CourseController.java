@@ -5,6 +5,7 @@ import com.breadbread.course.dto.request.CourseSearch;
 import com.breadbread.course.dto.request.ReorderBakeriesRequest;
 import com.breadbread.course.dto.request.ReplaceCourseBakeryRequest;
 import com.breadbread.course.dto.response.*;
+import com.breadbread.course.entity.RouteMode;
 import com.breadbread.course.service.CourseBakeryMutationService;
 import com.breadbread.course.service.CourseBakeryOrderService;
 import com.breadbread.course.service.CourseDrivingRouteService;
@@ -101,11 +102,15 @@ public class CourseController {
     }
 
     @Operation(
-            summary = "코스 자동차 경로 조회",
-            description = "코스에 포함된 빵집 순서대로 자동차 주행 경로의 vertex 좌표를 반환합니다. 비공개 AI 코스는 본인만 조회할 수 있습니다.")
+            summary = "코스 경로 조회",
+            description =
+                    "코스에 포함된 빵집 순서대로 경로의 vertex 좌표를 반환합니다."
+                            + " mode=DRIVING(기본값)이면 자동차 경로, WALKING이면 보도 경로를 반환합니다."
+                            + " 로그인 없이도 조회 가능합니다.")
     @GetMapping("/{id}/directions")
-    public ApiResponse<DrivingRouteResponse> getDrivingRoute(@PathVariable Long id) {
-        return ApiResponse.ok(courseDrivingRouteService.getDrivingRoute(id));
+    public ApiResponse<DrivingRouteResponse> getDrivingRoute(
+            @PathVariable Long id, @RequestParam(defaultValue = "DRIVING") RouteMode mode) {
+        return ApiResponse.ok(courseDrivingRouteService.getDrivingRoute(id, mode));
     }
 
     @Operation(summary = "코스 내 빵집 방문 순서 변경")

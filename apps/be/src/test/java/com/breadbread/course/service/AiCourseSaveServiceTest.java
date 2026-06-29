@@ -150,7 +150,7 @@ class AiCourseSaveServiceTest {
         aiCourseSaveService.deleteAi(2L, 5L);
 
         assertThat(course.isActive()).isFalse();
-        verify(courseDrivingRouteRepository).deleteAllByCourseIdIn(List.of(2L));
+        verify(courseDrivingRouteRepository).deleteByIdCourseIdIn(List.of(2L));
     }
 
     @Test

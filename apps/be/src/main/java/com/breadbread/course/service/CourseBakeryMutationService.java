@@ -8,6 +8,7 @@ import com.breadbread.course.dto.response.DrivingRouteResponse;
 import com.breadbread.course.dto.response.ModifyCourseBakeryResponse;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseBakery;
+import com.breadbread.course.entity.RouteMode;
 import com.breadbread.course.repository.CourseBakeryRepository;
 import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.global.exception.CustomException;
@@ -151,11 +152,12 @@ public class CourseBakeryMutationService {
         int estimatedTotalMinutes = 0;
         try {
             DrivingRouteResponse routeResponse =
-                    courseDrivingRouteService.fetchAndSaveDrivingRoute(
+                    courseDrivingRouteService.fetchAndSaveRoute(
                             course,
                             orderedBakeries,
                             orderedBakeries.stream().map(Bakery::getEstimatedStayMinutes).toList(),
-                            totalStayMinutes);
+                            totalStayMinutes,
+                            RouteMode.DRIVING);
             estimatedTotalMinutes = routeResponse.getTotalMinutes();
             course.updateTotalMinutes(estimatedTotalMinutes);
         } catch (CustomException e) {
