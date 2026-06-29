@@ -163,7 +163,8 @@ class CourseDrivingRouteServiceTest {
                 .thenReturn(Optional.empty());
         when(drivingRouteClient.getPath(any())).thenReturn(routeResult);
 
-        DrivingRouteResponse response = courseDrivingRouteService.getDrivingRoute(2L, RouteMode.DRIVING);
+        DrivingRouteResponse response =
+                courseDrivingRouteService.getDrivingRoute(2L, RouteMode.DRIVING);
 
         assertThat(response.getPath()).isEqualTo(path);
         verify(drivingRouteClient).getPath(any());
