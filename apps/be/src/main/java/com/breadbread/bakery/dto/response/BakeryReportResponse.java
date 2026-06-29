@@ -27,10 +27,14 @@ public class BakeryReportResponse {
     private String recommendation;
 
     // UPDATE_BAKERY
-    private String targetBakeryName;
+    private Long targetBakeryId;
     private BakeryUpdateField updateField;
     private String correctValue;
     private String description;
+
+    // MENU_SUGGESTION
+    private String menuName;
+    private String menuDescription;
 
     public static BakeryReportResponse from(BakeryReport report) {
         return BakeryReportResponse.builder()
@@ -44,10 +48,12 @@ public class BakeryReportResponse {
                 .district(report.getDistrict())
                 .representativeMenus(report.getRepresentativeMenus())
                 .recommendation(report.getRecommendation())
-                .targetBakeryName(report.getTargetBakeryName())
+                .targetBakeryId(report.getTargetBakeryId())
                 .updateField(report.getUpdateField())
                 .correctValue(report.getCorrectValue())
                 .description(report.getDescription())
+                .menuName(report.getMenuName())
+                .menuDescription(report.getMenuDescription())
                 .build();
     }
 }

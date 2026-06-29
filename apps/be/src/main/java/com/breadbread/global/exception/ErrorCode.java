@@ -53,6 +53,7 @@ public enum ErrorCode {
     BAKERY_NOT_PENDING(HttpStatus.BAD_REQUEST, "E0307", "대기 중인 빵집이 아닙니다."),
     BAKERY_REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "E0308", "존재하지 않는 빵집 제보입니다."),
     BAKERY_REPORT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "E0309", "이미 처리된 빵집 제보입니다."),
+    BAKERY_REPORT_TYPE_MISMATCH(HttpStatus.BAD_REQUEST, "E0311", "제보 유형이 올바르지 않습니다."),
     BAKERY_APPROVE_INCOMPLETE(
             HttpStatus.BAD_REQUEST,
             "E0310",

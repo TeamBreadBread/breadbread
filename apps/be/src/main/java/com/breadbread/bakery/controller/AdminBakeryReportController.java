@@ -1,5 +1,6 @@
 package com.breadbread.bakery.controller;
 
+import com.breadbread.bakery.dto.request.ApproveMenuReportRequest;
 import com.breadbread.bakery.dto.response.BakeryReportListResponse;
 import com.breadbread.bakery.entity.enums.BakeryStatus;
 import com.breadbread.bakery.service.BakeryReportService;
@@ -7,6 +8,7 @@ import com.breadbread.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -41,6 +43,17 @@ public class AdminBakeryReportController {
     @PostMapping("/{id}/approve")
     public ApiResponse<Void> approve(@PathVariable Long id) {
         bakeryReportService.approve(id);
+        return ApiResponse.ok();
+    }
+
+    @Operation(
+            summary = "메뉴 건의 승인",
+            description =
+                    "MENU_SUGGESTION 제보를 승인합니다. price(필수), breadType(필수), imageUrl(선택)을 입력하면 Bread 엔티티가 생성됩니다.")
+    @PostMapping("/{id}/approve-menu")
+    public ApiResponse<Void> approveMenu(
+            @PathVariable Long id, @Valid @RequestBody ApproveMenuReportRequest request) {
+        bakeryReportService.approveMenu(id, request);
         return ApiResponse.ok();
     }
 

@@ -1,15 +1,19 @@
 package com.breadbread.bakery.service;
 
+import com.breadbread.bakery.dto.request.ApproveMenuReportRequest;
+import com.breadbread.bakery.dto.request.CreateMenuReportRequest;
 import com.breadbread.bakery.dto.request.CreateNewBakeryReportRequest;
 import com.breadbread.bakery.dto.request.CreateUpdateBakeryReportRequest;
 import com.breadbread.bakery.dto.response.BakeryReportListResponse;
 import com.breadbread.bakery.dto.response.BakeryReportResponse;
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.BakeryReport;
+import com.breadbread.bakery.entity.Bread;
 import com.breadbread.bakery.entity.enums.BakeryReportType;
 import com.breadbread.bakery.entity.enums.BakeryStatus;
 import com.breadbread.bakery.repository.BakeryReportRepository;
 import com.breadbread.bakery.repository.BakeryRepository;
+import com.breadbread.bakery.repository.BreadRepository;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.user.entity.User;
@@ -28,6 +32,7 @@ public class BakeryReportService {
 
     private final BakeryReportRepository bakeryReportRepository;
     private final BakeryRepository bakeryRepository;
+    private final BreadRepository breadRepository;
     private final UserRepository userRepository;
 
     @Transactional
@@ -60,11 +65,15 @@ public class BakeryReportService {
                         .findById(userId)
                         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
+        bakeryRepository
+                .findByIdAndActiveTrueAndStatus(request.getTargetBakeryId(), BakeryStatus.APPROVED)
+                .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
+
         BakeryReport report =
                 BakeryReport.builder()
                         .type(BakeryReportType.UPDATE_BAKERY)
                         .user(user)
-                        .targetBakeryName(request.getTargetBakeryName())
+                        .targetBakeryId(request.getTargetBakeryId())
                         .updateField(request.getUpdateField())
                         .correctValue(request.getCorrectValue())
                         .description(request.getDescription())
@@ -72,6 +81,34 @@ public class BakeryReportService {
 
         Long reportId = bakeryReportRepository.save(report).getId();
         log.info("빵집 정보 수정 제보 등록: reportId={}, userId={}", reportId, userId);
+        return reportId;
+    }
+
+    @Transactional
+    public Long submitMenu(Long userId, CreateMenuReportRequest request) {
+        User user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        bakeryRepository
+                .findByIdAndActiveTrueAndStatus(request.getBakeryId(), BakeryStatus.APPROVED)
+                .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
+
+        BakeryReport report =
+                BakeryReport.builder()
+                        .type(BakeryReportType.MENU_SUGGESTION)
+                        .user(user)
+                        .targetBakeryId(request.getBakeryId())
+                        .menuName(request.getMenuName())
+                        .menuDescription(request.getDescription())
+                        .build();
+
+        Long reportId = bakeryReportRepository.save(report).getId();
+        log.info(
+                "메뉴 건의 등록: reportId={}, userId={}, bakeryId={}",
+                reportId,
+                userId,
+                request.getBakeryId());
         return reportId;
     }
 
@@ -96,6 +133,9 @@ public class BakeryReportService {
         if (report.getStatus() != BakeryStatus.PENDING) {
             throw new CustomException(ErrorCode.BAKERY_REPORT_ALREADY_PROCESSED);
         }
+        if (report.getType() == BakeryReportType.MENU_SUGGESTION) {
+            throw new CustomException(ErrorCode.BAKERY_REPORT_TYPE_MISMATCH);
+        }
         if (report.getType() == BakeryReportType.NEW_BAKERY) {
             Bakery pendingBakery =
                     Bakery.builder()
@@ -118,6 +158,40 @@ public class BakeryReportService {
     }
 
     @Transactional
+    public void approveMenu(Long reportId, ApproveMenuReportRequest request) {
+        BakeryReport report = findReport(reportId);
+        if (report.getStatus() != BakeryStatus.PENDING) {
+            throw new CustomException(ErrorCode.BAKERY_REPORT_ALREADY_PROCESSED);
+        }
+        if (report.getType() != BakeryReportType.MENU_SUGGESTION) {
+            throw new CustomException(ErrorCode.BAKERY_REPORT_TYPE_MISMATCH);
+        }
+        Bakery bakery =
+                bakeryRepository
+                        .findByIdAndActiveTrueAndStatus(
+                                report.getTargetBakeryId(), BakeryStatus.APPROVED)
+                        .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
+
+        Bread bread =
+                Bread.builder()
+                        .name(report.getMenuName())
+                        .price(request.getPrice())
+                        .imageUrl(request.getImageUrl())
+                        .breadType(request.getBreadType())
+                        .bakery(bakery)
+                        .signature(Boolean.TRUE.equals(request.getSignature()))
+                        .selloutMin(0)
+                        .build();
+        breadRepository.save(bread);
+        report.approve();
+        log.info(
+                "메뉴 건의 승인: reportId={}, bakeryId={}, menuName={}",
+                reportId,
+                bakery.getId(),
+                bread.getName());
+    }
+
+    @Transactional
     public void reject(Long reportId) {
         BakeryReport report = findReport(reportId);
         if (report.getStatus() != BakeryStatus.PENDING) {
@@ -130,7 +204,8 @@ public class BakeryReportService {
     private void applyUpdateReport(BakeryReport report) {
         Bakery bakery =
                 bakeryRepository
-                        .findFirstByNameAndActiveTrue(report.getTargetBakeryName())
+                        .findByIdAndActiveTrueAndStatus(
+                                report.getTargetBakeryId(), BakeryStatus.APPROVED)
                         .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
         switch (report.getUpdateField()) {
             case ADDRESS -> bakery.updateAddress(report.getCorrectValue());
