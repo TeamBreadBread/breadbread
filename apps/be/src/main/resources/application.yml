@@ -131,6 +131,12 @@ ai:
   job-ttl-hours: ${AI_JOB_TTL_HOURS:24}
   api-key: ${AI_API_KEY}
 
+scheduler:
+  oidc:
+    issuer-uri: https://accounts.google.com
+    service-account: ${SCHEDULER_SERVICE_ACCOUNT:}
+    audience: ${SCHEDULER_AUDIENCE:}
+
 portone:
   api-base-url: ${PORTONE_API_BASE_URL:https://api.portone.io}
   api-secret: ${PORTONE_API_SECRET:}

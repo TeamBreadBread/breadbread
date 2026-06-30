@@ -4,11 +4,13 @@ import com.breadbread.auth.service.CustomUserDetailsService;
 import com.breadbread.global.filter.AiApiKeyFilter;
 import com.breadbread.global.filter.AuthRateLimitFilter;
 import com.breadbread.global.filter.JwtAuthenticationFilter;
+import com.breadbread.global.filter.SchedulerOidcFilter;
 import com.breadbread.global.jwt.JwtProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +23,8 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
@@ -38,6 +42,15 @@ public class SecurityConfig {
     private final AiProperties aiProperties;
     private final ObjectMapper objectMapper;
 
+    @Value("${scheduler.oidc.issuer-uri}")
+    private String schedulerIssuerUri;
+
+    @Value("${scheduler.oidc.service-account}")
+    private String schedulerServiceAccount;
+
+    @Value("${scheduler.oidc.audience:}")
+    private String schedulerAudience;
+
     @Bean
     public FilterRegistrationBean<AuthRateLimitFilter> authRateLimitFilterRegistration(
             AuthRateLimitFilter filter) {
@@ -45,6 +58,11 @@ public class SecurityConfig {
                 new FilterRegistrationBean<>(filter);
         registration.setEnabled(false);
         return registration;
+    }
+
+    @Bean
+    public JwtDecoder schedulerJwtDecoder() {
+        return NimbusJwtDecoder.withIssuerLocation(schedulerIssuerUri).build();
     }
 
     @Bean
@@ -144,6 +162,13 @@ public class SecurityConfig {
                                         .hasRole("ADMIN")
                                         .anyRequest()
                                         .authenticated())
+                .addFilterBefore(
+                        new SchedulerOidcFilter(
+                                schedulerJwtDecoder(),
+                                schedulerServiceAccount,
+                                schedulerAudience,
+                                objectMapper),
+                        UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(
                         new AiApiKeyFilter(aiProperties, objectMapper),
                         UsernamePasswordAuthenticationFilter.class)
