@@ -70,6 +70,7 @@ jobs:
             REDIS_PORT=${{ secrets.REDIS_PORT }}
             JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}
             JWT_REFRESH_EXPIRES_IN=${{ secrets.JWT_REFRESH_EXPIRES_IN }}
+            GOOGLE_PLACES_PHOTO_URL_TTL_SECONDS=${{ secrets.GOOGLE_PLACES_PHOTO_URL_TTL_SECONDS }}
           secrets: |
             DB_NAME=DB_NAME:latest
             DB_USERNAME=DB_USERNAME:latest
