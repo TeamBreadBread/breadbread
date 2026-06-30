@@ -70,6 +70,7 @@ jobs:
             REDIS_PORT=${{ secrets.REDIS_PORT }}
             JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}
             JWT_REFRESH_EXPIRES_IN=${{ secrets.JWT_REFRESH_EXPIRES_IN }}
+            GOOGLE_PLACES_PHOTO_URL_TTL_SECONDS=${{ secrets.GOOGLE_PLACES_PHOTO_URL_TTL_SECONDS }}
           secrets: |
             DB_NAME=DB_NAME:latest
             DB_USERNAME=DB_USERNAME:latest
@@ -99,3 +100,5 @@ jobs:
             NAVER_MAPS_CLIENT_SECRET=NAVER_MAPS_CLIENT_SECRET:latest
             KAKAO_MOBILITY_APP_KEY=KAKAO_MOBILITY_APP_KEY:latest
             GOOGLE_PLACES_API_KEY=GOOGLE_PLACES_API_KEY:latest
+            SCHEDULER_SERVICE_ACCOUNT=SCHEDULER_SERVICE_ACCOUNT:latest
+            SCHEDULER_AUDIENCE=SCHEDULER_AUDIENCE:latest

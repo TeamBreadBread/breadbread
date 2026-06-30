@@ -31,3 +31,8 @@ coolsms:
 
 ai:
   webhook-url: http://localhost/test-ai-webhook
+
+scheduler:
+  oidc:
+    issuer-uri: https://accounts.google.com
+    service-account: test-scheduler@test-project.iam.gserviceaccount.com
