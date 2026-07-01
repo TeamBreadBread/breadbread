@@ -1,3 +1,5 @@
+import { prefetchCourseRoute } from "@/lib/courseRouteCache";
+
 /** 코스 안내 이동 수단 — UI 선택값 */
 export type CourseTransportMode = "WALKING" | "BIKE" | "CAR";
 
@@ -22,6 +24,7 @@ export function saveCourseTransportMode(courseId: number, mode: CourseTransportM
   window.dispatchEvent(
     new CustomEvent(COURSE_TRANSPORT_MODE_CHANGED, { detail: { courseId, mode } }),
   );
+  prefetchCourseRoute(courseId, mode);
 }
 
 export function readCourseTransportMode(courseId: number): CourseTransportMode | null {

@@ -1,35 +1,45 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { getCourseDirections, type CourseDirectionPoint } from "@/api/courses";
+import { getCourseDirections } from "@/api/courses";
 import {
-  COURSE_TRANSPORT_MODE_CHANGED,
+  normalizeCourseDirectionPath,
+  readCourseRouteCache,
+  saveCourseRouteCache,
+  subscribeCourseRouteInputs,
+} from "@/lib/courseRouteCache";
+import {
   courseTransportToRouteMode,
   readCourseTransportMode,
   type CourseTransportMode,
 } from "@/lib/courseTransportMode";
 
-function subscribeTransportMode(onStoreChange: () => void): () => void {
-  const handler = () => onStoreChange();
-  window.addEventListener(COURSE_TRANSPORT_MODE_CHANGED, handler);
-  return () => window.removeEventListener(COURSE_TRANSPORT_MODE_CHANGED, handler);
-}
+type RouteFetchState = {
+  key: string;
+  path: ReturnType<typeof normalizeCourseDirectionPath> | null;
+};
 
 function readTransportModeForCourse(courseId: number | null): CourseTransportMode | null {
   if (courseId == null || courseId <= 0) return null;
   return readCourseTransportMode(courseId);
 }
 
-type RouteFetchState = {
-  key: string;
-  path: CourseDirectionPoint[] | null;
-};
+function readCachedRouteForCourse(courseId: number | null, mode: CourseTransportMode | null) {
+  if (courseId == null || courseId <= 0 || mode == null) return null;
+  return readCourseRouteCache(courseId, mode);
+}
 
 /** BE `GET /courses/{id}/directions`로 이동 수단별 경로 좌표를 조회합니다. */
 export function useCourseRoutePath(courseId: number | null | undefined) {
   const validCourseId = courseId != null && courseId > 0 ? courseId : null;
 
   const transportMode = useSyncExternalStore(
-    subscribeTransportMode,
+    subscribeCourseRouteInputs,
     () => readTransportModeForCourse(validCourseId),
+    () => null,
+  );
+
+  const cachedPath = useSyncExternalStore(
+    subscribeCourseRouteInputs,
+    () => readCachedRouteForCourse(validCourseId, transportMode),
     () => null,
   );
 
@@ -42,6 +52,7 @@ export function useCourseRoutePath(courseId: number | null | undefined) {
 
   useEffect(() => {
     if (fetchKey == null || validCourseId == null || transportMode == null) return;
+    if (cachedPath && cachedPath.length >= 2) return;
 
     let cancelled = false;
     const routeMode = courseTransportToRouteMode(transportMode);
@@ -49,12 +60,14 @@ export function useCourseRoutePath(courseId: number | null | undefined) {
     void getCourseDirections(validCourseId, routeMode)
       .then((directions) => {
         if (cancelled) return;
-        const path = directions.path?.filter(
-          (point) => Number.isFinite(point.lat) && Number.isFinite(point.lng),
-        );
+        const path = normalizeCourseDirectionPath(directions.path);
+        const resolvedPath = path.length >= 2 ? path : null;
+        if (resolvedPath) {
+          saveCourseRouteCache(validCourseId, transportMode, resolvedPath);
+        }
         setRouteState({
           key: fetchKey,
-          path: path && path.length >= 2 ? path : null,
+          path: resolvedPath,
         });
       })
       .catch(() => {
@@ -66,10 +79,17 @@ export function useCourseRoutePath(courseId: number | null | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [fetchKey, transportMode, validCourseId]);
+  }, [cachedPath, fetchKey, transportMode, validCourseId]);
 
-  const routePath = fetchKey != null && routeState?.key === fetchKey ? routeState.path : null;
-  const routeLoading = fetchKey != null && routeState?.key !== fetchKey;
+  const resolvedPath =
+    cachedPath ?? (fetchKey != null && routeState?.key === fetchKey ? routeState.path : null);
 
-  return { routePath, routeLoading, transportMode: validCourseId != null ? transportMode : null };
+  const fetchSettled = fetchKey != null && routeState?.key === fetchKey;
+  const routeLoading = fetchKey != null && resolvedPath == null && !fetchSettled;
+
+  return {
+    routePath: resolvedPath,
+    routeLoading,
+    transportMode: validCourseId != null ? transportMode : null,
+  };
 }
