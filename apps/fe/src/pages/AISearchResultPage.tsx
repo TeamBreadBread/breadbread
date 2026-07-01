@@ -299,7 +299,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
   const [courseLikeCount, setCourseLikeCount] = useState(0);
   const [likeBusy, setLikeBusy] = useState(false);
 
-  const { routePath, routeLoading } = useCourseRoutePath(effectiveCourseId);
+  const { routePath, routeLoading, transportMode } = useCourseRoutePath(effectiveCourseId);
 
   const { sheetRef, contentRef, liveSheetTopY, isDragging, isHalfSheet, togglePhase } =
     useAiSearchBottomSheet();
@@ -526,6 +526,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
           isLoading={mapLoading}
           routePath={routePath}
           routeLoading={routeLoading}
+          expectRoutePath={transportMode != null}
           layoutKey={mapHeightPx}
           boundsPadding={{ top: 56, right: 40, bottom: 40, left: 40 }}
         />

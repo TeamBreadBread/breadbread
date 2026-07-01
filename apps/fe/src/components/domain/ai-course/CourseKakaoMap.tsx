@@ -25,6 +25,8 @@ type Props = {
   routePath?: Array<{ lat: number; lng: number }> | null;
   /** 경로 API 조회 중 */
   routeLoading?: boolean;
+  /** true면 API 경로가 올 때까지 점선 폴백을 그리지 않음 */
+  expectRoutePath?: boolean;
   /** 지도 영역 높이 변경 시 relayout만 수행 (fitBounds 재실행 없음) */
   layoutKey?: string | number;
   /** fitBounds 여백 — 하단 시트 등 UI 가림 방지 */
@@ -240,6 +242,7 @@ function CourseKakaoMapView({
   layoutKey,
   boundsPadding,
   routePath,
+  expectRoutePath = false,
 }: {
   mapPoints: CourseMapBakery[];
   departurePoint?: { lat: number; lng: number; label: string } | null;
@@ -247,6 +250,7 @@ function CourseKakaoMapView({
   layoutKey?: string | number;
   boundsPadding?: CourseMapBoundsPadding;
   routePath?: Array<{ lat: number; lng: number }> | null;
+  expectRoutePath?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<KakaoMap | null>(null);
@@ -287,8 +291,12 @@ function CourseKakaoMapView({
           routePath && routePath.length >= 2
             ? routePath.map((point) => new maps.LatLng(point.lat, point.lng))
             : null;
+        const shouldUseFallbackPath = !expectRoutePath || resolvedRoutePositions != null;
         const pathPositions =
-          resolvedRoutePositions ?? buildSimplePathPositions(maps, departurePoint, markerPositions);
+          resolvedRoutePositions ??
+          (shouldUseFallbackPath
+            ? buildSimplePathPositions(maps, departurePoint, markerPositions)
+            : []);
         const center = markerPositions[0] ?? pathPositions[0];
         if (!center) {
           if (!cancelled) setStatus("fallback");
@@ -516,6 +524,7 @@ export default function CourseKakaoMap({
   isLoading = false,
   routePath = null,
   routeLoading = false,
+  expectRoutePath = false,
   layoutKey,
   boundsPadding,
 }: Props) {
@@ -540,6 +549,7 @@ export default function CourseKakaoMap({
         layoutKey={layoutKey}
         boundsPadding={boundsPadding}
         routePath={routePath}
+        expectRoutePath={expectRoutePath}
       />
       {isLoading || routeLoading ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-gray-100/60 text-size-3 text-gray-500">

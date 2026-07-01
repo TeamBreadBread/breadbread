@@ -19,7 +19,8 @@ export default function BreadBotCourseMapCard({
   const [bakeries, setBakeries] = useState<CourseMapBakery[]>([]);
   const [resolvedCourseId, setResolvedCourseId] = useState<number | null>(null);
   const loading = resolvedCourseId !== courseId;
-  const { routePath, routeLoading } = useCourseRoutePath(courseId);
+  const { routePath, routeLoading, transportMode } = useCourseRoutePath(courseId);
+  const mapBlocked = loading || (transportMode != null && routeLoading);
 
   const departurePoint = useMemo(
     () =>
@@ -58,16 +59,17 @@ export default function BreadBotCourseMapCard({
         {courseDetail?.name?.trim() || "추천 코스"}
       </p>
       <div className="h-[148px] overflow-hidden rounded-r3 bg-gray-200">
-        {loading ? (
+        {mapBlocked ? (
           <div className="flex h-full items-center justify-center font-pretendard text-size-2 text-gray-600">
-            지도 불러오는 중…
+            {routeLoading ? "경로 불러오는 중…" : "지도 불러오는 중…"}
           </div>
         ) : (
           <CourseKakaoMap
             bakeries={bakeries}
             departurePoint={departurePoint}
             routePath={routePath}
-            routeLoading={routeLoading}
+            routeLoading={false}
+            expectRoutePath={transportMode != null}
             className="h-full w-full"
           />
         )}
