@@ -551,10 +551,12 @@ export default function BreadBotWidget({
         return;
       }
       const transportMode = readCourseTransportMode(tourCourseId) ?? "WALKING";
-      saveCourseTransportMode(tourCourseId, transportMode);
-      startCourseGuide(tourCourseId);
+      await saveCourseTransportMode(tourCourseId, transportMode);
       trackTourStarted(tourCourseId);
       await startTour(tourCourseId).catch(() => undefined);
+      const current = await getCurrentTour().catch(() => null);
+      if (current?.status !== "IN_PROGRESS" || current.courseId !== tourCourseId) return;
+      startCourseGuide(tourCourseId);
       setActiveTourCourseId(tourCourseId);
       celebratedTourRef.current.delete(`celebrated:${tourCourseId}`);
       setTourBubble({
@@ -1020,7 +1022,8 @@ export default function BreadBotWidget({
     void (async () => {
       try {
         if (isCourseExplainIntent(text)) {
-          if (!courseGuideActive || !courseId || courseId <= 0) {
+          const mapCourseId = effectiveTourCourseId ?? courseId;
+          if (!courseGuideActive || !mapCourseId || mapCourseId <= 0) {
             setMessages((prev) => [
               ...prev,
               {
@@ -1032,7 +1035,7 @@ export default function BreadBotWidget({
             return;
           }
 
-          const course = await getCourseDetail(courseId);
+          const course = await getCourseDetail(mapCourseId);
           setMessages((prev) => [
             ...prev,
             {
@@ -1317,11 +1320,15 @@ export default function BreadBotWidget({
     if (mode === "start" || mode === "autostart") {
       const transportMode = await pickTransportMode();
       if (!transportMode) return;
-      saveCourseTransportMode(tourCourseId, transportMode);
-      startCourseGuide(tourCourseId);
+      await saveCourseTransportMode(tourCourseId, transportMode);
       trackTourStarted(tourCourseId);
       await startTour(tourCourseId).catch(() => undefined);
+      const current = await getCurrentTour().catch(() => null);
+      if (current?.status !== "IN_PROGRESS" || current.courseId !== tourCourseId) return;
+      startCourseGuide(tourCourseId);
     } else {
+      const current = await getCurrentTour().catch(() => null);
+      if (current?.status !== "IN_PROGRESS" || current.courseId !== tourCourseId) return;
       startCourseGuide(tourCourseId);
     }
 
@@ -1426,7 +1433,7 @@ export default function BreadBotWidget({
           listRef={listRef}
           messages={messages}
           loading={loading}
-          courseId={courseId}
+          courseId={effectiveTourCourseId ?? courseId}
           courseMovementBubble={courseMovementBubble}
           courseGuideActive={courseGuideActive}
           activeTourCourseId={activeTourCourseId}

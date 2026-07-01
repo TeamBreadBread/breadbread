@@ -19,8 +19,8 @@ export default function BreadBotCourseMapCard({
   const [bakeries, setBakeries] = useState<CourseMapBakery[]>([]);
   const [resolvedCourseId, setResolvedCourseId] = useState<number | null>(null);
   const loading = resolvedCourseId !== courseId;
-  const { routePath, routeLoading, transportMode } = useCourseRoutePath(courseId);
-  const mapBlocked = loading || (transportMode != null && routeLoading);
+  const { routePath, routeLoading, expectRoutePath } = useCourseRoutePath(courseId);
+  const mapBlocked = loading || routeLoading;
 
   const departurePoint = useMemo(
     () =>
@@ -68,8 +68,8 @@ export default function BreadBotCourseMapCard({
             bakeries={bakeries}
             departurePoint={departurePoint}
             routePath={routePath}
-            routeLoading={false}
-            expectRoutePath={transportMode != null}
+            routeLoading={routeLoading}
+            expectRoutePath={expectRoutePath}
             className="h-full w-full"
           />
         )}

@@ -18,13 +18,16 @@ export function courseTransportToRouteMode(mode: CourseTransportMode): CourseRou
   return mode === "WALKING" ? "WALKING" : "DRIVING";
 }
 
-export function saveCourseTransportMode(courseId: number, mode: CourseTransportMode): void {
+export async function saveCourseTransportMode(
+  courseId: number,
+  mode: CourseTransportMode,
+): Promise<void> {
   if (typeof sessionStorage === "undefined") return;
   sessionStorage.setItem(storageKey(courseId), mode);
   window.dispatchEvent(
     new CustomEvent(COURSE_TRANSPORT_MODE_CHANGED, { detail: { courseId, mode } }),
   );
-  prefetchCourseRoute(courseId, mode);
+  await prefetchCourseRoute(courseId, mode);
 }
 
 export function readCourseTransportMode(courseId: number): CourseTransportMode | null {

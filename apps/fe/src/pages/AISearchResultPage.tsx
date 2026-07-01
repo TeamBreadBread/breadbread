@@ -27,7 +27,7 @@ import {
 } from "@/api/courses";
 import { getBakeriesCongestion, getBakeryById } from "@/api/bakery";
 import { ApiBusinessError, getErrorMessage } from "@/api/types/common";
-import { startTour } from "@/api/tours";
+import { startTour, getCurrentTour } from "@/api/tours";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import { mapCongestionByBakeryId } from "@/utils/congestionCheck";
 import { AI_COURSE_RESULT_STORAGE_KEY, saveRouteFocusCourseId } from "@/utils/aiCourseStorage";
@@ -299,7 +299,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
   const [courseLikeCount, setCourseLikeCount] = useState(0);
   const [likeBusy, setLikeBusy] = useState(false);
 
-  const { routePath, routeLoading, transportMode } = useCourseRoutePath(effectiveCourseId);
+  const { routePath, routeLoading, expectRoutePath } = useCourseRoutePath(effectiveCourseId);
 
   const { sheetRef, contentRef, liveSheetTopY, isDragging, isHalfSheet, togglePhase } =
     useAiSearchBottomSheet();
@@ -323,13 +323,16 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
       saveRouteFocusCourseId(effectiveCourseId);
     }
     trackTourStarted(effectiveCourseId);
-    startCourseGuide(effectiveCourseId);
     try {
       await startTour(effectiveCourseId);
     } catch {
       /* 이미 진행 중(409)이면 투어 화면에서 복구 */
     }
-    void navigate({ to: "/tour", search: { courseId: effectiveCourseId } });
+    const current = await getCurrentTour().catch(() => null);
+    if (current?.status === "IN_PROGRESS" && current.courseId === effectiveCourseId) {
+      startCourseGuide(effectiveCourseId);
+      void navigate({ to: "/tour", search: { courseId: effectiveCourseId } });
+    }
   };
 
   const { requestCourseGuideStart, closedBakeryDialog, transportSheet } = useCourseGuideStart({
@@ -526,7 +529,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
           isLoading={mapLoading}
           routePath={routePath}
           routeLoading={routeLoading}
-          expectRoutePath={transportMode != null}
+          expectRoutePath={expectRoutePath}
           layoutKey={mapHeightPx}
           boundsPadding={{ top: 56, right: 40, bottom: 40, left: 40 }}
         />
