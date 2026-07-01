@@ -381,7 +381,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
       } finally {
         setLikeBusy(false);
       }
-    })();
+    });
   };
 
   const handlePlaceClick = (place: CoursePlace) => {
