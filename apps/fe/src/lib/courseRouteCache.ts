@@ -7,11 +7,32 @@ import {
 
 const ROUTE_CACHE_PREFIX = "breadbread_course_route:";
 
-export const COURSE_ROUTE_CACHE_CHANGED = "course-route-cache-changed";
+const BLOCKED_JSON_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
+function parseJsonSafely(raw: string): unknown {
+  return JSON.parse(raw, (key, value) => {
+    if (BLOCKED_JSON_KEYS.has(key)) return undefined;
+    return value;
+  });
+}
+
+function isRoutePointRecord(value: unknown): value is Record<string, unknown> {
+  return value != null && typeof value === "object" && !Array.isArray(value);
+}
+
+function readRoutePoint(point: Record<string, unknown>): CourseDirectionPoint | null {
+  const lat = point.lat ?? point.latitude;
+  const lng = point.lng ?? point.longitude;
+  if (typeof lat !== "number" || typeof lng !== "number") return null;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
+}
 
 function routeCacheStorageKey(courseId: number, mode: CourseTransportMode): string {
   return `${ROUTE_CACHE_PREFIX}${courseId}:${courseTransportToRouteMode(mode)}`;
 }
+
+export const COURSE_ROUTE_CACHE_CHANGED = "course-route-cache-changed";
 
 export function normalizeCourseDirectionPath(
   path:
@@ -45,8 +66,15 @@ export function readCourseRouteCache(
   const raw = sessionStorage.getItem(routeCacheStorageKey(courseId, mode));
   if (!raw) return null;
   try {
-    const parsed = JSON.parse(raw) as CourseDirectionPoint[];
-    const path = normalizeCourseDirectionPath(parsed);
+    const parsed = parseJsonSafely(raw);
+    if (!Array.isArray(parsed)) return null;
+
+    const path: CourseDirectionPoint[] = [];
+    for (const item of parsed) {
+      if (!isRoutePointRecord(item)) continue;
+      const point = readRoutePoint(item);
+      if (point) path.push(point);
+    }
     return path.length >= 2 ? path : null;
   } catch {
     return null;
@@ -81,12 +109,6 @@ export function prefetchCourseRoute(courseId: number, mode: CourseTransportMode)
     .catch(() => {
       /* 지도는 로드 완료 후 점선 폴백 */
     });
-}
-
-export function subscribeCourseTransportMode(onStoreChange: () => void): () => void {
-  const handler = () => onStoreChange();
-  window.addEventListener(COURSE_TRANSPORT_MODE_CHANGED, handler);
-  return () => window.removeEventListener(COURSE_TRANSPORT_MODE_CHANGED, handler);
 }
 
 export function subscribeCourseRouteInputs(onStoreChange: () => void): () => void {
