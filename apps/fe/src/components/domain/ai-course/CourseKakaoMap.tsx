@@ -21,6 +21,10 @@ type Props = {
   className?: string;
   /** API 조회 중 좌표가 아직 없을 때 정적 지도 대신 로딩 표시 */
   isLoading?: boolean;
+  /** BE directions API 경로 — 있으면 실선 polyline, 없으면 점선 직선 연결 */
+  routePath?: Array<{ lat: number; lng: number }> | null;
+  /** 경로 API 조회 중 */
+  routeLoading?: boolean;
   /** 지도 영역 높이 변경 시 relayout만 수행 (fitBounds 재실행 없음) */
   layoutKey?: string | number;
   /** fitBounds 여백 — 하단 시트 등 UI 가림 방지 */
@@ -77,6 +81,13 @@ function buildCourseMapBounds(
 
 function mapPointsKey(points: CourseMapBakery[]): string {
   return points.map((b) => `${b.order}:${b.id}:${b.lat},${b.lng}`).join("|");
+}
+
+function routePathKey(routePath?: Array<{ lat: number; lng: number }> | null): string {
+  if (!routePath || routePath.length === 0) return "none";
+  const first = routePath[0]!;
+  const last = routePath[routePath.length - 1]!;
+  return `${routePath.length}:${first.lat},${first.lng}->${last.lat},${last.lng}`;
 }
 
 function courseBoundsKey(pointsKey: string, departureKey: string): string {
@@ -228,12 +239,14 @@ function CourseKakaoMapView({
   className,
   layoutKey,
   boundsPadding,
+  routePath,
 }: {
   mapPoints: CourseMapBakery[];
   departurePoint?: { lat: number; lng: number; label: string } | null;
   className?: string;
   layoutKey?: string | number;
   boundsPadding?: CourseMapBoundsPadding;
+  routePath?: Array<{ lat: number; lng: number }> | null;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<KakaoMap | null>(null);
@@ -247,7 +260,8 @@ function CourseKakaoMapView({
   const departureKey = departurePoint
     ? `${departurePoint.lat.toFixed(6)},${departurePoint.lng.toFixed(6)},${departurePoint.label}`
     : "none";
-  const boundsKey = courseBoundsKey(pointsKey, departureKey);
+  const pathKey = routePathKey(routePath);
+  const boundsKey = `${courseBoundsKey(pointsKey, departureKey)}::${pathKey}`;
   const resolvedPadding = resolveBoundsPadding(boundsPadding);
 
   useEffect(() => {
@@ -269,7 +283,12 @@ function CourseKakaoMapView({
         const { maps } = kakao;
         const orderedPoints = [...mapPoints].sort((a, b) => a.order - b.order);
         const markerPositions = orderedPoints.map((b) => new maps.LatLng(b.lat, b.lng));
-        const pathPositions = buildSimplePathPositions(maps, departurePoint, markerPositions);
+        const resolvedRoutePositions =
+          routePath && routePath.length >= 2
+            ? routePath.map((point) => new maps.LatLng(point.lat, point.lng))
+            : null;
+        const pathPositions =
+          resolvedRoutePositions ?? buildSimplePathPositions(maps, departurePoint, markerPositions);
         const center = markerPositions[0] ?? pathPositions[0];
         if (!center) {
           if (!cancelled) setStatus("fallback");
@@ -302,15 +321,15 @@ function CourseKakaoMapView({
           ? new maps.LatLng(departurePoint.lat, departurePoint.lng)
           : null;
 
-        if (markerPositions.length > 1) {
+        if (pathPositions.length > 1) {
           mapObjects.push(
             new maps.Polyline({
               map,
               path: pathPositions,
-              strokeWeight: 3,
+              strokeWeight: resolvedRoutePositions ? 4 : 3,
               strokeColor: "#41454e",
-              strokeOpacity: 0.85,
-              strokeStyle: "shortdash",
+              strokeOpacity: resolvedRoutePositions ? 0.92 : 0.85,
+              strokeStyle: resolvedRoutePositions ? "solid" : "shortdash",
             }),
           );
         }
@@ -365,7 +384,9 @@ function CourseKakaoMapView({
       container.replaceChildren();
       setStatus("loading");
     };
-  }, [departureKey, pointsKey]);
+    // departureKey·pointsKey·pathKey가 mapPoints·departurePoint·routePath 변경을 대표합니다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed deps avoid map re-init on referential churn
+  }, [departureKey, pathKey, pointsKey]);
 
   useEffect(() => {
     if (status !== "ready") return;
@@ -493,6 +514,8 @@ export default function CourseKakaoMap({
   departurePoint,
   className,
   isLoading = false,
+  routePath = null,
+  routeLoading = false,
   layoutKey,
   boundsPadding,
 }: Props) {
@@ -508,13 +531,21 @@ export default function CourseKakaoMap({
   }
 
   return (
-    <CourseKakaoMapView
-      key={mapPointsKey(mapPoints)}
-      mapPoints={mapPoints}
-      departurePoint={departurePoint}
-      className={className}
-      layoutKey={layoutKey}
-      boundsPadding={boundsPadding}
-    />
+    <div className={cn("relative h-full w-full", className)}>
+      <CourseKakaoMapView
+        key={`${mapPointsKey(mapPoints)}::${routePathKey(routePath)}`}
+        mapPoints={mapPoints}
+        departurePoint={departurePoint}
+        className="h-full w-full"
+        layoutKey={layoutKey}
+        boundsPadding={boundsPadding}
+        routePath={routePath}
+      />
+      {isLoading || routeLoading ? (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-gray-100/60 text-size-3 text-gray-500">
+          {routeLoading ? "경로 불러오는 중…" : "지도 불러오는 중…"}
+        </div>
+      ) : null}
+    </div>
   );
 }

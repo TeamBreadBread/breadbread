@@ -2,6 +2,8 @@ import { useCallback, useState } from "react";
 
 import type { CourseDetail } from "@/api/courses";
 import ClosedBakeryCourseDialog from "@/components/common/dialog/ClosedBakeryCourseDialog";
+import { useCourseTransportSheet } from "@/hooks/useCourseTransportSheet";
+import { saveCourseTransportMode } from "@/lib/courseTransportMode";
 import {
   excludeClosedBakeryFromCourse,
   formatCourseMutationError,
@@ -24,10 +26,20 @@ export function useCourseGuideStart({
   onCourseUpdated,
   onStartGuide,
 }: UseCourseGuideStartOptions) {
+  const { pickTransportMode, transportSheet } = useCourseTransportSheet();
   const [closedDialogOpen, setClosedDialogOpen] = useState(false);
   const [closedBakeries, setClosedBakeries] = useState<ClosedCourseBakery[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [busy, setBusy] = useState(false);
+
+  const confirmTransportAndStart = useCallback(async () => {
+    if (!courseId) return false;
+    const mode = await pickTransportMode();
+    if (!mode) return false;
+    saveCourseTransportMode(courseId, mode);
+    await onStartGuide();
+    return true;
+  }, [courseId, onStartGuide, pickTransportMode]);
 
   const refreshClosedBakeries = useCallback(async (): Promise<ClosedCourseBakery[]> => {
     if (!courseId) return [];
@@ -40,14 +52,14 @@ export function useCourseGuideStart({
         setClosedDialogOpen(false);
         setClosedBakeries([]);
         setCurrentIndex(0);
-        await onStartGuide();
+        await confirmTransportAndStart();
         return;
       }
       setClosedBakeries(nextClosed);
       setCurrentIndex(0);
       setClosedDialogOpen(true);
     },
-    [onStartGuide],
+    [confirmTransportAndStart],
   );
 
   const requestCourseGuideStart = useCallback(async () => {
@@ -56,16 +68,16 @@ export function useCourseGuideStart({
     try {
       const closed = await refreshClosedBakeries();
       if (closed.length === 0) {
-        await onStartGuide();
+        await confirmTransportAndStart();
         return;
       }
       setClosedBakeries(closed);
       setCurrentIndex(0);
       setClosedDialogOpen(true);
     } catch {
-      await onStartGuide();
+      await confirmTransportAndStart();
     }
-  }, [courseId, onStartGuide, refreshClosedBakeries]);
+  }, [confirmTransportAndStart, courseId, refreshClosedBakeries]);
 
   const handleReplace = useCallback(async () => {
     if (!courseId || busy) return;
@@ -145,5 +157,6 @@ export function useCourseGuideStart({
   return {
     requestCourseGuideStart,
     closedBakeryDialog,
+    transportSheet,
   };
 }

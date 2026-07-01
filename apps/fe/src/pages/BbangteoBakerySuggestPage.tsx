@@ -2,7 +2,11 @@ import { useState, type ReactNode } from "react";
 
 import { useNavigate } from "@tanstack/react-router";
 
-import { submitNewBakeryReport, submitUpdateBakeryReport } from "@/api/bakery";
+import {
+  submitMenuBakeryReport,
+  submitNewBakeryReport,
+  submitUpdateBakeryReport,
+} from "@/api/bakery";
 import { getErrorMessage } from "@/api/types/common";
 import type { BakeryListItem } from "@/api/types/bakery";
 
@@ -369,10 +373,11 @@ export default function BbangteoBakerySuggestPage() {
           description: form.message.trim() || undefined,
         });
       } else {
-        await submitUpdateBakeryReport({
-          targetBakeryName: form.bakeryName.trim(),
-          updateField: "REPRESENTATIVE_MENU",
-          correctValue: form.menuName.trim(),
+        if (form.targetBakeryId == null) return;
+
+        await submitMenuBakeryReport({
+          bakeryId: form.targetBakeryId,
+          menuName: form.menuName.trim(),
           description: form.message.trim() || undefined,
         });
       }

@@ -8,7 +8,9 @@ import MobileFrame from "@/components/layout/MobileFrame";
 import { getUserProfile } from "@/lib/userProfileCache";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { getMyProfile, type MyProfileResponse } from "@/api/user";
+import { getMyProfile, withdrawMyAccount, type MyProfileResponse } from "@/api/user";
+import { getErrorMessage } from "@/api/types/common";
+import { performLogout } from "@/lib/auth/performLogout";
 
 function formatKoreanMobile(phone: string | undefined): string {
   if (!phone || !/^010\d{8}$/.test(phone)) return "—";
@@ -19,6 +21,21 @@ export default function AccountSettingsPage() {
   const navigate = useNavigate();
   const cachedProfile = getUserProfile();
   const [profile, setProfile] = useState<MyProfileResponse | null>(null);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+
+  const handleWithdraw = () => {
+    if (isWithdrawing) return;
+    if (!window.confirm("회원 탈퇴를 진행할까요? 탈퇴 후에는 계정을 복구할 수 없어요.")) return;
+    if (!window.confirm("정말 탈퇴하시겠어요? 작성한 게시글·댓글은 익명 처리됩니다.")) return;
+
+    setIsWithdrawing(true);
+    void withdrawMyAccount()
+      .then(() => performLogout(navigate))
+      .catch((error) => {
+        window.alert(getErrorMessage(error));
+      })
+      .finally(() => setIsWithdrawing(false));
+  };
 
   useEffect(() => {
     let active = true;
@@ -72,7 +89,7 @@ export default function AccountSettingsPage() {
           },
         ]
       : []),
-    { id: "withdraw", label: "회원 탈퇴", danger: true, showArrow: false },
+    { id: "withdraw", label: "회원 탈퇴", danger: true, showArrow: false, onClick: handleWithdraw },
   ];
 
   return (

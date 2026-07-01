@@ -280,3 +280,9 @@ export async function checkNicknameAvailable(nickname: string): Promise<boolean>
   });
   return extractData(data);
 }
+
+/** `DELETE /users/me` — 회원 탈퇴 */
+export async function withdrawMyAccount(): Promise<void> {
+  const { data } = await apiClient.delete<ApiEnvelope<void>>(`${PATH}/me`);
+  extractData(data);
+}
