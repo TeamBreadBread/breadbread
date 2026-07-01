@@ -262,3 +262,15 @@ export async function submitUpdateBakeryReport(
   const { data } = await apiClient.post<ApiEnvelope<number>>(`${PATH}/reports/update`, body);
   return extractData(data);
 }
+
+export type SubmitMenuReportRequest = {
+  bakeryId: number;
+  menuName: string;
+  description?: string;
+};
+
+/** `POST /bakeries/reports/menu` — 등록된 빵집 메뉴 건의 */
+export async function submitMenuBakeryReport(body: SubmitMenuReportRequest): Promise<number> {
+  const { data } = await apiClient.post<ApiEnvelope<number>>(`${PATH}/reports/menu`, body);
+  return extractData(data);
+}

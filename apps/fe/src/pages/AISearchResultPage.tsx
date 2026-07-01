@@ -19,8 +19,10 @@ import { useAiSearchBottomSheet } from "@/hooks/useAiSearchBottomSheet";
 import {
   getCourseDetail,
   getMyCourseRoutes,
+  likeCourse,
   reorderCourseBakeries,
   saveCourseRoute,
+  unlikeCourse,
   type CourseDetail,
 } from "@/api/courses";
 import { getBakeriesCongestion, getBakeryById } from "@/api/bakery";
@@ -38,6 +40,7 @@ import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
 import { resetAiCourseFlowForRetry } from "@/utils/clearAiCourseJobContext";
 import { findMatchingSavedRoute, isSameCourseRouteContent } from "@/utils/courseRouteCompare";
 import { useCourseGuideStart } from "@/hooks/useCourseGuideStart";
+import { useCourseRoutePath } from "@/hooks/useCourseRoutePath";
 import { formatBakerySignatureMenuLabel } from "@/utils/bakerySignatureMenu";
 import {
   trackAiCourseRegenerated,
@@ -267,6 +270,12 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
 
   const mapLoading = (courseDetailLoading && !courseDetail) || mapPointsResolving;
   const useDevFallbackContent = !effectiveCourseId;
+
+  useEffect(() => {
+    if (!courseDetail) return;
+    setCourseLiked(Boolean(courseDetail.liked));
+    setCourseLikeCount(courseDetail.likeCount ?? 0);
+  }, [courseDetail]);
   const displaySummary = dynamicSummary ?? (useDevFallbackContent ? summary : null);
   const displayPlaces = dynamicPlaces ?? (useDevFallbackContent ? places : null);
   const courseIconSeed = effectiveCourseId ?? displaySummary?.title ?? summary.title;
@@ -286,6 +295,11 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
 
   const [showSavedBanner, setShowSavedBanner] = useState(false);
   const [activeTourConflictOpen, setActiveTourConflictOpen] = useState(false);
+  const [courseLiked, setCourseLiked] = useState(false);
+  const [courseLikeCount, setCourseLikeCount] = useState(0);
+  const [likeBusy, setLikeBusy] = useState(false);
+
+  const { routePath, routeLoading } = useCourseRoutePath(effectiveCourseId);
 
   const { sheetRef, contentRef, liveSheetTopY, isDragging, isHalfSheet, togglePhase } =
     useAiSearchBottomSheet();
@@ -318,7 +332,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     void navigate({ to: "/tour", search: { courseId: effectiveCourseId } });
   };
 
-  const { requestCourseGuideStart, closedBakeryDialog } = useCourseGuideStart({
+  const { requestCourseGuideStart, closedBakeryDialog, transportSheet } = useCourseGuideStart({
     courseId: effectiveCourseId,
     onCourseUpdated: (detail) => {
       if (!effectiveCourseId) return;
@@ -340,6 +354,34 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
       return;
     }
     navigate({ to: "/taxi-reserve", search: { courseId: effectiveCourseId } });
+  };
+
+  const handleToggleCourseLike = () => {
+    if (!effectiveCourseId || likeBusy) return;
+    requireLogin(async () => {
+      const wasLiked = courseLiked;
+      const prevCount = courseLikeCount;
+      const nextLiked = !wasLiked;
+      const optimisticCount = Math.max(0, prevCount + (nextLiked ? 1 : -1));
+
+      setCourseLiked(nextLiked);
+      setCourseLikeCount(optimisticCount);
+      setLikeBusy(true);
+
+      try {
+        if (nextLiked) {
+          await likeCourse(effectiveCourseId);
+        } else {
+          await unlikeCourse(effectiveCourseId);
+        }
+      } catch (error) {
+        setCourseLiked(wasLiked);
+        setCourseLikeCount(prevCount);
+        window.alert(getErrorMessage(error));
+      } finally {
+        setLikeBusy(false);
+      }
+    });
   };
 
   const handlePlaceClick = (place: CoursePlace) => {
@@ -482,6 +524,8 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
           departurePoint={departurePoint}
           className="h-full w-full"
           isLoading={mapLoading}
+          routePath={routePath}
+          routeLoading={routeLoading}
           layoutKey={mapHeightPx}
           boundsPadding={{ top: 56, right: 40, bottom: 40, left: 40 }}
         />
@@ -506,6 +550,9 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
             summary={resolvedSummary}
             iconSeed={courseIconSeed}
             recommendReason={displayRecommendReason}
+            liked={courseLiked}
+            likeCount={courseLikeCount}
+            onToggleLike={effectiveCourseId ? handleToggleCourseLike : undefined}
           />
         </div>
       </div>
@@ -579,6 +626,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
         onConfirm={() => setActiveTourConflictOpen(false)}
       />
       {closedBakeryDialog}
+      {transportSheet}
 
       {from === "route" ? (
         <div

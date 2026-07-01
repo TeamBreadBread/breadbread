@@ -7,14 +7,17 @@ import SettingsToggleRow from "@/components/domain/my/SettingsToggleRow";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useComingSoonToast } from "@/hooks/useComingSoonToast";
 import { performLogout } from "@/lib/auth/performLogout";
+import { withdrawMyAccount } from "@/api/user";
+import { getErrorMessage } from "@/api/types/common";
 import BottomNav from "@/components/layout/BottomNav";
 import MobileFrame from "@/components/layout/MobileFrame";
 
 export default function MyServiceSettingsPage() {
   const navigate = useNavigate();
   const { settings, updateSetting } = useAppSettings();
-  const { toastMessage, showComingSoon } = useComingSoonToast();
+  const { toastMessage } = useComingSoonToast();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
 
   const handleLogout = () => {
     if (isLoggingOut) return;
@@ -24,8 +27,17 @@ export default function MyServiceSettingsPage() {
   };
 
   const handleWithdraw = () => {
-    if (!window.confirm("회원 탈퇴를 진행할까요?")) return;
-    showComingSoon("회원 탈퇴 기능은 준비 중이에요.");
+    if (isWithdrawing) return;
+    if (!window.confirm("회원 탈퇴를 진행할까요? 탈퇴 후에는 계정을 복구할 수 없어요.")) return;
+    if (!window.confirm("정말 탈퇴하시겠어요? 작성한 게시글·댓글은 익명 처리됩니다.")) return;
+
+    setIsWithdrawing(true);
+    void withdrawMyAccount()
+      .then(() => performLogout(navigate))
+      .catch((error) => {
+        window.alert(getErrorMessage(error));
+      })
+      .finally(() => setIsWithdrawing(false));
   };
 
   return (

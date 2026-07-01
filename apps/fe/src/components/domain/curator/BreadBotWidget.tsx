@@ -18,8 +18,10 @@ import {
   type CongestionCheckResult,
 } from "@/api/tours";
 import { getErrorMessage } from "@/api/types/common";
+import { useCourseTransportSheet } from "@/hooks/useCourseTransportSheet";
 import { isLoggedIn } from "@/lib/auth/isLoggedIn";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
+import { readCourseTransportMode, saveCourseTransportMode } from "@/lib/courseTransportMode";
 import {
   trackBakeryVisitChecked,
   trackCuratorGuideClicked,
@@ -401,6 +403,7 @@ export default function BreadBotWidget({
     acknowledgeCelebration,
     pendingCelebrationCourseId,
   } = useLoginRequired();
+  const { pickTransportMode, transportSheet } = useCourseTransportSheet();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const onTourPage = pathname.startsWith("/tour");
@@ -547,6 +550,8 @@ export default function BreadBotWidget({
         setActiveTourConflictOpen(true);
         return;
       }
+      const transportMode = readCourseTransportMode(tourCourseId) ?? "WALKING";
+      saveCourseTransportMode(tourCourseId, transportMode);
       startCourseGuide(tourCourseId);
       trackTourStarted(tourCourseId);
       await startTour(tourCourseId).catch(() => undefined);
@@ -1308,11 +1313,18 @@ export default function BreadBotWidget({
       }
     }
     setTourBubble(null);
-    startCourseGuide(tourCourseId);
+
     if (mode === "start" || mode === "autostart") {
+      const transportMode = await pickTransportMode();
+      if (!transportMode) return;
+      saveCourseTransportMode(tourCourseId, transportMode);
+      startCourseGuide(tourCourseId);
       trackTourStarted(tourCourseId);
       await startTour(tourCourseId).catch(() => undefined);
+    } else {
+      startCourseGuide(tourCourseId);
     }
+
     setActiveTourCourseId(tourCourseId);
     celebratedTourRef.current.delete(`celebrated:${tourCourseId}`);
     void navigate({ to: "/tour", search: { courseId: tourCourseId } });
@@ -1633,6 +1645,7 @@ export default function BreadBotWidget({
         open={activeTourConflictOpen}
         onConfirm={() => setActiveTourConflictOpen(false)}
       />
+      {transportSheet}
     </>
   );
 }

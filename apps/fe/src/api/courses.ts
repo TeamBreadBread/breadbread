@@ -188,9 +188,16 @@ export async function getCourseDetail(courseId: number): Promise<CourseDetail> {
   return extractData(response.data);
 }
 
-export async function getCourseDirections(courseId: number): Promise<CourseDirections> {
+/** BE `RouteMode` — WALKING(도보), DRIVING(자동차·타슈 등 도로) */
+export type CourseRouteMode = "WALKING" | "DRIVING";
+
+export async function getCourseDirections(
+  courseId: number,
+  mode: CourseRouteMode = "DRIVING",
+): Promise<CourseDirections> {
   const response = await apiClient.get<ApiEnvelope<CourseDirections>>(
     `${PATH}/${courseId}/directions`,
+    { params: { mode } },
   );
   return extractData(response.data);
 }

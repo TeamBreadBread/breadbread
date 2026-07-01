@@ -3,6 +3,7 @@ import { getCourseDetail, type CourseDetail } from "@/api/courses";
 import CourseKakaoMap from "@/components/domain/ai-course/CourseKakaoMap";
 import { courseBakeriesToMapPoints } from "@/components/domain/ai-course/courseMapPoints";
 import type { CourseMapBakery } from "@/components/domain/ai-course/CourseKakaoMap";
+import { useCourseRoutePath } from "@/hooks/useCourseRoutePath";
 import { resolveAiCourseDeparturePoint } from "@/lib/aiCourseDepartureCoords";
 
 type BreadBotCourseMapCardProps = {
@@ -18,6 +19,7 @@ export default function BreadBotCourseMapCard({
   const [bakeries, setBakeries] = useState<CourseMapBakery[]>([]);
   const [resolvedCourseId, setResolvedCourseId] = useState<number | null>(null);
   const loading = resolvedCourseId !== courseId;
+  const { routePath, routeLoading } = useCourseRoutePath(courseId);
 
   const departurePoint = useMemo(
     () =>
@@ -64,6 +66,8 @@ export default function BreadBotCourseMapCard({
           <CourseKakaoMap
             bakeries={bakeries}
             departurePoint={departurePoint}
+            routePath={routePath}
+            routeLoading={routeLoading}
             className="h-full w-full"
           />
         )}
