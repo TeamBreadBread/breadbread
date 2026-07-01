@@ -2,6 +2,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { getCourseDirections } from "@/api/courses";
 import {
   normalizeCourseDirectionPath,
+  prefetchCourseRoute,
   readCourseRouteCache,
   saveCourseRouteCache,
   subscribeCourseRouteInputs,
@@ -15,6 +16,7 @@ import {
 type RouteFetchState = {
   key: string;
   path: ReturnType<typeof normalizeCourseDirectionPath> | null;
+  settled: boolean;
 };
 
 function readTransportModeForCourse(courseId: number | null): CourseTransportMode | null {
@@ -51,6 +53,11 @@ export function useCourseRoutePath(courseId: number | null | undefined) {
   const [routeState, setRouteState] = useState<RouteFetchState | null>(null);
 
   useEffect(() => {
+    if (validCourseId == null || transportMode == null) return;
+    void prefetchCourseRoute(validCourseId, transportMode);
+  }, [transportMode, validCourseId]);
+
+  useEffect(() => {
     if (fetchKey == null || validCourseId == null || transportMode == null) return;
     if (cachedPath && cachedPath.length >= 2) return;
 
@@ -68,11 +75,12 @@ export function useCourseRoutePath(courseId: number | null | undefined) {
         setRouteState({
           key: fetchKey,
           path: resolvedPath,
+          settled: true,
         });
       })
       .catch(() => {
         if (!cancelled) {
-          setRouteState({ key: fetchKey, path: null });
+          setRouteState({ key: fetchKey, path: null, settled: true });
         }
       });
 
@@ -84,12 +92,17 @@ export function useCourseRoutePath(courseId: number | null | undefined) {
   const resolvedPath =
     cachedPath ?? (fetchKey != null && routeState?.key === fetchKey ? routeState.path : null);
 
-  const fetchSettled = fetchKey != null && routeState?.key === fetchKey;
+  const fetchSettled =
+    (cachedPath != null && cachedPath.length >= 2) ||
+    (fetchKey != null && routeState?.key === fetchKey && routeState.settled);
+
   const routeLoading = fetchKey != null && resolvedPath == null && !fetchSettled;
 
   return {
     routePath: resolvedPath,
     routeLoading,
     transportMode: validCourseId != null ? transportMode : null,
+    /** API 경로를 기다리는 중일 때만 점선 폴백을 숨깁니다. 실패 시에는 점선을 표시합니다. */
+    expectRoutePath: transportMode != null && routeLoading,
   };
 }

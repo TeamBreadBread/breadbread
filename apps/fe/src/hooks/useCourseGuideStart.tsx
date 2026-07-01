@@ -36,7 +36,7 @@ export function useCourseGuideStart({
     if (!courseId) return false;
     const mode = await pickTransportMode();
     if (!mode) return false;
-    saveCourseTransportMode(courseId, mode);
+    await saveCourseTransportMode(courseId, mode);
     await onStartGuide();
     return true;
   }, [courseId, onStartGuide, pickTransportMode]);

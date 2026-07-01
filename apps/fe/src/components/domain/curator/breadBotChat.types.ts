@@ -82,7 +82,11 @@ export function buildCourseExplainMessage(course: CourseDetail): string {
 }
 
 export function isCourseExplainIntent(text: string): boolean {
-  return /현재\s*코스\s*설명|코스\s*설명해/.test(text.trim());
+  const normalized = text.trim();
+  return (
+    /현재\s*코스\s*설명|코스\s*설명해/.test(normalized) ||
+    /현재\s*코스\s*보기|코스\s*지도|코스\s*경로/.test(normalized)
+  );
 }
 
 export function isCourseReorderIntent(text: string): boolean {

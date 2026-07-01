@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import LoginRequiredDialog from "@/components/common/dialog/LoginRequiredDialog";
 import BreadBotWidget from "@/components/domain/curator/BreadBotWidget";
-import { getCurrentTour } from "@/api/tours";
+import { getCurrentTour, type TourCurrentResponse } from "@/api/tours";
 import { isBotFloatingHiddenPath } from "@/lib/courseGuide";
+import { subscribeTourStateUpdate } from "@/utils/tourStateSync";
 import { isLoggedIn } from "@/lib/auth/isLoggedIn";
 import { tryPostLoginRedirectPath } from "@/lib/postLoginRedirect";
 import { LoginRequiredContext } from "@/lib/auth/LoginRequiredContext";
@@ -73,31 +74,45 @@ export function LoginRequiredProvider({ children }: { children: ReactNode }) {
     setPendingCelebrationCourseId(null);
   }, []);
 
-  /** 앱 재진입 시 진행 중 투어가 있으면 코스 안내 세션 복구 */
+  const applyTourToCourseGuide = useCallback((tour: TourCurrentResponse | null) => {
+    if (tour?.status === "IN_PROGRESS" && tour.courseId > 0) {
+      clearPendingTourCompleteCelebration();
+      setPendingCelebrationCourseId(null);
+      setCourseGuideActive(true);
+      setCourseGuideId(tour.courseId);
+      return;
+    }
+    if (readPendingTourCompleteCelebration() == null) {
+      setCourseGuideActive(false);
+      setCourseGuideId(null);
+    }
+  }, []);
+
+  /** 진행 중 투어(IN_PROGRESS)일 때만 코스 안내·챗봇 세션 유지 */
   useEffect(() => {
     if (!loggedIn) return;
 
     let cancelled = false;
-    void getCurrentTour()
-      .then((tour) => {
-        if (cancelled) return;
-        if (tour?.status === "IN_PROGRESS" && tour.courseId > 0) {
-          clearPendingTourCompleteCelebration();
-          setPendingCelebrationCourseId(null);
-          setCourseGuideActive(true);
-          setCourseGuideId(tour.courseId);
-        } else if (readPendingTourCompleteCelebration() == null) {
-          setCourseGuideActive(false);
-          setCourseGuideId(null);
-        }
-      })
-      .catch(() => {
-        /* 조용히 무시 */
-      });
+    const refresh = () => {
+      void getCurrentTour()
+        .then((tour) => {
+          if (!cancelled) applyTourToCourseGuide(tour);
+        })
+        .catch(() => {
+          /* 조용히 무시 */
+        });
+    };
+
+    refresh();
+    const unsubscribe = subscribeTourStateUpdate((tour) => {
+      applyTourToCourseGuide(tour);
+    });
+
     return () => {
       cancelled = true;
+      unsubscribe();
     };
-  }, [loggedIn]);
+  }, [loggedIn, pathname, applyTourToCourseGuide]);
 
   const resolvedCourseGuideActive = loggedIn && courseGuideActive;
   const resolvedCourseGuideId = loggedIn ? courseGuideId : null;

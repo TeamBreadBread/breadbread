@@ -110,8 +110,10 @@ export default function TourPage({ courseId }: TourPageProps) {
   }, [init]);
 
   useEffect(() => {
-    if (courseId > 0) startCourseGuide(courseId);
-  }, [courseId, startCourseGuide]);
+    if (tour?.status === "IN_PROGRESS" && tour.courseId === courseId && courseId > 0) {
+      startCourseGuide(courseId);
+    }
+  }, [courseId, startCourseGuide, tour]);
 
   const handleTourCompleted = useCallback(
     (completedCourseId: number) => {

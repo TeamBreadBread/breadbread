@@ -57,17 +57,19 @@ export function saveCourseRouteCache(
 }
 
 /** 이동 수단 저장 직후 directions API를 미리 조회해 챗봇 지도 등에서 즉시 사용 */
-export function prefetchCourseRoute(courseId: number, mode: CourseTransportMode): void {
-  void getCourseDirections(courseId, courseTransportToRouteMode(mode))
-    .then((directions) => {
-      const path = normalizeCourseDirectionPath(directions.path);
-      if (path.length >= 2) {
-        saveCourseRouteCache(courseId, mode, path);
-      }
-    })
-    .catch(() => {
-      /* 지도는 로드 완료 후 점선 폴백 */
-    });
+export async function prefetchCourseRoute(
+  courseId: number,
+  mode: CourseTransportMode,
+): Promise<void> {
+  try {
+    const directions = await getCourseDirections(courseId, courseTransportToRouteMode(mode));
+    const path = normalizeCourseDirectionPath(directions.path);
+    if (path.length >= 2) {
+      saveCourseRouteCache(courseId, mode, path);
+    }
+  } catch {
+    /* 지도는 로드 완료 후 점선 폴백 */
+  }
 }
 
 export function subscribeCourseRouteInputs(onStoreChange: () => void): () => void {
