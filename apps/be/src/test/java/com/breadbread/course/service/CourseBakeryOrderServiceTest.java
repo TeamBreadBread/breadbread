@@ -14,11 +14,17 @@ import com.breadbread.course.dto.request.ReorderBakeriesRequest;
 import com.breadbread.course.dto.response.DrivingRouteResponse;
 import com.breadbread.course.dto.response.ReorderBakeriesResponse;
 import com.breadbread.course.dto.route.Coordinate;
+import com.breadbread.course.entity.AiCourseInfo;
+import com.breadbread.course.entity.BudgetRange;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseBakery;
+import com.breadbread.course.entity.FlexibilityLevel;
 import com.breadbread.course.entity.ManualCourseInfo;
+import com.breadbread.course.entity.RouteMode;
+import com.breadbread.course.entity.TravelType;
 import com.breadbread.course.repository.CourseBakeryRepository;
 import com.breadbread.course.repository.CourseRepository;
+import com.breadbread.course.service.ai.AiCourseRouteOptimizer;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
 import com.breadbread.tour.service.TourRedisService;
@@ -40,6 +46,7 @@ class CourseBakeryOrderServiceTest {
     @Mock private CourseBakeryRepository courseBakeryRepository;
     @Mock private CourseDrivingRouteService courseDrivingRouteService;
     @Mock private TourRedisService tourRedisService;
+    @Mock private AiCourseRouteOptimizer aiCourseRouteOptimizer;
 
     @InjectMocks private CourseBakeryOrderService courseBakeryOrderService;
 
@@ -196,7 +203,116 @@ class CourseBakeryOrderServiceTest {
         assertThat(response.getBakeryOrder()).containsExactly(10L, 20L);
     }
 
+    // ── optimizeBakeryOrder ───────────────────────────────────────────────
+
+    @Test
+    void optimizeBakeryOrder_throws_whenCourseNotFound() {
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(
+                        () ->
+                                courseBakeryOrderService.optimizeBakeryOrder(
+                                        1L, 1L, UserRole.ROLE_USER, RouteMode.DRIVING))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.COURSE_NOT_FOUND);
+    }
+
+    @Test
+    void optimizeBakeryOrder_throws_whenManualCourse() {
+        Course course = manualCourse(1L, "수동코스");
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
+
+        assertThatThrownBy(
+                        () ->
+                                courseBakeryOrderService.optimizeBakeryOrder(
+                                        1L, 99L, UserRole.ROLE_ADMIN, RouteMode.DRIVING))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.INVALID_INPUT_VALUE);
+    }
+
+    @Test
+    void optimizeBakeryOrder_throws_whenForbidden() {
+        User owner = owner(1L);
+        Course course = aiCourse(1L, owner, 36.3, 127.3);
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
+
+        assertThatThrownBy(
+                        () ->
+                                courseBakeryOrderService.optimizeBakeryOrder(
+                                        1L, 99L, UserRole.ROLE_USER, RouteMode.DRIVING))
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.FORBIDDEN);
+    }
+
+    @Test
+    void optimizeBakeryOrder_appliesOptimizedOrder() {
+        User owner = owner(1L);
+        Course course = aiCourse(1L, owner, 36.3, 127.3);
+        Bakery b1 = bakeryAt(10L, "A", 36.0, 127.0);
+        Bakery b2 = bakeryAt(20L, "B", 36.1, 127.1);
+        CourseBakery cb1 = CourseBakery.builder().visitOrder(1).bakery(b1).build();
+        CourseBakery cb2 = CourseBakery.builder().visitOrder(2).bakery(b2).build();
+
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
+        when(courseBakeryRepository.findAllByCourseId(1L)).thenReturn(List.of(cb1, cb2));
+        when(aiCourseRouteOptimizer.optimizeOrder(
+                        org.mockito.ArgumentMatchers.anyDouble(),
+                        org.mockito.ArgumentMatchers.anyDouble(),
+                        org.mockito.ArgumentMatchers.anyList(),
+                        org.mockito.ArgumentMatchers.anyMap(),
+                        any()))
+                .thenReturn(List.of(20L, 10L)); // 최적화 결과: B → A
+
+        List<Coordinate> path = List.of(new Coordinate(36.1, 127.1), new Coordinate(36.0, 127.0));
+        DrivingRouteResponse routeResponse =
+                DrivingRouteResponse.builder()
+                        .path(path)
+                        .legs(List.of())
+                        .stayMinutesPerBakery(List.of(40, 40))
+                        .totalTravelMinutes(10)
+                        .totalStayMinutes(80)
+                        .totalMinutes(90)
+                        .build();
+        when(courseDrivingRouteService.fetchAndSaveRoute(
+                        any(Course.class), anyList(), anyList(), anyInt(), any()))
+                .thenReturn(routeResponse);
+
+        ReorderBakeriesResponse response =
+                courseBakeryOrderService.optimizeBakeryOrder(
+                        1L, 1L, UserRole.ROLE_USER, RouteMode.DRIVING);
+
+        assertThat(response.getBakeryOrder()).containsExactly(20L, 10L);
+        assertThat(cb2.getVisitOrder()).isEqualTo(1); // 20L(B) → 1순위
+        assertThat(cb1.getVisitOrder()).isEqualTo(2); // 10L(A) → 2순위
+        verify(courseDrivingRouteService).invalidateCache(1L);
+    }
+
     // ── 헬퍼 ─────────────────────────────────────────────────────────────
+
+    private static Course aiCourse(long id, User user, double lat, double lng) {
+        AiCourseInfo aiInfo =
+                AiCourseInfo.builder()
+                        .travelType(TravelType.ALONE)
+                        .budgetRange(BudgetRange.ANY)
+                        .flexibilityLevel(FlexibilityLevel.MAINTAIN)
+                        .latitude(lat)
+                        .longitude(lng)
+                        .bakeryCount(2)
+                        .build();
+        Course course =
+                Course.createAi("AI코스", user, mockUserPreference(), aiInfo, java.util.Set.of());
+        ReflectionTestUtils.setField(course, "id", id);
+        return course;
+    }
+
+    private static com.breadbread.user.entity.UserPreference mockUserPreference() {
+        return com.breadbread.user.entity.UserPreference.builder()
+                .bakeryTypes(java.util.List.of())
+                .build();
+    }
 
     private static Course manualCourse(long id, String name) {
         BreadType bt = BreadType.BREAD;
