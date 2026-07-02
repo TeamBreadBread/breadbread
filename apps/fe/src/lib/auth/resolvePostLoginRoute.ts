@@ -2,13 +2,17 @@ import { refreshProfileCacheFromServer } from "@/lib/userProfileCache";
 import type { PostLoginRedirectPath } from "@/lib/postLoginRedirect";
 import { loginFlowTime, loginFlowTimeEnd } from "@/lib/auth/loginFlowTiming";
 import {
+  invalidatePreferenceOnboardingCache,
   PREFERENCE_ONBOARDING_PATH,
   PREFERENCE_ONBOARDING_SEARCH,
   resolveHasPreferenceForLogin,
 } from "@/lib/auth/preferenceOnboardingGate";
-import { isMandatoryPreferenceOnboarding } from "@/lib/auth/preferenceOnboardingSession";
 
-type NavigateFn = (options: { to: string; search?: Record<string, unknown> }) => Promise<void>;
+type NavigateFn = (options: {
+  to: string;
+  search?: Record<string, unknown>;
+  replace?: boolean;
+}) => Promise<void>;
 
 async function navigateToPostLoginRedirect(
   navigate: NavigateFn,
@@ -28,6 +32,7 @@ async function navigateToPreferenceOnboarding(navigate: NavigateFn): Promise<voi
   await navigate({
     to: PREFERENCE_ONBOARDING_PATH,
     search: PREFERENCE_ONBOARDING_SEARCH,
+    replace: true,
   });
   loginFlowTimeEnd("navigate");
 }
@@ -44,6 +49,7 @@ export async function finishLoginAndNavigate(
   postLogin: PostLoginRedirectPath | undefined,
 ): Promise<void> {
   loginFlowTime("post-login-parallel");
+  invalidatePreferenceOnboardingCache();
   const [, hasPreference] = await Promise.all([
     refreshProfileCacheFromServer(),
     resolveHasPreferenceForLogin(),
@@ -51,17 +57,7 @@ export async function finishLoginAndNavigate(
   loginFlowTimeEnd("post-login-parallel");
 
   if (!hasPreference) {
-    if (isMandatoryPreferenceOnboarding()) {
-      await navigateToPreferenceOnboarding(navigate);
-      return;
-    }
-
-    if (postLogin) {
-      await navigateToPostLoginRedirect(navigate, postLogin);
-      return;
-    }
-
-    await navigateToHome(navigate);
+    await navigateToPreferenceOnboarding(navigate);
     return;
   }
 

@@ -82,10 +82,9 @@ export function LoginRequiredProvider({ children }: { children: ReactNode }) {
       setCourseGuideId(tour.courseId);
       return;
     }
-    if (readPendingTourCompleteCelebration() == null) {
-      setCourseGuideActive(false);
-      setCourseGuideId(null);
-    }
+
+    setCourseGuideActive(false);
+    setCourseGuideId(null);
   }, []);
 
   /** 진행 중 투어(IN_PROGRESS)일 때만 코스 안내·챗봇 세션 유지 */
@@ -121,7 +120,7 @@ export function LoginRequiredProvider({ children }: { children: ReactNode }) {
     pathname === "/bbangteo" ||
     pathname.startsWith("/bbangteo-") ||
     pathname.startsWith("/bbangteo/");
-  /** 코스 안내 또는 축하 메시지 확인 전까지 BreadBot 노출 (투어 중 빵터 제외) */
+  /** 코스 진행 중이거나, 완료 축하 메시지 확인 전까지 BreadBot 노출 (투어 중 빵터 제외) */
   const showBot =
     loggedIn &&
     (resolvedCourseGuideActive || pendingCelebrationCourseId != null) &&

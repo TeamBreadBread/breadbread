@@ -96,6 +96,10 @@ function courseBoundsKey(pointsKey: string, departureKey: string): string {
   return `${pointsKey}::${departureKey}`;
 }
 
+/** CustomOverlay yAnchor — 콘텐츠 하단(좌표 핀)이 lat/lng에 맞도록 */
+const ORDER_MARKER_Y_ANCHOR = 1;
+const DEPARTURE_MARKER_Y_ANCHOR = 1;
+
 function createOrderMarkerElement(order: number, name: string): HTMLDivElement {
   const palette = getCourseOrderMarkerPalette(order);
   const wrap = document.createElement("div");
@@ -349,7 +353,7 @@ function CourseKakaoMapView({
               position: departureOverlayPosition,
               content: createDepartureMarkerElement(departurePoint.label),
               xAnchor: 0.5,
-              yAnchor: 1.7,
+              yAnchor: DEPARTURE_MARKER_Y_ANCHOR,
               zIndex: 3000,
             }),
           );
@@ -363,7 +367,7 @@ function CourseKakaoMapView({
               position: overlayPosition,
               content: createOrderMarkerElement(point.order, point.name),
               xAnchor: 0.5,
-              yAnchor: 1.55,
+              yAnchor: ORDER_MARKER_Y_ANCHOR,
               zIndex: 2000 + point.order,
             }),
           );

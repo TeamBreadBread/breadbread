@@ -7,7 +7,6 @@ import {
   PREFERENCE_ONBOARDING_SEARCH,
   resolveHasPreferenceForLogin,
 } from "@/lib/auth/preferenceOnboardingGate";
-import { isMandatoryPreferenceOnboarding } from "@/lib/auth/preferenceOnboardingSession";
 import { LANDING_DURATION_MS } from "@/utils/landingVisit";
 
 export default function LandingPage() {
@@ -24,15 +23,11 @@ export default function LandingPage() {
         void navigate({ to: "/home", replace: true });
         return;
       }
-      if (isMandatoryPreferenceOnboarding()) {
-        void navigate({
-          to: PREFERENCE_ONBOARDING_PATH,
-          search: PREFERENCE_ONBOARDING_SEARCH,
-          replace: true,
-        });
-        return;
-      }
-      void navigate({ to: "/home", replace: true });
+      void navigate({
+        to: PREFERENCE_ONBOARDING_PATH,
+        search: PREFERENCE_ONBOARDING_SEARCH,
+        replace: true,
+      });
     });
   }, [navigate]);
 

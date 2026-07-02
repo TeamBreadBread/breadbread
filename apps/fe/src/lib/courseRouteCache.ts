@@ -56,6 +56,12 @@ export function saveCourseRouteCache(
   window.dispatchEvent(new CustomEvent(COURSE_ROUTE_CACHE_CHANGED, { detail: { courseId, mode } }));
 }
 
+export function invalidateCourseRouteCache(courseId: number): void {
+  routeMemoryCache.delete(`${courseId}:WALKING`);
+  routeMemoryCache.delete(`${courseId}:DRIVING`);
+  window.dispatchEvent(new CustomEvent(COURSE_ROUTE_CACHE_CHANGED, { detail: { courseId } }));
+}
+
 /** 이동 수단 저장 직후 directions API를 미리 조회해 챗봇 지도 등에서 즉시 사용 */
 export async function prefetchCourseRoute(
   courseId: number,

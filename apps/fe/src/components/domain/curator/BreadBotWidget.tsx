@@ -1276,27 +1276,37 @@ export default function BreadBotWidget({
     }
   };
 
-  const handleBackToStart = () => {
-    clearChatHistory();
-  };
-
   const handleCelebrationMessageSeen = useCallback(() => {
-    if (!celebrationFlowActiveRef.current) return;
+    if (pendingCelebrationCourseId == null) return;
     celebrationMessageSeenRef.current = true;
-  }, []);
+  }, [pendingCelebrationCourseId]);
+
+  const finalizeCelebrationIfAcknowledged = useCallback(() => {
+    if (pendingCelebrationCourseId == null || !celebrationMessageSeenRef.current) return;
+    celebrationFlowActiveRef.current = false;
+    celebrationMessageSeenRef.current = false;
+    acknowledgeCelebration();
+  }, [acknowledgeCelebration, pendingCelebrationCourseId]);
 
   const closeChat = () => {
     setCelebrationBubble(null);
     setOpen(false);
-    if (
+    finalizeCelebrationIfAcknowledged();
+  };
+
+  const handleBackToStart = () => {
+    const sawCelebrationMessage =
       pendingCelebrationCourseId != null &&
-      celebrationFlowActiveRef.current &&
-      celebrationMessageSeenRef.current
-    ) {
-      celebrationFlowActiveRef.current = false;
-      celebrationMessageSeenRef.current = false;
-      acknowledgeCelebration();
+      (celebrationMessageSeenRef.current || messages.some((message) => message.showCelebration));
+
+    clearChatHistory();
+
+    if (!sawCelebrationMessage) return;
+
+    if (!celebrationMessageSeenRef.current) {
+      celebrationMessageSeenRef.current = true;
     }
+    closeChat();
   };
 
   const handleChangeAction = (button: ChatActionButton) => {

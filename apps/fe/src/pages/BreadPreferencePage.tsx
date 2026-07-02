@@ -175,7 +175,7 @@ export default function BreadPreferencePage({ isEditMode = false }: BreadPrefere
       invalidatePreferenceOnboardingCache();
       clearMandatoryPreferenceOnboarding();
       clearHomePreferencePromptDismissed();
-      navigate({ to: "/home" });
+      navigate({ to: "/home", replace: true });
     } catch (error) {
       window.alert(getErrorMessage(error));
     } finally {

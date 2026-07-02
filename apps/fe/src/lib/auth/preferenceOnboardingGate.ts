@@ -4,7 +4,6 @@ import { hasUserPreferenceSaved } from "@/api/user";
 
 import { isLoggedIn } from "./isLoggedIn";
 import { isPublicPath } from "./publicRoutes";
-import { isMandatoryPreferenceOnboarding } from "./preferenceOnboardingSession";
 
 /** 선호도 조사(Onboarding) 페이지 — BE `GET /users/preference`와 대응 */
 export const PREFERENCE_ONBOARDING_PATH = "/user-preference" as const;
@@ -82,7 +81,7 @@ export async function ensurePreferenceOnboardingGate(
 
   if (isPathExemptFromPreferenceGate(pathname)) return;
 
-  if (!hasPreference && isMandatoryPreferenceOnboarding()) {
+  if (!hasPreference) {
     throw redirect({
       to: PREFERENCE_ONBOARDING_PATH,
       search: PREFERENCE_ONBOARDING_SEARCH,
@@ -106,12 +105,8 @@ export async function redirectLoggedInUserFromLanding(): Promise<void> {
     throw redirect({ to: "/home" });
   }
 
-  if (isMandatoryPreferenceOnboarding()) {
-    throw redirect({
-      to: PREFERENCE_ONBOARDING_PATH,
-      search: PREFERENCE_ONBOARDING_SEARCH,
-    });
-  }
-
-  throw redirect({ to: "/home" });
+  throw redirect({
+    to: PREFERENCE_ONBOARDING_PATH,
+    search: PREFERENCE_ONBOARDING_SEARCH,
+  });
 }
