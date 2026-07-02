@@ -306,6 +306,19 @@ export async function reorderCourseBakeries(
   return extractData(response.data);
 }
 
+/** `POST /courses/{courseId}/bakeries/optimize` — 이동 시간 기준 방문 순서 최적화 */
+export async function optimizeCourseBakeries(
+  courseId: number,
+  mode: CourseRouteMode = "DRIVING",
+): Promise<ReorderCourseBakeriesResponse> {
+  const response = await apiClient.post<ApiEnvelope<ReorderCourseBakeriesResponse>>(
+    `${PATH}/${courseId}/bakeries/optimize`,
+    {},
+    { params: { mode } },
+  );
+  return extractData(response.data);
+}
+
 export async function excludeBakeryFromCourse(
   courseId: number,
   bakeryId: number,

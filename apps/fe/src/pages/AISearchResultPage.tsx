@@ -20,6 +20,7 @@ import {
   getCourseDetail,
   getMyCourseRoutes,
   likeCourse,
+  optimizeCourseBakeries,
   reorderCourseBakeries,
   saveCourseRoute,
   unlikeCourse,
@@ -41,6 +42,8 @@ import { resetAiCourseFlowForRetry } from "@/utils/clearAiCourseJobContext";
 import { findMatchingSavedRoute, isSameCourseRouteContent } from "@/utils/courseRouteCompare";
 import { useCourseGuideStart } from "@/hooks/useCourseGuideStart";
 import { useCourseRoutePath } from "@/hooks/useCourseRoutePath";
+import { invalidateCourseRouteCache, prefetchCourseRoute } from "@/lib/courseRouteCache";
+import { courseTransportToRouteMode, readCourseTransportMode } from "@/lib/courseTransportMode";
 import { formatBakerySignatureMenuLabel } from "@/utils/bakerySignatureMenu";
 import {
   trackAiCourseRegenerated,
@@ -120,6 +123,7 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     detail: CourseDetail;
   } | null>(null);
   const [reorderBusy, setReorderBusy] = useState(false);
+  const [optimizeBusy, setOptimizeBusy] = useState(false);
   const [congestionByBakeryId, setCongestionByBakeryId] = useState<
     Map<number, { level?: string | null; expectedWaitMin?: number | null }>
   >(new Map());
@@ -299,7 +303,9 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
   const [courseLikeCount, setCourseLikeCount] = useState(0);
   const [likeBusy, setLikeBusy] = useState(false);
 
-  const { routePath, routeLoading, expectRoutePath } = useCourseRoutePath(effectiveCourseId);
+  const { routePath, routeLoading, expectRoutePath, transportMode } =
+    useCourseRoutePath(effectiveCourseId);
+  const optimizeModeLabel = transportMode === "WALKING" ? "도보" : "도로";
 
   const { sheetRef, contentRef, liveSheetTopY, isDragging, isHalfSheet, togglePhase } =
     useAiSearchBottomSheet();
@@ -479,7 +485,8 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
   };
 
   const handleReorderBakeries = (nextPlaces: CoursePlace[]) => {
-    if (!effectiveCourseId || !courseDetail?.bakeries?.length || reorderBusy) return;
+    if (!effectiveCourseId || !courseDetail?.bakeries?.length || reorderBusy || optimizeBusy)
+      return;
 
     const bakeryById = new Map(courseDetail.bakeries.map((bakery) => [bakery.id, bakery]));
     const nextBakeries = nextPlaces
@@ -498,7 +505,9 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     void (async () => {
       try {
         await reorderCourseBakeries(effectiveCourseId, { bakeryOrder: nextOrder });
+        invalidateCourseRouteCache(effectiveCourseId);
         await refreshCourseDetail(effectiveCourseId);
+        await prefetchRouteAfterOrderChange(effectiveCourseId);
       } catch (error) {
         await refreshCourseDetail(effectiveCourseId).catch(() => {
           /* 서버 복구 실패 시 아래 alert만 표시 */
@@ -508,6 +517,54 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
         setReorderBusy(false);
       }
     })();
+  };
+
+  const prefetchRouteAfterOrderChange = async (courseId: number) => {
+    const transportMode = readCourseTransportMode(courseId);
+    if (!transportMode) return;
+    await prefetchCourseRoute(courseId, transportMode);
+  };
+
+  const resolveOptimizeRouteMode = (courseId: number) => {
+    const savedMode = readCourseTransportMode(courseId);
+    return savedMode ? courseTransportToRouteMode(savedMode) : "DRIVING";
+  };
+
+  const applyOptimizedBakeryOrder = (bakeryOrder: number[]) => {
+    if (!effectiveCourseId || !courseDetail?.bakeries?.length) return;
+    const bakeryById = new Map(courseDetail.bakeries.map((bakery) => [bakery.id, bakery]));
+    const nextBakeries = bakeryOrder
+      .map((bakeryId) => bakeryById.get(bakeryId))
+      .filter((bakery): bakery is NonNullable<typeof bakery> => bakery != null);
+    if (nextBakeries.length !== courseDetail.bakeries.length) return;
+    setApiCourseDetail({
+      courseId: effectiveCourseId,
+      detail: { ...courseDetail, bakeries: nextBakeries },
+    });
+  };
+
+  const handleOptimizeOrder = () => {
+    if (!effectiveCourseId || !courseDetail?.bakeries || courseDetail.bakeries.length < 2) return;
+
+    requireLogin(() => {
+      if (optimizeBusy || reorderBusy) return;
+      setOptimizeBusy(true);
+      void (async () => {
+        try {
+          const mode = resolveOptimizeRouteMode(effectiveCourseId);
+          const result = await optimizeCourseBakeries(effectiveCourseId, mode);
+          applyOptimizedBakeryOrder(result.bakeryOrder);
+          invalidateCourseRouteCache(effectiveCourseId);
+          await refreshCourseDetail(effectiveCourseId);
+          await prefetchRouteAfterOrderChange(effectiveCourseId);
+        } catch (error) {
+          await refreshCourseDetail(effectiveCourseId).catch(() => undefined);
+          window.alert(getErrorMessage(error));
+        } finally {
+          setOptimizeBusy(false);
+        }
+      })();
+    });
   };
 
   return (
@@ -598,13 +655,31 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
           )}
         >
           {displayPlaces && displayPlaces.length > 0 ? (
-            <CourseTimeline
-              places={displayPlaces}
-              onPlaceClick={handlePlaceClick}
-              canReorder={Boolean(courseDetail?.bakeries && courseDetail.bakeries.length > 1)}
-              reorderBusy={reorderBusy}
-              onReorderPlaces={handleReorderBakeries}
-            />
+            <>
+              {effectiveCourseId && courseDetail?.bakeries && courseDetail.bakeries.length > 1 ? (
+                <div className="px-x5 pt-x3">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-full"
+                    disabled={optimizeBusy || reorderBusy}
+                    onClick={handleOptimizeOrder}
+                  >
+                    {optimizeBusy ? "순서 최적화 중…" : "순서 최적화"}
+                  </Button>
+                  <p className="mt-x2 text-center font-pretendard text-size-2 leading-t3 text-gray-600">
+                    {optimizeModeLabel} 이동 시간 기준으로 방문 순서를 다시 정렬합니다.
+                  </p>
+                </div>
+              ) : null}
+              <CourseTimeline
+                places={displayPlaces}
+                onPlaceClick={handlePlaceClick}
+                canReorder={Boolean(courseDetail?.bakeries && courseDetail.bakeries.length > 1)}
+                reorderBusy={reorderBusy || optimizeBusy}
+                onReorderPlaces={handleReorderBakeries}
+              />
+            </>
           ) : courseDetailLoading ? (
             <p className="px-x5 py-x8 text-center font-pretendard text-size-4 text-gray-500">
               코스 불러오는 중…

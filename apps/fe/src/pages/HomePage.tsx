@@ -10,10 +10,8 @@ import {
   resetHomeCurationVisitDedupe,
   type HomeCurationVisit,
 } from "@/components/domain/home/dongCurationParams";
-import { useHomePreferencePrompt } from "@/hooks/useHomePreferencePrompt";
 
 const HomePage = () => {
-  const { dialog: preferencePromptDialog } = useHomePreferencePrompt();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [firstCurationBakeryIds, setFirstCurationBakeryIds] = useState<number[]>([]);
   const [firstCurationReady, setFirstCurationReady] = useState(false);
@@ -71,7 +69,6 @@ const HomePage = () => {
       </main>
 
       <BottomNav />
-      {preferencePromptDialog}
     </AppShell>
   );
 };
