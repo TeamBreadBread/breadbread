@@ -113,6 +113,22 @@ public class CourseController {
         return ApiResponse.ok(courseDrivingRouteService.getDrivingRoute(id, mode));
     }
 
+    @Operation(
+            summary = "AI 코스 방문 순서 최적화",
+            description =
+                    "TMAP Matrix API로 이동시간 행렬을 계산해 greedy 알고리즘으로 최적 방문 순서를 적용합니다."
+                            + " AI 코스 본인만 호출 가능합니다.")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PostMapping("/{courseId}/bakeries/optimize")
+    public ApiResponse<ReorderBakeriesResponse> optimizeBakeryOrder(
+            @PathVariable Long courseId,
+            @RequestParam(defaultValue = "DRIVING") RouteMode mode,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ApiResponse.ok(
+                courseBakeryOrderService.optimizeBakeryOrder(
+                        courseId, userDetails.getId(), userDetails.getRole(), mode));
+    }
+
     @Operation(summary = "코스 내 빵집 방문 순서 변경")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @PatchMapping("/{courseId}/bakeries/reorder")

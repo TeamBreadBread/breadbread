@@ -4,13 +4,17 @@ import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.course.dto.request.ReorderBakeriesRequest;
 import com.breadbread.course.dto.response.DrivingRouteResponse;
 import com.breadbread.course.dto.response.ReorderBakeriesResponse;
+import com.breadbread.course.entity.AiCourseInfo;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseBakery;
+import com.breadbread.course.entity.CourseType;
 import com.breadbread.course.entity.RouteMode;
 import com.breadbread.course.repository.CourseBakeryRepository;
 import com.breadbread.course.repository.CourseRepository;
+import com.breadbread.course.service.ai.AiCourseRouteOptimizer;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.global.util.GeoDistance;
 import com.breadbread.tour.service.TourRedisService;
 import com.breadbread.user.entity.UserRole;
 import java.util.Comparator;
@@ -33,6 +37,7 @@ public class CourseBakeryOrderService {
     private final CourseBakeryRepository courseBakeryRepository;
     private final CourseDrivingRouteService courseDrivingRouteService;
     private final TourRedisService tourRedisService;
+    private final AiCourseRouteOptimizer aiCourseRouteOptimizer;
 
     @Transactional
     public ReorderBakeriesResponse reorderBakeries(
@@ -149,6 +154,98 @@ public class CourseBakeryOrderService {
         return ReorderBakeriesResponse.builder()
                 .courseId(courseId)
                 .bakeryOrder(activeBakeryOrder)
+                .estimatedTotalMinutes(estimatedTotalMinutes)
+                .build();
+    }
+
+    @Transactional
+    public ReorderBakeriesResponse optimizeBakeryOrder(
+            Long courseId, Long userId, UserRole role, RouteMode routeMode) {
+        Course course =
+                courseRepository
+                        .findByIdAndActiveTrue(courseId)
+                        .orElseThrow(() -> new CustomException(ErrorCode.COURSE_NOT_FOUND));
+
+        validateEditAccess(course, userId, role);
+
+        if (course.getCourseType() != CourseType.AI || course.getAiCourseInfo() == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        List<CourseBakery> courseBakeries =
+                courseBakeryRepository.findAllByCourseId(courseId).stream()
+                        .filter(cb -> cb.getBakery().isActive())
+                        .sorted(Comparator.comparingInt(CourseBakery::getVisitOrder))
+                        .toList();
+
+        if (courseBakeries.size() < 2) {
+            return buildResponse(courseId, courseBakeries, 0);
+        }
+
+        AiCourseInfo aiInfo = course.getAiCourseInfo();
+        Map<Long, double[]> bakeryCoords =
+                courseBakeries.stream()
+                        .map(CourseBakery::getBakery)
+                        .filter(
+                                b ->
+                                        GeoDistance.isValidCoordinate(
+                                                b.getLatitude(), b.getLongitude()))
+                        .collect(
+                                Collectors.toMap(
+                                        Bakery::getId,
+                                        b -> new double[] {b.getLatitude(), b.getLongitude()}));
+
+        List<Long> optimizedOrder =
+                aiCourseRouteOptimizer.optimizeOrder(
+                        aiInfo.getLatitude(),
+                        aiInfo.getLongitude(),
+                        courseBakeries,
+                        bakeryCoords,
+                        routeMode);
+
+        Map<Long, CourseBakery> bakeryMap =
+                courseBakeries.stream()
+                        .collect(Collectors.toMap(cb -> cb.getBakery().getId(), cb -> cb));
+
+        for (int i = 0; i < optimizedOrder.size(); i++) {
+            bakeryMap.get(optimizedOrder.get(i)).setVisitOrder(i + 1);
+        }
+
+        courseDrivingRouteService.invalidateCache(courseId);
+        log.info("코스 경로 최적화로 순서 변경 및 경로 캐시 삭제: courseId={}", courseId);
+
+        List<Bakery> orderedBakeries =
+                optimizedOrder.stream().map(id -> bakeryMap.get(id).getBakery()).toList();
+        int totalStayMinutes =
+                orderedBakeries.stream().mapToInt(Bakery::getEstimatedStayMinutes).sum();
+
+        int estimatedTotalMinutes = 0;
+        try {
+            DrivingRouteResponse routeResponse =
+                    courseDrivingRouteService.fetchAndSaveRoute(
+                            course,
+                            orderedBakeries,
+                            orderedBakeries.stream().map(Bakery::getEstimatedStayMinutes).toList(),
+                            totalStayMinutes,
+                            RouteMode.DRIVING);
+            estimatedTotalMinutes = routeResponse.getTotalMinutes();
+            course.updateTotalMinutes(estimatedTotalMinutes);
+        } catch (CustomException e) {
+            log.warn("코스 최적화 후 경로 갱신 실패: courseId={}, error={}", courseId, e.getErrorCode().name());
+        }
+
+        return ReorderBakeriesResponse.builder()
+                .courseId(courseId)
+                .bakeryOrder(optimizedOrder)
+                .estimatedTotalMinutes(estimatedTotalMinutes)
+                .build();
+    }
+
+    private ReorderBakeriesResponse buildResponse(
+            Long courseId, List<CourseBakery> courseBakeries, int estimatedTotalMinutes) {
+        return ReorderBakeriesResponse.builder()
+                .courseId(courseId)
+                .bakeryOrder(courseBakeries.stream().map(cb -> cb.getBakery().getId()).toList())
                 .estimatedTotalMinutes(estimatedTotalMinutes)
                 .build();
     }
