@@ -59,6 +59,12 @@ public enum ErrorCode {
             "E0310",
             "빵집 승인에 필요한 필드가 입력되지 않았습니다. (name, address, latitude, longitude, region, dong, bakeryType)"),
     MENU_TAG_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "E0311", "메뉴당 태그는 최대 2개까지 등록할 수 있습니다."),
+    BAKERY_IMPORT_RESULT_NOT_FOUND(
+            HttpStatus.NOT_FOUND, "E0312", "빵집 임포트 검색 결과가 만료되었거나 존재하지 않습니다."),
+    BAKERY_IMPORT_CANDIDATE_NOT_FOUND(
+            HttpStatus.BAD_REQUEST, "E0313", "선택한 candidateId가 검색 결과에 존재하지 않습니다."),
+    BAKERY_IMPORT_SEARCH_FAILED(
+            HttpStatus.BAD_GATEWAY, "E0314", "외부 검색 API 호출에 실패했습니다. 잠시 후 다시 시도해주세요."),
 
     // 코스/AI추천 E04xx
     COURSE_NOT_FOUND(HttpStatus.NOT_FOUND, "E0401", "존재하지 않는 코스입니다."),

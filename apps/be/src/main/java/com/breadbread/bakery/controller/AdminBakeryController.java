@@ -2,12 +2,15 @@ package com.breadbread.bakery.controller;
 
 import com.breadbread.auth.dto.CustomUserDetails;
 import com.breadbread.bakery.dto.request.ApproveBakeriesRequest;
+import com.breadbread.bakery.dto.request.BakeryImportConfirmRequest;
 import com.breadbread.bakery.dto.response.ApproveBakeriesResponse;
 import com.breadbread.bakery.dto.response.BakeryAdminListResponse;
 import com.breadbread.bakery.dto.response.BakeryAdminResponse;
+import com.breadbread.bakery.dto.response.BakeryImportPreviewResponse;
 import com.breadbread.bakery.dto.response.KakaoSyncResultResponse;
 import com.breadbread.bakery.entity.enums.AdminBakerySortType;
 import com.breadbread.bakery.entity.enums.BakeryStatus;
+import com.breadbread.bakery.service.BakeryImportRedisService;
 import com.breadbread.bakery.service.BakeryService;
 import com.breadbread.bakery.service.GooglePlacesImportService;
 import com.breadbread.bakery.service.GooglePlacesUpdateService;
@@ -18,11 +21,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "관리자 - 빵집")
@@ -30,6 +35,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/admin/bakeries")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
+@Validated
 public class AdminBakeryController {
 
     private final BakeryService bakeryService;
@@ -37,12 +43,26 @@ public class AdminBakeryController {
     private final GooglePlacesImportService googlePlacesImportService;
     private final KakaoLocalImportService kakaoLocalImportService;
     private final KakaoLocalUpdateService kakaoLocalUpdateService;
+    private final BakeryImportRedisService bakeryImportRedisService;
 
     @Operation(
-            summary = "구글 Places 키워드로 빵집 임포트",
+            summary = "구글 Places 키워드로 빵집 검색 (미리보기)",
             description =
-                    "검색 결과를 PENDING 상태로 저장한다. 이미 존재하는 빵집은 스킵.\n\n"
-                            + "**임포트 시 채워지는 필드**\n"
+                    "검색 결과를 DB에 저장하지 않고 Redis에 임시 캐시한 뒤 후보 목록을 반환한다. 이미 존재하는 빵집/프랜차이즈는 후보에서 제외됨.\n\n"
+                            + "후보 중 원하는 것만 골라 `searchId`와 함께 `POST /admin/bakeries/import/confirm`을 호출하면 실제로 저장된다."
+                            + " 캐시는 일정 시간 후 만료되며, 만료 전에는 `GET /admin/bakeries/import/search/{searchId}`로 다시 조회할 수 있다.")
+    @Parameter(name = "keyword", description = "검색 키워드", example = "대전 빵집")
+    @PostMapping("/import/search")
+    public ApiResponse<BakeryImportPreviewResponse> searchBakeries(
+            @RequestParam @NotBlank String keyword) {
+        return ApiResponse.ok(googlePlacesImportService.searchByKeyword(keyword));
+    }
+
+    @Operation(
+            summary = "구글 Places 검색 후보 확정 저장",
+            description =
+                    "`searchId`로 캐시된 후보 중 선택한 `candidateIds`만 PENDING 상태로 저장한다. 이미 존재하는 빵집은 스킵.\n\n"
+                            + "**저장 시 채워지는 필드**\n"
                             + "- `name` — 빵집 이름\n"
                             + "- `address` — 주소\n"
                             + "- `region` — 지역구\n"
@@ -53,27 +73,54 @@ public class AdminBakeryController {
                             + "- `closedDays` — 정기 휴무일\n"
                             + "- `placeId` — 구글 Places ID\n\n"
                             + "나머지 필드(`region`, `bakeryType` 등)는 승인 전 직접 입력 필요.")
-    @Parameter(name = "keyword", description = "검색 키워드", example = "대전 빵집")
-    @PostMapping("/import")
-    public ApiResponse<List<String>> importBakeries(@RequestParam String keyword) {
-        return ApiResponse.ok(googlePlacesImportService.importByKeyword(keyword));
+    @PostMapping("/import/confirm")
+    public ApiResponse<List<String>> confirmImport(
+            @Valid @RequestBody BakeryImportConfirmRequest request) {
+        return ApiResponse.ok(
+                googlePlacesImportService.confirmImport(
+                        request.getSearchId(), request.getCandidateIds()));
     }
 
     @Operation(
-            summary = "카카오 로컬 키워드로 빵집 임포트",
+            summary = "캐시된 검색 결과 다시 보기",
             description =
-                    "카카오 로컬 API 검색 결과를 PENDING 상태로 저장한다. 이미 존재하는 빵집은 스킵.\n\n"
-                            + "**임포트 시 채워지는 필드**\n"
+                    "`searchId`로 Redis에 캐시된 검색 결과(키워드/후보 목록)를 그대로 다시 조회한다."
+                            + " 구글 Places/카카오 로컬 검색 결과 모두 조회 가능하며, 캐시가 만료되었으면 404를 반환한다.")
+    @GetMapping("/import/search/{searchId}")
+    public ApiResponse<BakeryImportPreviewResponse> getCachedSearch(@PathVariable String searchId) {
+        return ApiResponse.ok(bakeryImportRedisService.getPreview(searchId));
+    }
+
+    @Operation(
+            summary = "카카오 로컬 키워드로 빵집 검색 (미리보기)",
+            description =
+                    "검색 결과를 DB에 저장하지 않고 Redis에 임시 캐시한 뒤 후보 목록을 반환한다. 이미 존재하는 빵집/프랜차이즈/빵집이 아닌 카테고리는 후보에서 제외됨.\n\n"
+                            + "후보 중 원하는 것만 골라 `searchId`와 함께 `POST /admin/bakeries/import/kakao/confirm`을 호출하면 실제로 저장된다."
+                            + " 캐시는 일정 시간 후 만료된다.")
+    @Parameter(name = "keyword", description = "검색 키워드", example = "대전 빵집")
+    @PostMapping("/import/kakao/search")
+    public ApiResponse<BakeryImportPreviewResponse> searchBakeriesFromKakao(
+            @RequestParam @NotBlank String keyword) {
+        return ApiResponse.ok(kakaoLocalImportService.searchByKeyword(keyword));
+    }
+
+    @Operation(
+            summary = "카카오 로컬 검색 후보 확정 저장",
+            description =
+                    "`searchId`로 캐시된 후보 중 선택한 `candidateIds`만 PENDING 상태로 저장한다. 이미 존재하는 빵집은 스킵.\n\n"
+                            + "**저장 시 채워지는 필드**\n"
                             + "- `name` — 빵집 이름\n"
                             + "- `address` — 도로명 주소 (없으면 지번 주소)\n"
                             + "- `region` — 지역구\n"
                             + "- `latitude` / `longitude` — 위경도\n"
                             + "- `phone` — 전화번호\n\n"
                             + "영업시간 등 나머지 필드는 승인 전 직접 입력 필요.")
-    @Parameter(name = "keyword", description = "검색 키워드", example = "대전 빵집")
-    @PostMapping("/import/kakao")
-    public ApiResponse<List<String>> importBakeriesFromKakao(@RequestParam String keyword) {
-        return ApiResponse.ok(kakaoLocalImportService.importByKeyword(keyword));
+    @PostMapping("/import/kakao/confirm")
+    public ApiResponse<List<String>> confirmImportFromKakao(
+            @Valid @RequestBody BakeryImportConfirmRequest request) {
+        return ApiResponse.ok(
+                kakaoLocalImportService.confirmImport(
+                        request.getSearchId(), request.getCandidateIds()));
     }
 
     @Operation(summary = "빵집 목록 조회 (상태 필터 / 키워드 검색 / 정렬)")
