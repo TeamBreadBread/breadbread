@@ -7,13 +7,22 @@ type BottomNavItemProps = {
   onClick?: () => void;
   /** 탭 위에 띄우는 안내 툴팁 (예: 코스 안내 중) */
   tooltip?: string;
+  coachTarget?: string;
 };
 
-const BottomNavItem = ({ label, active = false, icon, onClick, tooltip }: BottomNavItemProps) => {
+const BottomNavItem = ({
+  label,
+  active = false,
+  icon,
+  onClick,
+  tooltip,
+  coachTarget,
+}: BottomNavItemProps) => {
   return (
     <button
       type="button"
       onClick={onClick}
+      data-coach-target={coachTarget}
       className="relative flex flex-1 flex-col items-center justify-center gap-1 sm:gap-[6px]"
     >
       {tooltip ? (

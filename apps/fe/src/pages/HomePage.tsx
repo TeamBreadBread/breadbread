@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { useRouterState } from "@tanstack/react-router";
+import { HomeCoachMark } from "@/components/coach-mark";
 import BottomNav from "@/components/layout/BottomNav";
 import AppShell from "@/components/layout/AppShell";
 import HomeHeroSection from "@/components/domain/home/HomeHeroSection";
@@ -69,6 +70,7 @@ const HomePage = () => {
       </main>
 
       <BottomNav />
+      <HomeCoachMark />
     </AppShell>
   );
 };

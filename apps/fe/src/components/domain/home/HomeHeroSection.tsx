@@ -61,8 +61,12 @@ const HomeHeroSection = () => {
         </div>
 
         <div className="flex gap-2">
-          <RecommendationHeroCard onClick={goAiCoursePreferenceFlow} disabled={isNavigating} />
-          <QuickMenuGrid />
+          <div data-coach-target="ai-recommendation" className="flex min-w-0 flex-1">
+            <RecommendationHeroCard onClick={goAiCoursePreferenceFlow} disabled={isNavigating} />
+          </div>
+          <div data-coach-target="quick-menu" className="flex min-w-0 flex-1">
+            <QuickMenuGrid />
+          </div>
         </div>
       </div>
     </section>
