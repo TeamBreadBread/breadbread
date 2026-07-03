@@ -3,13 +3,13 @@ import { redirect } from "@tanstack/react-router";
 import { hasUserPreferenceSaved } from "@/api/user";
 
 import { isLoggedIn } from "./isLoggedIn";
-import { isPublicPath } from "./publicRoutes";
 
 /** 선호도 조사(Onboarding) 페이지 — BE `GET /users/preference`와 대응 */
 export const PREFERENCE_ONBOARDING_PATH = "/user-preference" as const;
 
 export const PREFERENCE_ONBOARDING_SEARCH = { mode: "create" as const };
 
+/** OAuth 콜백·결제 리다이렉트 등 — 로그인 직후 라우팅이 이어지는 경로만 예외 */
 const PATH_PREFIXES_EXEMPT_FROM_GATE = ["/auth/", "/payment/portone-redirect"] as const;
 
 let cachedHasPreference: boolean | null = null;
@@ -39,7 +39,7 @@ export function isPreferenceOnboardingPath(
 }
 
 export function isPathExemptFromPreferenceGate(pathname: string): boolean {
-  return isPublicPath(pathname) || isPathPrefixExempt(pathname);
+  return isPathPrefixExempt(pathname);
 }
 
 async function resolveHasPreferenceSaved(): Promise<boolean> {
@@ -72,8 +72,9 @@ export async function ensurePreferenceOnboardingGate(
 
   const hasPreference = await resolveHasPreferenceSaved();
 
-  if (isPreferenceOnboardingPath(pathname, search)) {
-    if (hasPreference && search.mode !== "edit") {
+  if (pathname === PREFERENCE_ONBOARDING_PATH) {
+    if (search.mode === "edit") return;
+    if (hasPreference) {
       throw redirect({ to: "/home" });
     }
     return;

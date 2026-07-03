@@ -140,6 +140,17 @@ export default function UserPreferenceEditPage() {
         setIsLoading(true);
         const rawPreference = await getMyPreference();
         if (!mounted) return;
+        if (!rawPreference) {
+          setHasExistingPreference(false);
+          setQuestions(INITIAL_USER_PREFERENCE_QUESTIONS);
+          setOriginalSnapshot({
+            bakeryTypes: [],
+            bakeryPersonalities: [],
+            bakeryUseTypes: [],
+            waitingTolerance: null,
+          });
+          return;
+        }
         const preference = normalizeMyPreference(rawPreference);
 
         setHasExistingPreference(true);
