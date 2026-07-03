@@ -1,12 +1,13 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import LoginPage from "@/pages/LoginPage";
 import { isLoggedIn } from "@/lib/auth/isLoggedIn";
+import { redirectLoggedInUserFromLanding } from "@/lib/auth/preferenceOnboardingGate";
 import { parseLoginRedirectPath } from "@/lib/postLoginRedirect";
 
 export const Route = createFileRoute("/login")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
     if (isLoggedIn()) {
-      throw redirect({ to: "/home" });
+      await redirectLoggedInUserFromLanding();
     }
   },
   validateSearch: (search: Record<string, unknown>) => ({

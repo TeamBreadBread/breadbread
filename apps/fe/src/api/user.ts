@@ -123,17 +123,33 @@ export type MyPreferenceResponse = {
   waitingTolerance: WaitingTolerance;
 };
 
+/** BE `GET /users/preference` — 선호도 없으면 `data: null`(200), PATCH 실패 시 E0403 */
+export function isSavedPreferenceResponse(
+  data: MyPreferenceResponse | null | undefined,
+): data is MyPreferenceResponse {
+  if (!data) return false;
+  return (
+    Array.isArray(data.bakeryTypes) &&
+    data.bakeryTypes.length > 0 &&
+    Array.isArray(data.bakeryPersonalities) &&
+    data.bakeryPersonalities.length > 0 &&
+    Array.isArray(data.bakeryUseTypes) &&
+    data.bakeryUseTypes.length > 0 &&
+    data.waitingTolerance != null
+  );
+}
+
 export async function savePreference(body: SavePreferenceRequest): Promise<void> {
   const { data } = await apiClient.post<ApiEnvelope<void>>(`${PATH}/preference`, body);
   extractData(data);
 }
 
-let inflightMyPreference: Promise<MyPreferenceResponse> | null = null;
+let inflightMyPreference: Promise<MyPreferenceResponse | null> | null = null;
 
-export async function getMyPreference(): Promise<MyPreferenceResponse> {
+export async function getMyPreference(): Promise<MyPreferenceResponse | null> {
   if (!inflightMyPreference) {
     inflightMyPreference = apiClient
-      .get<ApiEnvelope<MyPreferenceResponse>>(`${PATH}/preference`)
+      .get<ApiEnvelope<MyPreferenceResponse | null>>(`${PATH}/preference`)
       .then((response) => extractData(response.data))
       .finally(() => {
         inflightMyPreference = null;
@@ -145,8 +161,8 @@ export async function getMyPreference(): Promise<MyPreferenceResponse> {
 /** 로그인 직후 라우팅용 — 저장된 선호도가 있으면 true, 없으면 false. 네트워크 등 그 외 오류는 throw */
 export async function hasUserPreferenceSaved(): Promise<boolean> {
   try {
-    await getMyPreference();
-    return true;
+    const preference = await getMyPreference();
+    return isSavedPreferenceResponse(preference);
   } catch (e) {
     if (
       e instanceof ApiBusinessError &&

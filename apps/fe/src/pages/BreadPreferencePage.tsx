@@ -100,6 +100,7 @@ export default function BreadPreferencePage({ isEditMode = false }: BreadPrefere
         setIsLoadingPreference(true);
         const preference = await getMyPreference();
         if (!mounted) return;
+        if (!preference) return;
 
         setQuestions(hydrateQuestionsFromMyPreference(preference));
       } catch {
