@@ -39,10 +39,6 @@ export function useHomeCoachMark() {
     setVisible(false);
   }, []);
 
-  const handleSkip = useCallback(() => {
-    dismissCoachMark();
-  }, [dismissCoachMark]);
-
   const handleNext = useCallback(() => {
     if (stepIndex >= TOTAL_STEPS - 1) {
       pulseAiRecommendationCard();
@@ -58,6 +54,5 @@ export function useHomeCoachMark() {
     step,
     totalSteps: TOTAL_STEPS,
     handleNext,
-    handleSkip,
   };
 }
