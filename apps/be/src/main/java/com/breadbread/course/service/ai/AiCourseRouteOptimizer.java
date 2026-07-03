@@ -85,7 +85,13 @@ public class AiCourseRouteOptimizer {
                     bestDest = j;
                 }
             }
-            if (bestDest < 0) break;
+            if (bestDest < 0) {
+                // 일부 구간 누락으로 다음 목적지를 못 찾은 경우 — 미방문 빵집을 원래 순서대로 append
+                for (int j = 0; j < n; j++) {
+                    if (!visited[j]) order.add(j);
+                }
+                break;
+            }
             visited[bestDest] = true;
             order.add(bestDest);
             currentOriginIdx = bestDest + 1; // 빵집 destIdx → originsIdx = destIdx + 1

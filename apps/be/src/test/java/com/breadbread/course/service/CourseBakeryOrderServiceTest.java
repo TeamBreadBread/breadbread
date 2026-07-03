@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -288,6 +289,46 @@ class CourseBakeryOrderServiceTest {
         assertThat(cb2.getVisitOrder()).isEqualTo(1); // 20L(B) → 1순위
         assertThat(cb1.getVisitOrder()).isEqualTo(2); // 10L(A) → 2순위
         verify(courseDrivingRouteService).invalidateCache(1L);
+    }
+
+    @Test
+    void optimizeBakeryOrder_passesRouteModeToFetchAndSaveRoute() {
+        User owner = owner(1L);
+        Course course = aiCourse(1L, owner, 36.3, 127.3);
+        Bakery b1 = bakeryAt(10L, "A", 36.0, 127.0);
+        Bakery b2 = bakeryAt(20L, "B", 36.1, 127.1);
+        CourseBakery cb1 = CourseBakery.builder().visitOrder(1).bakery(b1).build();
+        CourseBakery cb2 = CourseBakery.builder().visitOrder(2).bakery(b2).build();
+
+        when(courseRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(course));
+        when(courseBakeryRepository.findAllByCourseId(1L)).thenReturn(List.of(cb1, cb2));
+        when(aiCourseRouteOptimizer.optimizeOrder(
+                        org.mockito.ArgumentMatchers.anyDouble(),
+                        org.mockito.ArgumentMatchers.anyDouble(),
+                        org.mockito.ArgumentMatchers.anyList(),
+                        org.mockito.ArgumentMatchers.anyMap(),
+                        any()))
+                .thenReturn(List.of(20L, 10L));
+
+        List<Coordinate> path = List.of(new Coordinate(36.1, 127.1), new Coordinate(36.0, 127.0));
+        DrivingRouteResponse routeResponse =
+                DrivingRouteResponse.builder()
+                        .path(path)
+                        .legs(List.of())
+                        .stayMinutesPerBakery(List.of(40, 40))
+                        .totalTravelMinutes(10)
+                        .totalStayMinutes(80)
+                        .totalMinutes(90)
+                        .build();
+        when(courseDrivingRouteService.fetchAndSaveRoute(
+                        any(Course.class), anyList(), anyList(), anyInt(), any()))
+                .thenReturn(routeResponse);
+
+        courseBakeryOrderService.optimizeBakeryOrder(1L, 1L, UserRole.ROLE_USER, RouteMode.WALKING);
+
+        verify(courseDrivingRouteService)
+                .fetchAndSaveRoute(
+                        any(Course.class), anyList(), anyList(), anyInt(), eq(RouteMode.WALKING));
     }
 
     // ── 헬퍼 ─────────────────────────────────────────────────────────────

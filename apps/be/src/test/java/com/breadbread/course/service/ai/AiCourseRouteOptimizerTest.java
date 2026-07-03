@@ -72,6 +72,37 @@ class AiCourseRouteOptimizerTest {
     }
 
     @Test
+    void optimizeOrder_appendsRemainingBakeries_whenSomeRoutesAreMissing() {
+        // D→A=100(최소), D→B=MAX, D→C=MAX → A 선택 후 A→B, A→C 모두 MAX → break
+        // break 시 미방문(B, C)를 원래 순서대로 append → A, B, C 전체 포함
+        int max = Integer.MAX_VALUE;
+        int[][] matrix = {
+            {100, max, max}, // D
+            {max, max, max}, // A
+            {max, max, max}, // B
+            {max, max, max}, // C
+        };
+        when(tmapMatrixClient.getMatrix(anyList(), anyList(), anyString())).thenReturn(matrix);
+
+        Bakery a = bakery(10L, 36.0, 127.0);
+        Bakery b = bakery(20L, 36.1, 127.1);
+        Bakery c = bakery(30L, 36.2, 127.2);
+        List<CourseBakery> cbs =
+                List.of(courseBakery(a, 1), courseBakery(b, 2), courseBakery(c, 3));
+        Map<Long, double[]> coords =
+                Map.of(
+                        10L, new double[] {36.0, 127.0},
+                        20L, new double[] {36.1, 127.1},
+                        30L, new double[] {36.2, 127.2});
+
+        List<Long> result = optimizer.optimizeOrder(36.5, 127.5, cbs, coords, RouteMode.DRIVING);
+
+        assertThat(result).containsExactlyInAnyOrder(10L, 20L, 30L);
+        assertThat(result).hasSize(3);
+        assertThat(result.get(0)).isEqualTo(10L); // A가 첫 번째
+    }
+
+    @Test
     void optimizeOrder_returnsOriginalOrder_whenTmapFails() {
         when(tmapMatrixClient.getMatrix(anyList(), anyList(), anyString()))
                 .thenThrow(new RuntimeException("TMAP 오류"));
