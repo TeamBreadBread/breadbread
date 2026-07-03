@@ -183,8 +183,48 @@ public class CourseBakeryOrderService {
         }
 
         AiCourseInfo aiInfo = course.getAiCourseInfo();
-        Map<Long, double[]> bakeryCoords =
+
+        // 투어 진행 중이면 방문 완료한 빵집은 순서 고정, 나머지만 최적화
+        int visitedCount =
+                tourRedisService
+                        .getTourState(userId)
+                        .filter(
+                                state ->
+                                        state.getCourseId().equals(courseId)
+                                                && state.getStatus()
+                                                        == com.breadbread.tour.redis.TourStatus
+                                                                .IN_PROGRESS)
+                        .map(state -> state.getCurrentVisitOrder())
+                        .orElse(0);
+
+        List<CourseBakery> visitedBakeries =
                 courseBakeries.stream()
+                        .filter(cb -> cb.getVisitOrder() <= visitedCount)
+                        .sorted(Comparator.comparingInt(CourseBakery::getVisitOrder))
+                        .toList();
+        List<CourseBakery> remainingBakeries =
+                courseBakeries.stream()
+                        .filter(cb -> cb.getVisitOrder() > visitedCount)
+                        .sorted(Comparator.comparingInt(CourseBakery::getVisitOrder))
+                        .toList();
+
+        if (remainingBakeries.size() < 2) {
+            return buildResponse(courseId, courseBakeries, 0);
+        }
+
+        // 출발점: 마지막으로 방문한 빵집 좌표, 없으면 AI 코스 출발 위치
+        double departureLat, departureLng;
+        if (!visitedBakeries.isEmpty()) {
+            Bakery lastVisited = visitedBakeries.get(visitedBakeries.size() - 1).getBakery();
+            departureLat = lastVisited.getLatitude();
+            departureLng = lastVisited.getLongitude();
+        } else {
+            departureLat = aiInfo.getLatitude();
+            departureLng = aiInfo.getLongitude();
+        }
+
+        Map<Long, double[]> bakeryCoords =
+                remainingBakeries.stream()
                         .map(CourseBakery::getBakery)
                         .filter(
                                 b ->
@@ -195,13 +235,14 @@ public class CourseBakeryOrderService {
                                         Bakery::getId,
                                         b -> new double[] {b.getLatitude(), b.getLongitude()}));
 
-        List<Long> optimizedOrder =
+        List<Long> optimizedRemaining =
                 aiCourseRouteOptimizer.optimizeOrder(
-                        aiInfo.getLatitude(),
-                        aiInfo.getLongitude(),
-                        courseBakeries,
-                        bakeryCoords,
-                        routeMode);
+                        departureLat, departureLng, remainingBakeries, bakeryCoords, routeMode);
+
+        // 방문 완료 빵집 순서 유지 + 최적화된 나머지 순서 합산
+        List<Long> optimizedOrder = new java.util.ArrayList<>();
+        visitedBakeries.forEach(cb -> optimizedOrder.add(cb.getBakery().getId()));
+        optimizedOrder.addAll(optimizedRemaining);
 
         Map<Long, CourseBakery> bakeryMap =
                 courseBakeries.stream()

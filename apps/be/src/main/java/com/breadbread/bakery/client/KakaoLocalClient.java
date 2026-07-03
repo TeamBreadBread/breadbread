@@ -1,6 +1,8 @@
 package com.breadbread.bakery.client;
 
 import com.breadbread.bakery.config.KakaoLocalProperties;
+import com.breadbread.global.exception.CustomException;
+import com.breadbread.global.exception.ErrorCode;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Duration;
@@ -30,6 +32,8 @@ public class KakaoLocalClient {
     @Getter
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Place {
+        private String id;
+
         @JsonProperty("place_name")
         private String placeName;
 
@@ -53,7 +57,7 @@ public class KakaoLocalClient {
     public List<Place> searchBakeries(String keyword) {
         if (properties.getApiKey() == null || properties.getApiKey().isBlank()) {
             log.warn("[카카오 로컬] API 키가 설정되지 않아 요청을 건너뜁니다.");
-            return List.of();
+            throw new CustomException(ErrorCode.BAKERY_IMPORT_SEARCH_FAILED);
         }
 
         try {
@@ -75,7 +79,7 @@ public class KakaoLocalClient {
             return response.getDocuments();
         } catch (Exception e) {
             log.error("[카카오 로컬] 키워드 검색 실패: keyword={}", keyword, e);
-            return List.of();
+            throw new CustomException(ErrorCode.BAKERY_IMPORT_SEARCH_FAILED);
         }
     }
 }

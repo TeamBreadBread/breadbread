@@ -1,6 +1,8 @@
 package com.breadbread.bakery.client;
 
 import com.breadbread.global.config.GooglePlacesProperties;
+import com.breadbread.global.exception.CustomException;
+import com.breadbread.global.exception.ErrorCode;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.Duration;
 import java.util.List;
@@ -98,18 +100,23 @@ public class GooglePlacesClient {
         private String photoUri;
     }
 
-    /** 키워드(지역 등) + bakery 타입으로 빵집 목록을 검색한다. */
+    /**
+     * 키워드(지역 등) + bakery 타입으로 빵집 목록을 검색한다. API 키 미설정/호출 실패는 "결과 없음"과 구분하기 위해 예외로 던진다. 응답에 places
+     * 필드가 없는 경우(진짜 검색 결과 없음)만 빈 목록을 반환한다.
+     */
     public List<PlaceResult> searchBakeriesByKeyword(String keyword) {
-        if (isApiKeyMissing()) return List.of();
+        if (isApiKeyMissing()) {
+            throw new CustomException(ErrorCode.BAKERY_IMPORT_SEARCH_FAILED);
+        }
 
-        var requestBody = new TextSearchWithTypeRequest(keyword, "bakery", true, 20, "ko");
+        var requestBody = new TextSearchWithTypeRequest(keyword, "bakery", true, 20, "ko", "KR");
         try {
             PlacesSearchResponse response = doSearchTextWithDetails(requestBody);
             if (response == null || response.getPlaces() == null) return List.of();
             return response.getPlaces();
         } catch (Exception e) {
             log.error("[구글 Places] 키워드 검색 실패: keyword={}", keyword, e);
-            return List.of();
+            throw new CustomException(ErrorCode.BAKERY_IMPORT_SEARCH_FAILED);
         }
     }
 
@@ -262,7 +269,8 @@ public class GooglePlacesClient {
             String includedType,
             boolean strictTypeFiltering,
             int maxResultCount,
-            String languageCode) {}
+            String languageCode,
+            String regionCode) {}
 
     record LocationBias(Circle circle) {}
 
