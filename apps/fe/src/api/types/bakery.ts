@@ -114,7 +114,7 @@ export type BakeryForAI = {
   imageUrls?: string[];
 };
 
-export type BakerySortType = "RATING" | "REVIEW_COUNT" | "LIKE_COUNT";
+export type BakerySortType = "RATING" | "REVIEW_COUNT" | "LIKE_COUNT" | "NEARBY";
 
 /** GET /bakeries 쿼리 (백엔드 검색 조건과 동일) */
 export type GetBakeriesParams = {
@@ -124,6 +124,12 @@ export type GetBakeriesParams = {
   region?: string;
   /** 행정동 필터 (예: 은행동) */
   dong?: string;
+  /** sort=NEARBY 또는 radiusMeters 사용 시 필수 */
+  userLat?: number;
+  /** sort=NEARBY 또는 radiusMeters 사용 시 필수 */
+  userLng?: number;
+  /** 검색 반경(미터). userLat·userLng 필요 */
+  radiusMeters?: number;
   page?: number;
   size?: number;
 };

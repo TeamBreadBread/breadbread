@@ -61,6 +61,15 @@ function buildSearchQuery(params: GetBakeriesParams): string {
   if (params.dong !== undefined && params.dong !== "") {
     q.set("dong", params.dong);
   }
+  if (params.userLat !== undefined) {
+    q.set("userLat", String(params.userLat));
+  }
+  if (params.userLng !== undefined) {
+    q.set("userLng", String(params.userLng));
+  }
+  if (params.radiusMeters !== undefined) {
+    q.set("radiusMeters", String(params.radiusMeters));
+  }
   q.set("page", String(params.page ?? 0));
   q.set("size", String(params.size ?? 10));
   const s = q.toString();
