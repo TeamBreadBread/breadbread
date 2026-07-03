@@ -38,6 +38,7 @@ const BottomNav = () => {
 
   return (
     <nav
+      data-coach-target="bottom-nav"
       className={`fixed bottom-0 left-1/2 z-50 w-full -translate-x-1/2 overflow-visible border-t border-gray-300 bg-gray-00 ${APP_SHELL_MAX_WIDTH}`}
     >
       <div className="flex h-[56px] sm:h-[60px]">
@@ -57,6 +58,7 @@ const BottomNav = () => {
               label={item.label}
               active={isActive}
               tooltip={to === "/route" ? routeNavTooltip : undefined}
+              coachTarget={item.label === "MY" ? "bottom-nav-my" : undefined}
               icon={
                 <AppIcon src={item.icon} size={24} color={isActive ? "gray-900" : "gray-500"} />
               }
