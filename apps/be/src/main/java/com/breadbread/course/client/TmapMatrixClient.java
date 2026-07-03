@@ -43,45 +43,30 @@ public class TmapMatrixClient {
         TmapMatrixResponse response = callApi(body);
         log.info("[Tmap Matrix] 완료: elapsed={}ms", System.currentTimeMillis() - startTime);
 
-        int[][] matrix = new int[m][n];
-        List<TmapMatrixResponse.MatrixResult> results = response.getResultList();
-        for (int i = 0; i < m; i++) {
-            for (int j = 0; j < n; j++) {
-                int idx = i * n + j;
-                matrix[i][j] =
-                        (results != null && idx < results.size() && results.get(idx) != null)
-                                ? results.get(idx).getTime()
-                                : Integer.MAX_VALUE;
-            }
-        }
-        return matrix;
+        return parseMatrix(response, m, n);
     }
 
     private Map<String, Object> buildRequestBody(
             List<double[]> origins, List<double[]> destinations, String transportMode) {
-        List<Map<String, Object>> startList = new ArrayList<>();
-        for (int i = 0; i < origins.size(); i++) {
-            double[] o = origins.get(i);
-            Map<String, Object> start = new HashMap<>();
-            start.put("startX", String.valueOf(o[1])); // lng
-            start.put("startY", String.valueOf(o[0])); // lat
-            start.put("startName", "s" + i);
-            startList.add(start);
+        List<Map<String, Object>> originList = new ArrayList<>();
+        for (double[] o : origins) {
+            Map<String, Object> point = new HashMap<>();
+            point.put("lon", String.valueOf(o[1])); // lng
+            point.put("lat", String.valueOf(o[0])); // lat
+            originList.add(point);
         }
 
-        List<Map<String, Object>> endList = new ArrayList<>();
-        for (int j = 0; j < destinations.size(); j++) {
-            double[] d = destinations.get(j);
-            Map<String, Object> end = new HashMap<>();
-            end.put("endX", String.valueOf(d[1])); // lng
-            end.put("endY", String.valueOf(d[0])); // lat
-            end.put("endName", "e" + j);
-            endList.add(end);
+        List<Map<String, Object>> destinationList = new ArrayList<>();
+        for (double[] d : destinations) {
+            Map<String, Object> point = new HashMap<>();
+            point.put("lon", String.valueOf(d[1])); // lng
+            point.put("lat", String.valueOf(d[0])); // lat
+            destinationList.add(point);
         }
 
         Map<String, Object> body = new HashMap<>();
-        body.put("startList", startList);
-        body.put("endList", endList);
+        body.put("origins", originList);
+        body.put("destinations", destinationList);
         body.put("transportMode", transportMode);
         return body;
     }
@@ -90,14 +75,7 @@ public class TmapMatrixClient {
         TmapMatrixResponse response =
                 webClient
                         .post()
-                        .uri(
-                                uriBuilder ->
-                                        uriBuilder
-                                                .scheme("https")
-                                                .host("apis.openapi.sk.com")
-                                                .path(MATRIX_PATH)
-                                                .queryParam("version", "1")
-                                                .build())
+                        .uri(properties.getBaseUrl() + MATRIX_PATH + "?version=1")
                         .header("appKey", properties.getAppKey())
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(body)
@@ -111,6 +89,26 @@ public class TmapMatrixClient {
             throw new RuntimeException("TMAP matrix 응답 없음");
         }
         return response;
+    }
+
+    int[][] parseMatrix(TmapMatrixResponse response, int m, int n) {
+        int[][] matrix = new int[m][n];
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                matrix[i][j] = Integer.MAX_VALUE;
+            }
+        }
+        List<TmapMatrixResponse.MatrixRoute> routes = response.getMatrixRoutes();
+        if (routes != null) {
+            for (TmapMatrixResponse.MatrixRoute r : routes) {
+                int oi = r.getOriginIndex();
+                int di = r.getDestinationIndex();
+                if (oi >= 0 && oi < m && di >= 0 && di < n) {
+                    matrix[oi][di] = r.getDuration();
+                }
+            }
+        }
+        return matrix;
     }
 
     private Mono<Throwable> handleErrorResponse(ClientResponse res) {
@@ -130,13 +128,15 @@ public class TmapMatrixClient {
     @Getter
     @JsonIgnoreProperties(ignoreUnknown = true)
     static class TmapMatrixResponse {
-        private List<MatrixResult> resultList;
+        private List<MatrixRoute> matrixRoutes;
 
         @Getter
         @JsonIgnoreProperties(ignoreUnknown = true)
-        static class MatrixResult {
-            private int time;
-            private int distance;
+        static class MatrixRoute {
+            private int originIndex;
+            private int destinationIndex;
+            private int duration;
+            private double distance;
         }
     }
 }

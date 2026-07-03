@@ -268,7 +268,7 @@ public class CourseBakeryOrderService {
                             orderedBakeries,
                             orderedBakeries.stream().map(Bakery::getEstimatedStayMinutes).toList(),
                             totalStayMinutes,
-                            RouteMode.DRIVING);
+                            routeMode);
             estimatedTotalMinutes = routeResponse.getTotalMinutes();
             course.updateTotalMinutes(estimatedTotalMinutes);
         } catch (CustomException e) {
