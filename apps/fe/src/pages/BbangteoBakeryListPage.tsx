@@ -40,6 +40,10 @@ import {
   shouldShowBakeryRating,
 } from "@/utils/bakeryRating";
 import { isListItemOpenNow } from "@/utils/bakeryBusinessHours";
+import { BakeryMapExplorer } from "@/components/domain/bakery-map";
+import type { BakeryMapPoint, BakeryMapViewMode } from "@/components/domain/bakery-map/types";
+import { useBakeryMapLocation } from "@/hooks/useBakeryMapLocation";
+import { BAKERY_MAP_FETCH_SIZE, buildBakeryMapNearbySearchParams } from "@/lib/bakeryMapConstants";
 
 const PAGE_SIZE = 6;
 const OPEN_FILTER_FETCH_SIZE = 60;
@@ -99,6 +103,8 @@ type BakeryRow = {
   images: string[];
   /** 4장 초과분 — 4번째 타일에 더보기 오버레이 */
   remainingPreviewImageCount: number;
+  lat?: number | null;
+  lng?: number | null;
 };
 
 const PREVIEW_SLOTS = 4 as const;
@@ -127,6 +133,8 @@ function mapListItemToBakeryRow(b: BakeryListItem): BakeryRow {
     closeTime: item.closeTime,
     images: previews,
     remainingPreviewImageCount: remaining,
+    lat: item.lat,
+    lng: item.lng,
   };
 }
 
@@ -152,15 +160,21 @@ function mapDetailToBakeryRow(detail: BakeryDetail): BakeryRow {
     closeTime: detail.closeTime,
     images: previews,
     remainingPreviewImageCount: remaining,
+    lat: detail.lat,
+    lng: detail.lng,
   };
 }
 
 const PageHeader = ({
   title,
   listEntryFrom,
+  viewMode,
+  onViewModeToggle,
 }: {
   title: string;
   listEntryFrom?: BakeryListEntryFrom;
+  viewMode?: BakeryMapViewMode;
+  onViewModeToggle?: () => void;
 }) => {
   const navigate = useNavigate();
   const handleBack = () => {
@@ -189,7 +203,22 @@ const PageHeader = ({
           <h1 className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[18px] leading-[24px] font-bold text-[#1a1c20]">
             {title}
           </h1>
-          <div className="h-[36px] w-[36px]" />
+          {onViewModeToggle ? (
+            <button
+              type="button"
+              className="flex h-[36px] w-[36px] items-center justify-center"
+              onClick={onViewModeToggle}
+              aria-label={viewMode === "map" ? "리스트 보기" : "지도 보기"}
+            >
+              <AppIcon
+                src={viewMode === "map" ? IconAssets.IcMenu : IconAssets.IcCompass}
+                size="x6"
+                alt=""
+              />
+            </button>
+          ) : (
+            <div className="h-[36px] w-[36px]" />
+          )}
         </div>
       </header>
       <div className={FIXED_TOP_BAR_SPACER_CLASS} aria-hidden />
@@ -431,9 +460,20 @@ const BakeryImageRow = ({
   );
 };
 
-const BakeryCard = ({ bakery, onClick }: { bakery: BakeryRow; onClick?: () => void }) => (
+const BakeryCard = ({
+  bakery,
+  selected = false,
+  onClick,
+}: {
+  bakery: BakeryRow;
+  selected?: boolean;
+  onClick?: () => void;
+}) => (
   <article
-    className="flex flex-col gap-[12px] border-b border-[#f3f4f5] px-[20px] py-[18px]"
+    className={cn(
+      "flex flex-col gap-[12px] border-b border-[#f3f4f5] px-[20px] py-[18px]",
+      selected && "bg-orange-100/60",
+    )}
     onClick={onClick}
     onKeyDown={(event) => {
       if (event.key === "Enter" || event.key === " ") {
@@ -467,9 +507,11 @@ const BakeryCard = ({ bakery, onClick }: { bakery: BakeryRow; onClick?: () => vo
 
 const BakeryList = ({
   items,
+  selectedBakeryId,
   onItemClick,
 }: {
   items: BakeryRow[];
+  selectedBakeryId?: number | null;
   onItemClick?: (bakery: BakeryRow) => void;
 }) => (
   <section className="flex flex-col">
@@ -477,6 +519,7 @@ const BakeryList = ({
       <BakeryCard
         key={bakery.id}
         bakery={bakery}
+        selected={bakery.id === selectedBakeryId}
         onClick={onItemClick ? () => onItemClick(bakery) : undefined}
       />
     ))}
@@ -617,6 +660,19 @@ const BbangteoBakeryListPage = ({
   const [listSort, setListSort] = useState<BakeryListSort>("RATING");
   const [openOnly, setOpenOnly] = useState(false);
   const [page, setPage] = useState(0);
+  const [viewMode, setViewMode] = useState<BakeryMapViewMode>("list");
+  const [selectedBakeryId, setSelectedBakeryId] = useState<number | null>(null);
+  const isMapView = viewMode === "map";
+  const {
+    center: mapCenter,
+    loading: mapLocationLoading,
+    permissionDenied: mapPermissionDenied,
+    recenterToUser: recenterMapToUser,
+  } = useBakeryMapLocation(isMapView);
+  const mapNearbyParams = useMemo(() => {
+    if (!isMapView || mapLocationLoading) return null;
+    return buildBakeryMapNearbySearchParams(mapCenter);
+  }, [isMapView, mapLocationLoading, mapCenter]);
   const [fetchedPinRowsById, setFetchedPinRowsById] = useState<Map<number, BakeryRow>>(
     () => new Map(),
   );
@@ -694,19 +750,38 @@ const BbangteoBakeryListPage = ({
       open: openOnly,
       keyword: queryKeyword,
     },
-    { enabled: !isDongCurationList && !(isTrendBreadList && pins.length === 0) },
+    {
+      enabled: !isDongCurationList && !(isTrendBreadList && pins.length === 0) && !isMapView,
+    },
+  );
+
+  const mapListQuery = useBakeries(
+    {
+      page: 0,
+      size: BAKERY_MAP_FETCH_SIZE,
+      open: openOnly,
+      keyword: queryKeyword,
+      ...(mapNearbyParams ?? {}),
+    },
+    {
+      enabled:
+        isMapView &&
+        mapNearbyParams != null &&
+        !isDongCurationList &&
+        !(isTrendBreadList && pins.length === 0),
+    },
   );
 
   const regionFallback = dongFilterTrimmed ? DONG_REGION_FALLBACK[dongFilterTrimmed] : undefined;
   const dongListQuery = useBakeries(
     {
       page: 0,
-      size: 60,
-      sort: listSort,
+      size: isMapView ? BAKERY_MAP_FETCH_SIZE : 60,
       open: openOnly,
       dong: dongFilterTrimmed,
+      ...(isMapView && mapNearbyParams ? mapNearbyParams : { sort: listSort }),
     },
-    { enabled: isDongCurationList },
+    { enabled: isDongCurationList && (!isMapView || mapNearbyParams != null) },
   );
   const dongListEmpty =
     isDongCurationList &&
@@ -716,12 +791,18 @@ const BbangteoBakeryListPage = ({
   const regionListQuery = useBakeries(
     {
       page: 0,
-      size: 60,
-      sort: listSort,
+      size: isMapView ? BAKERY_MAP_FETCH_SIZE : 60,
       open: openOnly,
       region: regionFallback,
+      ...(isMapView && mapNearbyParams ? mapNearbyParams : { sort: listSort }),
     },
-    { enabled: isDongCurationList && dongListEmpty && Boolean(regionFallback) },
+    {
+      enabled:
+        isDongCurationList &&
+        dongListEmpty &&
+        Boolean(regionFallback) &&
+        (!isMapView || mapNearbyParams != null),
+    },
   );
 
   const excludeSet = useMemo(() => new Set(excludePinIds ?? []), [excludePinIds]);
@@ -743,10 +824,11 @@ const BbangteoBakeryListPage = ({
     const rows = filtered.map((bakery) =>
       applyLikeOverlayToBakeryRow(mapListItemToBakeryRow(bakery)),
     );
-    const sorted = sortBakeryRows(rows, listSort);
+    const sorted = isMapView ? rows : sortBakeryRows(rows, listSort);
     return filterBakeryRowsByOpenOnly(filterRowsByKeyword(sorted, keyword), openOnly);
   }, [
     isDongCurationList,
+    isMapView,
     dongFilterTrimmed,
     dongListQuery.data,
     dongListEmpty,
@@ -765,6 +847,7 @@ const BbangteoBakeryListPage = ({
     isDongCurationList && (dongListQuery.error ?? (dongListEmpty ? regionListQuery.error : null));
 
   const pinResolutionActive =
+    !isMapView &&
     !openOnly &&
     !isDongCurationList &&
     page === 0 &&
@@ -846,12 +929,13 @@ const BbangteoBakeryListPage = ({
   }, [pinResolutionActive, pinIdsToFetchKey]);
 
   const apiRows: BakeryRow[] = useMemo(() => {
-    if (!data?.bakeries?.length) return [];
-    return data.bakeries.map((b) => {
+    const source = isMapView ? mapListQuery.data?.bakeries : data?.bakeries;
+    if (!source?.length) return [];
+    return source.map((b) => {
       const row = mapListItemToBakeryRow(b);
       return likeOverlayTick >= 0 ? applyLikeOverlayToBakeryRow(row) : row;
     });
-  }, [data, likeOverlayTick]);
+  }, [data, isMapView, likeOverlayTick, mapListQuery.data]);
 
   const openFilteredRows: BakeryRow[] = useMemo(() => {
     if (!useOpenFilterFetch || !apiRows.length) return [];
@@ -915,10 +999,49 @@ const BbangteoBakeryListPage = ({
     openFilteredRows,
   ]);
 
+  const mapRows: BakeryRow[] = useMemo(() => {
+    if (!isMapView) return [];
+
+    if (isDongCurationList) {
+      return dongCurationRows;
+    }
+
+    let rows = apiRows;
+
+    if (isPinOnlyList) {
+      const pinSet = new Set(pins);
+      rows = rows.filter((row) => pinSet.has(row.id));
+    }
+
+    if (useOpenFilterFetch) {
+      return filterBakeryRowsByOpenOnly(rows, true);
+    }
+
+    return filterBakeryRowsByOpenOnly(filterRowsByKeyword(rows, keyword), openOnly);
+  }, [
+    isMapView,
+    isDongCurationList,
+    dongCurationRows,
+    isPinOnlyList,
+    pins,
+    apiRows,
+    openOnly,
+    keyword,
+    useOpenFilterFetch,
+  ]);
+
   const listLoading =
-    (isTrendBreadList && (menuIndexQuery.isLoading || breadListResolving)) ||
-    (isDongCurationList ? dongLoading : loading);
+    !isMapView &&
+    ((isTrendBreadList && (menuIndexQuery.isLoading || breadListResolving)) ||
+      (isDongCurationList ? dongLoading : loading));
+  const mapDataLoading =
+    isMapView &&
+    !mapLocationLoading &&
+    ((isTrendBreadList && (menuIndexQuery.isLoading || breadListResolving)) ||
+      (isDongCurationList ? dongLoading : mapListQuery.loading));
   const listError = isDongCurationList ? dongError : error;
+  const mapError =
+    isMapView && isDongCurationList ? dongError : isMapView ? mapListQuery.error : null;
   const isCurationScopedList = isDongCurationList || isPinOnlyList;
 
   const totalPages = useOpenFilterFetch
@@ -930,6 +1053,7 @@ const BbangteoBakeryListPage = ({
       : Math.ceil((data?.total ?? 0) / PAGE_SIZE);
 
   const handleBakeryClick = (bakery: BakeryRow) => {
+    setSelectedBakeryId(bakery.id);
     void navigate({
       to: "/bbangteo-bakery-detail",
       search: buildBbakeryDetailSearch({
@@ -940,11 +1064,37 @@ const BbangteoBakeryListPage = ({
     });
   };
 
+  const handleMapBakeryDetail = (bakery: BakeryMapPoint) => {
+    setSelectedBakeryId(bakery.id);
+    void navigate({
+      to: "/bbangteo-bakery-detail",
+      search: buildBbakeryDetailSearch({
+        bakeryId: bakery.id,
+        from: listEntryFrom,
+        trendBread: isTrendBreadList ? breadKeywordTrimmed : undefined,
+      }),
+    });
+  };
+
+  const handleViewModeToggle = () => {
+    setViewMode((prev) => (prev === "list" ? "map" : "list"));
+  };
+
   return (
     <MobileFrame className="bg-white">
       <div className="flex min-h-screen flex-1 flex-col bg-white">
-        <PageHeader title={pageTitle} listEntryFrom={listEntryFrom} />
-        <main className="flex flex-1 flex-col pb-[56px] sm:pb-[60px]">
+        <PageHeader
+          title={pageTitle}
+          listEntryFrom={listEntryFrom}
+          viewMode={viewMode}
+          onViewModeToggle={handleViewModeToggle}
+        />
+        <main
+          className={cn(
+            "flex flex-1 flex-col pb-[56px] sm:pb-[60px]",
+            isMapView && "min-h-0 overflow-hidden pb-0 sm:pb-0",
+          )}
+        >
           <SearchFilterSection
             keyword={keyword}
             onKeywordChange={handleKeywordChange}
@@ -961,7 +1111,26 @@ const BbangteoBakeryListPage = ({
               onSelect={handleTrendCategorySelect}
             />
           ) : null}
-          {listLoading ? (
+          {isMapView ? (
+            mapError ? (
+              <div className="flex flex-1 flex-col items-center justify-center px-[20px] py-[40px] text-center text-[14px] text-[#868b94]">
+                {mapError.message}
+              </div>
+            ) : (
+              <BakeryMapExplorer
+                rows={mapRows}
+                loading={mapDataLoading}
+                mapCenter={mapCenter}
+                locationLoading={mapLocationLoading}
+                permissionDenied={mapPermissionDenied}
+                onRecenter={recenterMapToUser}
+                selectedBakeryId={selectedBakeryId}
+                onSelectedBakeryIdChange={setSelectedBakeryId}
+                onBakeryDetail={handleMapBakeryDetail}
+                className="min-h-0 flex-1"
+              />
+            )
+          ) : listLoading ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 px-[20px] py-[40px] text-[14px] text-[#868b94]">
               불러오는 중…
             </div>
@@ -988,7 +1157,11 @@ const BbangteoBakeryListPage = ({
             </div>
           ) : (
             <>
-              <BakeryList items={rows} onItemClick={handleBakeryClick} />
+              <BakeryList
+                items={rows}
+                selectedBakeryId={selectedBakeryId}
+                onItemClick={handleBakeryClick}
+              />
               {totalPages > 0 && !isCurationScopedList ? (
                 <PageNumberNav currentPage={page} totalPages={totalPages} onSelectPage={setPage} />
               ) : null}

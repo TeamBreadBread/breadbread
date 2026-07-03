@@ -9,6 +9,10 @@ interface KakaoMaps {
   CustomOverlay: new (options: KakaoCustomOverlayOptions) => KakaoCustomOverlay;
   Polyline: new (options: KakaoPolylineOptions) => KakaoPolyline;
   services: KakaoMapServices;
+  event: {
+    addListener(target: KakaoMap, type: string, callback: () => void): void;
+    removeListener(target: KakaoMap, type: string, callback: () => void): void;
+  };
 }
 
 interface KakaoMapServices {
@@ -55,6 +59,8 @@ interface KakaoMapOptions {
 
 interface KakaoMap {
   setCenter(latlng: KakaoLatLng): void;
+  getCenter(): KakaoLatLng;
+  getBounds(): KakaoLatLngBounds;
   setBounds(
     bounds: KakaoLatLngBounds,
     paddingTop?: number,
@@ -64,12 +70,15 @@ interface KakaoMap {
   ): void;
   setDraggable(draggable: boolean): void;
   setZoomable(zoomable: boolean): void;
+  setLevel(level: number): void;
   relayout(): void;
   addListener?(event: string, callback: () => void): void;
 }
 
 interface KakaoLatLngBounds {
   extend(latlng: KakaoLatLng): void;
+  getSouthWest(): KakaoLatLng;
+  getNorthEast(): KakaoLatLng;
 }
 
 interface KakaoPolylineOptions {
@@ -87,6 +96,7 @@ interface KakaoPolyline {
 
 interface KakaoMarker {
   setMap(map: KakaoMap | null): void;
+  setPosition(position: KakaoLatLng): void;
 }
 
 interface KakaoCustomOverlayOptions {

@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Button } from "@/components/common";
 import type { CoachMarkStep } from "@/components/coach-mark/coachMarkConfig";
-import { COACH_MARK_SPOTLIGHT_PADDING } from "@/components/coach-mark/coachMarkConfig";
+import {
+  COACH_MARK_SPOTLIGHT_PADDING,
+  formatCoachMarkProgress,
+} from "@/components/coach-mark/coachMarkConfig";
 import type { SpotlightRect } from "@/components/coach-mark/coachMarkSpotlight";
 import { cn } from "@/utils/cn";
 
@@ -12,7 +14,6 @@ type CoachMarkOverlayProps = {
   step: CoachMarkStep;
   totalSteps: number;
   onNext: () => void;
-  onSkip: () => void;
 };
 
 function CoachMarkCheckIcon() {
@@ -50,13 +51,37 @@ function measureTargetInContainer(
   };
 }
 
+function CoachMarkCardHeader({
+  progressLabel,
+  actionLabel,
+  onAction,
+}: {
+  progressLabel: string;
+  actionLabel: string;
+  onAction: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-x3">
+      <span className="rounded-full bg-orange-100 px-x2 py-x1 font-pretendard text-size-1 font-medium leading-t2 text-gray-700">
+        {progressLabel}
+      </span>
+      <button
+        type="button"
+        onClick={onAction}
+        className="shrink-0 font-pretendard text-size-3 font-bold leading-t4 tracking-0 text-gray-800"
+      >
+        {actionLabel}
+      </button>
+    </div>
+  );
+}
+
 export default function CoachMarkOverlay({
   open,
   stepIndex,
   step,
   totalSteps,
   onNext,
-  onSkip,
 }: CoachMarkOverlayProps) {
   const titleId = useId();
   const bodyId = useId();
@@ -65,6 +90,7 @@ export default function CoachMarkOverlay({
   const [spotlight, setSpotlight] = useState<SpotlightRect | null>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const isFinish = step.id === "finish";
+  const progressLabel = formatCoachMarkProgress(stepIndex, totalSteps);
 
   const measure = useCallback(() => {
     const container = containerRef.current;
@@ -149,20 +175,6 @@ export default function CoachMarkOverlay({
 
   useEffect(() => {
     if (!open) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onSkip();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onSkip, open]);
-
-  useEffect(() => {
-    if (!open) return;
     cardRef.current?.focus();
   }, [open, stepIndex]);
 
@@ -216,19 +228,25 @@ export default function CoachMarkOverlay({
           className={cn(
             "absolute z-[1] flex flex-col overflow-hidden rounded-r4 bg-gray-00 shadow-3",
             !isFinish && "animate-[coachMarkFadeUp_280ms_ease-out]",
-            isFinish ? "items-center gap-x6 p-x6" : "gap-x4 p-x5",
+            "gap-x4 p-x5",
+            isFinish && "items-center",
           )}
           style={cardStyle}
         >
+          <div className="w-full">
+            <CoachMarkCardHeader
+              progressLabel={progressLabel}
+              actionLabel={step.primaryLabel}
+              onAction={onNext}
+            />
+          </div>
+
           {isFinish ? (
             <>
               <div className="flex h-x12 w-x12 items-center justify-center rounded-full bg-orange-100 text-orange-600">
                 <CoachMarkCheckIcon />
               </div>
               <div className="flex w-full flex-col items-center gap-x1-5 text-center">
-                <span className="rounded-full bg-orange-100 px-x2 py-x1 font-pretendard text-size-1 font-medium leading-t2 text-gray-700">
-                  {step.badge}
-                </span>
                 <h2
                   id={titleId}
                   className="font-pretendard text-size-5 font-bold leading-t6 tracking-1 text-gray-1000"
@@ -242,60 +260,22 @@ export default function CoachMarkOverlay({
                   {step.body}
                 </p>
               </div>
-              <Button type="button" fullWidth onClick={onNext}>
-                {step.primaryLabel}
-              </Button>
             </>
           ) : (
-            <>
-              <div className="flex flex-col gap-x2">
-                <span className="w-fit rounded-full bg-orange-100 px-x2 py-x1 font-pretendard text-size-1 font-medium leading-t2 text-gray-700">
-                  {step.badge}
-                </span>
-                <h2
-                  id={titleId}
-                  className="font-pretendard text-size-4 font-bold leading-t5 tracking-1 text-gray-1000"
-                >
-                  {step.title}
-                </h2>
-                <p
-                  id={bodyId}
-                  className="font-pretendard text-size-3 leading-t4 tracking-0 text-gray-800"
-                >
-                  {step.body}
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between gap-x3 border-t border-gray-300 pt-x4">
-                <button
-                  type="button"
-                  onClick={onSkip}
-                  className="min-h-x11 min-w-x11 font-pretendard text-size-2 font-medium leading-t3 text-gray-700"
-                >
-                  건너뛰기
-                </button>
-
-                <div className="flex items-center gap-x1-5" aria-hidden>
-                  {Array.from({ length: totalSteps }, (_, index) => (
-                    <span
-                      key={index}
-                      className={cn(
-                        "h-x1-5 w-x1-5 rounded-full transition-colors duration-200",
-                        index === stepIndex ? "bg-orange-600" : "bg-gray-400",
-                      )}
-                    />
-                  ))}
-                </div>
-
-                <Button
-                  type="button"
-                  className="!h-x11 !min-w-[72px] !px-x4 !py-x2 !text-size-3"
-                  onClick={onNext}
-                >
-                  {step.primaryLabel}
-                </Button>
-              </div>
-            </>
+            <div className="flex flex-col gap-x2">
+              <h2
+                id={titleId}
+                className="font-pretendard text-size-4 font-bold leading-t5 tracking-1 text-gray-1000"
+              >
+                {step.title}
+              </h2>
+              <p
+                id={bodyId}
+                className="font-pretendard text-size-3 leading-t4 tracking-0 text-gray-800"
+              >
+                {step.body}
+              </p>
+            </div>
           )}
         </div>
       </div>
