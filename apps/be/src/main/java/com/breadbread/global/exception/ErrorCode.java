@@ -65,6 +65,7 @@ public enum ErrorCode {
             HttpStatus.BAD_REQUEST, "E0313", "선택한 candidateId가 검색 결과에 존재하지 않습니다."),
     BAKERY_IMPORT_SEARCH_FAILED(
             HttpStatus.BAD_GATEWAY, "E0314", "외부 검색 API 호출에 실패했습니다. 잠시 후 다시 시도해주세요."),
+    NO_REPLACEMENT_BAKERY_FOUND(HttpStatus.NOT_FOUND, "E0315", "대체할 유사 빵집이 존재하지 않습니다."),
 
     // 코스/AI추천 E04xx
     COURSE_NOT_FOUND(HttpStatus.NOT_FOUND, "E0401", "존재하지 않는 코스입니다."),
