@@ -4,11 +4,9 @@ import com.breadbread.bakery.dto.request.BakerySearch;
 import com.breadbread.bakery.entity.Bakery;
 import com.breadbread.bakery.entity.enums.BakeryStatus;
 import com.breadbread.bakery.repository.BakeryRepository;
-import com.breadbread.course.dto.response.DrivingRouteResponse;
 import com.breadbread.course.dto.response.ModifyCourseBakeryResponse;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseBakery;
-import com.breadbread.course.entity.RouteMode;
 import com.breadbread.course.repository.CourseBakeryRepository;
 import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.global.exception.CustomException;
@@ -69,7 +67,7 @@ public class CourseBakeryMutationService {
                         .toList();
         renumberVisitOrders(remaining);
 
-        return buildResponse(course, courseId, target.getBakery().getId(), targetName, null, null);
+        return buildResponse(courseId, target.getBakery().getId(), targetName, null, null);
     }
 
     @Transactional
@@ -99,7 +97,6 @@ public class CourseBakeryMutationService {
         target.replaceBakery(replacement);
 
         return buildResponse(
-                course,
                 courseId,
                 targetBakery.getId(),
                 targetBakery.getName(),
@@ -130,7 +127,6 @@ public class CourseBakeryMutationService {
     }
 
     private ModifyCourseBakeryResponse buildResponse(
-            Course course,
             Long courseId,
             Long targetBakeryId,
             String targetBakeryName,
@@ -144,33 +140,12 @@ public class CourseBakeryMutationService {
                         .sorted(Comparator.comparingInt(CourseBakery::getVisitOrder))
                         .toList();
 
-        List<Bakery> orderedBakeries = ordered.stream().map(CourseBakery::getBakery).toList();
-        List<Long> bakeryOrder = orderedBakeries.stream().map(Bakery::getId).toList();
-        int totalStayMinutes =
-                orderedBakeries.stream().mapToInt(Bakery::getEstimatedStayMinutes).sum();
-
-        int estimatedTotalMinutes = 0;
-        try {
-            DrivingRouteResponse routeResponse =
-                    courseDrivingRouteService.fetchAndSaveRoute(
-                            course,
-                            orderedBakeries,
-                            orderedBakeries.stream().map(Bakery::getEstimatedStayMinutes).toList(),
-                            totalStayMinutes,
-                            RouteMode.DRIVING);
-            estimatedTotalMinutes = routeResponse.getTotalMinutes();
-            course.updateTotalMinutes(estimatedTotalMinutes);
-        } catch (CustomException e) {
-            log.warn(
-                    "코스 빵집 변경 후 경로 갱신 실패: courseId={}, error={}",
-                    courseId,
-                    e.getErrorCode().name());
-        }
+        List<Long> bakeryOrder = ordered.stream().map(cb -> cb.getBakery().getId()).toList();
 
         return ModifyCourseBakeryResponse.builder()
                 .courseId(courseId)
                 .bakeryOrder(bakeryOrder)
-                .estimatedTotalMinutes(estimatedTotalMinutes)
+                .estimatedTotalMinutes(0)
                 .targetBakeryId(targetBakeryId)
                 .targetBakeryName(targetBakeryName)
                 .replacementBakeryId(replacementBakeryId)
@@ -226,7 +201,7 @@ public class CourseBakeryMutationService {
 
         return candidates.stream()
                 .findFirst()
-                .orElseThrow(() -> new CustomException(ErrorCode.BAKERY_NOT_FOUND));
+                .orElseThrow(() -> new CustomException(ErrorCode.NO_REPLACEMENT_BAKERY_FOUND));
     }
 
     private boolean isClosedToday(Bakery bakery) {
