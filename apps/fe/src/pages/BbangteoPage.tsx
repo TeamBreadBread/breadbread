@@ -1,4 +1,5 @@
 import BbangteoBakerySuggestBanner from "@/components/domain/bbangteo/BbangteoBakerySuggestBanner";
+import BbangteoUserTestSurveyBanner from "@/components/domain/bbangteo/BbangteoUserTestSurveyBanner";
 import BbangteoCommunitySection from "@/components/domain/bbangteo/BbangteoCommunitySection";
 import BbangteoHeader from "@/components/domain/bbangteo/BbangteoHeader";
 import BbangteoSearchSection from "@/components/domain/bbangteo/BbangteoSearchSection";
@@ -108,6 +109,9 @@ const BbangteoPage = () => {
             onSearch={handleBakerySearch}
           />
           <TrendHotBreadsSection compact />
+          <section className="w-full bg-white px-[20px] py-[12px]">
+            <BbangteoUserTestSurveyBanner />
+          </section>
           <TrendCurationSection
             compact
             title="요즘 핫한 빵집"
