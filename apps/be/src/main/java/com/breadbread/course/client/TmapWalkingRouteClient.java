@@ -5,6 +5,7 @@ import com.breadbread.course.dto.route.Coordinate;
 import com.breadbread.course.dto.route.RouteResult;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.global.exception.TransientApiException;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Duration;
@@ -18,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -34,6 +37,10 @@ public class TmapWalkingRouteClient implements WalkingRouteClient {
     private final TmapProperties properties;
 
     @Override
+    @Retryable(
+            retryFor = TransientApiException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 300, multiplier = 2))
     public RouteResult getPath(List<Coordinate> coordinates) {
         Coordinate start = coordinates.get(0);
         Coordinate end = coordinates.get(coordinates.size() - 1);
@@ -81,14 +88,7 @@ public class TmapWalkingRouteClient implements WalkingRouteClient {
             TmapRouteResponse response =
                     webClient
                             .post()
-                            .uri(
-                                    uriBuilder ->
-                                            uriBuilder
-                                                    .scheme("https")
-                                                    .host("apis.openapi.sk.com")
-                                                    .path(PEDESTRIAN_PATH)
-                                                    .queryParam("version", "1")
-                                                    .build())
+                            .uri(properties.getBaseUrl() + PEDESTRIAN_PATH + "?version=1")
                             .header("appKey", properties.getAppKey())
                             .contentType(MediaType.APPLICATION_JSON)
                             .bodyValue(body)
@@ -100,20 +100,21 @@ public class TmapWalkingRouteClient implements WalkingRouteClient {
 
             if (response == null) {
                 log.error("[Tmap 경로] 응답 body 없음");
-                throw new CustomException(ErrorCode.ROUTE_PROVIDER_ERROR);
+                throw new TransientApiException(
+                        ErrorCode.ROUTE_PROVIDER_ERROR, "Tmap 경로 응답 body 없음", null);
             }
             return response;
 
-        } catch (CustomException e) {
+        } catch (CustomException | TransientApiException e) {
             throw e;
         } catch (Exception e) {
             if (reactor.core.Exceptions.unwrap(e)
                     instanceof java.util.concurrent.TimeoutException) {
                 log.error("[Tmap 경로] 타임아웃: timeoutSeconds={}", properties.getTimeoutSeconds());
-            } else {
-                log.error("[Tmap 경로] API 호출 실패", e);
+                throw new TransientApiException(ErrorCode.ROUTE_PROVIDER_ERROR, "Tmap 경로 타임아웃", e);
             }
-            throw new CustomException(ErrorCode.ROUTE_PROVIDER_ERROR);
+            log.error("[Tmap 경로] API 호출 실패: {}", e.toString());
+            throw new TransientApiException(ErrorCode.ROUTE_PROVIDER_ERROR, "Tmap 경로 호출 실패", e);
         }
     }
 
@@ -125,6 +126,13 @@ public class TmapWalkingRouteClient implements WalkingRouteClient {
                                     "[Tmap 경로] HTTP 오류: status={}, body={}",
                                     res.statusCode(),
                                     body);
+                            if (res.statusCode().is5xxServerError()) {
+                                return Mono.error(
+                                        new TransientApiException(
+                                                ErrorCode.ROUTE_PROVIDER_ERROR,
+                                                "Tmap 경로 서버 오류: " + res.statusCode(),
+                                                null));
+                            }
                             return Mono.error(new CustomException(ErrorCode.ROUTE_PROVIDER_ERROR));
                         });
     }

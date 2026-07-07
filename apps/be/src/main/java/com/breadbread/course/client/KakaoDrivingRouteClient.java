@@ -5,6 +5,7 @@ import com.breadbread.course.dto.route.Coordinate;
 import com.breadbread.course.dto.route.RouteResult;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.global.exception.TransientApiException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -14,7 +15,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -30,6 +34,10 @@ public class KakaoDrivingRouteClient implements DrivingRouteClient {
     private final KakaoMobilityProperties properties;
 
     @Override
+    @Retryable(
+            retryFor = TransientApiException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 300, multiplier = 2))
     public RouteResult getPath(List<Coordinate> coordinates) {
         Coordinate origin = coordinates.get(0);
         Coordinate destination = coordinates.get(coordinates.size() - 1);
@@ -77,42 +85,48 @@ public class KakaoDrivingRouteClient implements DrivingRouteClient {
                             .uri(URI.create(url))
                             .header("Authorization", "KakaoAK " + properties.getAppKey())
                             .retrieve()
-                            .onStatus(
-                                    HttpStatusCode::isError,
-                                    res ->
-                                            res.bodyToMono(String.class)
-                                                    .flatMap(
-                                                            body -> {
-                                                                log.error(
-                                                                        "[Kakao 경로] HTTP 오류: status={}, body={}",
-                                                                        res.statusCode(),
-                                                                        body);
-                                                                return Mono.error(
-                                                                        new CustomException(
-                                                                                ErrorCode
-                                                                                        .ROUTE_PROVIDER_ERROR));
-                                                            }))
+                            .onStatus(HttpStatusCode::isError, this::handleErrorResponse)
                             .bodyToMono(KakaoDirectionsResponse.class)
                             .timeout(Duration.ofSeconds(properties.getTimeoutSeconds()))
                             .block();
 
             if (response == null) {
                 log.error("[Kakao 경로] 응답 body 없음");
-                throw new CustomException(ErrorCode.ROUTE_PROVIDER_ERROR);
+                throw new TransientApiException(
+                        ErrorCode.ROUTE_PROVIDER_ERROR, "Kakao 경로 응답 body 없음", null);
             }
             return response;
 
-        } catch (CustomException e) {
+        } catch (CustomException | TransientApiException e) {
             throw e;
         } catch (Exception e) {
             if (reactor.core.Exceptions.unwrap(e)
                     instanceof java.util.concurrent.TimeoutException) {
                 log.error("[Kakao 경로] 타임아웃: timeoutSeconds={}", properties.getTimeoutSeconds());
-            } else {
-                log.error("[Kakao 경로] API 호출 실패", e);
+                throw new TransientApiException(ErrorCode.ROUTE_PROVIDER_ERROR, "Kakao 경로 타임아웃", e);
             }
-            throw new CustomException(ErrorCode.ROUTE_PROVIDER_ERROR);
+            log.error("[Kakao 경로] API 호출 실패: {}", e.toString());
+            throw new TransientApiException(ErrorCode.ROUTE_PROVIDER_ERROR, "Kakao 경로 호출 실패", e);
         }
+    }
+
+    private Mono<Throwable> handleErrorResponse(ClientResponse res) {
+        return res.bodyToMono(String.class)
+                .flatMap(
+                        body -> {
+                            log.error(
+                                    "[Kakao 경로] HTTP 오류: status={}, body={}",
+                                    res.statusCode(),
+                                    body);
+                            if (res.statusCode().is5xxServerError()) {
+                                return Mono.error(
+                                        new TransientApiException(
+                                                ErrorCode.ROUTE_PROVIDER_ERROR,
+                                                "Kakao 경로 서버 오류: " + res.statusCode(),
+                                                null));
+                            }
+                            return Mono.error(new CustomException(ErrorCode.ROUTE_PROVIDER_ERROR));
+                        });
     }
 
     private RouteResult toRouteResult(KakaoDirectionsResponse response, Coordinate destination) {

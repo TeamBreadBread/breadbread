@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import com.breadbread.global.config.AiProperties;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.global.exception.TransientApiException;
 import com.breadbread.tour.dto.CongestionInstantCheckResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
@@ -147,7 +148,9 @@ class CongestionInstantCheckClientTest {
     }
 
     @Test
-    void check_throws_TIMEOUT_whenTimeoutException() {
+    void check_throws_TransientApiException_TIMEOUT_whenTimeoutException() {
+        // @Retryable은 Spring AOP 프록시로 동작하므로, 프록시 없이 직접 생성한 인스턴스에서는
+        // 재시도 없이 원본 TransientApiException이 그대로 던져진다(변환은 GlobalExceptionHandler가 담당).
         when(webClient
                         .post()
                         .uri(any(String.class))
@@ -163,13 +166,13 @@ class CongestionInstantCheckClientTest {
                                 new java.util.concurrent.TimeoutException()));
 
         assertThatThrownBy(() -> client.check(Map.of("userId", 1L, "courseId", 10L)))
-                .isInstanceOf(CustomException.class)
+                .isInstanceOf(TransientApiException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.AI_WEBHOOK_TIMEOUT);
     }
 
     @Test
-    void check_throws_CONNECTION_ERROR_whenOtherException() {
+    void check_throws_TransientApiException_CONNECTION_ERROR_whenOtherException() {
         when(webClient
                         .post()
                         .uri(any(String.class))
@@ -183,7 +186,7 @@ class CongestionInstantCheckClientTest {
                 .thenThrow(new RuntimeException("connection refused"));
 
         assertThatThrownBy(() -> client.check(Map.of("userId", 1L, "courseId", 10L)))
-                .isInstanceOf(CustomException.class)
+                .isInstanceOf(TransientApiException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.AI_WEBHOOK_CONNECTION_ERROR);
     }

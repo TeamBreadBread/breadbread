@@ -1,6 +1,9 @@
 package com.breadbread.course.client;
 
 import com.breadbread.course.config.TmapProperties;
+import com.breadbread.global.exception.CustomException;
+import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.global.exception.TransientApiException;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -12,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -31,6 +36,10 @@ public class TmapMatrixClient {
      * origins[0] = 출발지, origins[1..N] = 빵집들 destinations[0..N-1] = 빵집들 반환: matrix[i][j] =
      * origins[i] → destinations[j] 이동시간(초), 실패 시 Integer.MAX_VALUE
      */
+    @Retryable(
+            retryFor = TransientApiException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 300, multiplier = 2))
     public int[][] getMatrix(
             List<double[]> origins, List<double[]> destinations, String transportMode) {
         int m = origins.size();
@@ -72,23 +81,39 @@ public class TmapMatrixClient {
     }
 
     private TmapMatrixResponse callApi(Map<String, Object> body) {
-        TmapMatrixResponse response =
-                webClient
-                        .post()
-                        .uri(properties.getBaseUrl() + MATRIX_PATH + "?version=1")
-                        .header("appKey", properties.getAppKey())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .bodyValue(body)
-                        .retrieve()
-                        .onStatus(HttpStatusCode::isError, this::handleErrorResponse)
-                        .bodyToMono(TmapMatrixResponse.class)
-                        .timeout(Duration.ofSeconds(properties.getTimeoutSeconds()))
-                        .block();
+        try {
+            TmapMatrixResponse response =
+                    webClient
+                            .post()
+                            .uri(properties.getBaseUrl() + MATRIX_PATH + "?version=1")
+                            .header("appKey", properties.getAppKey())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .bodyValue(body)
+                            .retrieve()
+                            .onStatus(HttpStatusCode::isError, this::handleErrorResponse)
+                            .bodyToMono(TmapMatrixResponse.class)
+                            .timeout(Duration.ofSeconds(properties.getTimeoutSeconds()))
+                            .block();
 
-        if (response == null) {
-            throw new RuntimeException("TMAP matrix 응답 없음");
+            if (response == null) {
+                log.error("[Tmap Matrix] 응답 body 없음");
+                throw new TransientApiException(
+                        ErrorCode.ROUTE_PROVIDER_ERROR, "Tmap Matrix 응답 body 없음", null);
+            }
+            return response;
+
+        } catch (CustomException | TransientApiException e) {
+            throw e;
+        } catch (Exception e) {
+            if (reactor.core.Exceptions.unwrap(e)
+                    instanceof java.util.concurrent.TimeoutException) {
+                log.error("[Tmap Matrix] 타임아웃: timeoutSeconds={}", properties.getTimeoutSeconds());
+                throw new TransientApiException(
+                        ErrorCode.ROUTE_PROVIDER_ERROR, "Tmap Matrix 타임아웃", e);
+            }
+            log.error("[Tmap Matrix] API 호출 실패: {}", e.toString());
+            throw new TransientApiException(ErrorCode.ROUTE_PROVIDER_ERROR, "Tmap Matrix 호출 실패", e);
         }
-        return response;
     }
 
     int[][] parseMatrix(TmapMatrixResponse response, int m, int n) {
@@ -119,9 +144,14 @@ public class TmapMatrixClient {
                                     "[Tmap Matrix] HTTP 오류: status={}, body={}",
                                     res.statusCode(),
                                     body);
-                            return Mono.error(
-                                    new RuntimeException(
-                                            "TMAP matrix HTTP 오류: " + res.statusCode()));
+                            if (res.statusCode().is5xxServerError()) {
+                                return Mono.error(
+                                        new TransientApiException(
+                                                ErrorCode.ROUTE_PROVIDER_ERROR,
+                                                "Tmap Matrix 서버 오류: " + res.statusCode(),
+                                                null));
+                            }
+                            return Mono.error(new CustomException(ErrorCode.ROUTE_PROVIDER_ERROR));
                         });
     }
 
