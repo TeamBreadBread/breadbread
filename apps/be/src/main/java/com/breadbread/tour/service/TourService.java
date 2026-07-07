@@ -1,6 +1,7 @@
 package com.breadbread.tour.service;
 
 import com.breadbread.course.entity.Course;
+import com.breadbread.course.entity.CourseBakery;
 import com.breadbread.course.repository.CourseBakeryRepository;
 import com.breadbread.course.repository.CourseRepository;
 import com.breadbread.global.exception.CustomException;
@@ -19,9 +20,13 @@ import com.breadbread.tour.redis.TourStatus;
 import com.breadbread.user.entity.User;
 import com.breadbread.user.entity.UserRole;
 import com.breadbread.user.repository.UserRepository;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,19 +63,40 @@ public class TourService {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
 
-        int totalBakeryCount = courseBakeryRepository.findAllByCourseId(courseId).size();
+        List<CourseBakery> courseBakeries =
+                courseBakeryRepository.findAllByCourseIdWithBakery(courseId);
+        int totalBakeryCount = courseBakeries.size();
 
         if (totalBakeryCount == 0) {
             throw new CustomException(ErrorCode.COURSE_BAKERY_REQUIRED);
         }
 
+        ZonedDateTime nowSeoul = ZonedDateTime.now(ZoneId.of("Asia/Seoul"));
+        LocalTime nowTime = nowSeoul.toLocalTime();
+        DayOfWeek today = nowSeoul.getDayOfWeek();
+
+        // 영업시간이 미설정(카카오/구글 임포트 데이터 등)인 빵집은 "닫힘"이 아니라 "모름"으로 보고 검증 대상에서 제외
+        boolean hasClosed =
+                courseBakeries.stream()
+                        .map(CourseBakery::getBakery)
+                        .filter(bakery -> bakery.getBusinessHours() != null)
+                        .filter(bakery -> bakery.getBusinessHours().hasDefinedHours(today))
+                        .anyMatch(
+                                bakery ->
+                                        !bakery.getBusinessHours()
+                                                .isOpenNow(nowTime, today, bakery.getClosedDays()));
+
+        if (hasClosed) {
+            throw new CustomException(ErrorCode.TOUR_BAKERY_CLOSED);
+        }
+
         // Redis 먼저 성공해야 예약 상태 전환 (실패 시 DB 롤백으로 상태 보존)
         TourStateCache state = tourRedisService.startTour(userId, course.getId(), totalBakeryCount);
 
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+        LocalDate departureDate = LocalDate.now(ZoneId.of("Asia/Seoul"));
         reservationRepository
                 .findFirstByUserIdAndCourseIdAndDepartureDateAndStatus(
-                        userId, courseId, today, ReservationStatus.CONFIRMED)
+                        userId, courseId, departureDate, ReservationStatus.CONFIRMED)
                 .ifPresent(Reservation::startTour);
 
         return TourStartResponse.from(state);

@@ -36,6 +36,13 @@ public class BusinessHours {
         this.lastOrderTime = lastOrderTime;
     }
 
+    /** 해당 요일 타입(평일/주말)의 open/close 시간이 둘 다 설정돼 있는지. 미설정(영업시간 미정)인 경우 false. */
+    public boolean hasDefinedHours(DayOfWeek day) {
+        LocalTime open = isWeekend(day) ? weekendOpen : weekdayOpen;
+        LocalTime close = isWeekend(day) ? weekendClose : weekdayClose;
+        return open != null && close != null;
+    }
+
     public boolean isOpenNow(LocalTime now, DayOfWeek today, Set<DayOfWeek> closedDays) {
         // 정기 휴무일 체크
         if (closedDays != null && closedDays.contains(today)) {
