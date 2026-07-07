@@ -3,6 +3,7 @@ package com.breadbread.tour.client;
 import com.breadbread.global.config.AiProperties;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.global.exception.TransientApiException;
 import com.breadbread.tour.dto.CongestionInstantCheckResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
@@ -11,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -24,6 +27,10 @@ public class CongestionInstantCheckClient {
     private final ObjectMapper objectMapper;
     private final AiProperties aiProperties;
 
+    @Retryable(
+            retryFor = TransientApiException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 300, multiplier = 2))
     public CongestionInstantCheckResponse check(Map<String, Object> requestBody) {
         Object userId = requestBody.get("userId");
         Object courseId = requestBody.get("courseId");
@@ -45,6 +52,13 @@ public class CongestionInstantCheckClient {
                                                 "[혼잡도 즉시 체크] HTTP 오류: userId={}, status={}",
                                                 userId,
                                                 res.statusCode());
+                                        if (res.statusCode().is5xxServerError()) {
+                                            return Mono.error(
+                                                    new TransientApiException(
+                                                            ErrorCode.AI_WEBHOOK_HTTP_ERROR,
+                                                            "혼잡도 웹훅 서버 오류: " + res.statusCode(),
+                                                            null));
+                                        }
                                         return Mono.error(
                                                 new CustomException(
                                                         ErrorCode.AI_WEBHOOK_HTTP_ERROR));
@@ -52,7 +66,7 @@ public class CongestionInstantCheckClient {
                             .bodyToMono(String.class)
                             .timeout(Duration.ofSeconds(aiProperties.getWebhookTimeoutSeconds()))
                             .block();
-        } catch (CustomException e) {
+        } catch (CustomException | TransientApiException e) {
             throw e;
         } catch (Exception e) {
             long elapsed = System.currentTimeMillis() - start;
@@ -63,10 +77,15 @@ public class CongestionInstantCheckClient {
                         userId,
                         elapsed,
                         aiProperties.getWebhookTimeoutSeconds());
-                throw new CustomException(ErrorCode.AI_WEBHOOK_TIMEOUT);
+                throw new TransientApiException(ErrorCode.AI_WEBHOOK_TIMEOUT, "혼잡도 웹훅 타임아웃", e);
             }
-            log.error("[혼잡도 즉시 체크] 호출 실패: userId={}, elapsed={}ms", userId, elapsed, e);
-            throw new CustomException(ErrorCode.AI_WEBHOOK_CONNECTION_ERROR);
+            log.error(
+                    "[혼잡도 즉시 체크] 호출 실패: userId={}, elapsed={}ms, error={}",
+                    userId,
+                    elapsed,
+                    e.toString());
+            throw new TransientApiException(
+                    ErrorCode.AI_WEBHOOK_CONNECTION_ERROR, "혼잡도 웹훅 호출 실패", e);
         }
 
         if (rawBody == null || rawBody.isBlank()) {

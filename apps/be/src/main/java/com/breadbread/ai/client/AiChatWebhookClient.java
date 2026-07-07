@@ -5,12 +5,15 @@ import com.breadbread.ai.dto.AiChatWebhookRequest;
 import com.breadbread.global.config.AiProperties;
 import com.breadbread.global.exception.CustomException;
 import com.breadbread.global.exception.ErrorCode;
+import com.breadbread.global.exception.TransientApiException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -24,6 +27,10 @@ public class AiChatWebhookClient {
     private final ObjectMapper objectMapper;
     private final AiProperties aiProperties;
 
+    @Retryable(
+            retryFor = TransientApiException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 300, multiplier = 2))
     public AiChatResponse requestChat(AiChatWebhookRequest request) {
         log.info(
                 "[AI 채팅 웹훅] 요청 시작: messageLength={}",
@@ -46,6 +53,13 @@ public class AiChatWebhookClient {
                                     res -> {
                                         log.error(
                                                 "[AI 채팅 웹훅] HTTP 오류: status={}", res.statusCode());
+                                        if (res.statusCode().is5xxServerError()) {
+                                            return Mono.error(
+                                                    new TransientApiException(
+                                                            ErrorCode.AI_WEBHOOK_HTTP_ERROR,
+                                                            "AI 채팅 웹훅 서버 오류: " + res.statusCode(),
+                                                            null));
+                                        }
                                         return Mono.error(
                                                 new CustomException(
                                                         ErrorCode.AI_WEBHOOK_HTTP_ERROR));
@@ -60,7 +74,7 @@ public class AiChatWebhookClient {
             }
             return rawBody;
 
-        } catch (CustomException e) {
+        } catch (CustomException | TransientApiException e) {
             throw e;
         } catch (Exception e) {
             long elapsed = System.currentTimeMillis() - start;
@@ -70,10 +84,11 @@ public class AiChatWebhookClient {
                         "[AI 채팅 웹훅] 타임아웃: elapsed={}ms, timeout={}s",
                         elapsed,
                         aiProperties.getWebhookTimeoutSeconds());
-                throw new CustomException(ErrorCode.AI_WEBHOOK_TIMEOUT);
+                throw new TransientApiException(ErrorCode.AI_WEBHOOK_TIMEOUT, "AI 채팅 웹훅 타임아웃", e);
             }
-            log.error("[AI 채팅 웹훅] 호출 실패: elapsed={}ms", elapsed, e);
-            throw new CustomException(ErrorCode.AI_WEBHOOK_CONNECTION_ERROR);
+            log.error("[AI 채팅 웹훅] 호출 실패: elapsed={}ms, error={}", elapsed, e.toString());
+            throw new TransientApiException(
+                    ErrorCode.AI_WEBHOOK_CONNECTION_ERROR, "AI 채팅 웹훅 호출 실패", e);
         }
     }
 

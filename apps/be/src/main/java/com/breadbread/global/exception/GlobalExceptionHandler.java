@@ -2,6 +2,8 @@ package com.breadbread.global.exception;
 
 import com.breadbread.global.dto.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -21,16 +23,47 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 @Slf4j
 public class GlobalExceptionHandler {
 
+    /**
+     * 외부 API 실패로 인한 5xx 에러코드. 원인(HTTP 상태/body)은 클라이언트 쪽에서 이미 로깅했으므로, 여기서는 스택트레이스 없이 메시지만 남긴다. 진짜 내부
+     * 버그로 인한 5xx(INTERNAL_SERVER_ERROR 등)는 별도로 트레이스를 유지한다.
+     */
+    private static final Set<ErrorCode> EXTERNAL_API_ERROR_CODES =
+            EnumSet.of(
+                    ErrorCode.BAKERY_IMPORT_SEARCH_FAILED,
+                    ErrorCode.ROUTE_PROVIDER_ERROR,
+                    ErrorCode.AI_SERVER_ERROR,
+                    ErrorCode.AI_WEBHOOK_HTTP_ERROR,
+                    ErrorCode.AI_WEBHOOK_TIMEOUT,
+                    ErrorCode.AI_WEBHOOK_CONNECTION_ERROR,
+                    ErrorCode.AI_WEBHOOK_EMPTY_RESPONSE);
+
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ApiResponse<Void>> handleCustomException(CustomException e) {
         ErrorCode errorCode = e.getErrorCode();
         MDC.put("errorCode", errorCode.getCode());
         try {
-            if (errorCode.getStatus().is5xxServerError()) {
+            if (errorCode.getStatus().is5xxServerError()
+                    && !EXTERNAL_API_ERROR_CODES.contains(errorCode)) {
                 log.error("[{}] {}", errorCode.getCode(), e.getMessage(), e);
             } else {
                 log.warn("[{}] {}", errorCode.getCode(), e.getMessage());
             }
+        } finally {
+            MDC.remove("errorCode");
+        }
+        return ResponseEntity.status(errorCode.getStatus()).body(ApiResponse.fail(errorCode));
+    }
+
+    /**
+     * 재시도 대상 예외라 클라이언트 쪽 callApi가 시도마다 이미 트레이스를 남겼으므로, 여기서는 트레이스 없이 메시지만 남긴다(외부 API 문제라는 게 정의상
+     * 확실하므로 별도 코드 목록으로 분기할 필요가 없다).
+     */
+    @ExceptionHandler(TransientApiException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTransientApiException(TransientApiException e) {
+        ErrorCode errorCode = e.getErrorCode();
+        MDC.put("errorCode", errorCode.getCode());
+        try {
+            log.error("[{}] 재시도 소진: {}", errorCode.getCode(), e.getMessage());
         } finally {
             MDC.remove("errorCode");
         }

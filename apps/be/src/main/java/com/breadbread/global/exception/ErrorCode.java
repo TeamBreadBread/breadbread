@@ -146,6 +146,7 @@ public enum ErrorCode {
     TOUR_ALREADY_STARTED(HttpStatus.CONFLICT, "E0902", "이미 시작된 투어가 있습니다."),
     TOUR_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "E0903", "이미 완료된 투어입니다."),
     TOUR_INVALID_VISIT_ORDER(HttpStatus.BAD_REQUEST, "E0904", "유효하지 않은 방문 순서입니다."),
+    TOUR_BAKERY_CLOSED(HttpStatus.BAD_REQUEST, "E0905", "현재 영업 중이지 않은 빵집이 포함되어 있어 투어를 시작할 수 없습니다."),
 
     // 혼잡도 E10xx
     CONGESTION_NOT_FOUND(HttpStatus.NOT_FOUND, "E1001", "혼잡도 데이터가 없습니다.");
