@@ -9,8 +9,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.breadbread.bakery.entity.Bakery;
-import com.breadbread.bakery.entity.BusinessHours;
 import com.breadbread.course.entity.Course;
 import com.breadbread.course.entity.CourseBakery;
 import com.breadbread.course.repository.CourseBakeryRepository;
@@ -111,8 +109,11 @@ class TourServiceTest {
         when(tourRedisService.hasActiveTour(1L)).thenReturn(false);
         when(courseRepository.findByIdAndActiveTrue(10L)).thenReturn(Optional.of(course));
         List<CourseBakery> courseBakeries =
-                List.of(openCourseBakery(), openCourseBakery(), openCourseBakery());
-        when(courseBakeryRepository.findAllByCourseIdWithBakery(10L)).thenReturn(courseBakeries);
+                List.of(
+                        mock(CourseBakery.class),
+                        mock(CourseBakery.class),
+                        mock(CourseBakery.class));
+        when(courseBakeryRepository.findAllByCourseId(10L)).thenReturn(courseBakeries);
         when(tourRedisService.startTour(1L, 10L, 3)).thenReturn(state);
         when(reservationRepository.findFirstByUserIdAndCourseIdAndDepartureDateAndStatus(
                         eq(1L), eq(10L), any(LocalDate.class), eq(ReservationStatus.CONFIRMED)))
@@ -130,8 +131,9 @@ class TourServiceTest {
         TourStateCache state = tourState(5L, 10L, 2, 0, TourStatus.IN_PROGRESS);
         when(tourRedisService.hasActiveTour(5L)).thenReturn(false);
         when(courseRepository.findByIdAndActiveTrue(10L)).thenReturn(Optional.of(course));
-        List<CourseBakery> courseBakeries = List.of(openCourseBakery(), openCourseBakery());
-        when(courseBakeryRepository.findAllByCourseIdWithBakery(10L)).thenReturn(courseBakeries);
+        List<CourseBakery> courseBakeries =
+                List.of(mock(CourseBakery.class), mock(CourseBakery.class));
+        when(courseBakeryRepository.findAllByCourseId(10L)).thenReturn(courseBakeries);
         when(tourRedisService.startTour(5L, 10L, 2)).thenReturn(state);
         when(reservationRepository.findFirstByUserIdAndCourseIdAndDepartureDateAndStatus(
                         eq(5L), eq(10L), any(LocalDate.class), eq(ReservationStatus.CONFIRMED)))
@@ -147,47 +149,12 @@ class TourServiceTest {
         Course course = sharedCourse(10L);
         when(tourRedisService.hasActiveTour(1L)).thenReturn(false);
         when(courseRepository.findByIdAndActiveTrue(10L)).thenReturn(Optional.of(course));
-        when(courseBakeryRepository.findAllByCourseIdWithBakery(10L)).thenReturn(List.of());
+        when(courseBakeryRepository.findAllByCourseId(10L)).thenReturn(List.of());
 
         assertThatThrownBy(() -> tourService.startTour(1L, UserRole.ROLE_USER, 10L))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.COURSE_BAKERY_REQUIRED);
-    }
-
-    @Test
-    void startTour_succeeds_when_bakery_hours_undefined() {
-        // 카카오/구글 임포트 등으로 영업시간이 미설정인 빵집은 "닫힘"이 아니라 "모름"으로 보고 통과시켜야 함
-        Course course = sharedCourse(10L);
-        TourStateCache state = tourState(1L, 10L, 1, 0, TourStatus.IN_PROGRESS);
-        when(tourRedisService.hasActiveTour(1L)).thenReturn(false);
-        when(courseRepository.findByIdAndActiveTrue(10L)).thenReturn(Optional.of(course));
-        CourseBakery undefinedHoursBakery = courseBakeryWithHours(false, false);
-        when(courseBakeryRepository.findAllByCourseIdWithBakery(10L))
-                .thenReturn(List.of(undefinedHoursBakery));
-        when(tourRedisService.startTour(1L, 10L, 1)).thenReturn(state);
-        when(reservationRepository.findFirstByUserIdAndCourseIdAndDepartureDateAndStatus(
-                        eq(1L), eq(10L), any(LocalDate.class), eq(ReservationStatus.CONFIRMED)))
-                .thenReturn(Optional.empty());
-
-        TourStartResponse response = tourService.startTour(1L, UserRole.ROLE_USER, 10L);
-
-        assertThat(response.getCourseId()).isEqualTo(10L);
-    }
-
-    @Test
-    void startTour_throws_TOUR_BAKERY_CLOSED_when_bakery_closed_now() {
-        Course course = sharedCourse(10L);
-        when(tourRedisService.hasActiveTour(1L)).thenReturn(false);
-        when(courseRepository.findByIdAndActiveTrue(10L)).thenReturn(Optional.of(course));
-        CourseBakery closedBakery = courseBakeryWithHours(true, false);
-        when(courseBakeryRepository.findAllByCourseIdWithBakery(10L))
-                .thenReturn(List.of(closedBakery));
-
-        assertThatThrownBy(() -> tourService.startTour(1L, UserRole.ROLE_USER, 10L))
-                .isInstanceOf(CustomException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.TOUR_BAKERY_CLOSED);
     }
 
     // ── visitBakery ────────────────────────────────────────────────────────────
@@ -467,25 +434,5 @@ class TourServiceTest {
         when(course.getUser()).thenReturn(null);
         when(course.getId()).thenReturn(courseId);
         return course;
-    }
-
-    /** businessHours가 없어(null) 영업시간 체크에서 걸러지는(=항상 영업 중 취급되는) CourseBakery 목 */
-    private static CourseBakery openCourseBakery() {
-        Bakery bakery = mock(Bakery.class);
-        CourseBakery courseBakery = mock(CourseBakery.class);
-        when(courseBakery.getBakery()).thenReturn(bakery);
-        return courseBakery;
-    }
-
-    /** hasDefinedHours/isOpenNow 결과를 직접 제어하는 CourseBakery 목(시간대 의존 없이 검증) */
-    private static CourseBakery courseBakeryWithHours(boolean hasDefinedHours, boolean isOpen) {
-        BusinessHours hours = mock(BusinessHours.class);
-        when(hours.hasDefinedHours(any())).thenReturn(hasDefinedHours);
-        when(hours.isOpenNow(any(), any(), any())).thenReturn(isOpen);
-        Bakery bakery = mock(Bakery.class);
-        when(bakery.getBusinessHours()).thenReturn(hours);
-        CourseBakery courseBakery = mock(CourseBakery.class);
-        when(courseBakery.getBakery()).thenReturn(bakery);
-        return courseBakery;
     }
 }
