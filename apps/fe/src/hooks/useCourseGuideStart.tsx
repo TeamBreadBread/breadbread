@@ -1,8 +1,13 @@
 import { useCallback, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 
 import type { CourseDetail } from "@/api/courses";
 import ClosedBakeryCourseDialog from "@/components/common/dialog/ClosedBakeryCourseDialog";
 import { useCourseTransportSheet } from "@/hooks/useCourseTransportSheet";
+import {
+  buildCourseGuidePreviewSearch,
+  type CourseGuidePreviewReturnFrom,
+} from "@/lib/courseGuidePreviewNavigation";
 import { saveCourseTransportMode } from "@/lib/courseTransportMode";
 import {
   excludeClosedBakeryFromCourse,
@@ -18,28 +23,44 @@ import {
 type UseCourseGuideStartOptions = {
   courseId: number | null | undefined;
   onCourseUpdated?: (detail: CourseDetail) => void;
-  onStartGuide: () => Promise<void>;
+  returnFrom?: CourseGuidePreviewReturnFrom;
 };
 
 export function useCourseGuideStart({
   courseId,
   onCourseUpdated,
-  onStartGuide,
+  returnFrom = "ai-result",
 }: UseCourseGuideStartOptions) {
+  const navigate = useNavigate();
   const { pickTransportMode, transportSheet } = useCourseTransportSheet();
   const [closedDialogOpen, setClosedDialogOpen] = useState(false);
   const [closedBakeries, setClosedBakeries] = useState<ClosedCourseBakery[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [busy, setBusy] = useState(false);
 
-  const confirmTransportAndStart = useCallback(async () => {
+  const openCourseGuidePreview = useCallback(
+    async (mode: NonNullable<Awaited<ReturnType<typeof pickTransportMode>>>) => {
+      if (!courseId) return false;
+      await saveCourseTransportMode(courseId, mode);
+      void navigate({
+        to: "/course-guide-preview",
+        search: buildCourseGuidePreviewSearch({
+          courseId,
+          transportMode: mode,
+          returnFrom,
+        }),
+      });
+      return true;
+    },
+    [courseId, navigate, returnFrom],
+  );
+
+  const confirmTransportAndPreview = useCallback(async () => {
     if (!courseId) return false;
     const mode = await pickTransportMode();
     if (!mode) return false;
-    await saveCourseTransportMode(courseId, mode);
-    await onStartGuide();
-    return true;
-  }, [courseId, onStartGuide, pickTransportMode]);
+    return openCourseGuidePreview(mode);
+  }, [courseId, openCourseGuidePreview, pickTransportMode]);
 
   const refreshClosedBakeries = useCallback(async (): Promise<ClosedCourseBakery[]> => {
     if (!courseId) return [];
@@ -52,14 +73,14 @@ export function useCourseGuideStart({
         setClosedDialogOpen(false);
         setClosedBakeries([]);
         setCurrentIndex(0);
-        await confirmTransportAndStart();
+        await confirmTransportAndPreview();
         return;
       }
       setClosedBakeries(nextClosed);
       setCurrentIndex(0);
       setClosedDialogOpen(true);
     },
-    [confirmTransportAndStart],
+    [confirmTransportAndPreview],
   );
 
   const requestCourseGuideStart = useCallback(async () => {
@@ -68,16 +89,16 @@ export function useCourseGuideStart({
     try {
       const closed = await refreshClosedBakeries();
       if (closed.length === 0) {
-        await confirmTransportAndStart();
+        await confirmTransportAndPreview();
         return;
       }
       setClosedBakeries(closed);
       setCurrentIndex(0);
       setClosedDialogOpen(true);
     } catch {
-      await confirmTransportAndStart();
+      await confirmTransportAndPreview();
     }
-  }, [confirmTransportAndStart, courseId, refreshClosedBakeries]);
+  }, [confirmTransportAndPreview, courseId, refreshClosedBakeries]);
 
   const handleReplace = useCallback(async () => {
     if (!courseId || busy) return;

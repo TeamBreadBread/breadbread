@@ -22,6 +22,7 @@ import { useCourseTransportSheet } from "@/hooks/useCourseTransportSheet";
 import { isLoggedIn } from "@/lib/auth/isLoggedIn";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import { readCourseTransportMode, saveCourseTransportMode } from "@/lib/courseTransportMode";
+import { buildCourseGuidePreviewSearch } from "@/lib/courseGuidePreviewNavigation";
 import {
   trackBakeryVisitChecked,
   trackCuratorGuideClicked,
@@ -1331,11 +1332,15 @@ export default function BreadBotWidget({
       const transportMode = await pickTransportMode();
       if (!transportMode) return;
       await saveCourseTransportMode(tourCourseId, transportMode);
-      trackTourStarted(tourCourseId);
-      await startTour(tourCourseId).catch(() => undefined);
-      const current = await getCurrentTour().catch(() => null);
-      if (current?.status !== "IN_PROGRESS" || current.courseId !== tourCourseId) return;
-      startCourseGuide(tourCourseId);
+      void navigate({
+        to: "/course-guide-preview",
+        search: buildCourseGuidePreviewSearch({
+          courseId: tourCourseId,
+          transportMode,
+          returnFrom: "chatbot",
+        }),
+      });
+      return;
     } else {
       const current = await getCurrentTour().catch(() => null);
       if (current?.status !== "IN_PROGRESS" || current.courseId !== tourCourseId) return;

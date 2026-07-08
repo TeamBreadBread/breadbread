@@ -28,28 +28,21 @@ import {
 } from "@/api/courses";
 import { getBakeriesCongestion, getBakeryById } from "@/api/bakery";
 import { ApiBusinessError, getErrorMessage } from "@/api/types/common";
-import { startTour, getCurrentTour } from "@/api/tours";
 import { useLoginRequired } from "@/lib/auth/useLoginRequired";
 import { mapCongestionByBakeryId } from "@/utils/congestionCheck";
-import { AI_COURSE_RESULT_STORAGE_KEY, saveRouteFocusCourseId } from "@/utils/aiCourseStorage";
+import { AI_COURSE_RESULT_STORAGE_KEY } from "@/utils/aiCourseStorage";
 import { buildBbakeryDetailSearch } from "@/utils/bakeryListEntry";
 import ResultCTASection from "@/components/domain/ai-course/ResultCTASection";
 import SaveRouteBanner from "@/components/domain/ai-course/SaveRouteBanner";
-import ActiveTourConflictDialog from "@/components/common/dialog/ActiveTourConflictDialog";
-import { hasConflictingActiveTour } from "@/utils/activeTourGuard";
-import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
-import { resetAiCourseFlowForRetry } from "@/utils/clearAiCourseJobContext";
-import { findMatchingSavedRoute, isSameCourseRouteContent } from "@/utils/courseRouteCompare";
 import { useCourseGuideStart } from "@/hooks/useCourseGuideStart";
 import { useCourseRoutePath } from "@/hooks/useCourseRoutePath";
 import { invalidateCourseRouteCache, prefetchCourseRoute } from "@/lib/courseRouteCache";
 import { courseTransportToRouteMode, readCourseTransportMode } from "@/lib/courseTransportMode";
 import { formatBakerySignatureMenuLabel } from "@/utils/bakerySignatureMenu";
-import {
-  trackAiCourseRegenerated,
-  trackRouteDetailViewed,
-  trackTourStarted,
-} from "@/lib/analytics/gtag";
+import { AI_COURSE_FLOW_START } from "@/utils/aiCourseFlow";
+import { resetAiCourseFlowForRetry } from "@/utils/clearAiCourseJobContext";
+import { findMatchingSavedRoute, isSameCourseRouteContent } from "@/utils/courseRouteCompare";
+import { trackAiCourseRegenerated, trackRouteDetailViewed } from "@/lib/analytics/gtag";
 
 const summary: CourseSummary = {
   title: "커플을 위한 달콤한 빵투어",
@@ -103,7 +96,7 @@ type AISearchResultPageProps = {
 
 export default function AISearchResultPage({ courseId, from }: AISearchResultPageProps) {
   const navigate = useNavigate();
-  const { requireLogin, startCourseGuide } = useLoginRequired();
+  const { requireLogin } = useLoginRequired();
   const effectiveCourseId = courseId ?? getDevFallbackCourseId();
   const storedCourseDetail = useMemo((): CourseDetail | null => {
     if (typeof window === "undefined") return null;
@@ -298,7 +291,6 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
   );
 
   const [showSavedBanner, setShowSavedBanner] = useState(false);
-  const [activeTourConflictOpen, setActiveTourConflictOpen] = useState(false);
   const [courseLiked, setCourseLiked] = useState(false);
   const [courseLikeCount, setCourseLikeCount] = useState(0);
   const [likeBusy, setLikeBusy] = useState(false);
@@ -316,33 +308,9 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
     displaySummary ??
     (effectiveCourseId ? { title: "코스 불러오는 중…", duration: "—", price: "—" } : summary);
 
-  const handleCourseGuide = async () => {
-    if (!effectiveCourseId) {
-      window.alert("안내할 코스 정보를 찾지 못했습니다.");
-      return;
-    }
-    if (await hasConflictingActiveTour(effectiveCourseId)) {
-      setActiveTourConflictOpen(true);
-      return;
-    }
-    if (from === "route") {
-      saveRouteFocusCourseId(effectiveCourseId);
-    }
-    trackTourStarted(effectiveCourseId);
-    try {
-      await startTour(effectiveCourseId);
-    } catch {
-      /* 이미 진행 중(409)이면 투어 화면에서 복구 */
-    }
-    const current = await getCurrentTour().catch(() => null);
-    if (current?.status === "IN_PROGRESS" && current.courseId === effectiveCourseId) {
-      startCourseGuide(effectiveCourseId);
-      void navigate({ to: "/tour", search: { courseId: effectiveCourseId } });
-    }
-  };
-
   const { requestCourseGuideStart, closedBakeryDialog, transportSheet } = useCourseGuideStart({
     courseId: effectiveCourseId,
+    returnFrom: from === "route" ? "route" : "ai-result",
     onCourseUpdated: (detail) => {
       if (!effectiveCourseId) return;
       setApiCourseDetail({ courseId: effectiveCourseId, detail });
@@ -352,7 +320,6 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
         /* ignore */
       }
     },
-    onStartGuide: handleCourseGuide,
   });
 
   const goBreadTaxiReserve = () => {
@@ -700,10 +667,6 @@ export default function AISearchResultPage({ courseId, from }: AISearchResultPag
           )
         : null}
 
-      <ActiveTourConflictDialog
-        open={activeTourConflictOpen}
-        onConfirm={() => setActiveTourConflictOpen(false)}
-      />
       {closedBakeryDialog}
       {transportSheet}
 
