@@ -36,6 +36,14 @@ public class BusinessHours {
         this.lastOrderTime = lastOrderTime;
     }
 
+    /** 평일/주말 open·close가 전부 채워져 있는지. 승인 전 필수 항목 검증에 사용. */
+    public boolean isComplete() {
+        return weekdayOpen != null
+                && weekdayClose != null
+                && weekendOpen != null
+                && weekendClose != null;
+    }
+
     public boolean isOpenNow(LocalTime now, DayOfWeek today, Set<DayOfWeek> closedDays) {
         // 정기 휴무일 체크
         if (closedDays != null && closedDays.contains(today)) {

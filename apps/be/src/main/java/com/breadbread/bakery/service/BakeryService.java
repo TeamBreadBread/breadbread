@@ -493,7 +493,9 @@ public class BakeryService {
                     || bakery.getLongitude() == 0.0
                     || bakery.getRegion() == null
                     || bakery.getDong() == null
-                    || bakery.getBakeryType() == null) {
+                    || bakery.getBakeryType() == null
+                    || bakery.getBusinessHours() == null
+                    || !bakery.getBusinessHours().isComplete()) {
                 skipped.add(
                         ApproveBakeriesResponse.SkippedBakery.builder()
                                 .id(bakery.getId())
