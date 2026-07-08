@@ -162,11 +162,11 @@ public class AdminBakeryController {
                             + "- `latitude` / `longitude` — 위경도 (0.0이면 미입력 상태)\n"
                             + "- `region` — 지역구\n"
                             + "- `dong` — 행정동\n"
-                            + "- `bakeryType` — 빵집 유형\n\n"
+                            + "- `bakeryType` — 빵집 유형\n"
+                            + "- `businessHours` — 영업 시간 (평일/주말 open·close 전부 입력)\n\n"
                             + "**권장 확인 항목**\n"
                             + "- `phone` — 전화번호\n"
-                            + "- `mapLink` — 지도 링크\n"
-                            + "- `businessHours` — 영업 시간\n\n"
+                            + "- `mapLink` — 지도 링크\n\n"
                             + "승인 후 일반 사용자에게 노출되며 AI 코스 추천 대상에도 포함됩니다.")
     @PostMapping("/approve")
     public ApiResponse<ApproveBakeriesResponse> approveBakeries(

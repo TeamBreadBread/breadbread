@@ -755,6 +755,36 @@ class BakeryServiceTest {
     }
 
     @Test
+    void approveBakeries_skips_when_businessHours_incomplete() {
+        Bakery bakery =
+                Bakery.builder()
+                        .name("빵집")
+                        .address("주소")
+                        .region("강남구")
+                        .dong("역삼동")
+                        .latitude(37.5)
+                        .longitude(127.0)
+                        .bakeryType(BakeryType.PLAIN)
+                        .weekdayOpen(LocalTime.of(9, 0))
+                        .weekdayClose(LocalTime.of(21, 0))
+                        // weekendOpen/weekendClose 미입력
+                        .dineInAvailable(false)
+                        .parkingAvailable(false)
+                        .drinkAvailable(false)
+                        .holidayClosed(false)
+                        .build();
+        ReflectionTestUtils.setField(bakery, "id", 100L);
+        ReflectionTestUtils.setField(bakery, "status", BakeryStatus.PENDING);
+        when(bakeryRepository.findByIdAndActiveTrue(100L)).thenReturn(Optional.of(bakery));
+
+        ApproveBakeriesResponse result = bakeryService.approveBakeries(1L, List.of(100L));
+
+        assertThat(bakery.getStatus()).isEqualTo(BakeryStatus.PENDING);
+        assertThat(result.getSuccessCount()).isZero();
+        assertThat(result.getSkipCount()).isEqualTo(1);
+    }
+
+    @Test
     void approveBakeries_skips_when_required_fields_null() {
         Bakery bakery =
                 Bakery.builder()
@@ -1077,6 +1107,10 @@ class BakeryServiceTest {
                         .latitude(37.5)
                         .longitude(127.0)
                         .bakeryType(BakeryType.PLAIN)
+                        .weekdayOpen(LocalTime.of(9, 0))
+                        .weekdayClose(LocalTime.of(21, 0))
+                        .weekendOpen(LocalTime.of(10, 0))
+                        .weekendClose(LocalTime.of(20, 0))
                         .dineInAvailable(false)
                         .parkingAvailable(false)
                         .drinkAvailable(false)
