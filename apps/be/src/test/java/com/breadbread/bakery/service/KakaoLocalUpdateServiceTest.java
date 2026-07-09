@@ -163,16 +163,41 @@ class KakaoLocalUpdateServiceTest {
     @Test
     void syncAllBakeries_countsFailedOnException() {
         Bakery b1 = bakery(1L, "영춘모찌", 36.3504, 127.3845);
+        Bakery b2 = bakery(2L, "나폴레옹과자점", 36.351, 127.385);
+        Place p =
+                place(
+                        "나폴레옹과자점",
+                        "042-222-2222",
+                        "127.3851",
+                        "36.3511",
+                        "대전광역시 중구 은행동 1",
+                        "대전광역시 중구 은행로 1");
         when(bakeryRepository.findAllByActiveTrueAndStatus(BakeryStatus.APPROVED))
-                .thenReturn(List.of(b1));
+                .thenReturn(List.of(b1, b2));
         when(bakeryRepository.findById(1L)).thenReturn(Optional.of(b1));
+        when(bakeryRepository.findById(2L)).thenReturn(Optional.of(b2));
         when(kakaoLocalClient.searchBakeries("영춘모찌")).thenThrow(new RuntimeException("API 오류"));
+        when(kakaoLocalClient.searchBakeries("나폴레옹과자점")).thenReturn(List.of(p));
 
         KakaoSyncResultResponse result = kakaoLocalUpdateService.syncAllBakeries();
 
-        assertThat(result.getSuccessCount()).isEqualTo(0);
+        assertThat(result.getSuccessCount()).isEqualTo(1);
         assertThat(result.getFailedCount()).isEqualTo(1);
         assertThat(result.getFailedBakeries()).extracting("id").containsExactly(1L);
+    }
+
+    @Test
+    void syncAllBakeries_throws_whenEveryBakeryFails() {
+        Bakery b1 = bakery(1L, "영춘모찌", 36.3504, 127.3845);
+        when(bakeryRepository.findAllByActiveTrueAndStatus(BakeryStatus.APPROVED))
+                .thenReturn(List.of(b1));
+        when(bakeryRepository.findById(1L)).thenReturn(Optional.of(b1));
+        when(kakaoLocalClient.searchBakeries("영춘모찌")).thenThrow(new RuntimeException("API 키 누락"));
+
+        assertThatThrownBy(() -> kakaoLocalUpdateService.syncAllBakeries())
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.BAKERY_IMPORT_SEARCH_FAILED);
     }
 
     // ───────────────────────────── helpers ─────────────────────────────

@@ -1,6 +1,7 @@
 package com.breadbread.scheduler;
 
 import com.breadbread.bakery.service.GooglePlacesUpdateService;
+import com.breadbread.bakery.service.KakaoLocalUpdateService;
 import com.breadbread.global.dto.ApiResponse;
 import com.breadbread.image.service.TempImageService;
 import com.breadbread.reservation.service.ReservationDailyService;
@@ -28,6 +29,7 @@ public class SchedulerController {
     private final ReservationRealTimeService reservationRealTimeService;
     private final TempImageService tempImageService;
     private final GooglePlacesUpdateService googlePlacesUpdateService;
+    private final KakaoLocalUpdateService kakaoLocalUpdateService;
 
     @Operation(summary = "만료 예약 취소 + 당일 예약 알림 (매일 09:00)")
     @PostMapping("/reservation-daily")
@@ -93,6 +95,19 @@ public class SchedulerController {
     public ApiResponse<Void> placesPhotoWarmup() {
         log.info("[스케줄러] places-photo-warmup 실행");
         googlePlacesUpdateService.warmAllPhotoCaches();
+        return ApiResponse.ok();
+    }
+
+    @Operation(summary = "카카오 로컬 기준 전체 빵집 정보 최신화 (매월 1일 05:00)")
+    @PostMapping("/bakery-sync-kakao")
+    @ResponseStatus(HttpStatus.OK)
+    @SchedulerLock(
+            name = "schedulerController_bakerySyncKakao",
+            lockAtMostFor = "PT1H",
+            lockAtLeastFor = "PT1M")
+    public ApiResponse<Void> bakerySyncKakao() {
+        log.info("[스케줄러] bakery-sync-kakao 실행");
+        kakaoLocalUpdateService.syncAllBakeries();
         return ApiResponse.ok();
     }
 }

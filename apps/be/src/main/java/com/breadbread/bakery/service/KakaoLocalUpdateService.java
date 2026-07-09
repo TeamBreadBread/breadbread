@@ -64,12 +64,24 @@ public class KakaoLocalUpdateService {
                 failed.add(BakeryEntry.builder().id(bakery.getId()).name(bakery.getName()).build());
             }
         }
-        log.info(
-                "[카카오 업데이트] 전체 완료: success={}, skipped={}, failed={}, total={}",
-                success,
-                skipped.size(),
-                failed.size(),
-                bakeries.size());
+        if (skipped.isEmpty() && failed.isEmpty()) {
+            log.info(
+                    "[카카오 업데이트] 전체 완료: success={}, skipped={}, failed={}, total={}",
+                    success,
+                    skipped.size(),
+                    failed.size(),
+                    bakeries.size());
+        } else {
+            log.warn(
+                    "[카카오 업데이트] 전체 완료: success={}, skipped={}, failed={}, total={}",
+                    success,
+                    skipped.size(),
+                    failed.size(),
+                    bakeries.size());
+        }
+        if (success == 0 && skipped.isEmpty() && !failed.isEmpty()) {
+            throw new CustomException(ErrorCode.BAKERY_IMPORT_SEARCH_FAILED);
+        }
         return KakaoSyncResultResponse.builder()
                 .successCount(success)
                 .skippedCount(skipped.size())
@@ -83,7 +95,7 @@ public class KakaoLocalUpdateService {
         List<Place> places = kakaoLocalClient.searchBakeries(bakery.getName());
         Place matched = findBestMatch(bakery, places);
         if (matched == null) {
-            log.debug("[카카오 업데이트] 매칭 실패: bakeryId={}, name={}", bakery.getId(), bakery.getName());
+            log.info("[카카오 업데이트] 매칭 실패: bakeryId={}, name={}", bakery.getId(), bakery.getName());
             return false;
         }
 
