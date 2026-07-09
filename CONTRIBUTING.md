@@ -10,15 +10,15 @@
 ```mermaid
 gitGraph
    commit id: "main"
-   branch feat/be/기능명
+   branch "feat/be/기능명"
    commit id: "구현"
    commit id: "테스트"
    checkout main
-   merge feat/be/기능명 tag: "PR merge"
-   branch fix/fe/버그명
+   merge "feat/be/기능명" tag: "PR merge"
+   branch "fix/fe/버그명"
    commit id: "수정"
    checkout main
-   merge fix/fe/버그명 tag: "PR merge"
+   merge "fix/fe/버그명" tag: "PR merge"
 ```
 
 #### 브랜치 명명 규칙
@@ -42,9 +42,9 @@ gitGraph
 flowchart LR
     A[Issue 생성] --> B["브랜치 생성<br/>feat/be/기능명"]
     B --> C[구현 + PR 생성]
-    C --> D{"코드 리뷰<br/>1명 Approve"}
-    D -- 반려 --> C
-    D -- 승인 --> E[main으로 Merge]
+    C --> D{"CI 통과<br/>lint·build·test"}
+    D -- 실패 --> C
+    D -- 통과 --> E[본인이 main으로 Merge]
     E --> F[브랜치 삭제]
     E --> G["BE: GitHub Actions CD<br/>→ Cloud Run"]
     E --> H["FE: Cloudflare Pages<br/>자체 Git 연동"]
@@ -52,9 +52,11 @@ flowchart LR
 
 1. **Issue 생성** → 작업 내용 정의
 2. **브랜치 생성** → `git checkout -b feat/fe/기능명`
-3. **작업 후 PR 생성** → 제공된 PR 템플릿 작성
-4. **코드 리뷰** → FE는 FE 팀원, BE는 BE 팀원이 리뷰
-5. **1명 Approve 후 merge** → 브랜치 삭제 → `main` 반영분이 자동 배포(BE: Cloud Run, FE: Cloudflare Pages)로 이어짐
+3. **작업 후 PR 생성** → 제공된 PR 템플릿 작성. Branch Protection으로 `main` 직접 push가 막혀 있어 PR 생성이 필수
+4. **CI 확인** → FE는 lint/타입체크, BE는 spotlessCheck/build/test 통과 확인 (`.github/workflows/ci.yml`)
+5. **CI 통과 후 merge** → 브랜치 삭제 → `main` 반영분이 자동 배포(BE: Cloud Run, FE: Cloudflare Pages)로 이어짐
+
+> FE/BE 담당이 한 명씩으로 명확히 나뉜 2인 체제라 상호 코드 리뷰는 진행하지 않고, PR 생성 + CI 통과를 품질 게이트로 사용합니다.
 
 ### 커밋 메시지 규칙
 
