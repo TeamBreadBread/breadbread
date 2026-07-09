@@ -60,7 +60,7 @@ breadbread/
 | HTTP | Axios (`src/api/`) |
 | 서버 데이터 | 커스텀 훅 · Route loader prefetch (`useBakeries` 등) |
 | 클라이언트 상태 | React Context · `localStorage` (JWT 세션) |
-| 지도 | Kakao Map SDK · Kakao Mobility 보행 길찾기 |
+| 지도 | Kakao Map SDK |
 | 푸시 | Firebase Cloud Messaging (PWA) |
 | 스타일 | Tailwind CSS v4 |
 | 빌드 | Vite · vite-plugin-pwa |

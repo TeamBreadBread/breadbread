@@ -32,7 +32,8 @@
 - Secret Manager에 새 환경변수 secret이 등록되어 있는지 확인
 - `.github/workflows/cd-cloud-run.yml`의 `env_vars` 또는 `secrets`에 새 값이 연결되어 있는지 확인
 - Cloud Run 최대 인스턴스와 `DB_MAX_POOL_SIZE`의 곱이 Cloud SQL `max_connections`를 넘지 않는지 확인
-- 외부 API 키 변경 시 n8n, PortOne, CoolSMS, Kakao, Google Places 쪽 설정도 같이 확인
+- 외부 API 키 변경 시 n8n, PortOne, CoolSMS, Kakao, Google Places, T맵 쪽 설정도 같이 확인
+- Cloud Scheduler 관련 변경 시 `SCHEDULER_SERVICE_ACCOUNT`(서비스 계정 이메일), `SCHEDULER_AUDIENCE`(Cloud Run 서비스 URL)가 Secret Manager와 Cloud Scheduler 잡 설정에 모두 동일하게 반영되어 있는지 확인
 
 ---
 
@@ -110,6 +111,8 @@ Redis는 다음 기능에 사용된다.
 - Rate Limit 카운터 저장
 - Google Places 사진 URL 캐싱 (외부 API 호출 최소화, TTL: `GOOGLE_PLACES_PHOTO_URL_TTL_SECONDS`)
 
+경로 캐시는 Redis가 아니라 DB의 `CourseDrivingRoute`에 저장된다. 도보 경로도 `route_mode=WALKING`으로 같은 테이블에 캐싱된다.
+
 Redis 장애 시 영향:
 
 - refresh token 검증 실패 가능
@@ -155,4 +158,3 @@ GCS는 이미지 업로드 파일 저장소로 사용된다.
 - 이미지 업로드, AI 요청, 결제 준비처럼 외부 의존성이 있는 대표 API가 정상 동작하는지
 
 문제가 있으면 이전 Cloud Run revision으로 rollback한 뒤 로그와 Secret 연결 상태를 확인한다.
-

@@ -4,41 +4,68 @@
 
 ### 브랜치 전략 (GitHub Flow)
 
-```
-main                    ← 배포 브랜치 (직접 push 금지)
-feat/fe/기능명          ← FE 기능 브랜치
-feat/be/기능명          ← BE 기능 브랜치
-fix/fe/버그명           ← FE 버그 수정
-fix/be/버그명           ← BE 버그 수정
-docs/fe/작업명          ← FE 문서
-docs/be/작업명          ← BE 문서
-chore/작업명            ← 설정, 문서, 패키지 등
+`main` 단일 브랜치로 배포하는 **GitHub Flow**를 사용합니다.  
+`develop`/`release`/`hotfix` 브랜치를 두는 Git Flow와 달리, 작업 브랜치를 `main`에 직접 PR합니다.
+
+```mermaid
+gitGraph
+   commit id: "main"
+   branch feat/be/기능명
+   commit id: "구현"
+   commit id: "테스트"
+   checkout main
+   merge feat/be/기능명 tag: "PR merge"
+   branch fix/fe/버그명
+   commit id: "수정"
+   checkout main
+   merge fix/fe/버그명 tag: "PR merge"
 ```
 
-### PR 프로세스
+#### 브랜치 명명 규칙
+
+| 타입 | 형식 | 예시 |
+|------|------|------|
+| FE 기능 | `feat/fe/<기능명>` | `feat/fe/bakery-detail` |
+| BE 기능 | `feat/be/<기능명>` | `feat/be/route-optimization` |
+| FE 버그 | `fix/fe/<버그명>` | `fix/fe/login-redirect` |
+| BE 버그 | `fix/be/<버그명>` | `fix/be/walking-route` |
+| FE 문서 | `docs/fe/<작업명>` | `docs/fe/api-guide` |
+| BE 문서 | `docs/be/<작업명>` | `docs/be/docs-accuracy` |
+| 그 외 유지보수 | `chore/<작업명>` | `chore/dependabot-setup` |
+
+- 기능명은 **소문자 케밥케이스** 사용 (`bakery-import-preview`)
+- 한 브랜치에 하나의 기능/버그만 작업
+
+### PR 프로세스 · 배포 흐름
+
+```mermaid
+flowchart LR
+    A[Issue 생성] --> B["브랜치 생성<br/>feat/be/기능명"]
+    B --> C[구현 + PR 생성]
+    C --> D{"코드 리뷰<br/>1명 Approve"}
+    D -- 반려 --> C
+    D -- 승인 --> E[main으로 Merge]
+    E --> F[브랜치 삭제]
+    E --> G["BE: GitHub Actions CD<br/>→ Cloud Run"]
+    E --> H["FE: Cloudflare Pages<br/>자체 Git 연동"]
+```
 
 1. **Issue 생성** → 작업 내용 정의
 2. **브랜치 생성** → `git checkout -b feat/fe/기능명`
 3. **작업 후 PR 생성** → 제공된 PR 템플릿 작성
 4. **코드 리뷰** → FE는 FE 팀원, BE는 BE 팀원이 리뷰
-5. **1명 Approve 후 merge** → 브랜치 삭제
+5. **1명 Approve 후 merge** → 브랜치 삭제 → `main` 반영분이 자동 배포(BE: Cloud Run, FE: Cloudflare Pages)로 이어짐
 
 ### 커밋 메시지 규칙
 
-```
-feat: 새로운 기능 추가
-fix: 버그 수정
-docs: 문서 추가 및 수정
-chore: 설정, 패키지 등
-refactor: 리팩토링 (기능 변경 없음)
-style: 스타일 변경 (CSS 등)
-```
-
-예시:
-```
-feat: 베이커리 목록 페이지 구현
-fix: 로그인 토큰 만료 처리 오류 수정
-```
+| 타입 | 설명 | 예시 |
+|------|------|------|
+| `feat` | 새로운 기능 추가 | `feat: 베이커리 목록 페이지 구현` |
+| `fix` | 버그 수정 | `fix: 로그인 토큰 만료 처리 오류 수정` |
+| `docs` | 문서 추가 및 수정 | `docs: API 명세 업데이트` |
+| `chore` | 설정, 패키지 등 | `chore: dependabot 설정 추가` |
+| `refactor` | 리팩토링 (기능 변경 없음) | `refactor: CourseService 메서드 분리` |
+| `style` | 스타일 변경 (CSS 등) | `style: 버튼 여백 조정` |
 
 ### 패키지 설치 규칙
 
