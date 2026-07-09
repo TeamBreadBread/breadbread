@@ -23,6 +23,7 @@ com.breadbread
 ├── trend         # 트렌드 — 인기 빵집·메뉴 집계
 ├── tour          # 투어 — 실시간 코스 안내
 ├── user          # 사용자 — 프로필, 탈퇴
+├── scheduler     # Cloud Scheduler 전용 엔드포인트 — 예약/이미지/빵집 동기화 등 배치 작업 트리거
 └── global        # 공통 — 예외처리, 보안 설정, GCS, Rate Limit, JWT
 ```
 
@@ -75,12 +76,19 @@ COOLSMS_SENDER=01000000000
 # Kakao Mobility (경로 계산 테스트 시 필요)
 KAKAO_MOBILITY_APP_KEY=...
 
+# Tmap (도보 경로/방문순서 최적화 테스트 시 필요)
+TMAP_APP_KEY=...
+
 # Google Places (빵집 사진 조회 시 필요)
 GOOGLE_PLACES_API_KEY=...
 
 # Naver Maps (현재 미사용, route.provider=naver 전환 시 필요)
 NAVER_MAPS_CLIENT_ID=...
 NAVER_MAPS_CLIENT_SECRET=...
+
+# Cloud Scheduler OIDC (/scheduler/** 호출 검증)
+SCHEDULER_SERVICE_ACCOUNT=...
+SCHEDULER_AUDIENCE=...
 ```
 
 ---
@@ -139,6 +147,10 @@ NAVER_MAPS_CLIENT_SECRET=...
 | `GOOGLE_PLACES_API_KEY` | **필수** | Google Places API 키 |
 | `GOOGLE_PLACES_PHOTO_URL_TTL_SECONDS` | `345600` | 사진 URL 캐시 TTL (초, 기본 4일) |
 | `ROUTE_PROVIDER` | `kakao` | 경로 계산 Provider (`naver` 또는 `kakao`) |
+| `TMAP_APP_KEY` | _(없음)_ | T맵 보행자 경로 API 앱 키 |
+| `TMAP_TIMEOUT_SECONDS` | `10` | T맵 요청 타임아웃 (초) |
+| `SCHEDULER_SERVICE_ACCOUNT` | _(없음)_ | Cloud Scheduler OIDC 서비스 계정 이메일 (`/scheduler/**` 호출 검증) |
+| `SCHEDULER_AUDIENCE` | _(없음)_ | Cloud Scheduler OIDC 토큰 audience (Cloud Run 서비스 URL) |
 
 ---
 
