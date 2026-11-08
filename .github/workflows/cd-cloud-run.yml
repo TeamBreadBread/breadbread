@@ -1,5 +1,6 @@
 name: Deploy to Cloud Run
 on:
+  workflow_dispatch:
   pull_request:
     branches: [main]
     types: [closed]
@@ -12,7 +13,7 @@ permissions:
 
 jobs:
   deploy:
-    if: ${{ github.event.pull_request.merged == true }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
     env:
       RUN_REGION: ${{ secrets.GCP_RUN_REGION }}
