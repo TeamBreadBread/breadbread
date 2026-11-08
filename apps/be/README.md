@@ -256,3 +256,4 @@ n8n → 백엔드 호출 시 `X-AI-API-KEY` 헤더로 `AI_API_KEY` 검증.
 
 - [백엔드 배포 가이드](docs/backend-deployment.md): Cloud Run, Cloud SQL, Redis, GCS, Secret Manager 운영 체크리스트
 - [백엔드 보안/운영 정책](docs/backend-security-and-ops.md): JWT, Rate Limit, AI API key, PortOne 웹훅, 파일 업로드 정책
+
