@@ -69,6 +69,7 @@ jobs:
             CLOUD_SQL_INSTANCE=${{ secrets.CLOUD_SQL_INSTANCE }}
             GCS_BUCKET=${{ secrets.GCS_BUCKET }}
             REDIS_PORT=${{ secrets.REDIS_PORT }}
+            REDIS_SSL_ENABLED=${{ vars.REDIS_SSL_ENABLED }}
             JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}
             JWT_REFRESH_EXPIRES_IN=${{ secrets.JWT_REFRESH_EXPIRES_IN }}
             GOOGLE_PLACES_PHOTO_URL_TTL_SECONDS=${{ secrets.GOOGLE_PLACES_PHOTO_URL_TTL_SECONDS }}
